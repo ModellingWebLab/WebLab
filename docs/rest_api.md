@@ -16,6 +16,8 @@ A `?` after a JSON field name indicates that the field is optional.
 
 Arguably we'd be more RESTful to turn some of these POST requests into GET ones, since they don't actually change anything on the server...
 
+Pretty much all these calls check the identity of the logged in user (if any) and whether they are permitted to view/modify the relevant state.
+
 ## Admin.java
 
 * POST `/admin`
@@ -51,13 +53,14 @@ This file does a lot! It handles the pages for both initial creation of new enti
 
 There are also API calls:
 * POST `/protocol/submitInterface.html`
+    * `{signature: <string>, returntype: 'success'|'failed', returnmsg?: <string>, optional: [<uri>], required: [<uri>]}` - callback for a Celery task updating a protocol's interface info in the DB
 * POST `/(model|protocol|experiment)`
-    * `{task: 'createNewEntity'}` - creates a new entity version, or an entirely new entity
-    * `{task: 'verifyNewEntity'}` - called to check individual properties (e.g. name) as the user fills them in
-    * `{task: 'updateEntityFile'}` - creates a new version of an existing entity by changing one file
-    * `{task: 'getInfo'}`
-    * `{task: 'updateVisibility'}`
-    * `{task: 'deleteVersion'}`
-    * `{task: 'deleteEntity'}`
-    * `{task: 'getInterface'}`
-    * `{task: 'updateInterface'}`
+    * `{task: 'createNewEntity', many other fields!}` - creates a new entity version, or an entirely new entity
+    * `{task: 'verifyNewEntity', entityName, visibility, versionName, commitMsg}` - called to check individual properties (e.g. name) as the user fills them in
+    * `{task: 'updateEntityFile', baseVersionId: <id>, fileName: <string>, fileContents: <string>}` - creates a new version of an existing entity by changing one file
+    * `{task: 'getInfo', version: <id>}` - get a JSON dump of an entity version
+    * `{task: 'updateVisibility', version: <id>, visibility: <string>}` - change the visibility field for an entity version
+    * `{task: 'deleteVersion', version: <id>}` - remove a version of an entity (and the whole entity if this was the only version)
+    * `{task: 'deleteEntity', entity: <id>}` - remove an entire entity
+    * `{task: 'getInterface'}` - returns interface info for all protocols a user can see
+    * `{task: 'updateInterface', version: <version_id>}` - submit a Celery task to update a protocol's interface info in the DB
