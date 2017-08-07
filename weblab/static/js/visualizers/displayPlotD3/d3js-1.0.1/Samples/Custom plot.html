@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <title>Custom plot</title>
+    <link rel="stylesheet" type="text/css" href="../css/d3.css" />
+    <link rel="stylesheet" type="text/css" href="../css/D3Theme.css" />
+    <script src="../script/jquery-1.8.0.min.js"></script>
+    <script src="../script/rx.js"></script>
+    <script src="../script/rx.jQuery.js"></script>
+    <script src="../script/d3-1.0.1.min.js"></script>
+
+    <script type="application/javascript">
+        var ZeroLinesPlot = function (jqDiv, master) {
+            this.base = D3.CanvasPlot;
+            this.base(jqDiv, master);
+
+            this.renderCore = function (plotRect, screenSize) {
+                var t = this.getTransform();
+                var dataToScreenX = t.dataToScreenX;
+                var dataToScreenY = t.dataToScreenY;
+
+                var context = this.getContext(true);
+                context.beginPath();
+                context.strokeStyle = 'rgb(60,60,60)';
+
+                var hs = t.dataToScreenY(0); // Y screen coordinate of the horizontal line
+                if (hs >= 0 && hs < screenSize.height) {
+                    context.moveTo(0, hs);
+                    context.lineTo(screenSize.width - 1, hs);
+                }
+
+                var ws = t.dataToScreenX(0);
+                if (ws >= 0 && ws < screenSize.width) {
+                    context.moveTo(ws, 0);
+                    context.lineTo(ws, screenSize.height - 1);
+                }
+
+                context.stroke();
+            }
+        };
+        ZeroLinesPlot.prototype = new D3.CanvasPlot;
+
+        $(document).ready(function () {
+            D3.register('zeroLines', function (jqDiv, master) { return new ZeroLinesPlot(jqDiv, master); });
+            D3.asPlot('chart').navigation.setVisibleRect({ x: -1, y: -1, width: 2, height: 2 });
+        });
+    </script>
+</head>
+<body>
+    <div id="chart" data-d3-plot="chart" style="width: 800px; height: 600px;">
+        <div data-d3-plot="zeroLines"></div>
+    </div>
+</body>
+</html>

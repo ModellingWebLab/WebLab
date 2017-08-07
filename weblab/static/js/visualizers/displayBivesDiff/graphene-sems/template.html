@@ -1,0 +1,113 @@
+<div ng-controller="LayoutCtrl">
+  <!-- div>
+    Show: <button type="button" class="btn btn-primary" ng-model="show.id" btn-checkbox>Node IDs</button>
+  </div -->
+<svg xmlns="http://www.w3.org/2000/svg" height="500" width="780">
+  <style>
+    svg .selected {
+      stroke: #FF0000;
+    }
+    svg marker {
+      overflow: visible;
+    }
+    svg line.bives-inserted {
+      stroke: green
+    }
+    svg line.bives-deleted {
+      stroke: red
+    }
+  </style>
+  <defs>
+    <marker style="overflow:visible" case-sensitive="refX,refY" id="arrow" viewBox="0 0 10 10" ng-attr-refX="{{-2}}" ng-attr-refY="{{0}}" markerWidth="10" markerHeight="10" orient="auto">
+      <path transform="rotate(-90)" ng-attr-d="{{arrow({size: 10, type: 'triangle-down'})}}"></path></marker>
+    <marker style="overflow:visible" case-sensitive="refX,refY" id="emptyArrow" viewBox="0 0 10 10" ng-attr-refX="{{-2}}" ng-attr-refY="{{0}}" markerWidth="10" markerHeight="10" orient="auto">
+      <path fill="white" stroke="black" transform="rotate(-90)" ng-attr-d="{{arrow({size: 10, type: 'triangle-down'})}}"></path></marker>
+    <marker style="overflow:visible" case-sensitive="refX,refY" id="diamond" viewBox="0 0 10 10" ng-attr-refX="{{-2}}" ng-attr-refY="{{0}}" markerWidth="10" markerHeight="10" orient="auto">
+      <path transform="rotate(-45)" stroke="black" fill="white" ng-attr-d="{{arrow({size: 10, type: 'square'})}}"></path></marker>
+    <marker 
+      case-sensitive="refX,refY" 
+      id="circle" 
+      viewBox="0 0 10 10" 
+      markerWidth="30"
+      markerHeight="30" 
+      ng-attr-refX="{{-0.4}}" 
+      ng-attr-refY="{{0}}" 
+      orient="auto">
+      <path 
+        stroke="black" 
+        stroke-width="0.3" 
+        fill="none" 
+        ng-attr-d="{{arrow({size: 1, type: 'circle'})}}">
+      </path>
+    </marker>
+    <linearGradient id="gradient">
+      <stop offset="5%" stop-color="#FFDC9E"></stop>
+      <stop offset="95%" stop-color="#FFF"></stop>
+    </linearGradient>
+    <linearGradient id="blueGradient">
+      <stop offset="5%" stop-color="#B0C0FF"></stop>
+      <stop offset="95%" stop-color="#FFF"></stop>
+    </linearGradient>
+  </defs>
+  <g ng-attr-transform="translate({{translate.x || 0}}, {{translate.y || 0}})scale({{scale || 1}})">
+    <g ng-repeat="e in imports.edges track by $index"
+      ng-attr-opacity="{{e.opacity || 1}}"
+      >
+      <line
+      stroke="black"
+      ng-attr-x1="{{e.x1}}"
+      ng-attr-y1="{{e.y1}}"
+      ng-attr-x2="{{e.x2}}"
+      ng-attr-y2="{{e.y2}}"
+      ng-attr-marker-end="{{'url(#' + e.marker + ')'}}"
+      stroke-width="1.5px"
+			ng-class="{{e.classes.split(' ')}}"
+      ></line>
+    </g>
+
+    <g ng-repeat="node in imports.nodes track by $index"
+    draggable
+    ng-attr-transform="translate({{node.x}},{{node.y}})"
+    ng-attr-opacity="{{node.opacity || 1}}"
+    ng-mouseover="imports.events.mouseover(node, this, $event)"
+		ng-mouseleave="imports.events.mouseleave(node, this, $event)"
+		popover="{{node.data.name}}"
+		popover-trigger="mouseenter"
+		popover-append-to-body="true"
+    >
+      <ellipse 
+        ng-if="_.contains(node.classes, 'species')"
+        ng-class="{selected: node.fixed}" 
+        ng-style="{fill: node.color}"
+        fill="white"
+        stroke="black"
+        cx="0" cy="0" 
+        ng-attr-rx="{{node.width/2}}"
+        ng-attr-ry="{{node.height/2}}"
+      ></ellipse>
+      <rect
+        ng-if="_.contains(node.classes, 'reaction')"
+        ng-class="{selected: node.fixed}" 
+        ng-style="{fill: node.color}"
+        stroke="black"
+        fill="white"
+        ng-attr-x="{{-node.width/2}}"
+        ng-attr-y="{{-node.width/2}}"
+        ng-attr-width="{{node.width}}"
+        ng-attr-height="{{node.height}}"
+        >
+      </rect>
+      <text 
+        ng-if="show.id"
+        style="font-size: 12px;
+        font-family: monospace;
+        font-weight: bolder;
+        text-anchor: middle;
+        dominant-baseline: middle;
+        ">{{node.data.name | truncateTo: 10}}</text>
+    </g>
+  </g>
+
+
+</svg>
+</div>

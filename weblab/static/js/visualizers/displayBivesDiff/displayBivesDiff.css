@@ -1,0 +1,98 @@
+
+.bivesDiffDisplayer
+{
+	margin-top: 20px;
+	font-size: .8em;
+}
+
+.bivesDiffDel
+{
+	color: #890000;
+}
+
+.bivesDiffIns
+{
+	color: #008900;
+}
+
+.bivesDiffUpdate
+{
+	color: #aba500;
+}
+
+.bivesDiffMove
+{
+	color: #100089;
+}
+
+.bivesTabLine
+{
+	margin: 10px 0;
+}
+
+.bivesTab
+{
+	border: 1px solid #263e6a;
+	margin-right: 5px;
+	padding: 5px;
+	color: #263e6a;
+	cursor: default;
+}
+
+.bivesTabSelected
+{
+	border: 2px solid #000;
+	background-color:#263e6a;
+	color: #fff;
+}
+
+
+.bivesDiffDisplayer table
+{
+	    width: auto;
+	    
+}
+
+        
+.bivesDiffDisplayer table tr
+{
+    border:none;
+}
+
+.bives-insert
+{
+    color: #008900;
+}   
+.bives-delete
+{
+    color: #890000;
+}   
+.bives-attr
+{
+    font-weight: bold;
+}   
+.bives-suppl
+{
+    color: #999;
+}
+.bives-annotation
+{
+	color: #999;
+}   
+
+.bivesLegend
+{
+	width: 100%;
+	text-align:right;
+}
+.bivesLegend .bivesLegendItem
+{
+	padding: 5px;
+}
+
+/* Add some extra spacing between MathML identifiers to avoid confusion */
+.mi:not([style*="padding"]),
+.mn:not([style*="padding"])
+{
+    padding-left: 0.1em;
+}

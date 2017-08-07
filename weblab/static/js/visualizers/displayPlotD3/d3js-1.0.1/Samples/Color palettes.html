@@ -1,0 +1,63 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <title>Color palettes</title>
+    <link rel="stylesheet" type="text/css" href="../css/d3.css" />
+    <link rel="stylesheet" type="text/css" href="../css/D3Theme.css" />
+    <script src="../script/jquery-1.8.0.min.js"></script>
+    <script src="../script/rx.js"></script>
+    <script src="../script/rx.jQuery.js"></script>
+    <script src="../script/d3-1.0.1.min.js"></script>    
+
+    <script type="application/javascript">
+        var input;
+        var paletteControl, paletteControl2, paletteControl3, paletteControl4;
+
+        $(document).ready(function () {
+            paletteControl = new D3.ColorPaletteViewer($('#paletteControl'));
+            paletteControl2 = new D3.ColorPaletteViewer($('#paletteControl2'));
+            paletteControl3 = new D3.ColorPaletteViewer($('#paletteControl3'));
+            paletteControl4 = new D3.ColorPaletteViewer($('#paletteControl4'));
+            input = document.getElementById("string");
+
+            parsePalette();
+        });
+
+        function parsePalette() {
+            var s = input.value;
+            try {
+                palette = D3.ColorPalette.parse(s);
+            }
+            catch (e) {
+                palette = D3.ColorPalette.parse("black, white");
+            }
+
+            paletteControl.palette = palette;
+            paletteControl2.palette = palette.relative();
+            paletteControl3.palette = palette.absolute(0, 100);
+            paletteControl4.palette = palette.banded(5);
+        };
+    </script>   
+</head>
+<body>
+    <div style="margin: 10px">
+        <input id="string" style="width: 500px" oninput="parsePalette();" />
+        <p>Try these palettes:</p>
+        <ul>
+            <li>red,green,blue</li>
+            <li>red,orange,yellow,green,blue,violet</li>
+            <li>-100=red,green,blue=100</li>
+            <li>red=green=blue</li>
+            <li>red,0.3=#00FF00=0.8,blue</li>
+        </ul>
+    </div>
+    <div id="paletteControl" style="margin: 20px 10px; width: 300px"></div>
+    <div>palette.relative()</div>
+    <div id="paletteControl2" style="margin: 10px; width: 300px"></div>
+    <div>palette.absolute(0, 100)</div>
+    <div id="paletteControl3" style="margin: 10px; width: 300px"></div>
+    <div>palette.banded(5)</div>
+    <div id="paletteControl4" style="margin: 10px; width: 300px"></div>
+</body>
+</html>

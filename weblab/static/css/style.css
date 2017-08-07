@@ -1,0 +1,621 @@
+@import url("fonts.css");
+
+body {
+	font-family: 'Open Sans', sans-serif;
+	font-size: 16px;
+}
+
+code,input {
+	font-family: 'Cousine', monospace, sans-serif;
+}
+
+#page {
+	width: 850px;
+	margin: auto;
+}
+
+#logo {
+	/*      float:left;*/
+	
+}
+/* support for historic browsers */
+header,section,footer,aside,nav,article,figure {
+	display: block;
+}
+
+header {
+	position: relative;
+	/*	background-color: #bbb;*/
+}
+
+
+button {
+	background-color: #263e6a;
+	padding: 8px 12px;
+	color: #fff;
+	font-size: 14px;
+	border-radius: 5px;
+	border: 1px solid #39578e;
+}
+
+button:active {
+	background-color: #192a49;
+	border: 1px solid #39578e;
+}
+
+button:hover, button.selected {
+	background-color: #39578e;
+	border: 1px solid #39578e;
+}
+
+nav {
+	/*      float:right;*/
+	/*background-color: #aaa;*/
+	/*position: absolute;
+    bottom: 0;
+right:0;
+}
+nav ul
+{
+	/*list-style-type: none;*/
+	
+}
+/*nav ul li
+{
+display: inline;
+padding: 10px;
+}
+.navbar li a:before {
+	content: "\00BB";
+}
+*/
+.navbar li ul li a:before {
+	content: '\00BB\00A0';
+}
+
+
+.navbar {
+	height: 60px;
+	padding: 0;
+	margin: 0;
+	position: absolute;
+	/* Ensures that the menu doesn’t affect other elements */
+	/*border-right: 1px solid #54879d; */
+	bottom: 0;
+	right: 0;
+}
+
+.navbar li {
+	height: auto;
+	/*width: 100px; Each menu item is 80px wide */
+	float: left; /* This lines up the menu items horizontally */
+	text-align: center; /* All text is placed in the center of the box */
+	list-style: none;
+	/* Removes the default styling (bullets) for the list */
+	/*font: normal bold 12px/1.2em Arial, Verdana, Helvetica;  */
+	padding: 10px;
+	/*
+			margin: 0;*/
+	/*background-color: #366b82;*/
+	margin-right: 20px;
+}
+
+#usernavbar {
+    min-width: 100px;
+}
+
+.navbar a, .navbar a:hover, .navbar a:active {
+	padding: 18px 0;
+	/* Adds a padding on the top and bottom so the text appears centered vertically */
+	/*border-left: 1px solid #54879d; /* Creates a border in a slightly lighter shade of blue than the background. 
+	 Combined with the right border, this creates a nice effect. */
+	/*border-right: 1px solid #1f5065; /* Creates a border in a slightly darker shade of blue than the background. 
+	 Combined with the left border, this creates a nice effect. */
+	text-decoration: none; /* Removes the default hyperlink styling. */
+	/*color: white; /* Text color is white */
+	display: block;
+	border: none;
+}
+
+.navbar li:hover,.navbar a:hover {
+	/*background-color: #263e6a; color:white;
+	/*border: 1px solid #263e6a;*/
+	
+}
+
+.navbar li ul {
+	display: none; /* Hides the drop-down menu */
+	height: auto;
+	width: 100px;
+	margin: 0; /* Aligns drop-down box underneath the menu item */
+	padding: 0; /* Aligns drop-down box underneath the menu item */
+}
+
+.navbar li:hover ul {
+	display: block;
+	/* Displays the drop-down box when the menu item is hovered over */
+}
+
+.navbar li:hover ul li a {
+	padding: 0;
+	/* Displays the drop-down box when the menu item is hovered over */
+}
+
+.navbar li ul li { 
+    background-color: #ffffff;
+	/*border-left: 1px solid #263e6a;*/
+	padding: 0;
+}
+
+.navbar li ul li a {
+	/*border-left: 1px solid #1f5065; 
+    border-right: 1px solid #1f5065; 
+    border-top: 1px solid #74a3b7; 
+    border-bottom: 1px solid #1f5065; */
+	
+}
+
+.navbar li ul li a:hover { /*background-color: #366b82;*/
+	
+}
+
+#body {
+	clear: both;
+	/*background-color: #ccc;*/
+	padding: 10px;
+}
+
+footer {
+	background-color: #263e6a;
+	color: white;
+	padding: 15px;
+	clear: both;
+}
+
+a,a:active,a:visited
+{
+	text-decoration: none;
+	cursor: pointer;
+	/*border-bottom: 1px solid #263e6a;*/
+}
+a,a:active,a:visited,h1,h2,h3,h4,h5,#comparisonModeIndicator {
+	color: #263e6a;
+}
+h1 a,h2 a,h3 a,h4 a,h5 a
+{
+	border-bottom: none;
+}
+
+p.right
+{
+    text-align: right;
+    width: 100%;
+}
+
+#loginform small,#registerform small {
+	color: #aaa;
+}
+
+#error {
+	background-color: #e5cece;
+	border: 2px solid #7d3e3e;
+	padding: 0px 10px;
+}
+
+#info {
+	background-color: #ced5e5;
+	border: 2px solid #263e6a;
+	padding: 0px 10px;
+}
+
+.pointer {
+	cursor: pointer;
+}
+
+.invisible {
+	display: none;
+}
+
+table.leftright th {
+	text-align: left;
+	padding-right: 15px;
+	padding-top: 5px;
+}
+
+.failed {
+	color: red;
+}
+
+.success {
+	color: green;
+}
+
+/*file uploads*/
+#dropbox {
+	background-color: #eee;
+	padding: 40px 50px;
+	margin-bottom: 30px;
+	border: 3px dashed #bbb;
+	text-align: center;
+	text-transform: uppercase;
+	font-size: 16px;
+	font-weight: bold;
+	color: #bbb;
+}
+
+#dropbox a {
+	background-color: #263e6a;
+	padding: 12px 26px;
+	color: #fff;
+	font-size: 14px;
+	border-radius: 2px;
+	cursor: pointer;
+	display: inline-block;
+	margin-top: 12px;
+	line-height: 1;
+}
+
+#dropbox input {
+	display: none;
+}
+
+.uploadedfiles code {
+	font-weight: bold;
+}
+
+
+
+/* model page */
+/*#modelversion,
+#modelversionfiledetails
+{
+}*/
+
+.closebtn
+{
+	float:right;
+	cursor: pointer;
+}
+
+h1#entityname,
+h2#entityversionname,
+h3#entityversionfilename
+{
+        margin-bottom:0;
+}
+.suppl
+{
+        color: #888;
+        font-size: .8em;
+}
+
+
+#entityversion,
+#entityversionfiledetails,
+#filedetails
+{
+	/* hidden by default */
+	display: none;
+	padding: 10px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	overflow:auto;
+}
+#entityversionfiledisplay
+{
+	overflow:auto;
+}
+
+td.right {
+	text-align: right;
+}
+
+table
+{
+        width: 100%;
+        border-collapse:collapse;
+}
+
+th
+{
+    text-align: left;
+}
+
+tr:nth-child(5n+1)
+{
+	border-bottom:1px dashed #ccc;
+}
+
+tr:nth-child(1)
+{
+    border-top:1px dashed #ccc;
+}
+
+
+
+/*#modellist ul,
+#protocollist ul,
+#experimentlist ul,*/
+#batchlist ul,
+#entityversionfilestable,
+#filestable,
+#accounttable
+{
+	font-size:.8em;
+	text-align: left;
+}
+
+#experimentlist li.experiment-QUEUED,
+#entitydetails p.experiment-QUEUED,
+.experiment-QUEUED
+{
+    background-color:#d9e3f6;
+}
+
+#experimentlist li.experiment-RUNNING,
+#entitydetails p.experiment-RUNNING,
+.experiment-RUNNING
+{
+	background-color:#93b4f6;
+}
+
+#experimentlist li.experiment-INAPPLICABLE,
+#entitydetails p.experiment-INAPPLICABLE,
+.experiment-INAPPLICABLE
+{
+	background-color:#bdbdbd;
+}
+#experimentlist li.experiment-FAILED,
+#entitydetails p.experiment-FAILED,
+.experiment-FAILED
+{
+	background-color:#ffe0e0;
+}
+#experimentlist li.experiment-PARTIAL,
+#entitydetails p.experiment-PARTIAL,
+.experiment-PARTIAL
+{
+    background-color:#f7be81;
+}
+
+#experiment-files-switcher,
+#entityexperimentlist
+{
+    display: none;
+    border-width:3px; 
+    border-style:solid;
+    border-color:white;
+    min-height: 40px; 
+    width: 100%;
+}
+
+
+/* new experiment creator */
+
+#newexpicon, #newexp
+{
+	float:left;
+}
+#newexp
+{
+	margin-left:20px;
+}
+#newexpheadline
+{
+	font-weight:bold;
+}
+#newexpcontainer
+{
+	margin-top: 20px;
+	padding:5px;
+	font-size: .8em;
+	overflow:hidden;
+	background-color: #dee9fd;
+	border: 1px solid #263e6a;
+	border-radius: 5px;
+}
+
+#newexpmodel,
+#newexpprotocol
+{
+	color: #263e6a;
+	font-style:italic
+}
+
+
+
+p.entityviz-RESTRICTED
+{
+	padding-left:20px;
+	background: url(../img/yellow-dot.png) no-repeat left top 5px;
+}
+
+p.entityviz-PRIVATE
+{
+	padding-left:20px;
+	background: url(../img/red-dot.png) no-repeat left top 5px;
+}
+
+p.entityviz-PUBLIC,
+p.entityviz-MODERATED
+{
+	padding-left:20px;
+	background: url(../img/green-dot.png) no-repeat left top 5px;
+}
+
+/*#modellist ul,
+#protocollist ul,
+#experimentlist ul
+{
+	list-style: none;
+    padding:0;
+    margin:0;
+}*/
+
+li.entityviz-RESTRICTED,
+li.entityviz-PRIVATE,
+li.entityviz-PUBLIC,
+li.entityviz-MODERATED
+{
+	padding-left: 25px; 
+	background-repeat: no-repeat;
+	background-position: 0px 5px; 
+}
+
+li.entityviz-PUBLIC,
+li.entityviz-MODERATED
+{
+	background-image: url(../img/green-dot.png);
+}
+
+li.entityviz-RESTRICTED
+{
+	background-image: url(../img/yellow-dot.png);
+}
+
+li.entityviz-PRIVATE
+{
+	background-image: url(../img/red-dot.png);
+}
+
+#expversioncolorlegend
+{
+	font-size:.8em;
+}
+
+#entityversionfilesreadme
+{
+	font-size:.8em;
+	background-color: #dddddd;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	padding:15px;
+	margin:10px;
+}
+
+.filesTable-header-shown:before
+{
+    content: "[-]  ";
+}
+.filesTable-header-hidden:before
+{
+    content: "[+]  ";
+}
+.filesTable-plots
+{
+	background-color: #eee;
+}
+
+.filesTable-defaults
+{
+    background-color: #F7D358;
+}
+
+.filesTable-text
+{
+    background-color: #A9D0F5;
+}
+
+#cluetip
+{
+	font-size:.8em;
+}
+
+#entityexperimentlistpartnersact a
+{
+	font-size:.8em;
+}
+
+.matrixTableCol,
+.matrixTableRow
+{
+	font-size:.8em;
+}
+/* Highlight row & column labels when the mouse is over the related cell. */
+.matrixHover
+{
+    font-weight: bold;
+}
+
+.vertical-text {
+	display: inline-block;
+	overflow: hidden;
+	width: 1.5em;
+}
+
+.vertical-text__inner {
+	display: inline-block;
+	white-space: nowrap;
+	line-height: 1.5;
+	/*transform: translate(0,100%) rotate(-90deg);
+	transform-origin: 0 0;*/
+	transform:rotate(-90deg);
+	-webkit-transform: rotate(-90deg); 
+	-moz-transform: rotate(-90deg);	
+	-ms-transform:rotate(-90deg);
+	-o-transform: rotate(-90deg);
+}
+
+/* This element stretches the parent to be square
+   by using the mechanics of vertical margins  */
+.vertical-text__inner:after {
+	content: "";
+	display: block;
+	margin: -1.5em 0 100%;
+}
+.matrixTable .experiment-QUEUED
+{
+    background-color:#66cfff;
+}
+.matrixTable .experiment-RUNNING
+{
+	background-color:#4996f3;
+}
+.matrixTable .experiment-INAPPLICABLE
+{
+	background-color:#bdbdbd;
+}
+.matrixTable .experiment-FAILED
+{
+	background-color:#db0000;
+}
+.matrixTable .experiment-PARTIAL
+{
+    background-color:#ff8000;
+}
+.matrixTable .experiment-SUCCESS
+{
+	background-color:#05db00;
+}
+.matrixTable td
+{
+	border-bottom:1px dashed #ccc;
+	border-right:1px dashed #ccc;
+	border-top:1px dashed #ccc;
+	border-left:1px dashed #ccc;
+}
+
+.center
+{
+	text-align:center;
+}
+.small
+{
+	font-size:.8em;
+}
+
+.masterFile
+{
+	background-color: #bbd3ff;
+}
+
+
+.clearer
+{
+	clear: both;
+}
+
+.patternized
+{
+	background-image: url(../img/pattern.png);
+}

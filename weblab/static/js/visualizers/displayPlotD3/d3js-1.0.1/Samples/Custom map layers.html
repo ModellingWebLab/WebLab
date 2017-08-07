@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <title>Custom map layers.html</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" type="text/css" href="../css/d3.css" />
+    <script type="text/javascript" src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0"></script>
+    <script src="../script/jquery-1.8.0.min.js"></script>
+    <script src="../script/rx.js"></script>
+    <script src="../script/rx.jQuery.js"></script>
+    <script src="../script/d3-1.0.1.min.js"></script>
+    <script type="application/javascript">
+        $(document).ready(function () {
+            D3.asPlot("chart").yDataTransform = D3.mercatorTransform;
+            D3.asPlot("map").setMap(Microsoft.Maps.MapTypeId.aerial);
+
+            $("#select").change(function () {
+                switch ($(this).val()) {
+                    case "aerial":
+                        D3.asPlot("map").setMap(Microsoft.Maps.MapTypeId.aerial);
+                        return;
+                    case "road":
+                        D3.asPlot("map").setMap(Microsoft.Maps.MapTypeId.road);
+                        return;
+                    case "openstreet":
+                        D3.asPlot("map").setMap(D3.BingMaps.OpenStreetMap.GetTileSource());
+                        return;
+                    case "WorldTopo":
+                        D3.asPlot("map").setMap(D3.BingMaps.ESRI.GetWorldTopo());
+                        return;
+                    case "DeLorme":
+                        D3.asPlot("map").setMap(D3.BingMaps.ESRI.GetDeLorme());
+                        return;
+                    case "WorldImagery":
+                        D3.asPlot("map").setMap(D3.BingMaps.ESRI.GetWorldImagery());
+                        return;
+                    case "OceanBasemap":
+                        D3.asPlot("map").setMap(D3.BingMaps.ESRI.GetOceanBasemap());
+                        return;
+                    case "NationalGeographicMap":
+                        D3.asPlot("map").setMap(D3.BingMaps.ESRI.GetNationalGeographicMap());
+                        return;
+                    case "WorldShadedRelief":
+                        D3.asPlot("map").setMap(D3.BingMaps.ESRI.GetWorldShadedRelief());
+                        return;
+                    case "WorldTerrainBase":
+                        D3.asPlot("map").setMap(D3.BingMaps.ESRI.GetWorldTerrainBase());
+                        return;
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div id="chart" data-d3-plot="chart" style="width: 800px; height: 600px;">
+        <div data-d3-placement="top" style="text-align: center; border: 1px solid gray">Bing Maps Chart</div>
+        <div id="map" data-d3-plot="bingMaps" data-d3-mapkey="--place your key here--">
+        </div>
+    </div>
+    <select id="select">
+        <option value="aerial" selected="selected">BingMap's aerial</option>
+        <option value="road">BingMap's road</option>
+        <option value="openstreet">Open Street Map</option>
+        <option value="WorldImagery">ESRI World Imagery</option>
+        <option value="DeLorme">ESRI De Lorme</option>
+        <option value="WorldTopo">ESRI World Topo</option>
+        <option value="OceanBasemap">ESRI Ocean Basemap</option>
+        <option value="NationalGeographicMap">ESRI National Geographic Map</option>
+        <option value="WorldShadedRelief">ESRI World Shaded Relief</option>
+        <option value="WorldTerrainBase">ESRI World Terrain Base</option>
+    </select>
+</body>
+</html>
