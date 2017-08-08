@@ -1,12 +1,5 @@
-{% load staticfiles %}
+{% extends "base.html" %}
 
-<html>
-  <head>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-  </head>
-  <body>
-    <div id="page">
-    <h1>Cardiac Electrophysiology Web Lab</h1>
-    </div>
-  </body>
-</html>
+{% block content %}
+  <h1>Cardiac Electrophysiology Web Lab</h1>
+{% endblock content %}

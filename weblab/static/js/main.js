@@ -299,21 +299,13 @@ function initPage ()
 	    return this.indexOf(suffix, this.length - suffix.length) !== -1;
 	};
 	
+  $("#dismisserrors").click(function() {
+    clearNotifications("error");
+  });
 
-	var dismissErrs = document.getElementById("dismisserrors");
-	dismissErrs.addEventListener("click", 
-	        function (event)
-	        {
-				clearNotifications ("error");
-	        }, 
-	        false);
-	var dismissNotes = document.getElementById("dismissnotes");
-	dismissNotes.addEventListener("click", 
-	        function (event)
-	        {
-				clearNotifications ("info");
-	        }, 
-	        false);
+  $("#dismissnotes").click(function() {
+		clearNotifications ("info");
+  });
 	
 	beautifyTimeStamps();
 }
