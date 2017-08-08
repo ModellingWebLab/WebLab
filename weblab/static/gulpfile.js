@@ -13,3 +13,4 @@ gulp.task('watch', function () {
 
 
 gulp.task('default', ['watch', 'sass']);
+gulp.task('build', ['sass']);
