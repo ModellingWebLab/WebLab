@@ -43,7 +43,10 @@ $ npm install
 $ gulp
 ```
 
-By default, `gulp` will build the static files and keep watching for changes. To just build, use `gulp build`. 
+By default, `gulp` will just build the required static files.
+
+`gulp watch` will watch the files for changes and rebuild when necessary.
+
 
 ### Run unit tests
 
