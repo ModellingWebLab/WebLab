@@ -4,7 +4,9 @@
 #
 #    pip-compile --output-file dev.txt dev.in
 #
+appnope==0.1.0            # via ipython
 click==6.7                # via pip-tools
+coverage==4.4.1           # via pytest-cov
 decorator==4.1.2          # via ipython, traitlets
 django==1.11.4
 first==2.0.1              # via pip-tools
@@ -21,9 +23,13 @@ pip-tools==1.9.0
 prompt-toolkit==1.0.15    # via ipython
 psycopg2==2.7.3
 ptyprocess==0.5.2         # via pexpect
+py==1.4.34                # via pytest
 pycodestyle==2.3.1        # via flake8
 pyflakes==1.5.0           # via flake8
 pygments==2.2.0           # via ipython
+pytest-cov==2.5.1
+pytest-django==3.1.2
+pytest==3.2.0
 pytz==2017.2              # via django
 simplegeneric==0.8.1      # via ipython
 six==1.10.0               # via pip-tools, prompt-toolkit, traitlets
