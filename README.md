@@ -22,10 +22,17 @@ or, for local dev setup:
 pip install -r requirements/dev.txt
 ```
 
-### Create Postgres database
+### Create Postgres (user &) database
 
 ```bash
-createdb weblab;
+createuser weblab
+createdb -O weblab weblab
+```
+
+### Apply migrations
+
+```bash
+weblab/manage.py migrate
 ```
 
 ### Run server
