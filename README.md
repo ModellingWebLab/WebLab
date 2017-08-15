@@ -25,8 +25,10 @@ pip install -r requirements/dev.txt
 
 ### Create Postgres (user &) database
 
+The --createdb flag should be set for the database user if running tests (so test databases can be set up and torn down). This should not be done on a production system.
+
 ```bash
-createuser weblab
+createuser weblab --createdb
 createdb -O weblab weblab
 ```
 
