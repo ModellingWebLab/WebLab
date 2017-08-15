@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-	<h1>Log in</h1>
-	<section id="loginform">
+  <h1>Log in</h1>
+  <section id="loginform">
     <form method="POST" action="">
       {% csrf_token %}
       {{ form.as_p }}
@@ -10,5 +10,5 @@
         <button>Log in</button>
       </p>
     </form>
-	</section>
+ </section>
 {% endblock content %}

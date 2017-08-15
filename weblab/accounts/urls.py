@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from django.contrib.auth import views as auth_views
 
-from . import forms
+from . import forms, views
 
 
 urlpatterns = [
@@ -10,12 +10,18 @@ urlpatterns = [
         auth_views.LoginView.as_view(
             authentication_form=forms.AuthenticationForm
         ),
-        name='login'
+        name='login',
     ),
 
     url(
         r'^logout/$',
         auth_views.LogoutView.as_view(),
-        name='logout'
+        name='logout',
+    ),
+
+    url(
+        r'^register/$',
+        views.RegistrationView.as_view(),
+        name='register',
     ),
 ]

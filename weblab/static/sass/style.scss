@@ -192,8 +192,21 @@ p.right
     width: 100%;
 }
 
-#loginform small,#registerform small {
-	color: #aaa;
+#loginform, #registerform {
+  label {
+    display: block;
+  }
+  input {
+    width: 20em;
+  }
+  small, .helptext, ul {
+    color: #aaa;
+    font-size: small;
+    display: block;
+  }
+  .errorlist {
+    color: red;
+  }
 }
 
 #error {

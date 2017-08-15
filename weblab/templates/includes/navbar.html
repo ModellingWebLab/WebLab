@@ -18,6 +18,7 @@
         </li>
     {% else %}
       <li><a href="{% url 'accounts:login' %}">Log in</a></li>
+      <li><a href="{% url 'accounts:register' %}">Register</a></li>
     {% endif %}
 
     {% comment %}
@@ -45,7 +46,6 @@
         </li>
       {% else %}
         <li><a href="/login">Login</a></li>
-        <li><a href="/register">Register</a></li>
       {% endif %}
     {% endcomment %}
   </ul>
