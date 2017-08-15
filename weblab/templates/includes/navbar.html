@@ -3,7 +3,19 @@
   <ul class="navbar">
     <li><a href="{% url "home" %}">Home</a></li>
     {% if user.is_authenticated %}
-      <li><a href="{% url 'accounts:logout' %}">Log out</a></li>
+        <li id="usernavbar">
+          <a>{{ user.username }}</a>
+          <ul>
+            <!--li><a href="/myfiles">My files</a></li>
+            <li><a href="/myaccount">Account</a></li-->
+
+            {% if user.is_superuser %}
+              <li><a href="{% url 'admin:index' %}">Admin</a></li>
+            {% endif %}
+
+            <li><a href="{% url 'accounts:logout' %}">Log out</a></li>
+          </ul>
+        </li>
     {% else %}
       <li><a href="{% url 'accounts:login' %}">Log in</a></li>
     {% endif %}
