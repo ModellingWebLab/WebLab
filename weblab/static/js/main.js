@@ -1,5 +1,5 @@
 var $ = require('jquery');
-require('jquery-ui');
+require('jquery-ui-browserify');
 require('xdate');
 
 /*
