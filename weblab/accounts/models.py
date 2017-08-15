@@ -1,16 +1,32 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core import validators
 from django.db import models
 from django.utils import timezone
+from django.utils.deconstruct import deconstructible
 
 from .managers import UserManager
+
+
+@deconstructible
+class UsernameValidator(validators.RegexValidator):
+    """
+    Custom validator for usernames - this is similar to Django builtin validator
+    but prevents registration of usernames with '@' - we want this because
+    email addresses can be used to log in, and we don't want to cause
+    confusion or ambiguity in the authentication system.
+    """
+    regex = r'^[\w.+-]+$'
+    message = (
+        'Enter a valid username. This value may contain only letters, '
+        'numbers, and ./+/-/_ characters.'
+    )
 
 
 class User(PermissionsMixin, AbstractBaseUser):
     username = models.CharField(
         max_length=255,
         unique=True,
-        validators=[UnicodeUsernameValidator()],
+        validators=[UsernameValidator()],
         error_messages={
             'unique': "A user with that username already exists.",
         },
