@@ -2,6 +2,12 @@
 <nav>
   <ul class="navbar">
     <li><a href="{% url "home" %}">Home</a></li>
+    {% if user.is_authenticated %}
+      <li><a href="{% url 'accounts:logout' %}">Log out</a></li>
+    {% else %}
+      <li><a href="{% url 'accounts:login' %}">Log in</a></li>
+    {% endif %}
+
     {% comment %}
       {% if user.is_authenticated %}
         <li><a href="/db/mine">Experiments</a></li>
