@@ -1,0 +1,4 @@
+Django==1.11.4
+
+# Database
+psycopg2==2.7.3

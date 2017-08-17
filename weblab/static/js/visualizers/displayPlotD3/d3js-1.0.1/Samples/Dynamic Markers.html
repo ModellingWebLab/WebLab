@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <title>Dynamic Markers</title>
+    <link rel="stylesheet" type="text/css" href="../css/d3.css" />
+    <link rel="stylesheet" type="text/css" href="../css/D3Theme.css" />
+    <script src="../script/jquery-1.8.0.min.js"></script>
+    <script src="../script/rx.js"></script>
+    <script src="../script/rx.jQuery.js"></script>
+    <script src="../script/d3-1.0.1.min.js"></script>
+
+    <script type="application/javascript">
+        var N = 1000;
+        var phase = 0;
+
+        $(document).ready(function () {
+            D3.asPlot("chart");
+            run();
+        });
+
+        function run() {
+            var x = new Array(N);
+            var y = new Array(N);
+            for (var i = 0; i < N; i++) {
+                x[i] = i * Math.PI / 50;
+                y[i] = Math.cos(i * Math.PI / 50 + phase);
+            }
+            phase += 0.1;
+            D3.asPlot("chart").markers("sin", { y: y, x: x, size: 5 });
+
+            setTimeout(run, 1000 / 60);
+        };
+
+    </script>
+</head>
+<body>
+    <div id="chart" data-d3-plot="chart" style="width: 800px; height: 600px;">
+        <div data-d3-placement="top" style="text-align: center; border: 1px solid gray">Markers Sample</div>
+    </div>
+</body>
+</html>
+

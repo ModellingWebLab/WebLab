@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <title>Labelled Axis Sample Page</title>
+    <link rel="stylesheet" type="text/css" href="../css/d3.css" />
+    <script src="../script/jquery-1.8.0.min.js"></script>
+    <script src="../script/rx.js"></script>
+    <script src="../script/rx.jQuery.js"></script>
+    <script src="../script/d3-1.0.1.min.js"></script>
+
+    <script type="application/javascript">
+        $(document).ready(function () {
+            var figure2 = D3.asPlot($("#figure2"));
+
+            var line = figure2.get("lines");
+
+            var x = [];
+            var y = [];
+            var name = [];
+            for (var i = 0; i < 100; i++) {
+                x[i] = i * 10;
+                y[i] = Math.random() * 10;
+            }
+            for (var i = 0; i < 1000; i++) {
+                name[i] = "i=" + (i + 1);
+            }
+            line.draw({ x: x, y: y });
+
+            var gestureSource2 = D3.Gestures.getGesturesStream(figure2.host);
+            figure2.navigation.gestureSource = gestureSource2;
+
+            figure2.addAxis("bottom", "labels", { labels: name });
+            figure2.addAxis("left", "numeric");
+            var grid2 = figure2.get("grid2");
+            grid2.xAxis = figure2.getAxes("bottom")[0];
+            grid2.yAxis = figure2.getAxes("left")[0];
+        });
+    </script>
+</head>
+<body style="font-family: Segoe UI; font-size: 14px">
+    <div id="figure2" data-d3-plot="figure" data-d3-legend="figure2Legend" style="width: 800px; height: 600px; float:left">
+        <div id="grid2" data-d3-plot='grid' data-d3-placement='center' data-d3-style='stroke: DarkGray; thickness: 1px'></div>
+        <div id="figure2Legend" data-d3-placement='center' style="float: right"></div>
+        <div data-d3-name="lines" data-d3-plot="polyline" data-d3-style="stroke: green; thickness: 1px"></div>
+    </div>
+        
+</body>
+</html>

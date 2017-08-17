@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>    
+    <meta http-equiv="X-UA-Compatible" content="IE=10" /> 
+    <title>05 Update polyline</title>
+    <link rel="stylesheet" type="text/css" href="../css/d3.css" />
+    <link rel="stylesheet" type="text/css" href="../css/D3Theme.css" />
+    <script src="../script/jquery-1.8.0.min.js"></script>
+    <script src="../script/rx.js"></script>
+    <script src="../script/rx.jQuery.js"></script>
+    <script src="../script/d3-1.0.1.min.js"></script>
+
+    <script type="application/javascript">
+        var n = 1000;
+        var t = 0;
+
+        function getData() {
+            var x = new Array(n);
+            var y = new Array(n);
+
+            for (var i = 0; i < n; i++) {
+                var d = i * 0.003;
+                x[i] = d;
+                var k = 1 + 0.5 * Math.sin(t / 100 * Math.PI);
+                y[i] = d == 0 ? k : k * Math.sin(d * k * Math.PI) / (d * k * Math.PI);
+            }
+            t++;
+            return { x: x, y: y };
+        }
+
+        function polyline() {
+            var data = getData();
+            D3.asPlot('chart').polyline("p2", { x: data.x, y: data.y, stroke: 'Green', thickness: 3 });
+
+            setTimeout(polyline, 25);
+        }
+
+        function onLoad() {
+            var chart = D3.asPlot('chart');
+            polyline();
+        }
+    </script>
+</head>
+<body onload="onLoad();">
+    <div id="chart" data-d3-plot="chart" style="width: 800px; height: 600px;">
+        <div data-d3-placement="bottom" class="d3-horizontalTitle">X</div>
+        <div data-d3-placement="left" class="d3-verticalTitle" style="width: 20px">
+            <div style="position: absolute; top: 50%; margin-top: -0.5em; height: 10em; width: 100px;">
+                Y
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

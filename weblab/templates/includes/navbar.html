@@ -1,0 +1,34 @@
+
+<nav>
+  <ul class="navbar">
+    <li><a href="{% url "home" %}">Home</a></li>
+    {% comment %}
+      {% if user.is_authenticated %}
+        <li><a href="/db/mine">Experiments</a></li>
+      {% else %}
+        <li><a href="/db">Experiments</a></li>
+      {% endif %} 
+
+      <li><a href="/contact">Contact/Team</a></li>
+      <li><a href="/about">About</a></li>
+
+      {% if user.is_authenticated %}
+        <li id="usernavbar"><a href="${contextPath}/myfiles.html">${user.nick}</a>
+          <ul>
+            <li><a href="/myfiles">My files</a></li>
+            <li><a href="/myaccount">Account</a></li>
+
+            {% if user.is_superuser %}
+              <li><a href="/admin">Admin</a></li>
+            {% endif %}
+
+            <li><a href="/logout">Logout</a></li>
+          </ul>
+        </li>
+      {% else %}
+        <li><a href="/login">Login</a></li>
+        <li><a href="/register">Register</a></li>
+      {% endif %}
+    {% endcomment %}
+  </ul>
+</nav>

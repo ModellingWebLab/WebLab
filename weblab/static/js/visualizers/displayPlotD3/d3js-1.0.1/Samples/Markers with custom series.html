@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <title>02 Markers with custom color and size series</title>
+    <link rel="stylesheet" type="text/css" href="../css/d3.css" />
+    <link rel="stylesheet" type="text/css" href="../css/D3Theme.css" />
+    <script src="../script/jquery-1.8.0.min.js"></script>
+    <script src="../script/rx.js"></script>
+    <script src="../script/rx.jQuery.js"></script>
+    <script src="../script/d3-1.0.1.min.js"></script>
+    <script type="application/javascript">
+        $(document).ready(function () {
+            var bubbles = D3.asPlot("chart").get("bubbles");
+            var N = 100;
+            var x = new Array(N);
+            var y = new Array(N);
+            var color = new Array(N);
+            var size = new Array(N);
+            var sizePalette = new D3.SizePalette(true, { min: 5, max: 30 });
+            var colorPalette = D3.palettes.grayscale;
+            for (var i = 0; i < N; i++) {
+                x[i] = Math.random() * N;
+                y[i] = Math.random() * N;
+                color[i] = Math.random() * 100 - 50;
+                size[i] = Math.random() * 100 - 50;
+            }
+            bubbles.draw({ x: x, y: y, size: size, sizePalette: sizePalette, color: color, colorPalette: colorPalette });
+        });
+    </script>
+</head>
+<body>
+    <div id="chart" data-d3-plot="chart" style="width: 800px; height: 600px;">
+        <div data-d3-name="bubbles" data-d3-plot="markers" data-d3-style="border:grey; shape: cross;">
+        </div>
+    </div>
+</body>
+</html>

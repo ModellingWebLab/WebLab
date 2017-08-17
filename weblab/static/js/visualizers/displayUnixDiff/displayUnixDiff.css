@@ -1,0 +1,20 @@
+.unixDiffSelected
+{
+	font-weight: bold;
+}
+
+.unixDiffDisplayer
+{
+	margin-top: 20px;
+	font-size: .8em;
+}
+
+.unixDiffDel
+{
+	color: #890000;
+}
+
+.unixDiffIns
+{
+	color: #100089;
+}

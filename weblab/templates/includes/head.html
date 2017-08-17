@@ -1,0 +1,45 @@
+{% load staticfiles %}
+
+<script type='text/javascript'>
+  var contextPath = "${contextPath}";
+  var preferences = new Array ();
+  {% if user.is_authenticated %}
+    {% comment "Convert from JSP" %}
+      <c:forEach items="${user.preferences}" var="setting" >
+        preferences["${setting.key}"] = "${setting.value}";
+      </c:forEach>
+    {% endcomment %}
+  {% endif %}
+</script>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+<link rel='stylesheet' href="{% static 'css/jquery-ui-1.10.4.custom.min.css' %}" />
+<script src="{% static 'build/js/main.js' %}"></script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": {
+      imageFont:null
+      }
+  });
+</script>
+<script src="{% static 'js/3rd/MathJax-2.4-latest/MathJax.js' %}?config=TeX-AMS-MML_HTMLorMML"></script>
+
+
+{# dynamic header fields -> just import them as needed #}
+{% comment "convert from JSP"%}
+  <c:if test="${headerImports != null}">
+    <c:forEach items="${headerImports.metas}" var="himp" >
+      <meta http-equiv='${himp.httpEquiv}' content='${himp.content}'/>
+    </c:forEach>
+    <c:forEach items="${headerImports.links}" var="himp" >
+      <link rel='${himp.rel}' type='${himp.type}' href='${contextPath}/${himp.href}'/>
+    </c:forEach>
+    <c:forEach items="${headerImports.scripts}" var="himp" >
+      <script type='${himp.type}' src='${contextPath}/${himp.src}' charset='${himp.charset}'>${himp.content}</script>
+    </c:forEach>
+  </c:if>
+
+  {% if user.is_authenticated %}
+    <script>var ROLE = ${user.roleDump}; var USERNAME = "${user.nick}";</script>
+  {% endif %}
+{% endcomment %}

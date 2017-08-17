@@ -1,0 +1,78 @@
+/*
+ * Styling specific to the metadata editing plugin.
+ */
+
+/* The main divs holding our content */
+#editmeta_modelvars_div, #editmeta_ontoterms_div {
+    width: 47%;
+    margin: 0.5%;
+    padding: 0.5%;
+    height: 90vh;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    overflow: auto;
+}
+
+#editmeta_modelvars_div {
+    float: left;
+}
+
+#editmeta_ontoterms_div {
+    float: right;
+}
+
+/* The name of a component containing variables */
+.editmeta_cname {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* The name of a variable */
+.editmeta_vname {
+}
+
+/* An annotation for a variable */
+.editmeta_annotation {
+    padding-left: 2px;
+    padding-right: 2px;
+    font-style: italic;
+    border: 1px solid #ccc;
+    border-radius:5px;
+    background-color: #ddd;
+}
+
+.editmeta_annotation_used {
+    background-image: url(../../../img/pattern.png);
+}
+
+/* The available annotations */
+li.editmeta_annotation {
+    cursor: pointer;
+}
+
+.editmeta_spaced {
+    margin-left: 5px;
+}
+
+.editmeta_category_name {
+    cursor: pointer;
+}
+
+/* Indications of sublists/divs that can be expanded. */
+.editmeta_content_shown:before {
+    content: "[-]\00a0";
+}
+
+.editmeta_content_hidden:before {
+    content: "[+]\00a0";
+}
+
+/* Make the lists more compact, and use our sublist markers above rather than bullets. */
+#editmeta_modelvars_div ul, #editmeta_ontoterms_div ul {
+    list-style-type: none;
+    padding-left: 25px;
+}
+
+#editmeta_modelvars_div > ul, #editmeta_ontoterms_div > ul {
+    padding-left: 5px;
+}

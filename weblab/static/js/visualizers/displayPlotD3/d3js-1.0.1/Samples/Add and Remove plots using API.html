@@ -1,0 +1,47 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <title>Add and Remove plots using API</title>
+    <link rel="stylesheet" type="text/css" href="../css/d3.css" />
+    <link rel="stylesheet" type="text/css" href="../css/D3Theme.css" />
+    <script src="../script/jquery-1.8.0.min.js"></script>
+    <script src="../script/rx.js"></script>
+    <script src="../script/rx.jQuery.js"></script>
+    <script src="../script/d3-1.0.1.min.js"></script>
+
+    <script type="application/javascript">
+        var state = 0;
+        var chart;
+
+        $(document).ready(function () {
+            $("#but").click(function () {
+                if (state == 0) { // add chart
+                    chart = D3.asPlot($("<div data-d3-plot='chart'></div>").appendTo("#container"));
+                    chart.host.width(800).height(600);
+                    chart.requestUpdateLayout();
+                    $("#but").attr("value", "Draw polyline");
+                }
+                else if (state == 1) { // add polyline
+                    chart.polyline("polyline", { y: [0.1, 0.2, 0.0, 0.3, 0.2, 0.1, 0.3] });
+                    $("#but").attr("value", "Remove polyline");
+                } else if (state == 2) { // remove polyline
+                    chart.get("polyline").remove();
+                    $("#but").attr("value", "Remove chart");
+                }
+                else if (state == 3) { // remove chart
+                    chart.remove();
+                    $("#but").attr("value", "Add chart");
+                    state = -1;
+                }
+                state++;
+            });
+        });
+    </script>
+</head>
+<body>
+    <div id="container"></div>
+    <input type="button" id="but" value="Add chart" />
+</body>
+</html>
+

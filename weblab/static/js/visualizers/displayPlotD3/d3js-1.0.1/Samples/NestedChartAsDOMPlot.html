@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=10" />
+    <title>Nested chart as DOM Plot</title>
+    <link rel="stylesheet" type="text/css" href="../css/d3.css" />
+    <link rel="stylesheet" type="text/css" href="../css/D3Theme.css" />
+    <script src="../script/jquery-1.8.0.min.js"></script>
+    <script src="../script/rx.js"></script>
+    <script src="../script/rx.jQuery.js"></script>
+    <script src="../script/d3-1.0.1.min.js"></script>
+
+    <script type="application/javascript">
+        $(document).ready(function () {
+            D3.asPlot('innerChart');
+            D3.asPlot('chart');
+        });
+    </script>
+</head>
+<body>
+    <div id="chart" data-d3-plot="chart" style="width: 800px; height: 600px;">
+        <div data-d3-placement="bottom" class="d3-horizontalTitle">X</div>
+        <div data-d3-placement="left" class="d3-verticalTitle" style="width: 20px">
+            <div style="position: absolute; top: 50%; margin-top: -0.5em; height: 10em; width: 100px;">
+                Y
+            </div>
+        </div>
+
+        <div id="p" data-d3-plot="polyline" data-d3-style="stroke: rgb(89,150,255); thickness: 3">
+            x	y
+            0	0
+            1	0.5
+            2	0
+        </div>
+
+        <div id="dom" data-d3-plot="dom">
+
+            <div data-d3-position="0.5 0.5" data-d3-scale="none" id="innerChart" data-d3-plot="chart" style="width: 250px; height: 250px;">
+                <div id="p2" data-d3-plot="polyline" data-d3-style="stroke: orange; thickness: 2;">
+                    x	y
+                            0	0
+                            1   1
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{% load staticfiles %}
+
+<!--
+
+    ___     / __      ___      ___    __  ___  ___
+  //   ) ) //   ) ) //   ) ) ((   ) )  / /   //___) )
+ //       //   / / //   / /   \ \     / /   //
+((____   //   / / ((___( ( //   ) )  / /   ((____
+
+
+-->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      {% block title %}{% endblock %}Functional Curation @ Chaste - Cardiac Electrophysiology
+    </title>
+
+    {% include "includes/head.html" %}
+  </head>
+  <body>
+    <div id="page">
+
+    <header>
+      <div id="logo">
+        <a href="{% url "home" %}">
+          <img alt="Chaste - Functional Curation" src="{% static 'img/chaste.jpg' %}" /><br/><br/>
+        </a>
+      </div>
+
+      {% include "includes/navbar.html" %}
+
+      <div id="breadcrumb"></div>
+    </header>
+
+    {% include "includes/notifications.html" %}
+
+    <div id="body">
+      {% block content %}
+      {% endblock %}
+    </div>
+
+    <footer>
+      Cardiac Electrophysiology Web Lab &copy; 2013-{% now 'Y' %} University of Oxford, 2016-{% now 'Y' %} University College London
+    </footer>
+
+    </div>
+
+  </body>
+</html>
