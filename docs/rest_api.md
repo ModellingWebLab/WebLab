@@ -87,7 +87,7 @@ It also handles the API calls for returning experiment results and file uploads:
 
 The class also has further utility methods for communicating with the Celery experiment runner (sending messages), e.g. `submitExperiment`, `getProtocolInterface`, `cancelExperiments`
 
-## Index.java
+## Index.java
 
 Just displays the index page. No API calls.
 
