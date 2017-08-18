@@ -64,3 +64,51 @@ There are also API calls:
     * `{task: 'deleteEntity', entity: <id>}` - remove an entire entity
     * `{task: 'getInterface'}` - returns interface info for all protocols a user can see
     * `{task: 'updateInterface', version: <version_id>}` - submit a Celery task to update a protocol's interface info in the DB
+
+## FileTransfer.java
+
+This handles GET requests to download files, whether individual files within an entity, or a '[COMBINE Archive](http://co.mbine.org/documents/archive)' (ZIP file) of all the file making up an entity.
+
+It also has a `cleanUP` that gets run randomly every 20 or so page requests to check there aren't any stale files in the filestore that are no longer referenced by the DB.
+
+It also handles the API calls for returning experiment results and file uploads:
+* `POST /submitExperiment.html`
+    * This takes request parameters rather than a JSON object, since there will (hopefully) be a file upload involved
+    * `signature` - indicates which experiment this is a result for
+    * `taskid` - if given, this is just a ping with the Celery id of the running tasks, in case the user wants to cancel it. If not present, we should have the following:
+    * `returnmsg` - contains any error message
+    * `returntype` - gives the status of the experiment (success, partial, failed, inapplicable, running).
+        * If 'running' or 'inapplicable' we just update the status and stop processing.
+        * Otherwise, we will send mail to the user (if they chose to receive status emails), and process the results.
+    * `experiment` - a [COMBINE Archive](http://co.mbine.org/documents/archive) containing the result files. This will be unpacked and the contents stored
+* `POST /upload.html`
+    * Again this takes request parameters rather than a JSON object, but it returns a JSON object as response with the name of the file in the temporary store. This supports users uploading files individually when creating a new entity version.
+    * `file` - the uploading file
+
+The class also has further utility methods for communicating with the Celery experiment runner (sending messages), e.g. `submitExperiment`, `getProtocolInterface`, `cancelExperiments`
+
+## Index.java
+
+Just displays the index page. No API calls.
+
+## Login.java, Logout.java, Register.java
+
+Just handle user login/logout/registration, via web pages & API calls; will be obsolete.
+
+## Me.java
+
+A GET request to `/myfiles.html` displays the user's entities on different tabs. `GET /myaccount.html` shows the user's profile.
+
+APIs:
+* `POST /myaccount.html` - change various fields in the user's profile
+    * `{task: updatePassword, prev, next}` - change password
+    * `{task: updateInstitute, institute: <string>}` - change Institute
+    * `{task: updateSendMails, sendMail: <bool>}` - change whether user wants automated emails when experiments finish
+    * `{task: updatePref, prefKey: <string>, prefVal: <string>}` - change arbitrary user preference field
+
+## NewExperiment.java
+
+This provides a single API, and no corresponding web page.
+
+* `POST /newexperiment.html`
+    * `{task: newExperiment, model: <version_id>, protocol: <version_id>, forceNewVersion: <bool>}` - start a new experiment running; optionally creating a new version of an already-run expt if the user has permission to do so (admins only at present)
