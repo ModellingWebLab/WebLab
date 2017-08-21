@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Your account</h1>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+
+    <table id="myaccounttable" class="leftright">
+      <tr>
+        <th>E-mail address</th>
+        <td>{{ user.email }}</td>
+      </tr>
+      <tr>
+        <th>Nickname</th>
+        <td>{{ user.username }}</td>
+      </tr>
+      <tr>
+        <th>Institution</th>
+        <td>
+            {{ form.institution }}
+            <span class="errorlist">{{ form.institution.errors }}</span> 
+        </td>
+      </tr>
+      {% comment %}
+      <tr>
+        <th>Permissions</th>
+        <td>{{user.roleDescription}</td>
+      </tr>
+      {% endcomment %}
+      <tr>
+        <th>Registered since</th>
+        <td><time>{{ user.date_joined|date:"Y-m-d H:i:s" }}</time></td>
+      </tr>
+      {% comment %}
+      <tr>
+        <th>E-mail preferences</th>
+        <td><input type="checkbox" id="sendMailsCheckbox" <c:if test="${User.sendMails}">checked="checked"</c:if> > Inform me about finished experiments. <span id="sendMailsChangeaction"></span></td>
+      </tr>
+      {% endcomment %}
+    </table>
+
+    <p>
+      <button>Update account</button>
+    </p>
+    
+    <a href="{% url "password_change" %}">Change Password</a>
+
+  </form>
+
+ </section>
+{% endblock content %}

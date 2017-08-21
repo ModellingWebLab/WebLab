@@ -18,4 +18,10 @@ urlpatterns = [
         views.RegistrationView.as_view(),
         name='register',
     ),
+
+    url(
+        r'^myaccount/$',
+        views.MyAccountView.as_view(),
+        name='myaccount',
+    ),
 ]

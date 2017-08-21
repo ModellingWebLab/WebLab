@@ -1,7 +1,8 @@
 from django.contrib.auth import login
-from django.views.generic.edit import FormView
+from django.core.urlresolvers import reverse
+from django.views.generic.edit import FormView, UpdateView
 
-from .forms import RegistrationForm
+from .forms import MyAccountForm, RegistrationForm
 
 
 class RegistrationView(FormView):
@@ -16,3 +17,14 @@ class RegistrationView(FormView):
         user = form.save()
         login(self.request, user)
         return super().form_valid(form)
+
+
+class MyAccountView(UpdateView):
+    form_class = MyAccountForm
+    template_name = 'registration/myaccount.html'
+
+    def get_object(self):
+        return self.request.user
+
+    def get_success_url(self):
+        return reverse('accounts:myaccount')

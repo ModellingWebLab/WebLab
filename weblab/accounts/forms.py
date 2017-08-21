@@ -22,3 +22,9 @@ class RegistrationForm(auth_forms.UserCreationForm):
             'full_name': 'For metadata of your files',
             'institution': 'For our records',
         }
+
+
+class MyAccountForm(forms.ModelForm):
+    class Meta(forms.ModelForm):
+        model = User
+        fields = ('institution',)

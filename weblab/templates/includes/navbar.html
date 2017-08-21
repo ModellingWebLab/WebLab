@@ -7,8 +7,7 @@
           <a>{{ user.username }}</a>
           <ul>
             <!--li><a href="/myfiles">My files</a></li-->
-            <li><a href="{% url 'password_change' %}">Change Password</a></li>
-            {# <li><a href="{% url 'accounts:myaccount' %}">Account</a></li--> #}
+            <li><a href="{% url 'accounts:myaccount' %}">Account</a></li>
 
             {% if user.is_superuser %}
               <li><a href="{% url 'admin:index' %}">Admin</a></li>
