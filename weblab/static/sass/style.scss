@@ -100,10 +100,6 @@ padding: 10px;
 	margin-right: 20px;
 }
 
-#usernavbar {
-    min-width: 100px;
-}
-
 .navbar a, .navbar a:hover, .navbar a:active {
 	padding: 18px 0;
 	/* Adds a padding on the top and bottom so the text appears centered vertically */
@@ -123,41 +119,29 @@ padding: 10px;
 	
 }
 
-.navbar li ul {
-	display: none; /* Hides the drop-down menu */
-	height: auto;
-	width: 100px;
-	margin: 0; /* Aligns drop-down box underneath the menu item */
-	padding: 0; /* Aligns drop-down box underneath the menu item */
-}
+#usernavbar {
+  min-width: 180px;
 
-.navbar li:hover ul {
-	display: block;
-	/* Displays the drop-down box when the menu item is hovered over */
-}
-
-.navbar li:hover ul li a {
-	padding: 0;
-	/* Displays the drop-down box when the menu item is hovered over */
-}
-
-.navbar li ul li { 
+  ul {
+    display: none; /* Hides the drop-down menu */
+    height: auto;
+    width: 180px;
+    margin: 0; /* Aligns drop-down box underneath the menu item */
+    padding: 0; /* Aligns drop-down box underneath the menu item */
     background-color: #ffffff;
-	/*border-left: 1px solid #263e6a;*/
-	padding: 0;
+
+    li, li a {
+      text-align: left;
+      padding: 0;
+    }
+  }
+
+  &:hover ul {
+    display: block;
+    /* Displays the drop-down box when the menu item is hovered over */
+  }
 }
 
-.navbar li ul li a {
-	/*border-left: 1px solid #1f5065; 
-    border-right: 1px solid #1f5065; 
-    border-top: 1px solid #74a3b7; 
-    border-bottom: 1px solid #1f5065; */
-	
-}
-
-.navbar li ul li a:hover { /*background-color: #366b82;*/
-	
-}
 
 #body {
 	clear: both;
