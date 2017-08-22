@@ -48,6 +48,11 @@ class User(PermissionsMixin, AbstractBaseUser):
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(blank=True, null=True)
 
+    receive_emails = models.BooleanField(
+        default=False,
+        help_text='User wants to receive emails',
+    )
+
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', 'full_name', 'institution']
 

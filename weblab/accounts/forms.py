@@ -27,4 +27,7 @@ class RegistrationForm(auth_forms.UserCreationForm):
 class MyAccountForm(forms.ModelForm):
     class Meta(forms.ModelForm):
         model = User
-        fields = ('institution',)
+        fields = ('institution', 'receive_emails')
+        labels = {
+            'receive_emails': 'Inform me about finished experiments',
+        }
