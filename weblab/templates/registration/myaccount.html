@@ -22,12 +22,16 @@
             <span class="errorlist">{{ form.institution.errors }}</span> 
         </td>
       </tr>
-      {% comment %}
       <tr>
         <th>Permissions</th>
-        <td>{{user.roleDescription}</td>
+        <td>
+          {% if user.is_super_user %}
+            Administrator - you have full administrative privileges
+          {% else %}
+            None
+          {% endif %}
+        </td>
       </tr>
-      {% endcomment %}
       <tr>
         <th>Registered since</th>
         <td><time>{{ user.date_joined|date:"Y-m-d H:i:s" }}</time></td>
