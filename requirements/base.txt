@@ -4,5 +4,19 @@
 #
 #    pip-compile --output-file base.txt base.in
 #
+certifi==2017.7.27.1      # via requests
+chardet==3.0.4            # via requests
+defusedxml==0.5.0         # via python3-openid, social-auth-core
 django==1.11.4
+idna==2.6                 # via requests
+oauthlib==2.0.2           # via requests-oauthlib, social-auth-core
+psycopg2==2.7.3
+pyjwt==1.5.2              # via social-auth-core
+python3-openid==3.1.0     # via social-auth-core
 pytz==2017.2              # via django
+requests-oauthlib==0.8.0  # via social-auth-core
+requests==2.18.4          # via requests-oauthlib, social-auth-core
+six==1.10.0               # via social-auth-app-django, social-auth-core
+social-auth-app-django==1.2.0
+social-auth-core==1.4.0   # via social-auth-app-django
+urllib3==1.22             # via requests

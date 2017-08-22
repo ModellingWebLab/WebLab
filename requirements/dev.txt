@@ -4,19 +4,23 @@
 #
 #    pip-compile --output-file dev.txt dev.in
 #
-appnope==0.1.0            # via ipython
+certifi==2017.7.27.1      # via requests
+chardet==3.0.4            # via requests
 click==6.7                # via pip-tools
 coverage==4.4.1           # via pytest-cov
 decorator==4.1.2          # via ipython, traitlets
+defusedxml==0.5.0         # via python3-openid, social-auth-core
 django==1.11.4
 first==2.0.1              # via pip-tools
 flake8==3.4.1
+idna==2.6                 # via requests
 ipdb==0.10.3
 ipython-genutils==0.2.0   # via traitlets
 ipython==6.1.0            # via ipdb
 isort==4.2.15
 jedi==0.10.2              # via ipython
 mccabe==0.6.1             # via flake8
+oauthlib==2.0.2           # via requests-oauthlib, social-auth-core
 pexpect==4.2.1            # via ipython
 pickleshare==0.7.4        # via ipython
 pip-tools==1.9.0
@@ -27,11 +31,18 @@ py==1.4.34                # via pytest
 pycodestyle==2.3.1        # via flake8
 pyflakes==1.5.0           # via flake8
 pygments==2.2.0           # via ipython
+pyjwt==1.5.2              # via social-auth-core
 pytest-cov==2.5.1
 pytest-django==3.1.2
 pytest==3.2.0
+python3-openid==3.1.0     # via social-auth-core
 pytz==2017.2              # via django
+requests-oauthlib==0.8.0  # via social-auth-core
+requests==2.18.4          # via requests-oauthlib, social-auth-core
 simplegeneric==0.8.1      # via ipython
-six==1.10.0               # via pip-tools, prompt-toolkit, traitlets
+six==1.10.0               # via pip-tools, prompt-toolkit, social-auth-app-django, social-auth-core, traitlets
+social-auth-app-django==1.2.0
+social-auth-core==1.4.0   # via social-auth-app-django
 traitlets==4.3.2          # via ipython
+urllib3==1.22             # via requests
 wcwidth==0.1.7            # via prompt-toolkit

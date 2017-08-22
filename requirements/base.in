@@ -2,3 +2,6 @@ Django==1.11.4
 
 # Database
 psycopg2==2.7.3
+
+# Social authentication
+social-auth-app-django==1.2.0

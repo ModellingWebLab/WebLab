@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('username', models.CharField(error_messages={'unique': 'A user with that username already exists.'}, max_length=255, unique=True, validators=[django.contrib.auth.validators.UnicodeUsernameValidator()])),
                 ('email', models.EmailField(error_messages={'unique': 'A user with that email address already exists.'}, max_length=254, unique=True)),
                 ('full_name', models.CharField(max_length=255)),
-                ('institution', models.CharField(max_length=255)),
+                ('institution', models.CharField(max_length=255, blank=True)),
                 ('is_staff', models.BooleanField(default=False)),
                 ('is_active', models.BooleanField(default=True)),
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now)),

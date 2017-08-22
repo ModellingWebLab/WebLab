@@ -40,7 +40,7 @@ class User(PermissionsMixin, AbstractBaseUser):
     )
 
     full_name = models.CharField(max_length=255)
-    institution = models.CharField(max_length=255)
+    institution = models.CharField(max_length=255, blank=True)
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)

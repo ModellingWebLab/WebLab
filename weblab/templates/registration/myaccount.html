@@ -16,6 +16,10 @@
         <td>{{ user.username }}</td>
       </tr>
       <tr>
+        <th>Full name</th>
+        <td>{{ user.full_name }}</td>
+      </tr>
+      <tr>
         <th>Institution</th>
         <td>
             {{ form.institution }}
@@ -49,8 +53,10 @@
     <p>
       <button>Update account</button>
     </p>
-    
-    <a href="{% url "password_change" %}">Change Password</a>
+
+    {% if user.has_usable_password %}
+      <a href="{% url "password_change" %}">Change Password</a>
+    {% endif %}
 
   </form>
 
