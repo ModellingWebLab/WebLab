@@ -621,3 +621,19 @@ li.entityviz-PRIVATE
 {
 	background-image: url(../img/pattern.png);
 }
+
+.google-icon {
+  display: inline-block;
+}
+.github-icon {
+  display: inline-block;
+  padding: 5px 7px;
+  border: 1px solid #ddd;
+  font-size: 90%;
+  img {
+    vertical-align: middle;
+  }
+  span {
+    padding-left: 1em;
+  }
+}
