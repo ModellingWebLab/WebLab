@@ -18,7 +18,12 @@ class RegistrationForm(auth_forms.UserCreationForm):
 class MyAccountForm(forms.ModelForm):
     class Meta(forms.ModelForm):
         model = User
-        fields = ('institution', 'receive_emails')
+        fields = ('email', 'institution', 'receive_emails')
         labels = {
             'receive_emails': 'Inform me about finished experiments',
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.social_auth.exists():
+            del self.fields['email']

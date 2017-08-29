@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load oauth %}
 
 {% block content %}
   <h1>Your account</h1>
@@ -8,8 +9,23 @@
 
     <table id="myaccounttable" class="leftright">
       <tr>
-        <th>E-mail address</th>
-        <td>{{ user.email }}</td>
+        <th>Email address</th>
+        <td>
+          {% if form.email %}
+            {{ form.email }}
+            <span class="errorlist">{{ form.email.errors }}</span>
+          {% else %}
+            {{ user.email }}
+            <small>
+              Your account is connected to
+              {% for backend in backends.associated %}
+                {% if forloop.first %}{% elif forloop.last %}and{% else %}, {% endif %}
+                {{ backend|backend_name }}
+              {% endfor %}
+              so email address cannot be edited
+            </small>
+          {% endif %}
+        </td>
       </tr>
       <tr>
         <th>Full name</th>
@@ -37,7 +53,7 @@
         <td><time>{{ user.date_joined|date:"Y-m-d H:i:s" }}</time></td>
       </tr>
       <tr>
-        <th>E-mail preferences</th>
+        <th>Email preferences</th>
         <td>
           {{ form.receive_emails }}
           {{ form.receive_emails.label }}

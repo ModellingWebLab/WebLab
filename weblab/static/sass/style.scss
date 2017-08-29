@@ -184,7 +184,9 @@ form {
     display: block;
   }
   input {
-    width: 20em;
+    &[type=text], &[type=email], &[type=password] {
+      width: 20em;
+    }
   }
   small, .helptext, ul {
     color: #aaa;
