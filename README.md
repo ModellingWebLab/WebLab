@@ -1,6 +1,7 @@
 # WebLab
 Django-based front-end for the modelling Web Lab
 
+[![Build Status](https://travis-ci.org/ModellingWebLab/WebLab.svg?branch=master)](https://travis-ci.org/ModellingWebLab/WebLab)
 
 ## Setup
 
