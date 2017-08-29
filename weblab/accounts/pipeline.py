@@ -1,4 +1,4 @@
-USER_FIELDS = ['username', 'email']
+USER_FIELDS = ['email']
 
 
 def create_user(strategy, details, backend, user=None, *args, **kwargs):

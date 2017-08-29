@@ -11,11 +11,15 @@ class RegistrationView(FormView):
     success_url = '/'
 
     class Meta:
-        fields = ('username', 'email', 'full_name', 'institution')
+        fields = ('email', 'full_name', 'institution')
 
     def form_valid(self, form):
         user = form.save()
-        login(self.request, user)
+        login(
+            self.request,
+            user,
+            backend='django.contrib.auth.backends.ModelBackend',
+        )
         return super().form_valid(form)
 
 
