@@ -48,11 +48,11 @@
 
     <p>
       <button>Update account</button>
+      {% if user.has_usable_password %}
+        <a class="button" href="{% url "password_change" %}">Change Password...</a>
+      {% endif %}
     </p>
 
-    {% if user.has_usable_password %}
-      <a href="{% url "password_change" %}">Change Password</a>
-    {% endif %}
 
   </form>
 
