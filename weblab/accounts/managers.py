@@ -2,6 +2,9 @@ from django.contrib.auth.models import BaseUserManager
 
 
 class UserManager(BaseUserManager):
+    def admins(self):
+        return self.filter(is_superuser=True)
+
     def create_user(self, email, full_name, institution='', password=None):
         """
         Creates and saves a superuser with the given email, date of

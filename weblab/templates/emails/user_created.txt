@@ -1,0 +1,5 @@
+A new WebLab user was created.
+
+Email address: {{ user.email }}
+Full name: {{ user.full_name }}
+Institution: {{ user.institution }}
