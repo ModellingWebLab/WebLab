@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 from pathlib import Path
 
+import dj_database_url
+
 
 BASE_DIR = Path(os.path.abspath(__file__)).parents[2]
 
@@ -85,6 +87,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -95,6 +98,11 @@ DATABASES = {
         'PORT': 5432,
     }
 }
+
+# configure db url from DATABASE_URL env var if supplied
+DATABASES['default'] = dj_database_url.config(
+    default='postgres://weblab:weblab@localhost:5432/weblab'
+)
 
 
 # Password validation
