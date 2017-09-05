@@ -6,7 +6,6 @@
         <li id="usernavbar">
           <a>{{ user.full_name }}</a>
           <ul>
-            <!--li><a href="/myfiles">My files</a></li-->
             <li><a href="{% url 'accounts:myaccount' %}">Account</a></li>
 
             {% if user.is_superuser %}
