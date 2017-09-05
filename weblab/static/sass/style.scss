@@ -29,6 +29,13 @@ header {
 	/*	background-color: #bbb;*/
 }
 
+button {
+  // For some reason, browsers set buttons to border-box
+  // rather than content box. We want to size buttons in the
+  // same way as other similar looking objects with the 'button'
+  // class, so we must set this here.
+  box-sizing: content-box;
+}
 
 button,
 .button {
@@ -36,6 +43,9 @@ button,
 	padding: 8px 12px;
 	font-size: 14px;
 	border-radius: 5px;
+  height: 20px;
+  vertical-align: bottom;
+  display: inline-block;
 
   &, &:visited, &:active, &:hover {
 	  color: #fff;
@@ -49,6 +59,10 @@ button,
   &:hover, &.selected {
     background-color: lighten($button-bg, 10%);
   }
+}
+
+.button::-moz-focus-inner {
+  border: 0;
 }
 
 nav {
