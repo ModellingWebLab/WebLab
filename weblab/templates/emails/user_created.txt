@@ -1,0 +1,8 @@
+A new WebLab user was created.
+
+Email address: {{ user.email }}
+Full name: {{ user.full_name }}
+Institution: {{ user.institution }}
+
+
+Edit this user: {{ base_url }}{% url 'admin:accounts_user_change' user.id %}

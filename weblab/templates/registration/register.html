@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+  <h1>Register for this Functional Curation system</h1>
+
+  <p>
+    Only users with an account are able to upload their own models and/or
+    protocols for analysis. Once you have registered, you will need to wait
+    for an admin to approve the account before you are able to upload files.
+  </p>
+
+  <form action="" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <p>
+      <button>Register</button>
+    </p>
+  </form>
+
+{% endblock content %}

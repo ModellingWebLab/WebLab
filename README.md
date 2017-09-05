@@ -23,10 +23,26 @@ or, for local dev setup:
 pip install -r requirements/dev.txt
 ```
 
+### Create social apps
+
+To run social login, you will need to set up apps on Google and/or GitHub:
+
+* Google OAuth2: http://code.google.com/apis/accounts/docs/OAuth2.html#Registering
+* GitHub: https://github.com/settings/applications/new
+
+You can set these up via environment variables:
+* `SOCIAL_AUTH_GOOGLE_OAUTH2_KEY`
+* `SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET`
+* `SOCIAL_AUTH_GITHUB_KEY`
+* `SOCIAL_AUTH_GITHUB_SECRET`
+
+
 ### Create Postgres (user &) database
 
+The --createdb flag should be set for the database user if running tests (so test databases can be set up and torn down). This should not be done on a production system.
+
 ```bash
-createuser weblab
+createuser weblab --createdb
 createdb -O weblab weblab
 ```
 

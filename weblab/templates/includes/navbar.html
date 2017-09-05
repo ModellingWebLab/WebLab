@@ -2,6 +2,24 @@
 <nav>
   <ul class="navbar">
     <li><a href="{% url "home" %}">Home</a></li>
+    {% if user.is_authenticated %}
+        <li id="usernavbar">
+          <a>{{ user.full_name }}</a>
+          <ul>
+            <li><a href="{% url 'accounts:myaccount' %}">Account</a></li>
+
+            {% if user.is_superuser %}
+              <li><a href="{% url 'admin:index' %}">Admin</a></li>
+            {% endif %}
+
+            <li><a href="{% url 'logout' %}">Log out</a></li>
+          </ul>
+        </li>
+    {% else %}
+      <li><a href="{% url 'accounts:login' %}">Log in</a></li>
+      <li><a href="{% url 'accounts:register' %}">Register</a></li>
+    {% endif %}
+
     {% comment %}
       {% if user.is_authenticated %}
         <li><a href="/db/mine">Experiments</a></li>
@@ -13,7 +31,7 @@
       <li><a href="/about">About</a></li>
 
       {% if user.is_authenticated %}
-        <li id="usernavbar"><a href="${contextPath}/myfiles.html">${user.nick}</a>
+        <li id="usernavbar"><a href="${contextPath}/myfiles.html">${user.email}</a>
           <ul>
             <li><a href="/myfiles">My files</a></li>
             <li><a href="/myaccount">Account</a></li>
@@ -27,7 +45,6 @@
         </li>
       {% else %}
         <li><a href="/login">Login</a></li>
-        <li><a href="/register">Register</a></li>
       {% endif %}
     {% endcomment %}
   </ul>

@@ -1,6 +1,6 @@
 var $ = require('jquery');
 require('jquery-ui-browserify');
-require('xdate');
+var XDate = require('xdate');
 
 /*
  * list is either `error` or `info`
@@ -193,7 +193,7 @@ function convertForURL (str)
 function beautifyTimeStamp (datestring)
 {
   var date = new XDate(datestring, true);
-  if (date && date.valid ())
+  if (date && date.valid())
   {
     return date.toString ("MMM d'<sup>'S'</sup>', yyyy 'at' h:mm tt");
   }

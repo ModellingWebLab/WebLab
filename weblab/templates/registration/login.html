@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+  <h1>Log in</h1>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <p>
+      <button>Log in</button>
+      <a class="button" href="{% url "password_reset" %}">Reset Password</a>
+    </p>
+  </form>
+
+  <p>
+    <a class="google-icon" href="{% url "social:begin" "google-oauth2" %}"><img src="{% static 'img/oauth-icons/google.png' %}" /></a>
+  </p>
+  <p>
+    <a class="github-icon" href="{% url "social:begin" "github" %}"><img src="{% static 'img/oauth-icons/github.png' %}" /><span>Sign in with GitHub</span></a>
+  </p>
+
+{% endblock content %}

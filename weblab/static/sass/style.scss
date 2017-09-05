@@ -1,4 +1,5 @@
 @import url("fonts.css");
+@import "colors";
 
 body {
 	font-family: 'Open Sans', sans-serif;
@@ -28,24 +29,40 @@ header {
 	/*	background-color: #bbb;*/
 }
 
-
 button {
-	background-color: #263e6a;
+  // For some reason, browsers set buttons to border-box
+  // rather than content box. We want to size buttons in the
+  // same way as other similar looking objects with the 'button'
+  // class, so we must set this here.
+  box-sizing: content-box;
+}
+
+button,
+.button {
+  background-color: $button-bg;
 	padding: 8px 12px;
-	color: #fff;
 	font-size: 14px;
 	border-radius: 5px;
-	border: 1px solid #39578e;
+  height: 20px;
+  vertical-align: bottom;
+  display: inline-block;
+
+  &, &:visited, &:active, &:hover {
+	  color: #fff;
+	  border: 1px solid $button-border;
+  }
+
+  &:active {
+    background-color: darken($button-bg, 10%);
+  }
+
+  &:hover, &.selected {
+    background-color: lighten($button-bg, 10%);
+  }
 }
 
-button:active {
-	background-color: #192a49;
-	border: 1px solid #39578e;
-}
-
-button:hover, button.selected {
-	background-color: #39578e;
-	border: 1px solid #39578e;
+.button::-moz-focus-inner {
+  border: 0;
 }
 
 nav {
@@ -100,10 +117,6 @@ padding: 10px;
 	margin-right: 20px;
 }
 
-#usernavbar {
-    min-width: 100px;
-}
-
 .navbar a, .navbar a:hover, .navbar a:active {
 	padding: 18px 0;
 	/* Adds a padding on the top and bottom so the text appears centered vertically */
@@ -123,41 +136,29 @@ padding: 10px;
 	
 }
 
-.navbar li ul {
-	display: none; /* Hides the drop-down menu */
-	height: auto;
-	width: 100px;
-	margin: 0; /* Aligns drop-down box underneath the menu item */
-	padding: 0; /* Aligns drop-down box underneath the menu item */
-}
+#usernavbar {
+  min-width: 100px;
 
-.navbar li:hover ul {
-	display: block;
-	/* Displays the drop-down box when the menu item is hovered over */
-}
-
-.navbar li:hover ul li a {
-	padding: 0;
-	/* Displays the drop-down box when the menu item is hovered over */
-}
-
-.navbar li ul li { 
+  ul {
+    display: none; /* Hides the drop-down menu */
+    height: auto;
+    width: 100px;
+    margin: 0; /* Aligns drop-down box underneath the menu item */
+    padding: 0; /* Aligns drop-down box underneath the menu item */
     background-color: #ffffff;
-	/*border-left: 1px solid #263e6a;*/
-	padding: 0;
+
+    li, li a {
+      text-align: left;
+      padding: 0;
+    }
+  }
+
+  &:hover ul {
+    display: block;
+    /* Displays the drop-down box when the menu item is hovered over */
+  }
 }
 
-.navbar li ul li a {
-	/*border-left: 1px solid #1f5065; 
-    border-right: 1px solid #1f5065; 
-    border-top: 1px solid #74a3b7; 
-    border-bottom: 1px solid #1f5065; */
-	
-}
-
-.navbar li ul li a:hover { /*background-color: #366b82;*/
-	
-}
 
 #body {
 	clear: both;
@@ -192,8 +193,23 @@ p.right
     width: 100%;
 }
 
-#loginform small,#registerform small {
-	color: #aaa;
+form {
+  label {
+    display: block;
+  }
+  input {
+    &[type=text], &[type=email], &[type=password] {
+      width: 20em;
+    }
+  }
+  small, .helptext, ul {
+    color: #aaa;
+    font-size: small;
+    display: block;
+  }
+  .errorlist {
+    color: red;
+  }
 }
 
 #error {
@@ -618,4 +634,20 @@ li.entityviz-PRIVATE
 .patternized
 {
 	background-image: url(../img/pattern.png);
+}
+
+.google-icon {
+  display: inline-block;
+}
+.github-icon {
+  display: inline-block;
+  padding: 5px 7px;
+  border: 1px solid #ddd;
+  font-size: 90%;
+  img {
+    vertical-align: middle;
+  }
+  span {
+    padding-left: 1em;
+  }
 }
