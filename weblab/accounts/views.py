@@ -1,4 +1,5 @@
 from django.contrib.auth import login
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
 from django.views.generic.edit import FormView, UpdateView
 
@@ -23,7 +24,7 @@ class RegistrationView(FormView):
         return super().form_valid(form)
 
 
-class MyAccountView(UpdateView):
+class MyAccountView(LoginRequiredMixin, UpdateView):
     form_class = MyAccountForm
     template_name = 'registration/myaccount.html'
 
