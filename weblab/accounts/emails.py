@@ -11,7 +11,13 @@ def send_user_creation_email(user):
 
     # Don't email the created user about it
     admin_emails = get_user_model().objects.admins().exclude(pk=user.pk).values('email')
-    body = render_to_string('emails/user_created.txt', {'user': user})
+    body = render_to_string(
+        'emails/user_created.txt',
+        {
+            'user': user,
+            'base_url': settings.BASE_URL,
+        }
+    )
 
     send_mail(
         'New WebLab user created',

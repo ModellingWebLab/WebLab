@@ -178,3 +178,10 @@ SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.user.user_details',
     'social_core.pipeline.social_auth.associate_by_email',
 )
+
+# Root URL
+# This is for emails which may be generated with no request object
+# available. Sites framework unforutnately doesn't quite cut it as it doesn't
+# give us the scheme.
+# Trailing slashes should be removed
+BASE_URL = os.environ.get('WEBLAB_BASE_URL', 'http://127.0.0.1:8000')
