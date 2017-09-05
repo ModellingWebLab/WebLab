@@ -10,6 +10,7 @@
     {{ form.as_p }}
     <p>
       <button>Log in</button>
+      <a class="button" href="{% url "password_reset" %}">Reset Password</a>
     </p>
   </form>
 
@@ -18,10 +19,6 @@
   </p>
   <p>
     <a class="github-icon" href="{% url "social:begin" "github" %}"><img src="{% static 'img/oauth-icons/github.png' %}" /><span>Sign in with GitHub</span></a>
-  </p>
-
-  <p>
-    <a href="{% url "password_reset" %}">Reset Password</a>
   </p>
 
 {% endblock content %}
