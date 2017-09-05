@@ -7,7 +7,7 @@ from .models import User
 class RegistrationForm(auth_forms.UserCreationForm):
     class Meta(auth_forms.UserCreationForm.Meta):
         model = User
-        fields = ('email', 'full_name', 'institution')
+        fields = ('full_name', 'institution', 'email')
         help_texts = {
             'email': 'For recovering your password, and for metadata of your files',
             'full_name': 'For metadata of your files',
