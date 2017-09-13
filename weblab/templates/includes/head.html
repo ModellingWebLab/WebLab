@@ -1,7 +1,7 @@
 {% load staticfiles %}
 
 <script type='text/javascript'>
-  var contextPath = "${contextPath}";
+  var staticPath = "{% static '' %}";
   var preferences = new Array ();
   {% if user.is_authenticated %}
     {% comment "Convert from JSP" %}

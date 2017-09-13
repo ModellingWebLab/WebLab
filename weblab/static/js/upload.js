@@ -1,3 +1,8 @@
+var $ = require('jquery');
+require('blueimp-file-upload');
+var utils = require('./lib/utils.js')
+var notifications = require('./lib/notifications.js');
+
 
 /// Keep track of files sent to the server but not fully uploaded yet
 var uploading = new Array();
@@ -16,77 +21,78 @@ function alreadyExists (uploaded, name)
 	return false;
 }
 
+function showUpload(uploaded, file, types) {
+  var $table = $("#uploadedfiles");
+  var $tr = $("<tr>").appendTo($table);
 
-function sendFile (uploaded, file, name, types)
-{
-//    console.log("Send " + name);
-	if (alreadyExists (uploaded, name))
-	{
-		addNotification ("there is already a file with the name '" + name + "' - please remove that first.", "error");
-		return;
-	}
-	if (reserved_names.indexOf(name) != -1)
-	{
-		addNotification("the name '" + name + "' is reserved for system use; please choose another file name.", "error");
-		return;
-	}
-	if (!/^[a-zA-Z0-9._]+$/.test(name))
-	{
-		addNotification("the name '" + name + "' contains reserved characters; only alpha-numeric characters, underscores and periods are allowed.", "error");
-		return;
-	}
-	uploading.push(name);
-	
-	var table = document.getElementById("uploadedfiles");
-	var neu = document.createElement("tr");
-	table.appendChild(neu);
-	
-	var td = document.createElement("td");
-	neu.appendChild(td);
-	var mainEntry = document.createElement("input");
-	mainEntry.type = "radio";
-	mainEntry.name = "mainEntry";
-	mainEntry.value = name;
-	td.appendChild(mainEntry);
-	
+  var $td = $("<td>").appendTo($tr);
+  $('<input type="radio" name="mainEntry" value="' + file.name + '" />').appendTo($td);
 
-	td = document.createElement("td");
-	neu.appendChild(td);
-	var neuName = document.createElement("code");
-	var neuRm = document.createElement("a");
-	var neuRmPic = document.createElement("img");
-	neuName.appendChild(document.createTextNode(name));
-	neuRmPic.src = contextPath+"/res/img/failed.png";
-	neuRmPic.alt = "remove from list";
-	neuRm.appendChild (neuRmPic);
-	td.appendChild (neuName);
-	td.appendChild (neuRm);
+  $td = $("<td>").appendTo($tr);
+  var $name = $("<code>" + file.name + '</code>').appendTo($td);
+  var $rm = $('<a><img src="' + staticPath + 'img/failed.png" alt="remove from list" /></a>').appendTo($td);
+
+  $td = $("<td>").appendTo($tr);
+  $('<small><code> ' + utils.humanReadableBytes(file.size) + ' </code></small>').appendTo($td);
+
+  $td = $("<td>").appendTo($tr);
+  var $action = $('<small></small>').appendTo($td);
+
+  var array = {
+    fileName: file.name,
+    fileType: "unknown"
+  };
+
+  // Set default fileType based on extension, where sensible
+  if (file.name.endsWith(".cellml"))
+      array.fileType = "CellML";
+  else if (file.name.endsWith(".txt"))
+      array.fileType = "TXTPROTOCOL";
+  else if (file.name.endsWith(".xml"))
+      array.fileType = "XMLPROTOCOL";
+  else if (file.name.endsWith(".zip") || name.endsWith(".omex"))
+      array.fileType = "COMBINE archive";
+
+  var $typeSelect = $("<select>");
+  for (var i = 0; i < types.length; i++)
+  {
+    var $opt = $("<option>").appendTo($typeSelect);
+    $opt.value = types[i];
+    $opt.append(types[i]);
+  }
+  $typeSelect.val(array.fileType);
+
+  $typeSelect.click(function () {
+    array.fileType = $opt.options[$opt.selectedIndex].value;
+  });
+
+  $name.addClass("success");
+  $action.html($typeSelect);
+  uploaded.push(array);
+
+  $rm.click(function () {
+    for (var i = 0; i < uploaded.length; i++) {
+      if (uploaded[i].fileName == name)
+        uploaded.splice(i, 1);
+    }
+    for (var i = 0; i < uploading.length; i++) {
+      if (uploading[i] == name)
+        uploading.splice(i, 1);
+    }
+    /*
+    if (xmlhttp) {
+      xmlhttp.onreadystatechange = function ()
+      {// need this cause some browsers will throw a 'done' which we cannot interpret otherwise };
+      xmlhttp.abort();
+    }
+    */
+    $tr.remove();
+  });
+}
+
 	
-	
-	td = document.createElement("td");
-	neu.appendChild(td);
-	var neuSize = document.createElement("small");
-	var neuSizeCode = document.createElement("code");
-	neuSizeCode.appendChild (document.createTextNode(" "+humanReadableBytes(file.size)+" "));
-	neuSize.appendChild (neuSizeCode);
-	td.appendChild(neuSize);
-	
-	td = document.createElement("td");
-	neu.appendChild(td);
-	var neuAction = document.createElement("small");
-	td.appendChild(neuAction);
-	
+/*
 	var xmlhttp = null;
-    // !IE
-    if (window.XMLHttpRequest)
-    {
-        xmlhttp = new XMLHttpRequest();
-    }
-    // IE -- microsoft, we really hate you. every single day.
-    else if (window.ActiveXObject)
-    {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
     progress_monitor = function(e)
     {
         var done = e.position || e.loaded;
@@ -105,43 +111,9 @@ function sendFile (uploaded, file, name, types)
         	return;
     	var json = JSON.parse(xmlhttp.responseText);
     	if (json)
-    		displayNotifications (json);
+    		notifications.display (json);
         if (xmlhttp.status == 200 && json.upload && json.upload.response)
         {
-        	var array = {
-        		fileName: name,
-        		tmpName: json.upload.tmpName,
-        		fileType: "unknown"
-        	};
-        	
-        	// Set default fileType based on extension, where sensible
-        	if (name.endsWith(".cellml"))
-        	    array.fileType = "CellML";
-        	else if (name.endsWith(".txt"))
-        	    array.fileType = "TXTPROTOCOL";
-        	else if (name.endsWith(".xml"))
-        	    array.fileType = "XMLPROTOCOL";
-            else if (name.endsWith(".zip") || name.endsWith(".omex"))
-                array.fileType = "COMBINE archive";
-        	
-        	var type = document.createElement("select");
-        	for (var i = 0; i < types.length; i++)
-        	{
-        		var opt = document.createElement("option");
-        		opt.value = types[i];
-        		opt.appendChild (document.createTextNode(types[i]));
-        		if (opt.value == array.fileType)
-        		    opt.selected = true;
-        		type.appendChild(opt);
-        	}
-        	type.addEventListener("click", function () {
-        		array.fileType = type.options[type.selectedIndex].value;
-        	}, true);
-
-        	neuName.setAttribute("class", "success");
-        	removeChildren (neuAction);
-        	neuAction.appendChild (type);
-        	uploaded.push (array);
         }
         else
         {
@@ -154,65 +126,50 @@ function sendFile (uploaded, file, name, types)
                 uploading.splice(i, 1);
     };
 
-	var fd = new FormData;
-	fd.append('file', file);
-	
-	neuAction.innerHTML = "uploading";
-	xmlhttp.open('post', contextPath + "/upload.html", true);
-	xmlhttp.send(fd);
-	
-	neuRm.addEventListener("click", function () {
-//        console.log("Remove " + name);
-        for (var i = 0; i < uploaded.length; i++)
-            if (uploaded[i].fileName == name)
-                uploaded.splice(i, 1);
-        for (var i = 0; i < uploading.length; i++)
-            if (uploading[i] == name)
-                uploading.splice(i, 1);
-		if (xmlhttp)
-		{
-			xmlhttp.onreadystatechange = function ()
-			    {/* need this cause some browsers will throw a 'done' which we cannot interpret otherwise */};
-			xmlhttp.abort();
-		}
-		table.removeChild(neu);
-	}, true);
 }
+    */
 
-
-function handleDragOver(evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
-    evt.dataTransfer.dropEffect = 'copy';
-}
 
 
 function initUpload(uploaded, types)
 {
-    /// Handler for file(s) being dropped on the upload pane
-    function handleFileSelect(evt) {
-        evt.stopPropagation();
-        evt.preventDefault();
-        evt.dataTransfer.dropEffect = 'copy';
+  $("#fileupload").fileupload({
+    dataType: 'json',
+    dropZone: $("#dropbox"),
+    done: function(e, data) {
+      $.each(data.result.files, function(index, file) {
+        showUpload(uploaded, file, types);
+      });
+    },
+    submit: function(e, data) {
+      var name = data.files[0].name;
 
-        var files = evt.dataTransfer.files;
-        for (var i = 0, f; f = files[i]; i++) {
-            sendFile (uploaded, f, f.name, types);
-        }
+      if (alreadyExists(uploaded, name))
+      {
+        notifications.add("there is already a file with the name '" + name + "' - please remove that first.", "error");
+        return false;
+      }
+      if (reserved_names.indexOf(name) != -1)
+      {
+        notifications.add("the name '" + name + "' is reserved for system use; please choose another file name.", "error");
+        return false;
+      }
+      if (!/^[a-zA-Z0-9._]+$/.test(name))
+      {
+        notifications.add("the name '" + name + "' contains reserved characters; only alpha-numeric characters, underscores and periods are allowed.", "error");
+        return false;
+      }
+      uploading.push(name);
+
+      console.log('submit', e, data);
     }
+  });
 
-    var inp = document.getElementById('fileupload');
-	var dropZone = document.getElementById('dropbox');
-	dropZone.addEventListener('dragenter', handleDragOver, false);
-	dropZone.addEventListener('dragover', handleDragOver, false);
-	dropZone.addEventListener('drop', handleFileSelect, false);
-	dropZone.addEventListener("click", function (event) { inp.click (); }, false);
-	inp.addEventListener('change', function(e) {
-			var file = this.files[0];
-			var fullPath = inp.value;
-			var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
-			var filename = fullPath.substring(startIndex+1);
-			sendFile (uploaded, file, filename, types);
-		}, false);
+	$('#dropbox a').click(function() {
+    $("#fileupload").click();
+  });
 }
 
+
+
+module.exports = initUpload

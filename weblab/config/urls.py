@@ -23,5 +23,6 @@ urlpatterns = [
     url(r'^accounts/', include('accounts.urls', namespace='accounts')),
     url(r'^accounts/', include('django.contrib.auth.urls')),
     url(r'^social/', include('social_django.urls', namespace='social')),
+    url(r'^entities/', include('entities.urls', namespace='entities')),
     url(r'^admin/', admin.site.urls),
 ]

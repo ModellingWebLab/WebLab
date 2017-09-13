@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id='newentityform'>
+  <h1>Create Model</h1>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+
+    {{ form.as_p }}
+  </form>
+
+  <h3>Associated Files</h3>
+  <span id="uploadaction"></span>
+  <form>
+    <table id="uploadedfiles">
+      <tr>
+        <th>Main File</th>
+        <th>File Name</th>
+        <th>Size</th>
+        <th>Type</th>
+      </tr>
+    </table>
+  </form>
+
+  <br/>
+
+  <div id="dropbox">
+      Drop Files Here<br /> <a>Open Dialog</a> 
+      <input type="file" name="uploaded_file" id="fileupload"
+          data-url="{% url 'entities:upload' %}"
+          data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+  </div>
+
+  <p id="reRunPara" style="display: none;">
+    <input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>
+    <label for="reRunExperiments">rerun experiments involving previous versions of this ${fn:toLowerCase(newentitytype)}</label>
+    <small>(this might take some time)</small>
+  </p>
+  <p>
+    <button id="savebutton">Create Model</button>
+  </p>
+</div>
+{% endblock %}
