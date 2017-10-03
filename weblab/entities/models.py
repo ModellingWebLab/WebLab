@@ -42,3 +42,7 @@ class ModelEntity(Entity):
 
 class ProtocolEntity(Entity):
     pass
+
+
+class EntityUpload(models.Model):
+    upload = models.FileField(upload_to='uploads')

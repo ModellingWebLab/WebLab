@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import ModelEntity, ProtocolEntity
+from .models import EntityUpload, ModelEntity, ProtocolEntity
 
 
 class ModelEntityForm(forms.ModelForm):
@@ -18,5 +18,7 @@ class ProtocolEntityForm(forms.ModelForm):
         fields = ['name']
 
 
-class FileUploadForm(forms.Form):
-    uploaded_file = forms.FileField()
+class FileUploadForm(forms.ModelForm):
+    class Meta:
+        model = EntityUpload
+        fields = ['upload']

@@ -17,13 +17,15 @@ class FileUploadView(View):
     def post(self, request, *args, **kwargs):
         form = FileUploadForm(self.request.POST, self.request.FILES)
         if form.is_valid():
-            upload = form.cleaned_data['uploaded_file']
+            data = form.save()
+            upload = data.upload
             doc = {
                 "files": [
                     {
                         'is_valid': True,
                         'size': upload.size,
                         'name': upload.name,
+                        'url': upload.url,
                     }
                 ]
             }

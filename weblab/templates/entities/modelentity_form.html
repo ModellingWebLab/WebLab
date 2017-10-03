@@ -27,7 +27,7 @@
 
   <div id="dropbox">
       Drop Files Here<br /> <a>Open Dialog</a> 
-      <input type="file" name="uploaded_file" id="fileupload"
+      <input type="file" name="upload" id="fileupload"
           data-url="{% url 'entities:upload' %}"
           data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
   </div>

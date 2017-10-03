@@ -159,7 +159,7 @@ STATICFILES_DIRS = [
 
 # Media files (Uploaded files)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = str(BASE_DIR / 'media')
 
 # Google OAuth2 - see http://code.google.com/apis/accounts/docs/OAuth2.html#Registering
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', '')

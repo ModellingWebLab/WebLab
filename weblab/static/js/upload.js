@@ -12,13 +12,19 @@ var reserved_names = ['errors.txt', 'manifest.xml', 'metadata.rdf'];
 
 function alreadyExists (uploaded, name)
 {
-    for (var i = 0; i < uploading.length; i++)
-        if (uploading[i] == name)
-            return true;
-	for (var i = 0; i < uploaded.length; i++)
-		if (uploaded[i].fileName == name)
-			return true;
-	return false;
+  for (var i = 0; i < uploading.length; i++) {
+    if (uploading[i] == name) {
+      console.log('already uploading', name);
+      return true;
+    }
+  }
+  for (var i = 0; i < uploaded.length; i++) {
+    if (uploaded[i].fileName == name) {
+      console.log('already uploaded', name);
+      return true;
+    }
+  }
+  return false;
 }
 
 function showUpload(uploaded, file, types) {
