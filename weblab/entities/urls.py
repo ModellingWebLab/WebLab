@@ -11,6 +11,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^protocols/new$',
+        views.ProtocolEntityCreateView.as_view(),
+        name='new_protocol',
+    ),
+
+    url(
         r'^upload-file$',
         views.FileUploadView.as_view(),
         name='upload',

@@ -1,14 +1,23 @@
+from braces.views import UserFormKwargsMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.views import View
 from django.views.generic.edit import CreateView
 
-from .forms import FileUploadForm, ModelEntityForm
-from .models import ModelEntity
+from .forms import FileUploadForm, ModelEntityForm, ProtocolEntityForm
+from .models import ModelEntity, ProtocolEntity
 
 
-class ModelEntityCreateView(CreateView):
+class ModelEntityCreateView(LoginRequiredMixin, UserFormKwargsMixin, CreateView):
     model = ModelEntity
     form_class = ModelEntityForm
+    success_url = '/'
+
+
+class ProtocolEntityCreateView(LoginRequiredMixin, UserFormKwargsMixin, CreateView):
+    model = ProtocolEntity
+    form_class = ProtocolEntityForm
+    success_url = '/'
 
 
 class FileUploadView(View):

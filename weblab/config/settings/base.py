@@ -190,3 +190,5 @@ SOCIAL_AUTH_PIPELINE = (
 # give us the scheme.
 # Trailing slashes should be removed
 BASE_URL = os.environ.get('WEBLAB_BASE_URL', 'http://127.0.0.1:8000')
+
+REPO_BASE = BASE_DIR / 'repositories'

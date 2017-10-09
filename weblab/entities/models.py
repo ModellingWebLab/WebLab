@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
 from django.db import models
@@ -32,17 +34,34 @@ class Entity(models.Model):
 
     repository_url = models.URLField()
 
+    @property
+    def full_repository_url(self):
+        return str(settings.REPO_BASE / entity.repository_url)
+
+    @classmethod
+    def get_repo_path(cls, user_id, repo_name):
+        """Return filesystem path of repository"""
+        return Path(str(user_id)) / cls.REPO_DIRECTORY / repo_name
+
+    def __str__(self):
+        return self.name
+
     class Meta:
         abstract = True
 
 
 class ModelEntity(Entity):
-    pass
+    REPO_DIRECTORY = 'models'
+
+    class Meta:
+        verbose_name_plural = 'Model entities'
 
 
 class ProtocolEntity(Entity):
-    pass
+    REPO_DIRECTORY = 'protocols'
 
+    class Meta:
+        verbose_name_plural = 'Protocol entities'
 
 class EntityUpload(models.Model):
     upload = models.FileField(upload_to='uploads')
