@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+  <section id="modellist">
+    <h2>Your models</h2>
+
+    {% comment TODO %}
+      <c:if test="${User.allowedToCreateModel}"> 
+        <small><a href="${contextPath}/model/createnew" id="addmodellink" class="pointer">create a new model</a></small>
+      </c:if>
+    {% endcomment %}
+
+    <small><a href="${contextPath}/model/createnew" id="addmodellink" class="pointer">create a new model</a></small>
+
+    {% comment TODO %}
+      <c:if test="${!User.allowedToCreateModel}">
+          <small>Your account doesn't have the authority to upload models; please <a href="${contextPath}/contact.html">contact us</a> to request permission.</small>
+      </c:if>
+    {% endcomment %}
+
+    <ul>
+      {% for model in object_list %}
+        <li title="{{ model.name }}">
+          <strong><a href="{# ${contextPath}/model/${model.url}/${model.id}/${model.latestVersion.url}/${model.latestVersion.id} #}">{{model.name}}</a></strong> 
+
+          {% comment TODO %}
+            <c:if test="${User.allowedToCreateEntityVersion}">
+              <small>(<a href="${contextPath}/model/createnew/?newentityname=${model.id}">add new version</a>)</small>
+            </c:if>
+          {% endcomment %}
+        </li>
+      {% endfor %}
+    </c:forEach>
+  </ul>
+  </section>
+{% endblock %}

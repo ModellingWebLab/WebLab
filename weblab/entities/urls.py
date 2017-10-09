@@ -5,9 +5,21 @@ from . import views
 
 urlpatterns = [
     url(
+        r'^models/$',
+        views.ModelEntityListView.as_view(),
+        name='models',
+    ),
+
+    url(
         r'^models/new$',
         views.ModelEntityCreateView.as_view(),
         name='new_model',
+    ),
+
+    url(
+        r'^protocols/$',
+        views.ProtocolEntityListView.as_view(),
+        name='protocols',
     ),
 
     url(

@@ -63,5 +63,6 @@ class ProtocolEntity(Entity):
     class Meta:
         verbose_name_plural = 'Protocol entities'
 
+
 class EntityUpload(models.Model):
     upload = models.FileField(upload_to='uploads')

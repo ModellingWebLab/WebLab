@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.views import View
 from django.views.generic.edit import CreateView
+from django.views.generic.list import ListView
 
 from .forms import FileUploadForm, ModelEntityForm, ProtocolEntityForm
 from .models import ModelEntity, ProtocolEntity
@@ -18,6 +19,20 @@ class ProtocolEntityCreateView(LoginRequiredMixin, UserFormKwargsMixin, CreateVi
     model = ProtocolEntity
     form_class = ProtocolEntityForm
     success_url = '/'
+
+
+class ModelEntityListView(LoginRequiredMixin, ListView):
+    model = ModelEntity
+
+    def get_queryset(self):
+        return self.model.objects.filter(author=self.request.user)
+
+
+class ProtocolEntityListView(LoginRequiredMixin, ListView):
+    model = ProtocolEntity
+
+    def get_queryset(self):
+        return self.model.objects.filter(author=self.request.user)
 
 
 class FileUploadView(View):

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+  <section id="protocollist">
+    <h2>Your protocols</h2>
+
+    {% comment TODO %}
+      <c:if test="${User.allowedToCreateProtocol}"> 
+        <small><a href="${contextPath}/protocol/createnew" id="addprotocollink" class="pointer">create a new protocol</a></small>
+      </c:if>
+    {% endcomment %}
+
+    <small><a href="${contextPath}/protocol/createnew" id="addprotocollink" class="pointer">create a new protocol</a></small>
+
+    {% comment TODO %}
+      <c:if test="${!User.allowedToCreateProtocol}">
+          <small>Your account doesn't have the authority to upload protocols; please <a href="${contextPath}/contact.html">contact us</a> to request permission.</small>
+      </c:if>
+    {% endcomment %}
+
+    <ul>
+      {% for protocol in object_list %}
+        <li title="{{ protocol.name }}">
+          <strong><a href="{# ${contextPath}/protocol/${protocol.url}/${protocol.id}/${protocol.latestVersion.url}/${protocol.latestVersion.id} #}">{{protocol.name}}</a></strong> 
+
+          {% comment TODO %}
+            <c:if test="${User.allowedToCreateEntityVersion}">
+              <small>(<a href="${contextPath}/protocol/createnew/?newentityname=${protocol.id}">add new version</a>)</small>
+            </c:if>
+          {% endcomment %}
+        </li>
+      {% endfor %}
+    </c:forEach>
+  </ul>
+  </section>
+{% endblock %}
