@@ -22,7 +22,7 @@
     <ul>
       {% for protocol in object_list %}
         <li title="{{ protocol.name }}">
-          <strong><a href="{# ${contextPath}/protocol/${protocol.url}/${protocol.id}/${protocol.latestVersion.url}/${protocol.latestVersion.id} #}">{{protocol.name}}</a></strong> 
+          <strong><a href="{% url "entities:protocol" protocol.id %}">{{protocol.name}}</a></strong>
 
           {% comment TODO %}
             <c:if test="${User.allowedToCreateEntityVersion}">

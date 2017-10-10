@@ -17,6 +17,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^models/(?P<pk>\d+)$',
+        views.ModelEntityView.as_view(),
+        name='model',
+    ),
+
+    url(
         r'^protocols/$',
         views.ProtocolEntityListView.as_view(),
         name='protocols',
@@ -26,6 +32,12 @@ urlpatterns = [
         r'^protocols/new$',
         views.ProtocolEntityCreateView.as_view(),
         name='new_protocol',
+    ),
+
+    url(
+        r'^protocols/(?P<pk>\d+)$',
+        views.ProtocolEntityView.as_view(),
+        name='protocol',
     ),
 
     url(

@@ -2,6 +2,7 @@ from braces.views import UserFormKwargsMixin
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.views import View
+from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView
 from django.views.generic.list import ListView
 
@@ -33,6 +34,29 @@ class ProtocolEntityListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
+
+
+class ModelEntityView(LoginRequiredMixin, DetailView):
+    model = ModelEntity
+    context_object_name = 'entity'
+
+    def get_context_data(self, **kwargs):
+        kwargs.update({
+            'type': 'model',
+            'other_type': 'protocol'
+        })
+        return kwargs
+
+
+class ProtocolEntityView(LoginRequiredMixin, DetailView):
+    model = ProtocolEntity
+    context_object_name = 'entity'
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**{
+            'type': 'protocol',
+            'other_type': 'model'
+        })
 
 
 class FileUploadView(View):

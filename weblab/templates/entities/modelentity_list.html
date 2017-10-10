@@ -22,7 +22,7 @@
     <ul>
       {% for model in object_list %}
         <li title="{{ model.name }}">
-          <strong><a href="{# ${contextPath}/model/${model.url}/${model.id}/${model.latestVersion.url}/${model.latestVersion.id} #}">{{model.name}}</a></strong> 
+          <strong><a href="{% url "entities:model" model.id %}">{{model.name}}</a></strong>
 
           {% comment TODO %}
             <c:if test="${User.allowedToCreateEntityVersion}">
