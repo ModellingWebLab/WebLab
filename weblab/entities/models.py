@@ -1,8 +1,10 @@
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
 from django.db import models
+from git import Repo
 
 
 User = get_user_model()
@@ -34,9 +36,24 @@ class Entity(models.Model):
 
     repository_url = models.URLField()
 
+    def init_repo(self):
+        Repo.init(self.repo_file_path)
+
+    def add_file_to_repo(self, file_path):
+        repo = Repo(self.repo_file_path)
+        repo.index.add([file_path])
+
+    def commit_repo(self, message):
+        repo = Repo(self.repo_file_path)
+        repo.index.commit(message)
+
+    def tag_repo(self, tag):
+        repo = Repo(self.repo_file_path)
+        repo.create_tag(tag)
+
     @property
-    def full_repository_url(self):
-        return str(settings.REPO_BASE / entity.repository_url)
+    def repo_file_path(self):
+        return str(settings.REPO_BASE / self.repository_url)
 
     @classmethod
     def get_repo_path(cls, user_id, repo_name):
@@ -65,4 +82,6 @@ class ProtocolEntity(Entity):
 
 
 class EntityUpload(models.Model):
+    entity = models.ForeignKey(ModelEntity)
     upload = models.FileField(upload_to='uploads')
+    original_name = models.CharField(max_length=255)

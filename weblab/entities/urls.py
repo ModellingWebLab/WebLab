@@ -23,6 +23,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^models/(?P<pk>\d+)/versions/new$',
+        views.ModelEntityNewVersionView.as_view(),
+        name='model_newversion',
+    ),
+
+    url(
         r'^protocols/$',
         views.ProtocolEntityListView.as_view(),
         name='protocols',
@@ -41,8 +47,14 @@ urlpatterns = [
     ),
 
     url(
-        r'^upload-file$',
+        r'^protocols/(?P<pk>\d+)/versions/new$',
+        views.ProtocolEntityNewVersionView.as_view(),
+        name='protocol_newversion',
+    ),
+
+    url(
+        r'^models/(?P<pk>\d+)/upload-file$',
         views.FileUploadView.as_view(),
-        name='upload',
+        name='upload_model',
     ),
 ]

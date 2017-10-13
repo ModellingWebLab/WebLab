@@ -33,6 +33,7 @@ function showUpload(uploaded, file, types) {
 
   var $td = $("<td>").appendTo($tr);
   $('<input type="radio" name="mainEntry" value="' + file.name + '" />').appendTo($td);
+  $('<input type="hidden" name="filename[]" value="' + file.stored_name + '" />').appendTo($td);
 
   $td = $("<td>").appendTo($tr);
   var $name = $("<code>" + file.name + '</code>').appendTo($td);
