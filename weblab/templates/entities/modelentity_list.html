@@ -11,7 +11,7 @@
       </c:if>
     {% endcomment %}
 
-    <small><a href="${contextPath}/model/createnew" id="addmodellink" class="pointer">create a new model</a></small>
+    <small><a href="{% url "entities:new_model" %}" id="addmodellink" class="pointer">create a new model</a></small>
 
     {% comment TODO %}
       <c:if test="${!User.allowedToCreateModel}">
@@ -29,6 +29,7 @@
               <small>(<a href="${contextPath}/model/createnew/?newentityname=${model.id}">add new version</a>)</small>
             </c:if>
           {% endcomment %}
+          <small>(<a href="{% url "entities:model_newversion" model.id %}">add new version</a>)</small>
         </li>
       {% endfor %}
     </c:forEach>

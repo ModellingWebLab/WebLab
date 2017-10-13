@@ -106,7 +106,7 @@ class ModelEntityNewVersionView(LoginRequiredMixin, FormMixin, DetailView):
         entity.commit_repo(request.POST['commit_message'])
         entity.tag_repo(request.POST['version'])
 
-        return HttpResponseRedirect('/')
+        return HttpResponseRedirect(reverse('entities:model', args=[entity.id]))
 
 
 class ProtocolEntityNewVersionView(LoginRequiredMixin, DetailView):

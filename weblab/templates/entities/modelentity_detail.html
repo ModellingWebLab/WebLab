@@ -8,4 +8,12 @@
   <div class="suppl">
     <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
   </div>
+
+  <h2>Files</h2>
+  <ul>
+  {% for file in entity.entityupload_set.all %}
+    <li>{{ file.original_name }}</li>
+  {% endfor %}
+  </ul>
+  <a href="{% url "entities:model_newversion" entity.id %}">add new version</a>
 {% endblock %}
