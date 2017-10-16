@@ -2,10 +2,9 @@ import os.path
 
 from braces.forms import UserKwargModelFormMixin
 from django import forms
-from django.conf import settings
 from django.core.exceptions import ValidationError
 
-from .models import EntityUpload, ModelEntity, ProtocolEntity
+from .models import EntityUpload, Entity, ModelEntity, ProtocolEntity
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -13,18 +12,22 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
         name = self.cleaned_data['name']
         if self._meta.model.objects.filter(name=name).exists():
             raise ValidationError(
-                'You already have a %s named "%s"' % (self.ENTITY_TYPE_NAME, name))
-        if os.path.exists(
-            str(settings.REPO_BASE / self._meta.model.get_repo_path(self.user.id, name))
-        ):
+                'You already have a %s named "%s"' % (self.entity_type, name))
+
+        entity = Entity(
+            entity_type=self.entity_type,
+            author=self.user,
+            name=name
+        )
+        if os.path.exists(entity.repo_abs_path):
             raise ValidationError(
-                'You already have a %s repository named "%s"' % (self.ENTITY_TYPE_NAME, name))
+                'You already have a %s repository named "%s"' % (self.entity_type, name))
         return name
 
     def save(self, **kwargs):
         entity = super().save(commit=False)
         entity.author = self.user
-        entity.repository_url = entity.get_repo_path(entity.author.id, entity.name)
+        entity.entity_type = self.entity_type
 
         entity.init_repo()
 
@@ -32,18 +35,18 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
         self.save_m2m()
         return entity
 
+    @property
+    def entity_type(self):
+        return self._meta.model.entity_type
+
 
 class ModelEntityForm(EntityForm):
-    ENTITY_TYPE_NAME = 'model'
-
     class Meta:
         model = ModelEntity
         fields = ['name', 'visibility']
 
 
 class ProtocolEntityForm(EntityForm):
-    ENTITY_TYPE_NAME = 'protocol'
-
     class Meta:
         model = ProtocolEntity
         fields = ['name', 'visibility']

@@ -21,6 +21,18 @@ class Entity(models.Model):
         (VISIBILITY_PUBLIC, 'Public')
     )
 
+    ENTITY_TYPE_MODEL = 'model'
+    ENTITY_TYPE_PROTOCOL = 'protocol'
+    ENTITY_TYPE_CHOICES = (
+        (ENTITY_TYPE_MODEL, ENTITY_TYPE_MODEL),
+        (ENTITY_TYPE_PROTOCOL, ENTITY_TYPE_PROTOCOL),
+    )
+
+    entity_type = models.CharField(
+        max_length=16,
+        choices=ENTITY_TYPE_CHOICES,
+    )
+
     name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
     creation_date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(User)
@@ -34,51 +46,63 @@ class Entity(models.Model):
         ),
     )
 
-    repository_url = models.URLField()
-
     def init_repo(self):
-        Repo.init(self.repo_file_path)
+        Repo.init(self.repo_abs_path)
 
     def add_file_to_repo(self, file_path):
-        repo = Repo(self.repo_file_path)
-        repo.index.add([file_path])
+        self.repo.index.add([file_path])
 
     def commit_repo(self, message):
-        repo = Repo(self.repo_file_path)
-        repo.index.commit(message)
+        self.repo.index.commit(message)
 
     def tag_repo(self, tag):
-        repo = Repo(self.repo_file_path)
-        repo.create_tag(tag)
+        self.repo.create_tag(tag)
 
     @property
-    def repo_file_path(self):
-        return str(settings.REPO_BASE / self.repository_url)
+    def repo(self):
+        return Repo(self.repo_abs_path)
 
-    @classmethod
-    def get_repo_path(cls, user_id, repo_name):
+    @property
+    def repo_abs_path(self):
+        return str(settings.REPO_BASE / self.repo_rel_path)
+
+    @property
+    def repo_rel_path(self):
         """Return filesystem path of repository"""
-        return Path(str(user_id)) / cls.REPO_DIRECTORY / repo_name
+        return Path(str(self.author.id)) / (self.entity_type + 's') / self.name
 
     def __str__(self):
         return self.name
 
     class Meta:
-        abstract = True
-
-
-class ModelEntity(Entity):
-    REPO_DIRECTORY = 'models'
-
-    class Meta:
         verbose_name_plural = 'Model entities'
 
 
-class ProtocolEntity(Entity):
-    REPO_DIRECTORY = 'protocols'
+class EntityManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(entity_type=self.model.entity_type)
+
+    def create(self, **kwargs):
+        kwargs['entity_type'] = self.model.entity_type
+        return super().create(**kwargs)
+
+
+class ModelEntity(Entity):
+    entity_type = Entity.ENTITY_TYPE_MODEL
+
+    objects = EntityManager()
 
     class Meta:
-        verbose_name_plural = 'Protocol entities'
+        proxy = True
+
+
+class ProtocolEntity(Entity):
+    entity_type = Entity.ENTITY_TYPE_PROTOCOL
+
+    objects = EntityManager()
+
+    class Meta:
+        proxy = True
 
 
 class EntityUpload(models.Model):

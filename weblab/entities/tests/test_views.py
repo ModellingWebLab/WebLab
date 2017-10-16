@@ -36,6 +36,7 @@ def test_create_model(user, client, fake_repo_path):
 
     assert os.path.exists(fake_repo_path + str(user.id) + '/models/mymodel')
 
+
 @pytest.fixture
 def fake_repo_path(settings):
     settings.REPO_BASE = '/tmp/repos/'
