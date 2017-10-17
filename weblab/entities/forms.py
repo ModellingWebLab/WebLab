@@ -1,5 +1,3 @@
-import os.path
-
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
@@ -19,7 +17,7 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
             author=self.user,
             name=name
         )
-        if os.path.exists(entity.repo_abs_path):
+        if entity.repo_abs_path.exists():
             raise ValidationError(
                 'You already have a %s repository named "%s"' % (self.entity_type, name))
         return name

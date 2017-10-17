@@ -1,5 +1,4 @@
 import os.path
-import shutil
 
 import pytest
 
@@ -19,6 +18,12 @@ def user(client):
     return user
 
 
+@pytest.fixture
+def fake_repo_path(settings, tmpdir):
+    settings.REPO_BASE = str(tmpdir)
+    yield tmpdir
+
+
 @pytest.mark.django_db
 def test_create_model(user, client, fake_repo_path):
     response = client.post('/entities/models/new', data={
@@ -32,18 +37,9 @@ def test_create_model(user, client, fake_repo_path):
     entity = ModelEntity.objects.first()
     assert entity.name == 'mymodel'
     assert entity.visibility == 'private'
-    assert entity.author.email == 'test@example.com'
+    assert entity.author == user
 
-    assert os.path.exists(fake_repo_path + str(user.id) + '/models/mymodel')
-
-
-@pytest.fixture
-def fake_repo_path(settings):
-    settings.REPO_BASE = '/tmp/repos/'
-
-    yield settings.REPO_BASE
-
-    shutil.rmtree(settings.REPO_BASE)
+    assert entity.repo_abs_path.exists()
 
 
 @pytest.mark.django_db
@@ -59,6 +55,21 @@ def test_create_protocol(user, client, fake_repo_path):
     entity = ProtocolEntity.objects.first()
     assert entity.name == 'myprotocol'
     assert entity.visibility == 'public'
-    assert entity.author.email == 'test@example.com'
+    assert entity.author == user
 
-    assert os.path.exists(fake_repo_path + str(user.id) + '/protocols/myprotocol')
+    assert entity.repo_abs_path.exists()
+
+
+@pytest.mark.skip
+def test_create_model_version(user, client, fake_repo_path):
+    proto = ProtocolEntity.objects.create(
+        name='myprotocol',
+        visibility='public',
+        author=user,
+    )
+    response = client.post(
+        '/entities/protocols/' + proto.pk + '/versions/new',
+        data={
+        },
+    )
+

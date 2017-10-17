@@ -24,6 +24,26 @@ from .forms import (
 from .models import ModelEntity, ProtocolEntity
 
 
+class ModelEntityTypeMixin:
+    model = ModelEntity
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**{
+            'type': ModelEntity.entity_type,
+            'other_type': ProtocolEntity.entity_type,
+        })
+
+
+class ProtocolEntityTypeMixin:
+    model = ProtocolEntity
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**{
+            'type': ProtocolEntity.entity_type,
+            'other_type': ModelEntity.entity_type,
+        })
+
+
 class ModelEntityCreateView(LoginRequiredMixin, UserFormKwargsMixin, CreateView):
     model = ModelEntity
     form_class = ModelEntityForm
@@ -35,60 +55,33 @@ class ModelEntityCreateView(LoginRequiredMixin, UserFormKwargsMixin, CreateView)
 class ProtocolEntityCreateView(LoginRequiredMixin, UserFormKwargsMixin, CreateView):
     model = ProtocolEntity
     form_class = ProtocolEntityForm
-    success_url = '/'
 
     def get_success_url(self):
         return reverse('entities:protocol_newversion', args=[self.object.pk])
 
 
-class ModelEntityListView(LoginRequiredMixin, ListView):
-    model = ModelEntity
-
+class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
 
 
-class ProtocolEntityListView(LoginRequiredMixin, ListView):
-    model = ProtocolEntity
-
+class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListView):
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
 
 
-class ModelEntityView(LoginRequiredMixin, DetailView):
-    model = ModelEntity
+class ModelEntityView(LoginRequiredMixin, ModelEntityTypeMixin, DetailView):
     context_object_name = 'entity'
 
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**{
-            'type': 'model',
-            'other_type': 'protocol'
-        })
-        return kwargs
 
-
-class ProtocolEntityView(LoginRequiredMixin, DetailView):
-    model = ProtocolEntity
+class ProtocolEntityView(LoginRequiredMixin, ProtocolEntityTypeMixin, DetailView):
     context_object_name = 'entity'
 
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**{
-            'type': 'protocol',
-            'other_type': 'model'
-        })
 
-
-class ModelEntityNewVersionView(LoginRequiredMixin, FormMixin, DetailView):
-    model = ModelEntity
+class ModelEntityNewVersionView(LoginRequiredMixin, ModelEntityTypeMixin, FormMixin, DetailView):
     template_name = 'entities/modelentity_newversion.html'
     context_object_name = 'entity'
     form_class = EntityVersionForm
-
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**{
-            'type': 'model',
-            'other_type': 'protocol'
-        })
 
     def post(self, request, *args, **kwargs):
         entity = self.get_object()
@@ -99,7 +92,7 @@ class ModelEntityNewVersionView(LoginRequiredMixin, FormMixin, DetailView):
         # Copy each file into the git repo
         for upload in uploads:
             src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
-            dest = os.path.join(entity.repo_file_path, upload.original_name)
+            dest = str(entity.repo_abs_path / upload.original_name)
             shutil.move(src, dest)
             entity.add_file_to_repo(dest)
 
@@ -110,7 +103,6 @@ class ModelEntityNewVersionView(LoginRequiredMixin, FormMixin, DetailView):
 
 
 class ProtocolEntityNewVersionView(LoginRequiredMixin, DetailView):
-    model = ProtocolEntity
     template_name = 'entities/protocolentity_newversion.html'
     context_object_name = 'entity'
 

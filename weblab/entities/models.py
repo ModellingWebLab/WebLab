@@ -47,7 +47,7 @@ class Entity(models.Model):
     )
 
     def init_repo(self):
-        Repo.init(self.repo_abs_path)
+        Repo.init(str(self.repo_abs_path))
 
     def add_file_to_repo(self, file_path):
         self.repo.index.add([file_path])
@@ -60,11 +60,11 @@ class Entity(models.Model):
 
     @property
     def repo(self):
-        return Repo(self.repo_abs_path)
+        return Repo(str(self.repo_abs_path))
 
     @property
     def repo_abs_path(self):
-        return str(settings.REPO_BASE / self.repo_rel_path)
+        return Path(settings.REPO_BASE, self.repo_rel_path)
 
     @property
     def repo_rel_path(self):
@@ -73,9 +73,6 @@ class Entity(models.Model):
 
     def __str__(self):
         return self.name
-
-    class Meta:
-        verbose_name_plural = 'Model entities'
 
 
 class EntityManager(models.Manager):
@@ -94,6 +91,7 @@ class ModelEntity(Entity):
 
     class Meta:
         proxy = True
+        verbose_name_plural = 'Model entities'
 
 
 class ProtocolEntity(Entity):
@@ -103,6 +101,7 @@ class ProtocolEntity(Entity):
 
     class Meta:
         proxy = True
+        verbose_name_plural = 'Protocol entities'
 
 
 class EntityUpload(models.Model):
