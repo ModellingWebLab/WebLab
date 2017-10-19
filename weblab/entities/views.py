@@ -117,7 +117,7 @@ class FileUploadView(View):
         if form.is_valid():
             uploaded_file = request.FILES['upload']
             form.instance.entity_id = self.kwargs['pk']
-            form.instance.original_name = uploaded_file
+            form.instance.original_name = uploaded_file.name
             data = form.save()
             upload = data.upload
             doc = {
@@ -134,5 +134,4 @@ class FileUploadView(View):
             return JsonResponse(doc)
 
         else:
-            print(form.errors)
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest(form.errors)

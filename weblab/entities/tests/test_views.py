@@ -1,3 +1,6 @@
+import io
+import json
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -119,3 +122,30 @@ def test_create_protocol_version(user, client):
     assert 'v1' in protocol.repo.tags
     assert protocol.repo.head.commit.message == 'first commit'
     assert protocol.repo.head.commit.tree.blobs[0].name == 'protocol.txt'
+
+
+@pytest.mark.django_db
+def test_upload_file(user, client):
+    model = ModelEntity.objects.create(
+        name='mymodel',
+        visibility='public',
+        author=user,
+    )
+
+    upload = io.StringIO('my test model')
+    upload.name = 'model.txt'
+    response = client.post(
+        '/entities/' + str(model.pk) + '/upload-file',
+        {
+            'upload': upload
+        }
+    )
+
+    data = json.loads(response.content.decode())
+    upload = data['files'][0]
+    assert upload['stored_name'] == 'uploads/model.txt'
+    assert upload['name'] == 'model.txt'
+    assert upload['is_valid']
+    assert upload['size'] == 13
+
+    assert model.entityupload_set.count() == 1

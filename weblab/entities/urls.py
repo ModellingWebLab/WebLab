@@ -53,7 +53,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/upload-file$',
+        r'^(?P<pk>\d+)/upload-file$',
         views.FileUploadView.as_view(),
         name='upload_model',
     ),
