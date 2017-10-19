@@ -11,7 +11,7 @@
 
   <h2>Files</h2>
   <ul>
-  {% for file in entity.entityupload_set.all %}
+  {% for file in entity.files.all %}
     <li>{{ file.original_name }}</li>
   {% endfor %}
   </ul>

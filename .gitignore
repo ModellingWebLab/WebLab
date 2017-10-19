@@ -102,3 +102,6 @@ ENV/
 
 # repo directory
 weblab/repositories/
+
+# media directory
+weblab/media/

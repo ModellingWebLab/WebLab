@@ -81,9 +81,10 @@ class ProtocolEntityView(LoginRequiredMixin, ProtocolEntityTypeMixin, DetailView
 class EntityNewVersionView(LoginRequiredMixin, FormMixin, DetailView):
     context_object_name = 'entity'
     form_class = EntityVersionForm
+
     def post(self, request, *args, **kwargs):
         entity = self.get_object()
-        uploads = entity.entityupload_set.filter(
+        uploads = entity.files.filter(
             upload=request.POST['filename[]']
         )
 

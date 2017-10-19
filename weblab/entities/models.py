@@ -100,7 +100,7 @@ class ProtocolEntity(Entity):
         verbose_name_plural = 'Protocol entities'
 
 
-class EntityUpload(models.Model):
-    entity = models.ForeignKey(ModelEntity)
+class EntityFile(models.Model):
+    entity = models.ForeignKey(Entity, related_name='files')
     upload = models.FileField(upload_to='uploads')
     original_name = models.CharField(max_length=255)

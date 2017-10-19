@@ -2,7 +2,7 @@ from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import EntityUpload, Entity, ModelEntity, ProtocolEntity
+from .models import EntityFile, Entity, ModelEntity, ProtocolEntity
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -55,5 +55,5 @@ class EntityVersionForm(forms.Form):
 
 class FileUploadForm(forms.ModelForm):
     class Meta:
-        model = EntityUpload
+        model = EntityFile
         fields = ['upload']

@@ -5,7 +5,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from accounts.models import User
-from entities.models import EntityUpload, ModelEntity, ProtocolEntity
+from entities.models import EntityFile, ModelEntity, ProtocolEntity
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ def test_create_model_version(user, client):
         visibility='public',
         author=user,
     )
-    EntityUpload.objects.create(
+    EntityFile.objects.create(
         entity=model,
         upload=SimpleUploadedFile('model.txt', b'my test model'),
         original_name='model.txt',
@@ -104,7 +104,7 @@ def test_create_protocol_version(user, client):
         visibility='public',
         author=user,
     )
-    EntityUpload.objects.create(
+    EntityFile.objects.create(
         entity=protocol,
         upload=SimpleUploadedFile('protocol.txt', b'my test protocol'),
         original_name='protocol.txt',
@@ -148,4 +148,4 @@ def test_upload_file(user, client):
     assert upload['is_valid']
     assert upload['size'] == 13
 
-    assert model.entityupload_set.count() == 1
+    assert model.files.count() == 1
