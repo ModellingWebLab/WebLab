@@ -1,13 +1,9 @@
 from pathlib import Path
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator
 from django.db import models
 from git import Repo
-
-
-User = get_user_model()
 
 
 class Entity(models.Model):
@@ -35,7 +31,7 @@ class Entity(models.Model):
 
     name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
     creation_date = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(User)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL)
     visibility = models.CharField(
         max_length=16,
         choices=VISIBILITY_CHOICES,

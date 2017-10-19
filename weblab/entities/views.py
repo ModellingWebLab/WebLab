@@ -78,11 +78,9 @@ class ProtocolEntityView(LoginRequiredMixin, ProtocolEntityTypeMixin, DetailView
     context_object_name = 'entity'
 
 
-class ModelEntityNewVersionView(LoginRequiredMixin, ModelEntityTypeMixin, FormMixin, DetailView):
-    template_name = 'entities/modelentity_newversion.html'
+class EntityNewVersionView(LoginRequiredMixin, FormMixin, DetailView):
     context_object_name = 'entity'
     form_class = EntityVersionForm
-
     def post(self, request, *args, **kwargs):
         entity = self.get_object()
         uploads = entity.entityupload_set.filter(
@@ -99,21 +97,16 @@ class ModelEntityNewVersionView(LoginRequiredMixin, ModelEntityTypeMixin, FormMi
         entity.commit_repo(request.POST['commit_message'])
         entity.tag_repo(request.POST['version'])
 
-        return HttpResponseRedirect(reverse('entities:model', args=[entity.id]))
+        return HttpResponseRedirect(
+            reverse('entities:%s' % entity.entity_type, args=[entity.id]))
 
 
-class ProtocolEntityNewVersionView(LoginRequiredMixin, DetailView):
+class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):
+    template_name = 'entities/modelentity_newversion.html'
+
+
+class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView):
     template_name = 'entities/protocolentity_newversion.html'
-    context_object_name = 'entity'
-
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**{
-            'type': 'protocol',
-            'other_type': 'model'
-        })
-
-    def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
 
 
 class FileUploadView(View):

@@ -27,8 +27,6 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
         entity.author = self.user
         entity.entity_type = self.entity_type
 
-        entity.init_repo()
-
         entity.save()
         self.save_m2m()
         return entity
