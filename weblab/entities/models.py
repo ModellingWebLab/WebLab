@@ -42,6 +42,12 @@ class Entity(models.Model):
         ),
     )
 
+    class Meta:
+        unique_together=('entity_type', 'name', 'author')
+
+    def __str__(self):
+        return self.name
+
     def init_repo(self):
         Repo.init(str(self.repo_abs_path))
 
@@ -64,11 +70,8 @@ class Entity(models.Model):
 
     @property
     def repo_rel_path(self):
-        """Return filesystem path of repository"""
-        return Path(str(self.author.id)) / (self.entity_type + 's') / self.name
-
-    def __str__(self):
-        return self.name
+        """Return relative filesystem path of repository"""
+        return Path('%d/%ss/%d' % (self.author.id, self.entity_type, self.id))
 
 
 class EntityManager(models.Manager):

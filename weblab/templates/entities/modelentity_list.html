@@ -2,6 +2,10 @@
 
 
 {% block content %}
+
+  <a class="button selected" href="{% url "entities:models" %}" id="modelchooser">models</a>
+  <a class="button" href="{% url "entities:protocols" %}" id="protocolchooser">protocols</a>
+
   <section id="modellist">
     <h2>Your models</h2>
 

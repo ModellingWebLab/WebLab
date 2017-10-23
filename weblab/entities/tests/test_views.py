@@ -23,13 +23,13 @@ def user(client):
 @pytest.fixture(autouse=True)
 def fake_repo_path(settings, tmpdir):
     settings.REPO_BASE = str(tmpdir)
-    yield settings.REPO_BASE
+    return settings.REPO_BASE
 
 
 @pytest.fixture(autouse=True)
 def fake_upload_path(settings, tmpdir):
     settings.MEDIA_ROOT = str(tmpdir)
-    yield settings.MEDIA_ROOT
+    return settings.MEDIA_ROOT
 
 
 @pytest.mark.django_db

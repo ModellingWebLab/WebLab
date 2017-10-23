@@ -2,7 +2,7 @@ from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import EntityFile, Entity, ModelEntity, ProtocolEntity
+from .models import EntityFile, ModelEntity, ProtocolEntity
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -12,21 +12,12 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
             raise ValidationError(
                 'You already have a %s named "%s"' % (self.entity_type, name))
 
-        entity = Entity(
-            entity_type=self.entity_type,
-            author=self.user,
-            name=name
-        )
-        if entity.repo_abs_path.exists():
-            raise ValidationError(
-                'You already have a %s repository named "%s"' % (self.entity_type, name))
         return name
 
     def save(self, **kwargs):
         entity = super().save(commit=False)
         entity.author = self.user
         entity.entity_type = self.entity_type
-
         entity.save()
         self.save_m2m()
         return entity

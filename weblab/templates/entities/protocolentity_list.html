@@ -2,6 +2,10 @@
 
 
 {% block content %}
+
+  <a class="button" href="{% url "entities:models" %}" id="modelchooser">models</a>
+  <a class="button selected" href="{% url "entities:protocols" %}" id="protocolchooser">protocols</a>
+
   <section id="protocollist">
     <h2>Your protocols</h2>
 
@@ -11,7 +15,7 @@
       </c:if>
     {% endcomment %}
 
-    <small><a href="${contextPath}/protocol/createnew" id="addprotocollink" class="pointer">create a new protocol</a></small>
+    <small><a href="{% url "entities:new_protocol" %}" id="addprotocollink" class="pointer">create a new protocol</a></small>
 
     {% comment TODO %}
       <c:if test="${!User.allowedToCreateProtocol}">
@@ -29,6 +33,7 @@
               <small>(<a href="${contextPath}/protocol/createnew/?newentityname=${protocol.id}">add new version</a>)</small>
             </c:if>
           {% endcomment %}
+          <small>(<a href="{% url "entities:protocol_newversion" protocol.id %}">add new version</a>)</small>
         </li>
       {% endfor %}
     </c:forEach>
