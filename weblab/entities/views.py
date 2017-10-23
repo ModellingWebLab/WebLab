@@ -3,7 +3,10 @@ import shutil
 
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import (
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+)
 from django.core.urlresolvers import reverse
 from django.http import (
     HttpResponseBadRequest,
@@ -44,17 +47,23 @@ class ProtocolEntityTypeMixin:
         })
 
 
-class ModelEntityCreateView(LoginRequiredMixin, UserFormKwargsMixin, CreateView):
+class ModelEntityCreateView(
+    LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, CreateView
+):
     model = ModelEntity
     form_class = ModelEntityForm
+    permission_required = 'entities.create_model'
 
     def get_success_url(self):
         return reverse('entities:model_newversion', args=[self.object.pk])
 
 
-class ProtocolEntityCreateView(LoginRequiredMixin, UserFormKwargsMixin, CreateView):
+class ProtocolEntityCreateView(
+    LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, CreateView
+):
     model = ProtocolEntity
     form_class = ProtocolEntityForm
+    permission_required = 'entities.create_protocol'
 
     def get_success_url(self):
         return reverse('entities:protocol_newversion', args=[self.object.pk])
@@ -78,7 +87,9 @@ class ProtocolEntityView(LoginRequiredMixin, ProtocolEntityTypeMixin, DetailView
     context_object_name = 'entity'
 
 
-class EntityNewVersionView(LoginRequiredMixin, FormMixin, DetailView):
+class EntityNewVersionView(
+    LoginRequiredMixin, PermissionRequiredMixin, FormMixin, DetailView
+):
     context_object_name = 'entity'
     form_class = EntityVersionForm
 
@@ -104,10 +115,12 @@ class EntityNewVersionView(LoginRequiredMixin, FormMixin, DetailView):
 
 class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):
     template_name = 'entities/modelentity_newversion.html'
+    permission_required = 'entities.create_model_version'
 
 
 class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView):
     template_name = 'entities/protocolentity_newversion.html'
+    permission_required = 'entities.create_protocol_version'
 
 
 class FileUploadView(View):

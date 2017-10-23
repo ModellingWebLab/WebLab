@@ -15,5 +15,8 @@
     <li>{{ file.original_name }}</li>
   {% endfor %}
   </ul>
+
+  {% if perms.entities.create_protocol_version %}
   <a href="{% url "entities:protocol_newversion" entity.id %}">add new version</a>
+  {% endif %}
 {% endblock %}

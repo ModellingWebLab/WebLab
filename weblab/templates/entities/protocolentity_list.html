@@ -9,31 +9,20 @@
   <section id="protocollist">
     <h2>Your protocols</h2>
 
-    {% comment TODO %}
-      <c:if test="${User.allowedToCreateProtocol}"> 
-        <small><a href="${contextPath}/protocol/createnew" id="addprotocollink" class="pointer">create a new protocol</a></small>
-      </c:if>
-    {% endcomment %}
-
-    <small><a href="{% url "entities:new_protocol" %}" id="addprotocollink" class="pointer">create a new protocol</a></small>
-
-    {% comment TODO %}
-      <c:if test="${!User.allowedToCreateProtocol}">
-          <small>Your account doesn't have the authority to upload protocols; please <a href="${contextPath}/contact.html">contact us</a> to request permission.</small>
-      </c:if>
-    {% endcomment %}
+    {% if perms.entities.create_protocol %}
+      <small><a href="{% url "entities:new_protocol" %}" id="addprotocollink" class="pointer">create a new protocol</a></small>
+    {% else %}
+      <small>Your account doesn't have the authority to upload protocols; please <a href="">contact us</a> to request permission.</small>
+    {% endif %}
 
     <ul>
       {% for protocol in object_list %}
         <li title="{{ protocol.name }}">
           <strong><a href="{% url "entities:protocol" protocol.id %}">{{protocol.name}}</a></strong>
 
-          {% comment TODO %}
-            <c:if test="${User.allowedToCreateEntityVersion}">
-              <small>(<a href="${contextPath}/protocol/createnew/?newentityname=${protocol.id}">add new version</a>)</small>
-            </c:if>
-          {% endcomment %}
-          <small>(<a href="{% url "entities:protocol_newversion" protocol.id %}">add new version</a>)</small>
+          {% if perms.entities.create_protocol_version %}
+            <small>(<a href="{% url "entities:protocol_newversion" protocol.id %}">add new version</a>)</small>
+          {% endif %}
         </li>
       {% endfor %}
     </c:forEach>

@@ -15,5 +15,8 @@
     <li>{{ file.original_name }}</li>
   {% endfor %}
   </ul>
-  <a href="{% url "entities:model_newversion" entity.id %}">add new version</a>
+
+  {% if perms.entities.create_model_version %}
+    <a href="{% url "entities:model_newversion" entity.id %}">add new version</a>
+  {% endif %}
 {% endblock %}
