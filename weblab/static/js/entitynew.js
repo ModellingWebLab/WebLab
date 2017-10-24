@@ -1,4 +1,4 @@
-var initUpload = require('./upload.js');
+var Upload = require('./upload.js');
 
 var uploadedFiles = new Array ();
 var knownTypes = ["unknown", "CellML", "CSV", "HDF5", "EPS", "PNG", "XMLPROTOCOL", "TXTPROTOCOL", "COMBINE archive"];
@@ -18,7 +18,8 @@ function initNewEntity() {
     }
   });
 
-  initUpload(uploadedFiles, knownTypes);
+  var upload = new Upload();
+  upload.init(knownTypes);
 }
 
 $(document).ready(initNewEntity);
