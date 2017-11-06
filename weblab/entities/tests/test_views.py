@@ -164,6 +164,8 @@ class TestVersionCreation:
         assert 'v1' in protocol.repo.tags
         assert protocol.repo.head.commit.message == 'first commit'
         assert protocol.repo.head.commit.tree.blobs[0].name == 'protocol.txt'
+        assert protocol.repo.head.commit.author.email == user.email
+        assert protocol.repo.head.commit.author.name == user.full_name
 
     def test_create_protocol_version_requires_permissions(self, user, client):
         model = ProtocolEntity.objects.create(

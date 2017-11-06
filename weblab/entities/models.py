@@ -3,7 +3,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
-from git import Repo
+from git import Actor, Repo
 
 
 class Entity(models.Model):
@@ -60,8 +60,12 @@ class Entity(models.Model):
     def add_file_to_repo(self, file_path):
         self.repo.index.add([file_path])
 
-    def commit_repo(self, message):
-        self.repo.index.commit(message)
+    def commit_repo(self, message, author_name, author_email):
+        self.repo.index.commit(
+            message,
+            author=Actor(author_name, author_email),
+            committer=Actor(author_name, author_email),
+        )
 
     def tag_repo(self, tag):
         self.repo.create_tag(tag)

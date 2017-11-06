@@ -106,7 +106,9 @@ class EntityNewVersionView(
             shutil.move(src, dest)
             entity.add_file_to_repo(dest)
 
-        entity.commit_repo(request.POST['commit_message'])
+        entity.commit_repo(request.POST['commit_message'],
+                           request.user.full_name,
+                           request.user.email)
         entity.tag_repo(request.POST['version'])
 
         return HttpResponseRedirect(
