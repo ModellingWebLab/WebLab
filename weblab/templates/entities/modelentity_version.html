@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load entities %}
+
+{% block content %}
+  <h1 id="entityname">
+    <small>{{ type|capfirst }}: </small><span>{{ entity.name }}</span>
+  </h1>
+
+  <div class="suppl">
+    <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
+  </div>
+
+  <div id="entityversion">
+    <div><small><a href="{% url 'entities:model' entity.id %}">all versions</a></small></div>
+    <h2 id="entityversionname">
+      {% if tag %}
+        <b>{{ tag.name }}</b> <span class="suppl"><small>({{ version.hexsha }})</small></span>
+      {% else %}
+        <b>{{ version.hexsha }}</b>
+      {% endif %}
+    </h2>
+    <div class="suppl">
+      <small>
+        Created <time id="entityversiontime">{{ version.committed_date|as_datetime }}</time>
+        by <em id="entityversionauthor">{{ version.author }}</em>.
+      </small>
+    </div>
+
+    <div id="entityversiondetails">
+
+      <div id="entityversionfiles">
+        <h3>Files attached to this version</h3>
+
+        <table id="entityversionfilestable">
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Actions</th>
+          </tr>
+          {% for file in version.tree.blobs %}
+          <tr>
+            <td>{{ file.name }}</td>
+            <td>{{ file.name|file_type }}</td>
+            <td>{{ file.size|human_readable_bytes }}</td>
+            <td></td>
+          </tr>
+          {% endfor %}
+        </table>
+
+      </div>
+
+    </div>
+  </div>
+
+
+{% endblock %}

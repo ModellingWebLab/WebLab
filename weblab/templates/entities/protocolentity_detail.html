@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load entities %}
 
 {% block content %}
   <h1 id="entityname">
@@ -9,14 +10,31 @@
     <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
   </div>
 
-  <h2>Files</h2>
-  <ul>
-  {% for file in entity.files.all %}
-    <li>{{ file.original_name }}</li>
-  {% endfor %}
-  </ul>
-
   {% if perms.entities.create_protocol_version %}
   <a href="{% url "entities:protocol_newversion" entity.id %}">add new version</a>
   {% endif %}
+
+  <div id="entityversionlist_content">
+    <ul>
+    {% for tag, commit in versions %}
+    <li>
+      <p>
+        <strong>
+          <a class="entityversionlink" href="{% url "entities:protocol_version" entity.id commit.hexsha %}">
+          {{ commit.hexsha }}
+          {% if tag %} <b>({{ tag.name }})</b>{% endif %}
+          </a>
+        </strong>
+        by <em>{{ commit.author }}</em><br />
+        <span class="suppl">
+          <small>created </small> <time>{{commit.committed_date|as_datetime}}</time>
+          {% with commit|number_of_files as numfiles %}
+          <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize}}
+          {% endwith %}
+        </span>
+      </p>
+    </li>
+    {% endfor %}
+    </ul>
+  </div>
 {% endblock %}

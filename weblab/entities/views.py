@@ -31,20 +31,47 @@ class ModelEntityTypeMixin:
     model = ModelEntity
 
     def get_context_data(self, **kwargs):
-        return super().get_context_data(**{
+        kwargs.update({
             'type': ModelEntity.entity_type,
             'other_type': ProtocolEntity.entity_type,
         })
+        return super().get_context_data(**kwargs)
 
 
 class ProtocolEntityTypeMixin:
     model = ProtocolEntity
 
     def get_context_data(self, **kwargs):
-        return super().get_context_data(**{
+        kwargs.update({
             'type': ProtocolEntity.entity_type,
             'other_type': ModelEntity.entity_type,
         })
+        return super().get_context_data(**kwargs)
+
+
+class VersionListMixin:
+    def get_context_data(self, **kwargs):
+        entity = self.get_object()
+        tags = entity.tag_dict
+        kwargs.update(**{
+            'versions': list(
+                (tags.get(commit), commit)
+                for commit in entity.commits
+            )
+        })
+        return super().get_context_data(**kwargs)
+
+
+class VersionMixin:
+    def get_context_data(self, **kwargs):
+        entity = self.get_object()
+        tags = entity.tag_dict
+        commit = entity.repo.commit(self.kwargs['sha'])
+        kwargs.update(**{
+            'version': commit,
+            'tag': tags.get(commit),
+        })
+        return super().get_context_data(**kwargs)
 
 
 class ModelEntityCreateView(
@@ -79,11 +106,23 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class ModelEntityView(LoginRequiredMixin, ModelEntityTypeMixin, DetailView):
+class ModelEntityView(LoginRequiredMixin, ModelEntityTypeMixin, VersionListMixin, DetailView):
     context_object_name = 'entity'
 
 
-class ProtocolEntityView(LoginRequiredMixin, ProtocolEntityTypeMixin, DetailView):
+class ModelEntityVersionView(LoginRequiredMixin, ModelEntityTypeMixin, VersionMixin, DetailView):
+    context_object_name = 'entity'
+    template_name = 'entities/modelentity_version.html'
+
+
+class ProtocolEntityVersionView(
+    LoginRequiredMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
+):
+    context_object_name = 'entity'
+    template_name = 'entities/modelentity_version.html'
+
+
+class ProtocolEntityView(LoginRequiredMixin, ProtocolEntityTypeMixin, VersionListMixin, DetailView):
     context_object_name = 'entity'
 
 

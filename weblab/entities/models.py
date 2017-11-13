@@ -83,6 +83,17 @@ class Entity(models.Model):
         """Return relative filesystem path of repository"""
         return Path('%d/%ss/%d' % (self.author.id, self.entity_type, self.id))
 
+    @property
+    def tag_dict(self):
+        return {
+            tag.commit: tag
+            for tag in self.repo.tags
+        }
+
+    @property
+    def commits(self):
+        return self.repo.iter_commits()
+
 
 class EntityManager(models.Manager):
     def get_queryset(self):
@@ -117,3 +128,6 @@ class EntityFile(models.Model):
     entity = models.ForeignKey(Entity, related_name='files')
     upload = models.FileField(upload_to='uploads')
     original_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.original_name

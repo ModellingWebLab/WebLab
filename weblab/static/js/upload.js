@@ -17,7 +17,7 @@ var Upload = function(){
 
 Upload.prototype = {
 
-  init: function(uploaded, types) {
+  init: function(types) {
     var self =  this;
     $("#fileupload").fileupload({
       dataType: 'json',
@@ -29,7 +29,7 @@ Upload.prototype = {
       submit: function(e, data) {
         var name = data.files[0].name;
 
-        if (self.alreadyExists(uploaded, name))
+        if (self.alreadyExists(name))
         {
           notifications.add("there is already a file with the name '" + name + "' - please remove that first.", "error");
           return false;
@@ -53,7 +53,7 @@ Upload.prototype = {
       },
       done: function(e, data) {
         var file = data.result.files[0];
-        self.showUpload(data, uploaded, file, types);
+        self.showUpload(data, file, types);
       },
     }
     );
@@ -69,15 +69,15 @@ Upload.prototype = {
     $action.html((Math.floor(data.loaded/data.total*1000)/10) + "%");
   },
 
-  alreadyExists: function(uploaded, name) {
+  alreadyExists: function(name) {
     for (var i = 0; i < this.uploading.length; i++) {
       if (this.uploading[i] == name) {
         console.log('already uploading', name);
         return true;
       }
     }
-    for (var i = 0; i < uploaded.length; i++) {
-      if (uploaded[i].fileName == name) {
+    for (var i = 0; i < this.uploaded.length; i++) {
+      if (this.uploaded[i].fileName == name) {
         console.log('already uploaded', name);
         return true;
       }
@@ -92,7 +92,6 @@ Upload.prototype = {
 
     var $td = $("<td>").appendTo($tr);
     $('<input type="radio" name="mainEntry" value="' + file.name + '" />').appendTo($td);
-    $('<input type="hidden" name="filename[]" value="' + file.stored_name + '" />').appendTo($td);
 
     $td = $('<td class="filename">').appendTo($tr);
     $("<code>" + file.name + '</code>').appendTo($td);
@@ -104,7 +103,7 @@ Upload.prototype = {
     $('<td class="action"><small></small></td>').appendTo($tr);
   },
 
-  showUpload: function(data, uploaded, file, types) {
+  showUpload: function(data, file, types) {
     var $tr = data.context;
     var $name = $tr.find(".filename code");
     var $action = $tr.find(".action small");
@@ -141,12 +140,15 @@ Upload.prototype = {
 
     $name.addClass("success");
     $action.html($typeSelect);
-    uploaded.push(array);
+    this.uploaded.push(array);
+
+    $td = $tr.find(".filename");
+    $('<input type="hidden" name="filename[]" value="' + file.stored_name + '" />').appendTo($td);
 
     $rm.click(function () {
-      for (var i = 0; i < uploaded.length; i++) {
-        if (uploaded[i].fileName == name)
-          uploaded.splice(i, 1);
+      for (var i = 0; i < self.uploaded.length; i++) {
+        if (self.uploaded[i].fileName == name)
+          self.uploaded.splice(i, 1);
       }
       for (var i = 0; i < self.uploading.length; i++) {
         if (self.uploading[i] == name)
