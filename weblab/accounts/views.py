@@ -1,5 +1,6 @@
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.views.generic.edit import FormView, UpdateView
 
@@ -33,3 +34,21 @@ class MyAccountView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         return reverse('accounts:myaccount')
+
+    def get_context_data(self, **kwargs):
+        perms = {
+            'entities.create_protocol',
+            'entities.create_model',
+            'entities.create_protocol_version',
+            'entities.create_model_version',
+        }
+
+        codes = self.get_object().get_all_permissions() & perms
+        code_names = {code.split('.')[-1] for code in codes}
+
+        user_perms = Permission.objects.filter(codename__in=code_names)
+
+        kwargs.update(**{
+            'user_permissions': user_perms,
+        })
+        return super().get_context_data(**kwargs)

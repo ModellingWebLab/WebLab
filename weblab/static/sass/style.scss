@@ -202,7 +202,7 @@ form {
       width: 20em;
     }
   }
-  small, .helptext, ul {
+  small, .helptext, p + ul {
     color: #aaa;
     font-size: small;
     display: block;
