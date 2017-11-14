@@ -14,6 +14,7 @@ from django.http import (
     JsonResponse,
 )
 from django.views import View
+from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormMixin
 from django.views.generic.list import ListView
@@ -66,7 +67,11 @@ class VersionMixin:
     def get_context_data(self, **kwargs):
         entity = self.get_object()
         tags = entity.tag_dict
-        commit = entity.repo.commit(self.kwargs['sha'])
+        version = self.kwargs['sha']
+        if version == 'latest':
+            commit = entity.repo.head.commit
+        else:
+            commit = entity.repo.commit(version)
         kwargs.update(**{
             'version': commit,
             'tag': tags.get(commit),
@@ -106,10 +111,6 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class ModelEntityView(LoginRequiredMixin, ModelEntityTypeMixin, VersionListMixin, DetailView):
-    context_object_name = 'entity'
-
-
 class ModelEntityVersionView(LoginRequiredMixin, ModelEntityTypeMixin, VersionMixin, DetailView):
     context_object_name = 'entity'
     template_name = 'entities/modelentity_version.html'
@@ -122,8 +123,10 @@ class ProtocolEntityVersionView(
     template_name = 'entities/modelentity_version.html'
 
 
-class ProtocolEntityView(LoginRequiredMixin, ProtocolEntityTypeMixin, VersionListMixin, DetailView):
-    context_object_name = 'entity'
+class EntityView(LoginRequiredMixin, RedirectView):
+    def get_redirect_url(self, *args, **kwargs):
+        url_name = 'entities:{}_version'.format(kwargs['entity_type'])
+        return reverse(url_name, args=[kwargs['pk'], 'latest'])
 
 
 class EntityNewVersionView(
@@ -152,6 +155,20 @@ class EntityNewVersionView(
 
         return HttpResponseRedirect(
             reverse('entities:%s' % entity.entity_type, args=[entity.id]))
+
+
+class ModelEntityVersionListView(
+    LoginRequiredMixin, ModelEntityTypeMixin, VersionListMixin, DetailView
+):
+    context_object_name = 'entity'
+    template_name = 'entities/modelentity_versions.html'
+
+
+class ProtocolEntityVersionListView(
+    LoginRequiredMixin, ProtocolEntityTypeMixin, VersionListMixin, DetailView
+):
+    context_object_name = 'entity'
+    template_name = 'entities/protocolentity_versions.html'
 
 
 class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):

@@ -18,8 +18,15 @@ urlpatterns = [
 
     url(
         r'^models/(?P<pk>\d+)$',
-        views.ModelEntityView.as_view(),
+        views.EntityView.as_view(),
+        {'entity_type': 'model'},
         name='model',
+    ),
+
+    url(
+        r'^models/(?P<pk>\d+)/versions/$',
+        views.ModelEntityVersionListView.as_view(),
+        name='model_versions',
     ),
 
     url(
@@ -48,8 +55,15 @@ urlpatterns = [
 
     url(
         r'^protocols/(?P<pk>\d+)$',
-        views.ProtocolEntityView.as_view(),
+        views.EntityView.as_view(),
+        {'entity_type': 'protocol'},
         name='protocol',
+    ),
+
+    url(
+        r'^protocols/(?P<pk>\d+)/versions/$',
+        views.ProtocolEntityVersionListView.as_view(),
+        name='protocol_versions',
     ),
 
     url(

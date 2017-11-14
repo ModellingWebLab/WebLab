@@ -11,7 +11,9 @@
   </div>
 
   <div id="entityversion">
-    <div><small><a href="{% url 'entities:model' entity.id %}">all versions</a></small></div>
+    <div>
+      <small><a href="{% url 'entities:model_versions' entity.id %}">all versions</a></small>
+    </div>
     <h2 id="entityversionname">
       {% if tag %}
         <b>{{ tag.name }}</b> <span class="suppl"><small>({{ version.hexsha }})</small></span>
