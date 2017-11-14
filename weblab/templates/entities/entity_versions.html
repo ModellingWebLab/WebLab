@@ -10,8 +10,9 @@
     <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
   </div>
 
-  {% if perms.entities.create_protocol_version %}
-  <a href="{% url "entities:protocol_newversion" entity.id %}">add new version</a>
+  {% can_create_version entity.entity_type as permission %}
+  {% if permission %}
+  <a href="{{ entity|url_newversion }}">add new version</a>
   {% endif %}
 
   <div id="entityversionlist_content">
@@ -20,7 +21,7 @@
     <li>
       <p>
         <strong>
-          <a class="entityversionlink" href="{% url "entities:protocol_version" entity.id commit.hexsha %}">
+          <a class="entityversionlink" href="{{ entity|url_version:commit }}">
           {{ commit.hexsha }}
           {% if tag %} <b>({{ tag.name }})</b>{% endif %}
           </a>

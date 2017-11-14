@@ -3,6 +3,7 @@ import os.path
 from datetime import datetime
 
 from django import template
+from django.core.urlresolvers import reverse
 
 
 register = template.Library()
@@ -40,3 +41,45 @@ def file_type(filename):
     }
 
     return extensions.get(ext[1:], 'Unknown')
+
+
+@register.filter
+def url_versions(entity):
+    url_name = 'entities:{}_versions'.format(entity.entity_type)
+    return reverse(url_name, args=[entity.id])
+
+
+@register.filter
+def url_newversion(entity):
+    url_name = 'entities:{}_newversion'.format(entity.entity_type)
+    return reverse(url_name, args=[entity.id])
+
+
+@register.filter
+def url_version(entity, commit):
+    url_name = 'entities:{}_version'.format(entity.entity_type)
+    return reverse(url_name, args=[entity.id, commit.hexsha])
+
+
+@register.filter
+def url_entity(entity):
+    url_name = 'entities:{}'.format(entity.entity_type)
+    return reverse(url_name, args=[entity.id])
+
+
+@register.filter
+def url_new(entity_type):
+    url_name = 'entities:new_{}'.format(entity_type)
+    return reverse(url_name)
+
+
+@register.simple_tag(takes_context=True)
+def can_create_version(context, entity_type):
+    user = context['user']
+    return user.has_perm('entities.create_{}_version'.format(entity_type))
+
+
+@register.simple_tag(takes_context=True)
+def can_create_entity(context, entity_type):
+    user = context['user']
+    return user.has_perm('entities.create_{}'.format(entity_type))

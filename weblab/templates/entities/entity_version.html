@@ -12,7 +12,7 @@
 
   <div id="entityversion">
     <div>
-      <small><a href="{% url 'entities:model_versions' entity.id %}">all versions</a></small>
+      <small><a href="{{ entity|url_versions }}">all versions</a></small>
     </div>
     <h2 id="entityversionname">
       {% if tag %}
@@ -54,6 +54,5 @@
 
     </div>
   </div>
-
 
 {% endblock %}

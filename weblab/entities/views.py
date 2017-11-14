@@ -50,19 +50,6 @@ class ProtocolEntityTypeMixin:
         return super().get_context_data(**kwargs)
 
 
-class VersionListMixin:
-    def get_context_data(self, **kwargs):
-        entity = self.get_object()
-        tags = entity.tag_dict
-        kwargs.update(**{
-            'versions': list(
-                (tags.get(commit), commit)
-                for commit in entity.commits
-            )
-        })
-        return super().get_context_data(**kwargs)
-
-
 class VersionMixin:
     def get_context_data(self, **kwargs):
         entity = self.get_object()
@@ -85,6 +72,7 @@ class ModelEntityCreateView(
     model = ModelEntity
     form_class = ModelEntityForm
     permission_required = 'entities.create_model'
+    template_name = 'entities/entity_form.html'
 
     def get_success_url(self):
         return reverse('entities:model_newversion', args=[self.object.pk])
@@ -96,31 +84,36 @@ class ProtocolEntityCreateView(
     model = ProtocolEntity
     form_class = ProtocolEntityForm
     permission_required = 'entities.create_protocol'
+    template_name = 'entities/entity_form.html'
 
     def get_success_url(self):
         return reverse('entities:protocol_newversion', args=[self.object.pk])
 
 
 class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
+    template_name = 'entities/entity_list.html'
+
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
 
 
 class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListView):
+    template_name = 'entities/entity_list.html'
+
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
 
 
 class ModelEntityVersionView(LoginRequiredMixin, ModelEntityTypeMixin, VersionMixin, DetailView):
     context_object_name = 'entity'
-    template_name = 'entities/modelentity_version.html'
+    template_name = 'entities/entity_version.html'
 
 
 class ProtocolEntityVersionView(
     LoginRequiredMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
 ):
     context_object_name = 'entity'
-    template_name = 'entities/modelentity_version.html'
+    template_name = 'entities/entity_version.html'
 
 
 class EntityView(LoginRequiredMixin, RedirectView):
@@ -133,6 +126,7 @@ class EntityNewVersionView(
     LoginRequiredMixin, PermissionRequiredMixin, FormMixin, DetailView
 ):
     context_object_name = 'entity'
+    template_name = 'entities/entity_newversion.html'
     form_class = EntityVersionForm
 
     def post(self, request, *args, **kwargs):
@@ -157,28 +151,40 @@ class EntityNewVersionView(
             reverse('entities:%s' % entity.entity_type, args=[entity.id]))
 
 
-class ModelEntityVersionListView(
-    LoginRequiredMixin, ModelEntityTypeMixin, VersionListMixin, DetailView
-):
-    context_object_name = 'entity'
-    template_name = 'entities/modelentity_versions.html'
-
-
-class ProtocolEntityVersionListView(
-    LoginRequiredMixin, ProtocolEntityTypeMixin, VersionListMixin, DetailView
-):
-    context_object_name = 'entity'
-    template_name = 'entities/protocolentity_versions.html'
-
-
 class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):
-    template_name = 'entities/modelentity_newversion.html'
     permission_required = 'entities.create_model_version'
 
 
 class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView):
-    template_name = 'entities/protocolentity_newversion.html'
     permission_required = 'entities.create_protocol_version'
+
+
+class VersionListView(DetailView):
+    context_object_name = 'entity'
+    template_name = 'entities/entity_versions.html'
+
+    def get_context_data(self, **kwargs):
+        entity = self.get_object()
+        tags = entity.tag_dict
+        kwargs.update(**{
+            'versions': list(
+                (tags.get(commit), commit)
+                for commit in entity.commits
+            )
+        })
+        return super().get_context_data(**kwargs)
+
+
+class ModelEntityVersionListView(
+    LoginRequiredMixin, ModelEntityTypeMixin, VersionListView
+):
+    pass
+
+
+class ProtocolEntityVersionListView(
+    LoginRequiredMixin, ProtocolEntityTypeMixin, VersionListView
+):
+    pass
 
 
 class FileUploadView(View):
