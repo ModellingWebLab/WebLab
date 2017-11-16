@@ -52,6 +52,12 @@ createdb -O weblab weblab
 weblab/manage.py migrate
 ```
 
+### Create initial admin user account
+
+```bash
+weblab/manage.py createsuperuser
+```
+
 ### Run server
 
 ```bash
