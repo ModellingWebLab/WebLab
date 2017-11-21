@@ -11,7 +11,18 @@ var Upload = function(){
   // Names that aren't allowed to be uploaded
   this.reserved_names = ['errors.txt', 'manifest.xml', 'metadata.rdf'];
 
-  this.$table = $("#uploadedfiles");
+  this.$table = $("#entityversionfilestable");
+
+  var self = this;
+  this.$table.find("tbody tr").each(function(i, tr) {
+    var $tr = $(tr);
+    self.uploaded.push({
+      'fileName': $tr.find(".filename").html(),
+      'fileType': $tr.find(".type").html(),
+    });
+  });
+
+  console.log(self.uploaded);
 };
 
 
@@ -23,28 +34,15 @@ Upload.prototype = {
       dataType: 'json',
       dropZone: $("#dropbox"),
       add: function(e, data) {
-        self.addRow(data);
-        data.submit();
+        var name = data.files[0].name;
+        console.log(name);
+        if (self.validName(name)) {
+          self.addRow(data);
+          data.submit();
+        }
       },
       submit: function(e, data) {
-        var name = data.files[0].name;
-
-        if (self.alreadyExists(name))
-        {
-          notifications.add("there is already a file with the name '" + name + "' - please remove that first.", "error");
-          return false;
-        }
-        if (self.reserved_names.indexOf(name) != -1)
-        {
-          notifications.add("the name '" + name + "' is reserved for system use; please choose another file name.", "error");
-          return false;
-        }
-        if (!/^[a-zA-Z0-9._]+$/.test(name))
-        {
-          notifications.add("the name '" + name + "' contains reserved characters; only alpha-numeric characters, underscores and periods are allowed.", "error");
-          return false;
-        }
-        self.uploading.push(name);
+        self.uploading.push(data.files[0].name);
 
         console.log('submit', e, data);
       },
@@ -55,18 +53,34 @@ Upload.prototype = {
         var file = data.result.files[0];
         self.showUpload(data, file, types);
       },
-    }
-    );
+    });
 
     $('#dropbox a').click(function() {
       $("#fileupload").click();
     });
   },
 
+  validName: function(name) {
+    var error;
+    if (this.alreadyExists(name)) {
+      error = "there is already a file with the name '" + name + "' - please remove that first.", "error";
+    } else if (this.reserved_names.indexOf(name) != -1) {
+      error = "the name '" + name + "' is reserved for system use; please choose another file name.", "error";
+    } else if (!/^[a-zA-Z0-9._]+$/.test(name)) {
+      error = "the name '" + name + "' contains reserved characters; only alpha-numeric characters, underscores and periods are allowed.", "error";
+    }
+
+    if (error) {
+      notifications.add(error);
+      return false;
+    }
+    return true;
+  },
+
   updateProgress: function(data) {
     var $tr = data.context;
-    var $action = $tr.find(".action small");
-    $action.html((Math.floor(data.loaded/data.total*1000)/10) + "%");
+    var $type = $tr.find(".type small");
+    $type.html((Math.floor(data.loaded/data.total*1000)/10) + "%");
   },
 
   alreadyExists: function(name) {
@@ -76,6 +90,7 @@ Upload.prototype = {
         return true;
       }
     }
+    console.log(name, this.uploaded);
     for (var i = 0; i < this.uploaded.length; i++) {
       if (this.uploaded[i].fileName == name) {
         console.log('already uploaded', name);
@@ -89,13 +104,13 @@ Upload.prototype = {
     var file = data.files[0];
     var $tr = $("<tr>").appendTo(this.$table);
     data.context = $tr;
-
-    var $td = $("<td>").appendTo($tr);
-    $('<input type="radio" name="mainEntry" value="' + file.name + '" />').appendTo($td);
+    var $td;
 
     $td = $('<td class="filename">').appendTo($tr);
     $("<code>" + file.name + '</code>').appendTo($td);
     $('<a class="rm"><img src="' + staticPath + 'img/failed.png" alt="remove from list" /></a>').appendTo($td);
+
+    $('<td class="type"><small></small></td>').appendTo($tr);
 
     $td = $('<td class="size">').appendTo($tr);
     $('<small><code> ' + utils.humanReadableBytes(file.size) + ' </code></small>').appendTo($td);
@@ -106,7 +121,7 @@ Upload.prototype = {
   showUpload: function(data, file, types) {
     var $tr = data.context;
     var $name = $tr.find(".filename code");
-    var $action = $tr.find(".action small");
+    var $type = $tr.find(".type small");
     var $rm = $tr.find(".rm");
     var self = this;
 
@@ -139,7 +154,7 @@ Upload.prototype = {
     });
 
     $name.addClass("success");
-    $action.html($typeSelect);
+    $type.html($typeSelect);
     this.uploaded.push(array);
 
     $td = $tr.find(".filename");

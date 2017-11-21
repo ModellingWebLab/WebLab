@@ -33,22 +33,7 @@
       <div id="entityversionfiles">
         <h3>Files attached to this version</h3>
 
-        <table id="entityversionfilestable">
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Size</th>
-            <th>Actions</th>
-          </tr>
-          {% for file in version.tree.blobs %}
-          <tr>
-            <td>{{ file.name }}</td>
-            <td>{{ file.name|file_type }}</td>
-            <td>{{ file.size|human_readable_bytes }}</td>
-            <td></td>
-          </tr>
-          {% endfor %}
-        </table>
+       {% include "entities/includes/version_files.html" %}
 
       </div>
 

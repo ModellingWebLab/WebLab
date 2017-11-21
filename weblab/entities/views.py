@@ -129,6 +129,15 @@ class EntityNewVersionView(
     template_name = 'entities/entity_newversion.html'
     form_class = EntityVersionForm
 
+    def get_context_data(self, **kwargs):
+        entity = self.get_object()
+        latest = entity.repo.head
+        if latest.is_valid():
+            kwargs.update(**{
+                'latest_version': latest.commit,
+            })
+        return super().get_context_data(**kwargs)
+
     def post(self, request, *args, **kwargs):
         entity = self.get_object()
         uploads = entity.files.filter(
