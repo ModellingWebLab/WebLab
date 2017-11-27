@@ -11,9 +11,12 @@ coverage==4.4.1           # via pytest-cov
 decorator==4.1.2          # via ipython, traitlets
 defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2
+django-braces==1.11.0
 django==1.11.4
 first==2.0.1              # via pip-tools
 flake8==3.4.1
+gitdb2==2.0.3             # via gitpython
+gitpython==2.1.7
 idna==2.6                 # via requests
 ipdb==0.10.3
 ipython-genutils==0.2.0   # via traitlets
@@ -42,6 +45,7 @@ requests-oauthlib==0.8.0  # via social-auth-core
 requests==2.18.4          # via requests-oauthlib, social-auth-core
 simplegeneric==0.8.1      # via ipython
 six==1.10.0               # via pip-tools, prompt-toolkit, social-auth-app-django, social-auth-core, traitlets
+smmap2==2.0.3             # via gitdb2
 social-auth-app-django==1.2.0
 social-auth-core==1.4.0   # via social-auth-app-django
 traitlets==4.3.2          # via ipython

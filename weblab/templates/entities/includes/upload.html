@@ -1,0 +1,22 @@
+
+{% csrf_token %}
+
+<span id="uploadaction"></span>
+  <br/>
+
+  <div id="dropbox">
+    Drop Files Here<br /> <a>Open Dialog</a>
+    <input type="file" name="upload" id="fileupload"
+        data-url="{% url 'entities:upload_file' entity.id %}"
+        data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+  </div>
+
+  {{ form.as_p }}
+
+{% comment TODO %}
+<p id="reRunPara" style="display: none;">
+  <input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>
+  <label for="reRunExperiments">rerun experiments involving previous versions of this ${fn:toLowerCase(newentitytype)}</label>
+  <small>(this might take some time)</small>
+</p>
+{% endcomment %}

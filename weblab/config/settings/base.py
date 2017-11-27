@@ -44,6 +44,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     'accounts.apps.AccountsConfig',
+    'entities.apps.EntitiesConfig',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -156,6 +157,10 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
+# Media files (Uploaded files)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = str(BASE_DIR / 'media')
+
 # Google OAuth2 - see http://code.google.com/apis/accounts/docs/OAuth2.html#Registering
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', '')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', '')
@@ -185,3 +190,5 @@ SOCIAL_AUTH_PIPELINE = (
 # give us the scheme.
 # Trailing slashes should be removed
 BASE_URL = os.environ.get('WEBLAB_BASE_URL', 'http://127.0.0.1:8000')
+
+REPO_BASE = BASE_DIR / 'repositories'

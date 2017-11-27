@@ -15,7 +15,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -99,3 +98,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# repo directory
+weblab/repositories/
+
+# media directory
+weblab/media/

@@ -1,26 +1,28 @@
 
 <div id="notifications">
 
-  {% comment "needs converting from JSP" %}
-  <div id="error"  <c:if test="${notes == null || !notes.error}">class="invisible"</c:if>     >
+  <div id="error" class="invisible">
     <h3>The following errors occurred:</h3>
     <ul id='errorlist'>
+      {% comment %}
       <c:forEach items="${notes.errors}" var="err" >
         <li>${err}</li>
       </c:forEach>
+      {% endcomment %}
     </ul>
     <a class="pointer" id="dismisserrors">dismiss</a>
   </div>
 
-  <div id="info"  <c:if test="${notes == null || !notes.info}">class="invisible"</c:if>     >
+  <div id="info" class="invisible">
     <h3>Note:</h3>
     <ul id='infolist'>
+      {% comment %}
       <c:forEach items="${notes.infos}" var="info" >
         <li>${info}</li>
       </c:forEach>
+      {% endcomment %}
     </ul>
     <a class="pointer" id="dismissnotes">dismiss</a>
   </div>
-  {% endcomment %}
 
 </div>

@@ -1,43 +1,8 @@
 var $ = require('jquery');
 require('jquery-ui-browserify');
 var XDate = require('xdate');
-
-/*
- * list is either `error` or `info`
- */
-function addNotification (msg, list)
-{
-  console.log ("adding" + list);
-  if (!list)
-    list = "error";
-  var errsList = document.getElementById(list + "list");
-  var errors = document.getElementById(list);
-  var item = document.createElement("li");
-  item.innerHTML = msg;
-  errsList.appendChild(item);
-
-  if (errsList.firstChild)
-    errors.setAttribute("class", "");
-}
-
-function displayNotifications (json)
-{
-  if (json && json.notifications)
-  {
-    if (json.notifications.errors)
-    {
-      var errs = json.notifications.errors;
-      for(var i = 0; i < errs.length; i++)
-        addNotification (errs[i], "error");
-    }
-    if (json.notifications.notes)
-    {
-      var errs = json.notifications.notes;
-      for(var i = 0; i < errs.length; i++)
-        addNotification (errs[i], "info");
-    }
-  }
-}
+require('./entitynew.js');
+var notifications = require('./lib/notifications.js');
 
 /**
  * Raw parsing function for CSV files into columns of numerical/textual data
@@ -136,7 +101,7 @@ function batchProcessing (jsonObject, actionIndicator, callback)
         console.log (xmlhttp.responseText);
       var json = JSON.parse(xmlhttp.responseText);
       console.log (json);
-      displayNotifications (json);
+      notifications.display(json);
 
         if(xmlhttp.status == 200)
         {
@@ -170,14 +135,6 @@ function removeChildren (elem)
     if (elem)
         while (elem.firstChild)
             elem.removeChild(elem.firstChild);
-}
-
-function clearNotifications (type)
-{
-  var list = document.getElementById(type+"list");
-  removeChildren (list);
-  list = document.getElementById(type);
-  list.setAttribute("class", "invisible");
 }
 
 function convertForURL (str)
@@ -221,14 +178,6 @@ function getYMDHMS (datestring)
   }
   return datestring;
 }
-function humanReadableBytes (bytes)
-{
-    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes == 0)
-      return '0 Bytes';
-    var i = parseInt (Math.floor(Math.log(bytes) / Math.log(1024)));
-    return Math.round (bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
-};
 function sortChildrenByAttribute (elem, reverse, attr)
 {
   //console.log (elem);
@@ -304,11 +253,11 @@ function initPage ()
   };
 
   $("#dismisserrors").click(function() {
-    clearNotifications("error");
+    notifications.clear("error");
   });
 
   $("#dismissnotes").click(function() {
-    clearNotifications ("info");
+    notifications.clear("info");
   });
 
   beautifyTimeStamps();

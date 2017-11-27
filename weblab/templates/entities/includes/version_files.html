@@ -1,0 +1,26 @@
+{% load entities %}
+
+<h3>Associated Files</h3>
+<table id="entityversionfilestable">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Size</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+
+  <tbody>
+  {% if version %}
+    {% for file in version.tree.blobs %}
+      <tr>
+        <td class="filename">{{ file.name }}</td>
+        <td class="type">{{ file.name|file_type }}</td>
+        <td class="size">{{ file.size|human_readable_bytes }}</td>
+        <td class="action"></td>
+      </tr>
+    {% endfor %}
+  {% endif %}
+  </tbody>
+</table>

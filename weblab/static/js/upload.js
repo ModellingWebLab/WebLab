@@ -1,218 +1,178 @@
-
-/// Keep track of files sent to the server but not fully uploaded yet
-var uploading = new Array();
-
-// Names that aren't allowed to be uploaded
-var reserved_names = ['errors.txt', 'manifest.xml', 'metadata.rdf'];
-
-function alreadyExists (uploaded, name)
-{
-    for (var i = 0; i < uploading.length; i++)
-        if (uploading[i] == name)
-            return true;
-	for (var i = 0; i < uploaded.length; i++)
-		if (uploaded[i].fileName == name)
-			return true;
-	return false;
-}
+var $ = require('jquery');
+require('blueimp-file-upload');
+var utils = require('./lib/utils.js')
+var notifications = require('./lib/notifications.js');
 
 
-function sendFile (uploaded, file, name, types)
-{
-//    console.log("Send " + name);
-	if (alreadyExists (uploaded, name))
-	{
-		addNotification ("there is already a file with the name '" + name + "' - please remove that first.", "error");
-		return;
-	}
-	if (reserved_names.indexOf(name) != -1)
-	{
-		addNotification("the name '" + name + "' is reserved for system use; please choose another file name.", "error");
-		return;
-	}
-	if (!/^[a-zA-Z0-9._]+$/.test(name))
-	{
-		addNotification("the name '" + name + "' contains reserved characters; only alpha-numeric characters, underscores and periods are allowed.", "error");
-		return;
-	}
-	uploading.push(name);
-	
-	var table = document.getElementById("uploadedfiles");
-	var neu = document.createElement("tr");
-	table.appendChild(neu);
-	
-	var td = document.createElement("td");
-	neu.appendChild(td);
-	var mainEntry = document.createElement("input");
-	mainEntry.type = "radio";
-	mainEntry.name = "mainEntry";
-	mainEntry.value = name;
-	td.appendChild(mainEntry);
-	
+var Upload = function(){
+  this.uploading = new Array();
+  this.uploaded = new Array();
 
-	td = document.createElement("td");
-	neu.appendChild(td);
-	var neuName = document.createElement("code");
-	var neuRm = document.createElement("a");
-	var neuRmPic = document.createElement("img");
-	neuName.appendChild(document.createTextNode(name));
-	neuRmPic.src = contextPath+"/res/img/failed.png";
-	neuRmPic.alt = "remove from list";
-	neuRm.appendChild (neuRmPic);
-	td.appendChild (neuName);
-	td.appendChild (neuRm);
-	
-	
-	td = document.createElement("td");
-	neu.appendChild(td);
-	var neuSize = document.createElement("small");
-	var neuSizeCode = document.createElement("code");
-	neuSizeCode.appendChild (document.createTextNode(" "+humanReadableBytes(file.size)+" "));
-	neuSize.appendChild (neuSizeCode);
-	td.appendChild(neuSize);
-	
-	td = document.createElement("td");
-	neu.appendChild(td);
-	var neuAction = document.createElement("small");
-	td.appendChild(neuAction);
-	
-	var xmlhttp = null;
-    // !IE
-    if (window.XMLHttpRequest)
-    {
-        xmlhttp = new XMLHttpRequest();
-    }
-    // IE -- microsoft, we really hate you. every single day.
-    else if (window.ActiveXObject)
-    {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    progress_monitor = function(e)
-    {
-        var done = e.position || e.loaded;
-        var total = e.totalSize || e.total;
-        neuAction.innerHTML = (Math.floor(done/total*1000)/10) + "%";
-    };
-    xmlhttp.addEventListener('progress', progress_monitor, false);
-    if ( xmlhttp.upload )
-    {
-        xmlhttp.upload.onprogress = progress_monitor;
-    }
-    
-    xmlhttp.onreadystatechange = function(e)
-    {
-        if (xmlhttp.readyState != 4)
-        	return;
-    	var json = JSON.parse(xmlhttp.responseText);
-    	if (json)
-    		displayNotifications (json);
-        if (xmlhttp.status == 200 && json.upload && json.upload.response)
-        {
-        	var array = {
-        		fileName: name,
-        		tmpName: json.upload.tmpName,
-        		fileType: "unknown"
-        	};
-        	
-        	// Set default fileType based on extension, where sensible
-        	if (name.endsWith(".cellml"))
-        	    array.fileType = "CellML";
-        	else if (name.endsWith(".txt"))
-        	    array.fileType = "TXTPROTOCOL";
-        	else if (name.endsWith(".xml"))
-        	    array.fileType = "XMLPROTOCOL";
-            else if (name.endsWith(".zip") || name.endsWith(".omex"))
-                array.fileType = "COMBINE archive";
-        	
-        	var type = document.createElement("select");
-        	for (var i = 0; i < types.length; i++)
-        	{
-        		var opt = document.createElement("option");
-        		opt.value = types[i];
-        		opt.appendChild (document.createTextNode(types[i]));
-        		if (opt.value == array.fileType)
-        		    opt.selected = true;
-        		type.appendChild(opt);
-        	}
-        	type.addEventListener("click", function () {
-        		array.fileType = type.options[type.selectedIndex].value;
-        	}, true);
+  // Names that aren't allowed to be uploaded
+  this.reserved_names = ['errors.txt', 'manifest.xml', 'metadata.rdf'];
 
-        	neuName.setAttribute("class", "success");
-        	removeChildren (neuAction);
-        	neuAction.appendChild (type);
-        	uploaded.push (array);
+  this.$table = $("#entityversionfilestable");
+
+  var self = this;
+  this.$table.find("tbody tr").each(function(i, tr) {
+    var $tr = $(tr);
+    self.uploaded.push({
+      'fileName': $tr.find(".filename").html(),
+      'fileType': $tr.find(".type").html(),
+    });
+  });
+
+  console.log(self.uploaded);
+};
+
+
+Upload.prototype = {
+
+  init: function(types) {
+    var self =  this;
+    $("#fileupload").fileupload({
+      dataType: 'json',
+      dropZone: $("#dropbox"),
+      add: function(e, data) {
+        var name = data.files[0].name;
+        console.log(name);
+        if (self.validName(name)) {
+          self.addRow(data);
+          data.submit();
         }
-        else
-        {
-        	neuName.setAttribute("class", "failed");
-        	neuAction.innerHTML = "failed, try again";
-        }
-        // Note that this file is no longer uploading
-        for (var i = 0; i < uploading.length; i++)
-            if (uploading[i] == name)
-                uploading.splice(i, 1);
+      },
+      submit: function(e, data) {
+        self.uploading.push(data.files[0].name);
+
+        console.log('submit', e, data);
+      },
+      progress: function(e, data) {
+        self.updateProgress(data);
+      },
+      done: function(e, data) {
+        var file = data.result.files[0];
+        self.showUpload(data, file, types);
+      },
+    });
+
+    $('#dropbox a').click(function() {
+      $("#fileupload").click();
+    });
+  },
+
+  validName: function(name) {
+    var error;
+    if (this.alreadyExists(name)) {
+      error = "there is already a file with the name '" + name + "' - please remove that first.", "error";
+    } else if (this.reserved_names.indexOf(name) != -1) {
+      error = "the name '" + name + "' is reserved for system use; please choose another file name.", "error";
+    } else if (!/^[a-zA-Z0-9._]+$/.test(name)) {
+      error = "the name '" + name + "' contains reserved characters; only alpha-numeric characters, underscores and periods are allowed.", "error";
+    }
+
+    if (error) {
+      notifications.add(error);
+      return false;
+    }
+    return true;
+  },
+
+  updateProgress: function(data) {
+    var $tr = data.context;
+    var $type = $tr.find(".type small");
+    $type.html((Math.floor(data.loaded/data.total*1000)/10) + "%");
+  },
+
+  alreadyExists: function(name) {
+    for (var i = 0; i < this.uploading.length; i++) {
+      if (this.uploading[i] == name) {
+        console.log('already uploading', name);
+        return true;
+      }
+    }
+    console.log(name, this.uploaded);
+    for (var i = 0; i < this.uploaded.length; i++) {
+      if (this.uploaded[i].fileName == name) {
+        console.log('already uploaded', name);
+        return true;
+      }
+    }
+    return false;
+  },
+
+  addRow: function(data) {
+    var file = data.files[0];
+    var $tr = $("<tr>").appendTo(this.$table);
+    data.context = $tr;
+    var $td;
+
+    $td = $('<td class="filename">').appendTo($tr);
+    $("<code>" + file.name + '</code>').appendTo($td);
+    $('<a class="rm"><img src="' + staticPath + 'img/failed.png" alt="remove from list" /></a>').appendTo($td);
+
+    $('<td class="type"><small></small></td>').appendTo($tr);
+
+    $td = $('<td class="size">').appendTo($tr);
+    $('<small><code> ' + utils.humanReadableBytes(file.size) + ' </code></small>').appendTo($td);
+
+    $('<td class="action"><small></small></td>').appendTo($tr);
+  },
+
+  showUpload: function(data, file, types) {
+    var $tr = data.context;
+    var $name = $tr.find(".filename code");
+    var $type = $tr.find(".type small");
+    var $rm = $tr.find(".rm");
+    var self = this;
+
+    var array = {
+      fileName: file.name,
+      fileType: "unknown"
     };
 
-	var fd = new FormData;
-	fd.append('file', file);
-	
-	neuAction.innerHTML = "uploading";
-	xmlhttp.open('post', contextPath + "/upload.html", true);
-	xmlhttp.send(fd);
-	
-	neuRm.addEventListener("click", function () {
-//        console.log("Remove " + name);
-        for (var i = 0; i < uploaded.length; i++)
-            if (uploaded[i].fileName == name)
-                uploaded.splice(i, 1);
-        for (var i = 0; i < uploading.length; i++)
-            if (uploading[i] == name)
-                uploading.splice(i, 1);
-		if (xmlhttp)
-		{
-			xmlhttp.onreadystatechange = function ()
-			    {/* need this cause some browsers will throw a 'done' which we cannot interpret otherwise */};
-			xmlhttp.abort();
-		}
-		table.removeChild(neu);
-	}, true);
-}
+    // Set default fileType based on extension, where sensible
+    if (file.name.endsWith(".cellml"))
+        array.fileType = "CellML";
+    else if (file.name.endsWith(".txt"))
+        array.fileType = "TXTPROTOCOL";
+    else if (file.name.endsWith(".xml"))
+        array.fileType = "XMLPROTOCOL";
+    else if (file.name.endsWith(".zip") || name.endsWith(".omex"))
+        array.fileType = "COMBINE archive";
 
-
-function handleDragOver(evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
-    evt.dataTransfer.dropEffect = 'copy';
-}
-
-
-function initUpload(uploaded, types)
-{
-    /// Handler for file(s) being dropped on the upload pane
-    function handleFileSelect(evt) {
-        evt.stopPropagation();
-        evt.preventDefault();
-        evt.dataTransfer.dropEffect = 'copy';
-
-        var files = evt.dataTransfer.files;
-        for (var i = 0, f; f = files[i]; i++) {
-            sendFile (uploaded, f, f.name, types);
-        }
+    var $typeSelect = $("<select>");
+    for (var i = 0; i < types.length; i++)
+    {
+      var $opt = $("<option>").appendTo($typeSelect);
+      $opt.value = types[i];
+      $opt.append(types[i]);
     }
+    $typeSelect.val(array.fileType);
 
-    var inp = document.getElementById('fileupload');
-	var dropZone = document.getElementById('dropbox');
-	dropZone.addEventListener('dragenter', handleDragOver, false);
-	dropZone.addEventListener('dragover', handleDragOver, false);
-	dropZone.addEventListener('drop', handleFileSelect, false);
-	dropZone.addEventListener("click", function (event) { inp.click (); }, false);
-	inp.addEventListener('change', function(e) {
-			var file = this.files[0];
-			var fullPath = inp.value;
-			var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
-			var filename = fullPath.substring(startIndex+1);
-			sendFile (uploaded, file, filename, types);
-		}, false);
+    $typeSelect.click(function () {
+      array.fileType = $opt.options[$opt.selectedIndex].value;
+    });
+
+    $name.addClass("success");
+    $type.html($typeSelect);
+    this.uploaded.push(array);
+
+    $td = $tr.find(".filename");
+    $('<input type="hidden" name="filename[]" value="' + file.stored_name + '" />').appendTo($td);
+
+    $rm.click(function () {
+      for (var i = 0; i < self.uploaded.length; i++) {
+        if (self.uploaded[i].fileName == name)
+          self.uploaded.splice(i, 1);
+      }
+      for (var i = 0; i < self.uploading.length; i++) {
+        if (self.uploading[i] == name)
+          self.uploading.splice(i, 1);
+      }
+      $tr.remove();
+    });
+  }
 }
 
+
+module.exports = Upload

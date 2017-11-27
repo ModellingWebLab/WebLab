@@ -202,7 +202,7 @@ form {
       width: 20em;
     }
   }
-  small, .helptext, ul {
+  small, .helptext, p + ul {
     color: #aaa;
     font-size: small;
     display: block;
@@ -310,8 +310,6 @@ h3#entityversionfilename
 #entityversionfiledetails,
 #filedetails
 {
-	/* hidden by default */
-	display: none;
 	padding: 10px;
 	border: 1px solid #ccc;
 	border-radius: 5px;

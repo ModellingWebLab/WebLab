@@ -8,3 +8,9 @@ social-auth-app-django==1.2.0
 
 # Parse database URLs from environment
 dj-database-url==0.4.2
+
+# Git repo management
+GitPython==2.1.7
+
+# django helpers
+django-braces==1.11.0

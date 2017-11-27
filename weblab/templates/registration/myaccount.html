@@ -44,7 +44,11 @@
           {% if user.is_super_user %}
             Administrator - you have full administrative privileges
           {% else %}
-            None
+            <ul class="permissions">
+              {% for perm in user_permissions %}
+                <li>{{ perm.name }}</li>
+              {% endfor %}
+            <ul>
           {% endif %}
         </td>
       </tr>
