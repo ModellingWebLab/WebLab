@@ -7,7 +7,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from accounts.models import User
-from entities.models import Entity, EntityFile, ModelEntity, ProtocolEntity
+from core import recipes
+from entities.models import Entity, ModelEntity, ProtocolEntity
 
 
 @pytest.fixture
@@ -20,6 +21,11 @@ def user(client):
     )
     client.login(username='test@example.com', password='password')
     return user
+
+
+@pytest.fixture
+def other_user():
+    return recipes.user.make()
 
 
 def add_permission(user, perm):
@@ -41,6 +47,18 @@ def fake_repo_path(settings, tmpdir):
 def fake_upload_path(settings, tmpdir):
     settings.MEDIA_ROOT = str(tmpdir)
     return settings.MEDIA_ROOT
+
+
+@pytest.fixture
+def model_with_version(fake_repo_path):
+    """Set up a model with a single commit / version"""
+    model = recipes.model.make()
+    model.init_repo()
+    in_repo_path = str(model.repo_abs_path / 'model.txt')
+    open(in_repo_path, 'w').write('model contents')
+    model.add_file_to_repo(in_repo_path)
+    model.commit_repo('file', 'author', 'author@example.com')
+    return model
 
 
 @pytest.mark.django_db
@@ -99,21 +117,79 @@ class TestEntityCreation:
 
 
 @pytest.mark.django_db
+class TestEntityDetail:
+    def test_redirects_to_latest_version(self, client, user, model_with_version):
+        model = model_with_version
+        commit = next(model.commits)
+        response = client.get('/entities/models/{}'.format(model.pk, commit.hexsha))
+        assert response.status_code == 302
+        assert response.url == '/entities/models/{}/versions/latest'.format(model.pk)
+
+
+@pytest.mark.django_db
+class TestEntityVersionDetail:
+    def test_view_entity_version(self, client, user, model_with_version):
+        model = model_with_version
+        commit = next(model.commits)
+        response = client.get('/entities/models/{}/versions/{}'.format(model.pk, commit.hexsha))
+        assert response.status_code == 200
+        assert response.context['version'] == commit
+
+        response = client.get('/entities/models/{}/versions/latest'.format(model.pk))
+        assert response.status_code == 200
+        assert response.context['version'] == commit
+
+
+@pytest.mark.django_db
+class TestEntityVersionList:
+    def test_view_entity_version_list(self, client, user, model_with_version):
+        model = model_with_version
+
+        response = client.get('/entities/models/{}/versions/'.format(model.pk))
+        assert response.status_code == 200
+        assert response.context['versions'] == [(None, next(model.commits))]
+
+
+@pytest.mark.django_db
+class TestEntityList:
+    def test_lists_my_models(self, client, user):
+        models = recipes.model.make(_quantity=2, author=user)
+        response = client.get('/entities/models/')
+        assert response.status_code == 200
+        assert list(response.context['object_list']) == models
+
+    def test_lists_my_protocols(self, client, user):
+        protocols = recipes.protocol.make(_quantity=2, author=user)
+        response = client.get('/entities/protocols/')
+        assert response.status_code == 200
+        assert list(response.context['object_list']) == protocols
+
+
+@pytest.mark.django_db
 class TestVersionCreation:
+    def test_new_version_form_includes_latest_version(self, client, user, model_with_version):
+        add_permission(user, 'create_model_version')
+        commit = next(model_with_version.commits)
+        response = client.get('/entities/models/%d/versions/new' % model_with_version.pk)
+        assert response.status_code == 200
+        assert response.context['latest_version'] == commit
+
+    def test_no_latest_version(self, client, user):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make()
+        response = client.get('/entities/models/%d/versions/new' % model.pk)
+        assert response.status_code == 200
+        assert 'latest_version' not in response.context
+
     def test_create_model_version(self, user, client):
         add_permission(user, 'create_model_version')
-        model = ModelEntity.objects.create(
-            name='mymodel',
-            visibility='public',
-            author=user,
-        )
-        EntityFile.objects.create(
-            entity=model,
+        model = recipes.model_file.make(
+            entity__author=user,
             upload=SimpleUploadedFile('model.txt', b'my test model'),
             original_name='model.txt',
-        )
+        ).entity
         response = client.post(
-            '/entities/models/' + str(model.pk) + '/versions/new',
+            '/entities/models/%d/versions/new' % model.pk,
             data={
                 'filename[]': 'uploads/model.txt',
                 'commit_message': 'first commit',
@@ -127,13 +203,9 @@ class TestVersionCreation:
         assert model.repo.head.commit.tree.blobs[0].name == 'model.txt'
 
     def test_create_model_version_requires_permissions(self, user, client):
-        model = ModelEntity.objects.create(
-            name='mymodel',
-            visibility='public',
-            author=user,
-        )
+        model = recipes.model.make(author=user)
         response = client.post(
-            '/entities/models/' + str(model.pk) + '/versions/new',
+            '/entities/models/%d/versions/new' % model.pk,
             data={},
         )
         assert response.status_code == 302
@@ -141,18 +213,13 @@ class TestVersionCreation:
 
     def test_create_protocol_version(self, user, client):
         add_permission(user, 'create_protocol_version')
-        protocol = ProtocolEntity.objects.create(
-            name='myprotocol',
-            visibility='public',
-            author=user,
-        )
-        EntityFile.objects.create(
-            entity=protocol,
+        protocol = recipes.protocol_file.make(
+            entity__author=user,
             upload=SimpleUploadedFile('protocol.txt', b'my test protocol'),
             original_name='protocol.txt',
-        )
+        ).entity
         response = client.post(
-            '/entities/protocols/' + str(protocol.pk) + '/versions/new',
+            '/entities/protocols/%d/versions/new' % protocol.pk,
             data={
                 'filename[]': 'uploads/protocol.txt',
                 'commit_message': 'first commit',
@@ -168,13 +235,9 @@ class TestVersionCreation:
         assert protocol.repo.head.commit.author.name == user.full_name
 
     def test_create_protocol_version_requires_permissions(self, user, client):
-        model = ProtocolEntity.objects.create(
-            name='myprotocol',
-            visibility='public',
-            author=user,
-        )
+        protocol = recipes.protocol.make(author=user)
         response = client.post(
-            '/entities/protocols/' + str(model.pk) + '/versions/new',
+            '/entities/protocols/%d/versions/new' % protocol.pk,
             data={},
         )
         assert response.status_code == 302
@@ -182,27 +245,32 @@ class TestVersionCreation:
 
 
 @pytest.mark.django_db
-def test_upload_file(user, client):
-    model = ModelEntity.objects.create(
-        name='mymodel',
-        visibility='public',
-        author=user,
-    )
+class TestFileUpload:
+    def test_upload_file(self, user, client):
+        model = recipes.model.make(author=user)
 
-    upload = io.StringIO('my test model')
-    upload.name = 'model.txt'
-    response = client.post(
-        '/entities/' + str(model.pk) + '/upload-file',
-        {
-            'upload': upload
-        }
-    )
+        upload = io.StringIO('my test model')
+        upload.name = 'model.txt'
+        response = client.post(
+            '/entities/' + str(model.pk) + '/upload-file',
+            {
+                'upload': upload
+            }
+        )
 
-    data = json.loads(response.content.decode())
-    upload = data['files'][0]
-    assert upload['stored_name'] == 'uploads/model.txt'
-    assert upload['name'] == 'model.txt'
-    assert upload['is_valid']
-    assert upload['size'] == 13
+        data = json.loads(response.content.decode())
+        upload = data['files'][0]
+        assert upload['stored_name'] == 'uploads/model.txt'
+        assert upload['name'] == 'model.txt'
+        assert upload['is_valid']
+        assert upload['size'] == 13
 
-    assert model.files.count() == 1
+        assert model.files.count() == 1
+
+    def test_bad_upload(self, user, client):
+        model = recipes.model.make(author=user)
+
+        response = client.post('/entities/%s/upload-file' % model.pk, {})
+
+        assert response.status_code == 400
+

@@ -24,6 +24,7 @@ ipython==6.1.0            # via ipdb
 isort==4.2.15
 jedi==0.10.2              # via ipython
 mccabe==0.6.1             # via flake8
+model-mommy==1.4.0
 oauthlib==2.0.2           # via requests-oauthlib, social-auth-core
 pexpect==4.2.1            # via ipython
 pickleshare==0.7.4        # via ipython
@@ -44,7 +45,7 @@ pytz==2017.2              # via django
 requests-oauthlib==0.8.0  # via social-auth-core
 requests==2.18.4          # via requests-oauthlib, social-auth-core
 simplegeneric==0.8.1      # via ipython
-six==1.10.0               # via pip-tools, prompt-toolkit, social-auth-app-django, social-auth-core, traitlets
+six==1.10.0               # via model-mommy, pip-tools, prompt-toolkit, social-auth-app-django, social-auth-core, traitlets
 smmap2==2.0.3             # via gitdb2
 social-auth-app-django==1.2.0
 social-auth-core==1.4.0   # via social-auth-app-django

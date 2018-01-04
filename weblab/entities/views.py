@@ -25,7 +25,7 @@ from .forms import (
     ModelEntityForm,
     ProtocolEntityForm,
 )
-from .models import ModelEntity, ProtocolEntity
+from .models import Entity, ModelEntity, ProtocolEntity
 
 
 class ModelEntityTypeMixin:

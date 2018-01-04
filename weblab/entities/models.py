@@ -43,6 +43,7 @@ class Entity(models.Model):
     )
 
     class Meta:
+        ordering = ['name']
         unique_together = ('entity_type', 'name', 'author')
         permissions = (
             ('create_model', 'Can create models'),
@@ -61,7 +62,7 @@ class Entity(models.Model):
         self.repo.index.add([file_path])
 
     def commit_repo(self, message, author_name, author_email):
-        self.repo.index.commit(
+        return self.repo.index.commit(
             message,
             author=Actor(author_name, author_email),
             committer=Actor(author_name, author_email),
