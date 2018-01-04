@@ -233,7 +233,7 @@ class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView
     permission_required = 'entities.create_protocol_version'
 
 
-class VersionListView(DetailView):
+class VersionListView(EntityAccessMixin, DetailView):
     """
     Base class for listing versions of an entity
     """
@@ -253,7 +253,7 @@ class VersionListView(DetailView):
 
 
 class ModelEntityVersionListView(
-    LoginRequiredMixin, ModelEntityTypeMixin, VersionListView
+    ModelEntityTypeMixin, VersionListView
 ):
     """
     List versions of a model
@@ -262,7 +262,7 @@ class ModelEntityVersionListView(
 
 
 class ProtocolEntityVersionListView(
-    LoginRequiredMixin, ProtocolEntityTypeMixin, VersionListView
+    ProtocolEntityTypeMixin, VersionListView
 ):
     """
     List versions of a protocol

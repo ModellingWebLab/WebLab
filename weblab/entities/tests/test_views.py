@@ -50,7 +50,7 @@ def fake_upload_path(settings, tmpdir):
 
 
 def add_version(entity):
-    """Set up a model with a single commit / version"""
+    """Add a single commit/version to an entity"""
     entity.init_repo()
     in_repo_path = str(entity.repo_abs_path / 'entity.txt')
     open(in_repo_path, 'w').write('entity contents')
@@ -280,20 +280,23 @@ class TestFileUpload:
 @pytest.mark.django_db
 class TestEntityVisibility:
     def test_private_entity_visible_to_self(self, client, user):
-        model = recipes.model.make(visibility='private')
+        model = recipes.model.make(visibility='private', author=user)
         add_version(model)
         assert client.get('/entities/models/%s' % model.pk, follow=True).status_code == 200
 
     def test_private_entity_invisible_to_other_user(self, client, user, other_user):
         model = recipes.model.make(visibility='private', author=other_user)
         add_version(model)
-        # redirect to login
-        assert client.get('/entities/models/%s' % model.pk).status_code == 302
+        response = client.get('/entities/models/%s' % model.pk)
+        assert response.status_code == 302
+        assert '/login' in response.url
 
     def test_restricted_entity_invisible_to_anonymous(self, client):
         model = recipes.model.make(visibility='restricted')
         add_version(model)
-        assert client.get('/entities/models/%s' % model.pk).status_code == 302
+        response = client.get('/entities/models/%s' % model.pk)
+        assert response.status_code == 302
+        assert '/login' in response.url
 
     def test_restricted_entity_visible_to_other_user(self, client, user, other_user):
         model = recipes.model.make(visibility='restricted', author=other_user)
@@ -304,3 +307,36 @@ class TestEntityVisibility:
         model = recipes.model.make(visibility='public')
         add_version(model)
         assert client.get('/entities/models/%s' % model.pk, follow=True).status_code == 200
+
+
+@pytest.mark.django_db
+class TestEntityVersionListVisibility:
+    def test_private_entity_visible_to_self(self, client, user):
+        model = recipes.model.make(visibility='private', author=user)
+        add_version(model)
+        assert client.get('/entities/models/%s/versions/' % model.pk).status_code == 200
+
+    def test_private_entity_invisible_to_other_user(self, client, user, other_user):
+        model = recipes.model.make(visibility='private', author=other_user)
+        add_version(model)
+        # redirect to login
+        response = client.get('/entities/models/%s/versions/' % model.pk)
+        assert response.status_code == 302
+        assert '/login' in response.url
+
+    def test_restricted_entity_invisible_to_anonymous(self, client):
+        model = recipes.model.make(visibility='restricted')
+        add_version(model)
+        response = client.get('/entities/models/%s/versions/' % model.pk)
+        assert response.status_code == 302
+        assert '/login' in response.url
+
+    def test_restricted_entity_visible_to_other_user(self, client, user, other_user):
+        model = recipes.model.make(visibility='restricted', author=other_user)
+        add_version(model)
+        assert client.get('/entities/models/%s/versions/' % model.pk).status_code == 200
+
+    def test_public_entity_visible_to_anonymous(self, client):
+        model = recipes.model.make(visibility='public')
+        add_version(model)
+        assert client.get('/entities/models/%s/versions/' % model.pk).status_code == 200
