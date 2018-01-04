@@ -30,6 +30,9 @@ from .models import Entity, ModelEntity, ProtocolEntity
 
 
 class ModelEntityTypeMixin:
+    """
+    Mixin for model-based pages
+    """
     model = ModelEntity
 
     def get_context_data(self, **kwargs):
@@ -41,6 +44,9 @@ class ModelEntityTypeMixin:
 
 
 class ProtocolEntityTypeMixin:
+    """
+    Mixin for protocol-based pages
+    """
     model = ProtocolEntity
 
     def get_context_data(self, **kwargs):
@@ -52,6 +58,9 @@ class ProtocolEntityTypeMixin:
 
 
 class VersionMixin:
+    """
+    Mixin for entity version pages
+    """
     def get_context_data(self, **kwargs):
         entity = self.get_object()
         tags = entity.tag_dict
@@ -70,6 +79,9 @@ class VersionMixin:
 class ModelEntityCreateView(
     LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, CreateView
 ):
+    """
+    Create new model entity
+    """
     model = ModelEntity
     form_class = ModelEntityForm
     permission_required = 'entities.create_model'
@@ -82,6 +94,9 @@ class ModelEntityCreateView(
 class ProtocolEntityCreateView(
     LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, CreateView
 ):
+    """
+    Create new protocol entity
+    """
     model = ProtocolEntity
     form_class = ProtocolEntityForm
     permission_required = 'entities.create_protocol'
@@ -92,6 +107,9 @@ class ProtocolEntityCreateView(
 
 
 class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
+    """
+    List all user's model entities
+    """
     template_name = 'entities/entity_list.html'
 
     def get_queryset(self):
@@ -99,6 +117,9 @@ class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
 
 
 class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListView):
+    """
+    List all user's protocol entities
+    """
     template_name = 'entities/entity_list.html'
 
     def get_queryset(self):
@@ -106,6 +127,13 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
 
 
 class EntityAccessMixin(UserPassesTestMixin):
+    """
+    View mixin implementing visiblity restrictions on entity.
+
+    Public entities can be seen by all.
+    Restricted entities can be seen only by logged in users.
+    Private entities can be seen only by their owner.
+    """
     def test_func(self):
         entity = self.get_object()
         if entity.visibility == entity.VISIBILITY_PUBLIC:
@@ -120,6 +148,9 @@ class EntityAccessMixin(UserPassesTestMixin):
 class ModelEntityVersionView(
     EntityAccessMixin, ModelEntityTypeMixin, VersionMixin, DetailView
 ):
+    """
+    View a version of a model
+    """
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
 
@@ -127,11 +158,19 @@ class ModelEntityVersionView(
 class ProtocolEntityVersionView(
     EntityAccessMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
 ):
+    """
+    View a version of a protocol
+    """
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
 
 
 class EntityView(EntityAccessMixin, SingleObjectMixin, RedirectView):
+    """
+    View an entity
+
+    All this does is redirect to the latest version of the entity.
+    """
     model = Entity
 
     def get_redirect_url(self, *args, **kwargs):
@@ -142,6 +181,9 @@ class EntityView(EntityAccessMixin, SingleObjectMixin, RedirectView):
 class EntityNewVersionView(
     LoginRequiredMixin, PermissionRequiredMixin, FormMixin, DetailView
 ):
+    """
+    Create a new version of an entity.
+    """
     context_object_name = 'entity'
     template_name = 'entities/entity_newversion.html'
     form_class = EntityVersionForm
@@ -178,14 +220,23 @@ class EntityNewVersionView(
 
 
 class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):
+    """
+    Create a new version of a model
+    """
     permission_required = 'entities.create_model_version'
 
 
 class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView):
+    """
+    Create a new version of a protocol
+    """
     permission_required = 'entities.create_protocol_version'
 
 
 class VersionListView(DetailView):
+    """
+    Base class for listing versions of an entity
+    """
     context_object_name = 'entity'
     template_name = 'entities/entity_versions.html'
 
@@ -204,16 +255,25 @@ class VersionListView(DetailView):
 class ModelEntityVersionListView(
     LoginRequiredMixin, ModelEntityTypeMixin, VersionListView
 ):
+    """
+    List versions of a model
+    """
     pass
 
 
 class ProtocolEntityVersionListView(
     LoginRequiredMixin, ProtocolEntityTypeMixin, VersionListView
 ):
+    """
+    List versions of a protocol
+    """
     pass
 
 
 class FileUploadView(View):
+    """
+    Upload files to an entity
+    """
     form_class = FileUploadForm
 
     def post(self, request, *args, **kwargs):

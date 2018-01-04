@@ -115,8 +115,9 @@ class TestEntityCreation:
 
 @pytest.mark.django_db
 class TestEntityDetail:
-    def test_redirects_to_latest_version(self, client, user, model_with_version):
-        model = model_with_version
+    def test_redirects_to_latest_version(self, client, user):
+        model = recipes.model.make()
+        add_version(model)
         commit = next(model.commits)
         response = client.get('/entities/models/{}'.format(model.pk, commit.hexsha))
         assert response.status_code == 302
@@ -253,7 +254,7 @@ class TestFileUpload:
         upload = io.StringIO('my test model')
         upload.name = 'model.txt'
         response = client.post(
-            '/entities/%s/upload-file' % model,
+            '/entities/%s/upload-file' % model.pk,
             {
                 'upload': upload
             }
