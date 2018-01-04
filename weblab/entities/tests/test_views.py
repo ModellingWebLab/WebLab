@@ -49,16 +49,13 @@ def fake_upload_path(settings, tmpdir):
     return settings.MEDIA_ROOT
 
 
-@pytest.fixture
-def model_with_version(fake_repo_path):
+def add_version(entity):
     """Set up a model with a single commit / version"""
-    model = recipes.model.make()
-    model.init_repo()
-    in_repo_path = str(model.repo_abs_path / 'model.txt')
-    open(in_repo_path, 'w').write('model contents')
-    model.add_file_to_repo(in_repo_path)
-    model.commit_repo('file', 'author', 'author@example.com')
-    return model
+    entity.init_repo()
+    in_repo_path = str(entity.repo_abs_path / 'entity.txt')
+    open(in_repo_path, 'w').write('entity contents')
+    entity.add_file_to_repo(in_repo_path)
+    entity.commit_repo('file', 'author', 'author@example.com')
 
 
 @pytest.mark.django_db
@@ -128,8 +125,9 @@ class TestEntityDetail:
 
 @pytest.mark.django_db
 class TestEntityVersionDetail:
-    def test_view_entity_version(self, client, user, model_with_version):
-        model = model_with_version
+    def test_view_entity_version(self, client, user):
+        model = recipes.model.make()
+        add_version(model)
         commit = next(model.commits)
         response = client.get('/entities/models/{}/versions/{}'.format(model.pk, commit.hexsha))
         assert response.status_code == 200
@@ -142,8 +140,9 @@ class TestEntityVersionDetail:
 
 @pytest.mark.django_db
 class TestEntityVersionList:
-    def test_view_entity_version_list(self, client, user, model_with_version):
-        model = model_with_version
+    def test_view_entity_version_list(self, client, user):
+        model = recipes.model.make()
+        add_version(model)
 
         response = client.get('/entities/models/{}/versions/'.format(model.pk))
         assert response.status_code == 200
@@ -167,10 +166,12 @@ class TestEntityList:
 
 @pytest.mark.django_db
 class TestVersionCreation:
-    def test_new_version_form_includes_latest_version(self, client, user, model_with_version):
+    def test_new_version_form_includes_latest_version(self, client, user):
+        model = recipes.model.make()
+        add_version(model)
         add_permission(user, 'create_model_version')
-        commit = next(model_with_version.commits)
-        response = client.get('/entities/models/%d/versions/new' % model_with_version.pk)
+        commit = next(model.commits)
+        response = client.get('/entities/models/%d/versions/new' % model.pk)
         assert response.status_code == 200
         assert response.context['latest_version'] == commit
 
@@ -252,7 +253,7 @@ class TestFileUpload:
         upload = io.StringIO('my test model')
         upload.name = 'model.txt'
         response = client.post(
-            '/entities/' + str(model.pk) + '/upload-file',
+            '/entities/%s/upload-file' % model,
             {
                 'upload': upload
             }
@@ -274,3 +275,31 @@ class TestFileUpload:
 
         assert response.status_code == 400
 
+
+@pytest.mark.django_db
+class TestEntityVisibility:
+    def test_private_entity_visible_to_self(self, client, user):
+        model = recipes.model.make(visibility='private')
+        add_version(model)
+        assert client.get('/entities/models/%s' % model.pk, follow=True).status_code == 200
+
+    def test_private_entity_invisible_to_other_user(self, client, user, other_user):
+        model = recipes.model.make(visibility='private', author=other_user)
+        add_version(model)
+        # redirect to login
+        assert client.get('/entities/models/%s' % model.pk).status_code == 302
+
+    def test_restricted_entity_invisible_to_anonymous(self, client):
+        model = recipes.model.make(visibility='restricted')
+        add_version(model)
+        assert client.get('/entities/models/%s' % model.pk).status_code == 302
+
+    def test_restricted_entity_visible_to_other_user(self, client, user, other_user):
+        model = recipes.model.make(visibility='restricted', author=other_user)
+        add_version(model)
+        assert client.get('/entities/models/%s' % model.pk, follow=True).status_code == 200
+
+    def test_public_entity_visible_to_anonymous(self, client):
+        model = recipes.model.make(visibility='public')
+        add_version(model)
+        assert client.get('/entities/models/%s' % model.pk, follow=True).status_code == 200

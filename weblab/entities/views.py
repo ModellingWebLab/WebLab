@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    UserPassesTestMixin,
 )
 from django.core.urlresolvers import reverse
 from django.http import (
@@ -15,7 +16,7 @@ from django.http import (
 )
 from django.views import View
 from django.views.generic.base import RedirectView
-from django.views.generic.detail import DetailView
+from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, FormMixin
 from django.views.generic.list import ListView
 
@@ -104,19 +105,35 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class ModelEntityVersionView(LoginRequiredMixin, ModelEntityTypeMixin, VersionMixin, DetailView):
-    context_object_name = 'entity'
-    template_name = 'entities/entity_version.html'
+class EntityAccessMixin(UserPassesTestMixin):
+    def test_func(self):
+        entity = self.get_object()
+        if entity.visibility == entity.VISIBILITY_PUBLIC:
+            return True
+        if entity.visibility == entity.VISIBILITY_RESTRICTED:
+            return self.request.user.is_authenticated()
+        if entity.visibility == entity.VISIBILITY_PRIVATE:
+            return self.request.user == entity.author
+        return False
 
 
-class ProtocolEntityVersionView(
-    LoginRequiredMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
+class ModelEntityVersionView(
+    EntityAccessMixin, ModelEntityTypeMixin, VersionMixin, DetailView
 ):
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
 
 
-class EntityView(LoginRequiredMixin, RedirectView):
+class ProtocolEntityVersionView(
+    EntityAccessMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
+):
+    context_object_name = 'entity'
+    template_name = 'entities/entity_version.html'
+
+
+class EntityView(EntityAccessMixin, SingleObjectMixin, RedirectView):
+    model = Entity
+
     def get_redirect_url(self, *args, **kwargs):
         url_name = 'entities:{}_version'.format(kwargs['entity_type'])
         return reverse(url_name, args=[kwargs['pk'], 'latest'])
