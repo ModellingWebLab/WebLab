@@ -4,16 +4,19 @@ import shutil
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
 from django.contrib.auth.mixins import (
+    AccessMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     UserPassesTestMixin,
 )
 from django.core.urlresolvers import reverse
 from django.http import (
+    HttpResponseNotFound,
     HttpResponseBadRequest,
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.http.response import Http404
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
@@ -27,6 +30,7 @@ from .forms import (
     ProtocolEntityForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity
+from django.db.models import Q
 
 
 class ModelEntityTypeMixin:
@@ -126,27 +130,42 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class EntityAccessMixin(UserPassesTestMixin):
+class EntityVisibilityMixin(AccessMixin, SingleObjectMixin):
     """
     View mixin implementing visiblity restrictions on entity.
 
     Public entities can be seen by all.
     Restricted entities can be seen only by logged in users.
     Private entities can be seen only by their owner.
+
+    If an entity is not visible to a logged in user, we generate a 404
+    If an entity is not visible to an anonymous visitor, redirect to login page
     """
-    def test_func(self):
-        entity = self.get_object()
-        if entity.visibility == entity.VISIBILITY_PUBLIC:
-            return True
-        if entity.visibility == entity.VISIBILITY_RESTRICTED:
-            return self.request.user.is_authenticated()
-        if entity.visibility == entity.VISIBILITY_PRIVATE:
-            return self.request.user == entity.author
-        return False
+    def dispatch(self, request, *args, **kwargs):
+        # We don't necessarily want 'object not found' to give a 404 response
+        # (if the user is anonymous it makes more sense to login-redirect them)
+        try:
+            obj = self.get_object()
+        except Http404:
+            obj = None
+
+        if self.request.user.is_authenticated():
+            # Logged in user can view all except other people's private stuff
+            if not obj or (
+                obj.author != self.request.user and
+                obj.visibility == Entity.VISIBILITY_PRIVATE
+            ):
+                raise Http404
+        else:
+            # Anonymous user can only see public entities
+            if not obj or (obj.visibility != Entity.VISIBILITY_PUBLIC):
+                return self.handle_no_permission()
+
+        return super().dispatch(request, *args, **kwargs)
 
 
 class ModelEntityVersionView(
-    EntityAccessMixin, ModelEntityTypeMixin, VersionMixin, DetailView
+    EntityVisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
 ):
     """
     View a version of a model
@@ -156,7 +175,7 @@ class ModelEntityVersionView(
 
 
 class ProtocolEntityVersionView(
-    EntityAccessMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
+    EntityVisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
 ):
     """
     View a version of a protocol
@@ -165,7 +184,7 @@ class ProtocolEntityVersionView(
     template_name = 'entities/entity_version.html'
 
 
-class EntityView(EntityAccessMixin, SingleObjectMixin, RedirectView):
+class EntityView(EntityVisibilityMixin, SingleObjectMixin, RedirectView):
     """
     View an entity
 
@@ -233,7 +252,7 @@ class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView
     permission_required = 'entities.create_protocol_version'
 
 
-class VersionListView(EntityAccessMixin, DetailView):
+class VersionListView(EntityVisibilityMixin, DetailView):
     """
     Base class for listing versions of an entity
     """
