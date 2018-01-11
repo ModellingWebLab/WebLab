@@ -8,6 +8,8 @@
 
   <div class="suppl">
     <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
+    <br>
+    <small>Visibility: {{ entity.visibility }}</small>
   </div>
 
   {% can_create_version entity.entity_type as permission %}
