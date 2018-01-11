@@ -7,11 +7,9 @@ from django.contrib.auth.mixins import (
     AccessMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
-    UserPassesTestMixin,
 )
 from django.core.urlresolvers import reverse
 from django.http import (
-    HttpResponseNotFound,
     HttpResponseBadRequest,
     HttpResponseRedirect,
     JsonResponse,
@@ -30,7 +28,6 @@ from .forms import (
     ProtocolEntityForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity
-from django.db.models import Q
 
 
 class ModelEntityTypeMixin:
@@ -82,12 +79,12 @@ class VersionMixin:
 
 
 class ModelEntityCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, CreateView
+    LoginRequiredMixin, PermissionRequiredMixin, ModelEntityTypeMixin,
+    UserFormKwargsMixin, CreateView
 ):
     """
     Create new model entity
     """
-    model = ModelEntity
     form_class = ModelEntityForm
     permission_required = 'entities.create_model'
     template_name = 'entities/entity_form.html'
@@ -97,12 +94,12 @@ class ModelEntityCreateView(
 
 
 class ProtocolEntityCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, CreateView
+    LoginRequiredMixin, PermissionRequiredMixin, ProtocolEntityTypeMixin,
+    UserFormKwargsMixin, CreateView
 ):
     """
     Create new protocol entity
     """
-    model = ProtocolEntity
     form_class = ProtocolEntityForm
     permission_required = 'entities.create_protocol'
     template_name = 'entities/entity_form.html'
