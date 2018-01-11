@@ -35,7 +35,7 @@ from django.db.models import Q
 
 class ModelEntityTypeMixin:
     """
-    Mixin for model-based pages
+    Mixin for including in pages about `ModelEntity` objects
     """
     model = ModelEntity
 
@@ -49,7 +49,7 @@ class ModelEntityTypeMixin:
 
 class ProtocolEntityTypeMixin:
     """
-    Mixin for protocol-based pages
+    Mixin for including in pages about `ProtocolEntity` objects
     """
     model = ProtocolEntity
 
@@ -63,7 +63,8 @@ class ProtocolEntityTypeMixin:
 
 class VersionMixin:
     """
-    Mixin for entity version pages
+    Mixin for including in pages describing a specific version
+    of an `Entity` object
     """
     def get_context_data(self, **kwargs):
         entity = self.get_object()
