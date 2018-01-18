@@ -204,10 +204,7 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
     raise_exception = True
 
     def test_func(self):
-        return (
-            self.request.user.is_superuser or
-            self.request.user == self.get_object().author
-        )
+        return self.get_object().is_deletable_by(self.request.user)
 
     def get_success_url(self, *args, **kwargs):
         url_name = 'entities:{}s'.format(self.kwargs['entity_type'])

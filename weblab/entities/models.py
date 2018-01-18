@@ -56,6 +56,9 @@ class Entity(models.Model):
     def __str__(self):
         return self.name
 
+    def is_deletable_by(self, user):
+        return user.is_superuser or user == self.author
+
     def init_repo(self):
         """
         Create an empty repository

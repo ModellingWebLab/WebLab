@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% load entities %}
 
 {% block content %}
@@ -7,9 +8,19 @@
   </h1>
 
   <div class="suppl">
-    <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
+    <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.
     <br>
-    <small>Visibility: {{ entity.visibility }}</small>
+
+    {% can_delete_entity entity as can_delete %}
+    {% if can_delete %}
+      Delete {{ entity_type }}:
+      <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">
+        <img src="{% static 'res/img/delete.png' %}" alt="delete all versions of this {{ type }}"
+                                                     title="delete all versions of this {{type}}"/></a>
+      <br>
+    {% endif %}
+    Visibility: {{ entity.visibility }}
+    </small>
   </div>
 
   <div id="entityversion">
