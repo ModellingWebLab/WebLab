@@ -125,23 +125,22 @@ class TestEntityDetail:
 
 @pytest.mark.django_db
 class TestEntityVersionDetail:
-    def check(self, client, url, version, tag):
+    def check(self, client, url, version, tags):
         response = client.get(url)
         assert response.status_code == 200
         assert response.context['version'] == version
-        if tag:
-            assert response.context['tag'].name == tag
-        else:
-            assert response.context['tag'] is None
+        assert len(response.context['tags']) == len(tags)
+        for actual, expected in zip(response.context['tags'], tags):
+            assert actual.name == expected
 
     def test_view_entity_version(self, client, user):
         model = recipes.model.make()
         add_version(model)
         commit = next(model.commits)
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
-                   commit, None)
+                   commit, [])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
-                   commit, None)
+                   commit, [])
 
         # Now add a second version with tag
         assert len(list(model.commits)) == 1
@@ -154,11 +153,11 @@ class TestEntityVersionDetail:
         commit = next(model.commits)
 
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
-                   commit, 'my_tag')
+                   commit, ['my_tag'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'my_tag'),
-                   commit, 'my_tag')
+                   commit, ['my_tag'])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
-                   commit, 'my_tag')
+                   commit, ['my_tag'])
 
     def test_version_with_two_tags(self, client, user):
         model = recipes.model.make()
@@ -167,13 +166,13 @@ class TestEntityVersionDetail:
         model.tag_repo('tag1')
         model.tag_repo('tag2')
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
-                   commit, 'tag2')
+                   commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'),
-                   commit, 'tag2')
+                   commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag2'),
-                   commit, 'tag2')
+                   commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
-                   commit, 'tag2')
+                   commit, ['tag1', 'tag2'])
 
 
 @pytest.mark.django_db

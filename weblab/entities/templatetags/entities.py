@@ -59,7 +59,7 @@ def url_newversion(entity):
 def url_version(entity, commit):
     url_name = 'entities:{}_version'.format(entity.entity_type)
     tags = entity.tag_dict
-    args = [entity.id, tags.get(commit, commit.hexsha)]
+    args = [entity.id, tags.get(commit, [commit.hexsha])[-1]]
     return reverse(url_name, args=args)
 
 

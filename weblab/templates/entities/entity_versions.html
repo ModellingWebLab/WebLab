@@ -21,14 +21,17 @@
 
   <div id="entityversionlist_content">
     <ul>
-    {% for tag, commit in versions %}
+    {% for tags, commit in versions %}
     <li>
       <p>
         <strong>
           <a class="entityversionlink" href="{{ entity|url_version:commit }}">
-          {% if tag %} <b>{{ tag.name }}</b> <small>({% endif %}{% spaceless %}
+          {% for tag in tags %}
+            <b>{{ tag.name }}</b>{% if not forloop.last %},{% endif %}
+          {% endfor %}
+          {% if tags %}<small>({% endif %}{% spaceless %}
           <span title="Full identifier: {{ commit.hexsha }}">{{ commit.hexsha|truncatechars:11 }}</span>
-          {% endspaceless %}{% if tag %})</small>{% endif %}
+          {% endspaceless %}{% if tags %})</small>{% endif %}
           </a>
         </strong>
         by <em>{{ commit.author }}</em><br />

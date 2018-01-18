@@ -17,8 +17,12 @@
     </div>
     <h2 id="entityversionname">
       <small>Version:</small>
-      {% if tag %}
-        <span title="Full identifier: {{ version.hexsha }}"><b>{{ tag.name }}</b></span>
+      {% if tags %}
+        <span title="Full identifier: {{ version.hexsha }}">
+          {% for tag in tags %}
+            <b>{{ tag.name }}</b>{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        </span>
       {% else %}
         <span title="Full identifier: {{ version.hexsha }}"><b>{{ version.hexsha|truncatechars:11 }}</b></span>
       {% endif %}

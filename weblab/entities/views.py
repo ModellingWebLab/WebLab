@@ -74,7 +74,7 @@ class VersionMixin:
             commit = entity.repo.commit(version)
         kwargs.update(**{
             'version': commit,
-            'tag': tags.get(commit),
+            'tags': tags.get(commit, []),
         })
         return super().get_context_data(**kwargs)
 

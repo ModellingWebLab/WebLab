@@ -127,12 +127,12 @@ class Entity(models.Model):
         """
         Mapping of commits to git tags in the entity repository
 
-        :return: dict of the form { `git.Commit`: 'tag_name' }
+        :return: dict of the form { `git.Commit`: ['tag_name'] }
         """
-        return {
-            tag.commit: tag
-            for tag in self.repo.tags
-        }
+        tags = {}
+        for tag in self.repo.tags:
+            tags.setdefault(tag.commit, []).append(tag)
+        return tags
 
     @property
     def commits(self):
