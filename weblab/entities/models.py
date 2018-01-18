@@ -43,6 +43,7 @@ class Entity(models.Model):
     )
 
     class Meta:
+        ordering = ['name']
         unique_together = ('entity_type', 'name', 'author')
         permissions = (
             ('create_model', 'Can create models'),
@@ -55,36 +56,78 @@ class Entity(models.Model):
         return self.name
 
     def init_repo(self):
+        """
+        Create an empty repository
+        """
         Repo.init(str(self.repo_abs_path))
 
     def add_file_to_repo(self, file_path):
+        """
+        Add a file to the repository
+
+        :param file_path: Path of file to be added
+        """
         self.repo.index.add([file_path])
 
     def commit_repo(self, message, author_name, author_email):
-        self.repo.index.commit(
+        """
+        Commit changes to the repository
+
+        :param message: Commit message
+        :param author_name: Name of commit author (and also committer)
+        :param author_email: Email of commit author (and also committer)
+
+        :return: `git.Commit` object
+        """
+        return self.repo.index.commit(
             message,
             author=Actor(author_name, author_email),
             committer=Actor(author_name, author_email),
         )
 
     def tag_repo(self, tag):
+        """
+        Tag the repository at the latest commit, using the given tag
+
+        :param tag: Tag name to use
+        """
         self.repo.create_tag(tag)
 
     @property
     def repo(self):
+        """
+        Get a repository object for this entity
+
+        :return: `git.Repo` object
+        """
         return Repo(str(self.repo_abs_path))
 
     @property
     def repo_abs_path(self):
+        """
+        Absolute filesystem path for this entity's repository
+
+        :return: `Path` object
+        """
         return Path(settings.REPO_BASE, self.repo_rel_path)
 
     @property
     def repo_rel_path(self):
-        """Return relative filesystem path of repository"""
+        """
+        Filesystem path for this entity's repository relative to repo base dir
+
+
+        :return: `Path` object
+        """
         return Path('%d/%ss/%d' % (self.author.id, self.entity_type, self.id))
 
     @property
     def tag_dict(self):
+        """
+        Mapping of commits to git tags in the entity repository
+
+        :return: dict of the form { `git.Commit`: 'tag_name' }
+        """
         return {
             tag.commit: tag
             for tag in self.repo.tags
@@ -92,6 +135,9 @@ class Entity(models.Model):
 
     @property
     def commits(self):
+        """
+        :return iterable of `git.Commit` objects in the entity repository
+        """
         return self.repo.iter_commits()
 
 

@@ -2,7 +2,7 @@
 
 {% block content %}
 <div id='newentityform'>
-  <h1>Create Model</h1>
+  <h1>Create {{ type }}</h1>
 
   <form method="POST" action="">
     {% csrf_token %}
@@ -10,7 +10,7 @@
     {{ form.as_p }}
 
     <p>
-      <button id="savebutton">Create Model</button>
+    <button id="savebutton">Create {{ type }}</button>
     </p>
   </form>
 </div>

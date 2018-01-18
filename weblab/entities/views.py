@@ -4,6 +4,7 @@ import shutil
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
 from django.contrib.auth.mixins import (
+    AccessMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
 )
@@ -13,9 +14,10 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.http.response import Http404
 from django.views import View
 from django.views.generic.base import RedirectView
-from django.views.generic.detail import DetailView
+from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, FormMixin
 from django.views.generic.list import ListView
 
@@ -25,10 +27,13 @@ from .forms import (
     ModelEntityForm,
     ProtocolEntityForm,
 )
-from .models import ModelEntity, ProtocolEntity
+from .models import Entity, ModelEntity, ProtocolEntity
 
 
 class ModelEntityTypeMixin:
+    """
+    Mixin for including in pages about `ModelEntity` objects
+    """
     model = ModelEntity
 
     def get_context_data(self, **kwargs):
@@ -40,6 +45,9 @@ class ModelEntityTypeMixin:
 
 
 class ProtocolEntityTypeMixin:
+    """
+    Mixin for including in pages about `ProtocolEntity` objects
+    """
     model = ProtocolEntity
 
     def get_context_data(self, **kwargs):
@@ -51,6 +59,10 @@ class ProtocolEntityTypeMixin:
 
 
 class VersionMixin:
+    """
+    Mixin for including in pages describing a specific version
+    of an `Entity` object
+    """
     def get_context_data(self, **kwargs):
         entity = self.get_object()
         tags = entity.tag_dict
@@ -67,9 +79,12 @@ class VersionMixin:
 
 
 class ModelEntityCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, CreateView
+    LoginRequiredMixin, PermissionRequiredMixin, ModelEntityTypeMixin,
+    UserFormKwargsMixin, CreateView
 ):
-    model = ModelEntity
+    """
+    Create new model entity
+    """
     form_class = ModelEntityForm
     permission_required = 'entities.create_model'
     template_name = 'entities/entity_form.html'
@@ -79,9 +94,12 @@ class ModelEntityCreateView(
 
 
 class ProtocolEntityCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, CreateView
+    LoginRequiredMixin, PermissionRequiredMixin, ProtocolEntityTypeMixin,
+    UserFormKwargsMixin, CreateView
 ):
-    model = ProtocolEntity
+    """
+    Create new protocol entity
+    """
     form_class = ProtocolEntityForm
     permission_required = 'entities.create_protocol'
     template_name = 'entities/entity_form.html'
@@ -91,6 +109,9 @@ class ProtocolEntityCreateView(
 
 
 class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
+    """
+    List all user's model entities
+    """
     template_name = 'entities/entity_list.html'
 
     def get_queryset(self):
@@ -98,25 +119,77 @@ class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
 
 
 class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListView):
+    """
+    List all user's protocol entities
+    """
     template_name = 'entities/entity_list.html'
 
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
 
 
-class ModelEntityVersionView(LoginRequiredMixin, ModelEntityTypeMixin, VersionMixin, DetailView):
+class EntityVisibilityMixin(AccessMixin, SingleObjectMixin):
+    """
+    View mixin implementing visiblity restrictions on entity.
+
+    Public entities can be seen by all.
+    Restricted entities can be seen only by logged in users.
+    Private entities can be seen only by their owner.
+
+    If an entity is not visible to a logged in user, we generate a 404
+    If an entity is not visible to an anonymous visitor, redirect to login page
+    """
+    def dispatch(self, request, *args, **kwargs):
+        # We don't necessarily want 'object not found' to give a 404 response
+        # (if the user is anonymous it makes more sense to login-redirect them)
+        try:
+            obj = self.get_object()
+        except Http404:
+            obj = None
+
+        if self.request.user.is_authenticated():
+            # Logged in user can view all except other people's private stuff
+            if not obj or (
+                obj.author != self.request.user and
+                obj.visibility == Entity.VISIBILITY_PRIVATE
+            ):
+                raise Http404
+        else:
+            # Anonymous user can only see public entities
+            if not obj or (obj.visibility != Entity.VISIBILITY_PUBLIC):
+                return self.handle_no_permission()
+
+        return super().dispatch(request, *args, **kwargs)
+
+
+class ModelEntityVersionView(
+    EntityVisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
+):
+    """
+    View a version of a model
+    """
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
 
 
 class ProtocolEntityVersionView(
-    LoginRequiredMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
+    EntityVisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
 ):
+    """
+    View a version of a protocol
+    """
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
 
 
-class EntityView(LoginRequiredMixin, RedirectView):
+class EntityView(EntityVisibilityMixin, SingleObjectMixin, RedirectView):
+    """
+    View an entity
+
+    All this does is redirect to the latest version of the entity.
+    """
+    model = Entity
+
     def get_redirect_url(self, *args, **kwargs):
         url_name = 'entities:{}_version'.format(kwargs['entity_type'])
         return reverse(url_name, args=[kwargs['pk'], 'latest'])
@@ -125,6 +198,9 @@ class EntityView(LoginRequiredMixin, RedirectView):
 class EntityNewVersionView(
     LoginRequiredMixin, PermissionRequiredMixin, FormMixin, DetailView
 ):
+    """
+    Create a new version of an entity.
+    """
     context_object_name = 'entity'
     template_name = 'entities/entity_newversion.html'
     form_class = EntityVersionForm
@@ -161,14 +237,23 @@ class EntityNewVersionView(
 
 
 class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):
+    """
+    Create a new version of a model
+    """
     permission_required = 'entities.create_model_version'
 
 
 class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView):
+    """
+    Create a new version of a protocol
+    """
     permission_required = 'entities.create_protocol_version'
 
 
-class VersionListView(DetailView):
+class VersionListView(EntityVisibilityMixin, DetailView):
+    """
+    Base class for listing versions of an entity
+    """
     context_object_name = 'entity'
     template_name = 'entities/entity_versions.html'
 
@@ -185,18 +270,27 @@ class VersionListView(DetailView):
 
 
 class ModelEntityVersionListView(
-    LoginRequiredMixin, ModelEntityTypeMixin, VersionListView
+    ModelEntityTypeMixin, VersionListView
 ):
+    """
+    List versions of a model
+    """
     pass
 
 
 class ProtocolEntityVersionListView(
-    LoginRequiredMixin, ProtocolEntityTypeMixin, VersionListView
+    ProtocolEntityTypeMixin, VersionListView
 ):
+    """
+    List versions of a protocol
+    """
     pass
 
 
 class FileUploadView(View):
+    """
+    Upload files to an entity
+    """
     form_class = FileUploadForm
 
     def post(self, request, *args, **kwargs):
