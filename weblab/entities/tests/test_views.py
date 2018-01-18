@@ -217,7 +217,7 @@ class TestVersionCreation:
             data={
                 'filename[]': 'uploads/model.txt',
                 'commit_message': 'first commit',
-                'version': 'v1',
+                'tag': 'v1',
             },
         )
         assert response.status_code == 302
@@ -247,7 +247,7 @@ class TestVersionCreation:
             data={
                 'filename[]': 'uploads/protocol.txt',
                 'commit_message': 'first commit',
-                'version': 'v1',
+                'tag': 'v1',
             },
         )
         assert response.status_code == 302

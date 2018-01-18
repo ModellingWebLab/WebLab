@@ -40,7 +40,7 @@ class ProtocolEntityForm(EntityForm):
 
 
 class EntityVersionForm(forms.Form):
-    version = forms.CharField()
+    tag = forms.CharField()
     commit_message = forms.CharField(widget=forms.Textarea)
 
 

@@ -231,7 +231,7 @@ class EntityNewVersionView(
         entity.commit_repo(request.POST['commit_message'],
                            request.user.full_name,
                            request.user.email)
-        entity.tag_repo(request.POST['version'])
+        entity.tag_repo(request.POST['tag'])
 
         return HttpResponseRedirect(
             reverse('entities:%s' % entity.entity_type, args=[entity.id]))
