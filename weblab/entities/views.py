@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import (
     AccessMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    UserPassesTestMixin,
 )
 from django.core.urlresolvers import reverse
 from django.http import (
@@ -18,7 +19,7 @@ from django.http.response import Http404
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import CreateView, FormMixin
+from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 
 from .forms import (
@@ -193,6 +194,24 @@ class EntityView(EntityVisibilityMixin, SingleObjectMixin, RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         url_name = 'entities:{}_version'.format(kwargs['entity_type'])
         return reverse(url_name, args=[kwargs['pk'], 'latest'])
+
+
+class EntityDeleteView(UserPassesTestMixin, DeleteView):
+    """
+    Delete an entity
+    """
+    model = Entity
+    raise_exception = True
+
+    def test_func(self):
+        return (
+            self.request.user.is_superuser or
+            self.request.user == self.get_object().author
+        )
+
+    def get_success_url(self, *args, **kwargs):
+        url_name = 'entities:{}s'.format(self.kwargs['entity_type'])
+        return reverse(url_name)
 
 
 class EntityNewVersionView(

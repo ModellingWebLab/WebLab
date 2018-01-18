@@ -1,4 +1,5 @@
 from pathlib import Path
+from shutil import rmtree
 
 from django.conf import settings
 from django.core.validators import MinLengthValidator
@@ -60,6 +61,12 @@ class Entity(models.Model):
         Create an empty repository
         """
         Repo.init(str(self.repo_abs_path))
+
+    def delete_repo(self):
+        """
+        Create an empty repository
+        """
+        rmtree(str(self.repo_abs_path))
 
     def add_file_to_repo(self, file_path):
         """

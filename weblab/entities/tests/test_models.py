@@ -1,6 +1,5 @@
 import pytest
 from django.db.utils import IntegrityError
-from django.core.exceptions import ValidationError
 
 from accounts.models import User
 from entities.models import ModelEntity, ProtocolEntity

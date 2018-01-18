@@ -60,7 +60,7 @@ def add_version(entity):
 
 @pytest.mark.django_db
 class TestEntityCreation:
-    def test_create_model(self, user, client, fake_repo_path):
+    def test_create_model(self, user, client):
         add_permission(user, 'create_model')
         response = client.post('/entities/models/new', data={
             'name': 'mymodel',
@@ -111,6 +111,38 @@ class TestEntityCreation:
         )
         assert response.status_code == 302
         assert '/login/' in response.url
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("recipe,url,list_url", [
+    (recipes.model, '/entities/models/%d/delete', '/entities/models/'),
+    (recipes.protocol, '/entities/protocols/%d/delete', '/entities/protocols/'),
+])
+class TestEntityDeletion:
+    def test_owner_can_delete_entity(self, user, client, recipe, url, list_url):
+        entity = recipe.make(author=user)
+        repo_path = entity.repo_abs_path
+        add_version(entity)
+
+        response = client.post(url % entity.pk)
+
+        assert response.status_code == 302
+        assert response.url == list_url
+
+        assert not Entity.objects.filter(pk=entity.pk).exists()
+        assert not repo_path.exists()
+
+    @pytest.mark.usefixtures('user')
+    def test_non_owner_cannot_delete_entity(self, other_user, client, recipe, url, list_url):
+        entity = recipe.make(author=other_user)
+        repo_path = entity.repo_abs_path
+        add_version(entity)
+
+        response = client.post(url % entity.pk)
+
+        assert response.status_code == 403
+        assert Entity.objects.filter(pk=entity.pk).exists()
+        assert repo_path.exists()
 
 
 @pytest.mark.django_db
