@@ -58,7 +58,9 @@ def url_newversion(entity):
 @register.filter
 def url_version(entity, commit):
     url_name = 'entities:{}_version'.format(entity.entity_type)
-    return reverse(url_name, args=[entity.id, commit.hexsha])
+    tags = entity.tag_dict
+    args = [entity.id, tags.get(commit, commit.hexsha)]
+    return reverse(url_name, args=args)
 
 
 @register.filter
