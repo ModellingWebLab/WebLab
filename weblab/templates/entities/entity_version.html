@@ -18,9 +18,9 @@
     </div>
     <h2 id="entityversionname">
       {% if tag %}
-        <b>{{ tag.name }}</b> <span class="suppl"><small>({{ version.hexsha }})</small></span>
+        <span title="Full identifier: {{ version.hexsha }}"><b>{{ tag.name }}</b></span>
       {% else %}
-        <b>{{ version.hexsha }}</b>
+        <span title="Full identifier: {{ version.hexsha }}"><b>{{ version.hexsha|truncatechars:11 }}</b></span>
       {% endif %}
     </h2>
     <div class="suppl">

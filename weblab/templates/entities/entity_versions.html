@@ -24,8 +24,9 @@
       <p>
         <strong>
           <a class="entityversionlink" href="{{ entity|url_version:commit }}">
-          {{ commit.hexsha }}
-          {% if tag %} <b>({{ tag.name }})</b>{% endif %}
+          {% if tag %} <b>{{ tag.name }}</b> <small>({% endif %}{% spaceless %}
+          <span title="Full identifier: {{ commit.hexsha }}">{{ commit.hexsha|truncatechars:11 }}</span>
+          {% endspaceless %}{% if tag %})</small>{% endif %}
           </a>
         </strong>
         by <em>{{ commit.author }}</em><br />
