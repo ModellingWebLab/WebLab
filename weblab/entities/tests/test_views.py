@@ -125,17 +125,40 @@ class TestEntityDetail:
 
 @pytest.mark.django_db
 class TestEntityVersionDetail:
+    def check(self, client, url, version, tag):
+        response = client.get(url)
+        assert response.status_code == 200
+        assert response.context['version'] == version
+        if tag:
+            assert response.context['tag'].name == tag
+        else:
+            assert response.context['tag'] is None
+
     def test_view_entity_version(self, client, user):
         model = recipes.model.make()
         add_version(model)
         commit = next(model.commits)
-        response = client.get('/entities/models/%d/versions/%s' % (model.pk, commit.hexsha))
-        assert response.status_code == 200
-        assert response.context['version'] == commit
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
+                   commit, None)
+        self.check(client, '/entities/models/%d/versions/latest' % model.pk,
+                   commit, None)
 
-        response = client.get('/entities/models/%d/versions/latest' % model.pk)
-        assert response.status_code == 200
-        assert response.context['version'] == commit
+        # Now add a second version with tag
+        assert len(list(model.commits)) == 1
+        add_version(model)
+        model.tag_repo('my_tag')
+
+        # Commits are yielded newest first
+        assert len(list(model.commits)) == 2
+        assert commit == list(model.commits)[-1]
+        commit = next(model.commits)
+
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
+                   commit, 'my_tag')
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'my_tag'),
+                   commit, 'my_tag')
+        self.check(client, '/entities/models/%d/versions/latest' % model.pk,
+                   commit, 'my_tag')
 
 
 @pytest.mark.django_db
