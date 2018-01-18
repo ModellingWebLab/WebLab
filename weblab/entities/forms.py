@@ -40,8 +40,12 @@ class ProtocolEntityForm(EntityForm):
 
 
 class EntityVersionForm(forms.Form):
-    tag = forms.CharField()
-    commit_message = forms.CharField(widget=forms.Textarea)
+    tag = forms.CharField(
+        help_text='Optional short label for this version',
+        required=False)
+    commit_message = forms.CharField(
+        label='Description of this version',
+        widget=forms.Textarea)
 
 
 class FileUploadForm(forms.ModelForm):
