@@ -140,6 +140,7 @@ class EntityVisibilityMixin(AccessMixin, SingleObjectMixin):
     If an entity is not visible to a logged in user, we generate a 404
     If an entity is not visible to an anonymous visitor, redirect to login page
     """
+
     def dispatch(self, request, *args, **kwargs):
         # We don't necessarily want 'object not found' to give a 404 response
         # (if the user is anonymous it makes more sense to login-redirect them)

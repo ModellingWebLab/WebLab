@@ -160,6 +160,21 @@ class TestEntityVersionDetail:
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
                    commit, 'my_tag')
 
+    def test_version_with_two_tags(self, client, user):
+        model = recipes.model.make()
+        add_version(model)
+        commit = next(model.commits)
+        model.tag_repo('tag1')
+        model.tag_repo('tag2')
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
+                   commit, 'tag2')
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'),
+                   commit, 'tag2')
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag2'),
+                   commit, 'tag2')
+        self.check(client, '/entities/models/%d/versions/latest' % model.pk,
+                   commit, 'tag2')
+
 
 @pytest.mark.django_db
 class TestEntityVersionList:
