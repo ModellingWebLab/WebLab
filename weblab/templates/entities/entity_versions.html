@@ -35,6 +35,9 @@
           {% with commit|number_of_files as numfiles %}
           <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize}}
           {% endwith %}
+        </span><br />
+        <span class="suppl">
+          {{ commit.message|linebreaksbr }}
         </span>
       </p>
     </li>
