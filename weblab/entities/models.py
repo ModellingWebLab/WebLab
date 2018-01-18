@@ -16,6 +16,11 @@ class Entity(models.Model):
         (VISIBILITY_RESTRICTED, 'Restricted'),
         (VISIBILITY_PUBLIC, 'Public')
     )
+    VISIBILITY_HELP = (
+        'Public = anyone can view\n'
+        'Restricted = logged in users can view\n'
+        'Private = only you can view'
+    )
 
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
@@ -35,11 +40,7 @@ class Entity(models.Model):
     visibility = models.CharField(
         max_length=16,
         choices=VISIBILITY_CHOICES,
-        help_text=(
-            'Public = anyone can view<br>'
-            'Restricted = logged in users can view<br>'
-            'Private = only you can view'
-        ),
+        help_text=VISIBILITY_HELP.replace('\n', '<br />'),
     )
 
     class Meta:

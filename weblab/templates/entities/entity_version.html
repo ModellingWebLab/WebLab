@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load entities %}
+{% load staticfiles %}
 
 {% block content %}
   <h1 id="entityname">
@@ -8,15 +9,14 @@
 
   <div class="suppl">
     <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
-    <br>
-    <small>Visibility: {{ entity.visibility }}</small>
   </div>
 
   <div id="entityversion">
-    <div>
-      <small><a href="{{ entity|url_versions }}">all versions</a></small>
+    <div class="closebtn">
+      <small><a href="{{ entity|url_versions }}">list all versions</a></small>
     </div>
     <h2 id="entityversionname">
+      <small>Version:</small>
       {% if tag %}
         <span title="Full identifier: {{ version.hexsha }}"><b>{{ tag.name }}</b></span>
       {% else %}
@@ -27,6 +27,8 @@
       <small>
         Created <time id="entityversiontime">{{ version.committed_date|as_datetime }}</time>
         by <em id="entityversionauthor">{{ version.author }}</em>.
+        Visibility: {{ entity.visibility }}
+          <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />.
       </small>
     </div>
 
