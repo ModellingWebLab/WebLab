@@ -17,15 +17,7 @@
     </div>
     <h2 id="entityversionname">
       <small>Version:</small>
-      {% if tags %}
-        <span title="Full identifier: {{ version.hexsha }}">
-          {% for tag in tags %}
-            <b>{{ tag.name }}</b>{% if not forloop.last %},{% endif %}
-          {% endfor %}
-        </span>
-      {% else %}
-        <span title="Full identifier: {{ version.hexsha }}"><b>{{ version.hexsha|truncatechars:11 }}</b></span>
-      {% endif %}
+      {% include "./includes/version_name.html" with tags=tags version=version only %}
     </h2>
     <div class="suppl">
       <small>
