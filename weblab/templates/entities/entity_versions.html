@@ -12,9 +12,11 @@
     <small>Visibility: {{ entity.visibility }}</small>
   </div>
 
+  <h2>Versions</h2>
+
   {% can_create_version entity.entity_type as permission %}
   {% if permission %}
-  <a href="{{ entity|url_newversion }}">add new version</a>
+  <a href="{{ entity|url_newversion }}" class="button">Add new version</a>
   {% endif %}
 
   <div id="entityversionlist_content">
