@@ -42,7 +42,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^entity/(?P<pk>\d+)/(?P<sha>\w+)/tag$',
+        r'^tag/(?P<pk>\d+)/(?P<sha>\w+)$',
         views.EntityTagVersionView.as_view(),
         name='tag_version',
     ),
