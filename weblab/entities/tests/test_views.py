@@ -207,6 +207,36 @@ class TestTagging:
         with pytest.raises(git.exc.GitCommandError):
             model.tag_repo('tag')
 
+    def test_user_can_add_tag(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        add_version(model)
+        commit = next(model.commits)
+        response = client.post(
+            '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
+            data={
+                'tag': 'v1',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha)
+        assert 'v1' in model.repo.tags
+        tags = model.tag_dict
+        assert len(tags) == 1
+        assert tags[commit][0].name == 'v1'
+
+    @pytest.mark.skip('not yet implemented')
+    def test_tag_view_requires_permissions(self, user, client):
+        model = recipes.model.make(author=user)
+        add_version(model)
+        commit = next(model.commits)
+        response = client.post(
+            '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
+            data={},
+        )
+        assert response.status_code == 302
+        assert '/login/' in response.url
+
 
 @pytest.mark.django_db
 class TestEntityVersionList:
