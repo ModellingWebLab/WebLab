@@ -176,6 +176,39 @@ class TestEntityVersionDetail:
 
 
 @pytest.mark.django_db
+class TestTagging:
+    def test_tag_specific_ref(self):
+        model = recipes.model.make()
+        add_version(model)
+        commit = next(model.commits)
+        add_version(model)
+        model.tag_repo('tag', ref=commit.hexsha)
+        tags = model.tag_dict
+        assert len(tags) == 1
+        assert tags[commit][0].name == 'tag'
+
+    def test_nasty_tag_chars(self):
+        import git
+        model = recipes.model.make()
+        add_version(model)
+
+        with pytest.raises(git.exc.GitCommandError):
+            model.tag_repo('tag/')
+
+        with pytest.raises(git.exc.GitCommandError):
+            model.tag_repo('tag with spaces')
+
+    def test_cant_use_same_tag_twice(self):
+        import git
+        model = recipes.model.make()
+        add_version(model)
+        model.tag_repo('tag')
+        add_version(model)
+        with pytest.raises(git.exc.GitCommandError):
+            model.tag_repo('tag')
+
+
+@pytest.mark.django_db
 class TestEntityVersionList:
     def test_view_entity_version_list(self, client, user):
         model = recipes.model.make()

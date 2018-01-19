@@ -86,7 +86,7 @@ class Entity(models.Model):
             committer=Actor(author_name, author_email),
         )
 
-    def tag_repo(self, tag, ref='HEAD'):
+    def tag_repo(self, tag, *, ref='HEAD'):
         """
         Tag the repository at the latest (or a given) commit, using the given tag
 
