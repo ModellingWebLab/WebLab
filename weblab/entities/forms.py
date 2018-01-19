@@ -48,6 +48,16 @@ class EntityVersionForm(forms.Form):
         widget=forms.Textarea)
 
 
+class EntityTagVersionForm(forms.Form):
+    tag = forms.SlugField(
+        error_messages={
+            'invalid': 'A tag must contain just letters, numbers, underscores or hyphens.',
+        },
+        label='New tag',
+        help_text='Short label for this version',
+        required=True)
+
+
 class FileUploadForm(forms.ModelForm):
     class Meta:
         model = EntityFile

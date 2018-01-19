@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load entities %}
+
+
+{% block content %}
+  <h1 id="entityname">
+    <small>{{ type|capfirst }}: </small><span>{{ entity.name }}</span>
+  </h1>
+
+  <h2>Tag version: {% include "./includes/version_name.html" with tags=tags version=version only %}</h2>
+
+  {% if tags %}
+  <p>Existing tags for this version:</p>
+  <ul>
+    {% for tag in tags %}
+      <li>{{ tag.name }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <form method="POST" action="">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <p>
+      <button id="savebutton">Add tag</button>
+    </p>
+  </form>
+
+{% endblock content %}

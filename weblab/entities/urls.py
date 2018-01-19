@@ -42,6 +42,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^entity/(?P<pk>\d+)/(?P<sha>\w+)/tag$',
+        views.EntityTagVersionView.as_view(),
+        name='tag_version',
+    ),
+
+    url(
         r'^protocols/$',
         views.ProtocolEntityListView.as_view(),
         name='protocols',

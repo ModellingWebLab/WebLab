@@ -25,6 +25,10 @@
         by <em id="entityversionauthor">{{ version.author }}</em>.
         Visibility: {{ entity.visibility }}
           <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />.
+        {% can_create_version entity.entity_type as permission %}
+        {% if permission %}
+          <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
+        {% endif %}
       </small>
     </div>
 
