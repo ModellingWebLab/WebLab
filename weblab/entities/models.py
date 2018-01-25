@@ -57,6 +57,12 @@ class Entity(models.Model):
         return self.name
 
     def is_deletable_by(self, user):
+        """
+        Is the entity deletable by the given user?
+
+        :param user: User object
+        :return: True if deletable, False otherwise
+        """
         return user.is_superuser or user == self.author
 
     def init_repo(self):
@@ -67,7 +73,7 @@ class Entity(models.Model):
 
     def delete_repo(self):
         """
-        Create an empty repository
+        Delete the repository
         """
         rmtree(str(self.repo_abs_path))
 
@@ -89,7 +95,6 @@ class Entity(models.Model):
             self.repo.index.remove([file_path])
         except GitCommandError:
             # In case the file doesn't already exist
-            # This shouldn't happen normally.
             pass
 
     def commit_repo(self, message, author_name, author_email):
