@@ -221,6 +221,13 @@ class EntityNewVersionView(
     template_name = 'entities/entity_newversion.html'
     form_class = EntityVersionForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        delete_file = self.request.GET.get('deletefile')
+        if delete_file:
+            initial['commit_message'] = 'Delete %s' % delete_file
+        return initial
+
     def get_context_data(self, **kwargs):
         entity = self.get_object()
         latest = entity.repo.head
@@ -228,20 +235,29 @@ class EntityNewVersionView(
             kwargs.update(**{
                 'latest_version': latest.commit,
             })
+
+        kwargs['delete_file'] = self.request.GET.get('deletefile')
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
         entity = self.get_object()
-        uploads = entity.files.filter(
-            upload=request.POST['filename[]']
-        )
 
-        # Copy each file into the git repo
-        for upload in uploads:
-            src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
-            dest = str(entity.repo_abs_path / upload.original_name)
-            shutil.move(src, dest)
-            entity.add_file_to_repo(dest)
+        if 'delete_filename[]' in request.POST:
+            deletions = request.POST.getlist('delete_filename[]')
+            for filename in deletions:
+                path = str(entity.repo_abs_path / filename)
+                entity.delete_file_from_repo(path)
+
+        if 'filename[]' in request.POST:
+            additions = request.POST.getlist('filename[]')
+            uploads = entity.files.filter(upload__in=additions)
+
+            # Copy each file into the git repo
+            for upload in uploads:
+                src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
+                dest = str(entity.repo_abs_path / upload.original_name)
+                shutil.move(src, dest)
+                entity.add_file_to_repo(dest)
 
         entity.commit_repo(request.POST['commit_message'],
                            request.user.full_name,

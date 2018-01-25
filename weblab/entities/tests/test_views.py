@@ -49,10 +49,10 @@ def fake_upload_path(settings, tmpdir):
     return settings.MEDIA_ROOT
 
 
-def add_version(entity):
+def add_version(entity, filename='file1.txt'):
     """Add a single commit/version to an entity"""
     entity.init_repo()
-    in_repo_path = str(entity.repo_abs_path / 'entity.txt')
+    in_repo_path = str(entity.repo_abs_path / filename)
     open(in_repo_path, 'w').write('entity contents')
     entity.add_file_to_repo(in_repo_path)
     entity.commit_repo('file', 'author', 'author@example.com')
@@ -234,6 +234,73 @@ class TestVersionCreation:
         assert 'v1' in model.repo.tags
         assert model.repo.head.commit.message == 'first commit'
         assert model.repo.head.commit.tree.blobs[0].name == 'model.txt'
+
+    def test_add_multiple_files(self, user, client):
+        add_permission(user, 'create_model_version')
+        file1 = recipes.model_file.make(
+            entity__author=user,
+            upload=SimpleUploadedFile('file1.txt', b'file 1'),
+            original_name='file1.txt',
+        )
+        file2 = recipes.model_file.make(
+            entity=file1.entity,
+            upload=SimpleUploadedFile('file2.txt', b'file 2'),
+            original_name='file2.txt',
+        )
+        model = file1.entity
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': ['uploads/file1.txt', 'uploads/file2.txt'],
+                'commit_message': 'files',
+                'version': 'v1',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d' % model.id
+        assert 'v1' in model.repo.tags
+        assert model.repo.head.commit.message == 'files'
+        assert model.repo.head.commit.tree.blobs[0].name == 'file1.txt'
+        assert model.repo.head.commit.tree.blobs[1].name == 'file2.txt'
+
+    def test_delete_file(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        add_version(model, 'file1.txt')
+        add_version(model, 'file2.txt')
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'delete_filename[]': ['file1.txt'],
+                'commit_message': 'delete file1',
+                'version': 'delete-file',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d' % model.id
+        assert 'delete-file' in model.repo.tags
+        assert model.repo.head.commit.message == 'delete file1'
+        assert len(model.repo.head.commit.tree.blobs) == 1
+
+    def test_delete_nonexistent_file(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        add_version(model, 'file1.txt')
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'delete_filename[]': ['file2.txt'],
+                'commit_message': 'delete file1',
+                'version': 'delete-file',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d' % model.id
+        assert 'delete-file' in model.repo.tags
+        assert model.repo.head.commit.message == 'delete file1'
 
     def test_create_model_version_requires_permissions(self, user, client):
         model = recipes.model.make(author=user)

@@ -4,7 +4,7 @@ from shutil import rmtree
 from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
-from git import Actor, Repo
+from git import Actor, Repo, GitCommandError
 
 
 class Entity(models.Model):
@@ -78,6 +78,19 @@ class Entity(models.Model):
         :param file_path: Path of file to be added
         """
         self.repo.index.add([file_path])
+
+    def delete_file_from_repo(self, file_path):
+        """
+        Delete a file from the repository
+
+        :param file_path: Path of file to be deleted
+        """
+        try:
+            self.repo.index.remove([file_path])
+        except GitCommandError:
+            # In case the file doesn't already exist
+            # This shouldn't happen normally.
+            pass
 
     def commit_repo(self, message, author_name, author_email):
         """

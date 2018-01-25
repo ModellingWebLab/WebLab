@@ -43,8 +43,6 @@ Upload.prototype = {
       },
       submit: function(e, data) {
         self.uploading.push(data.files[0].name);
-
-        console.log('submit', e, data);
       },
       progress: function(e, data) {
         self.updateProgress(data);
@@ -57,6 +55,19 @@ Upload.prototype = {
 
     $('#dropbox a').click(function() {
       $("#fileupload").click();
+    });
+
+    $("#entityversionfilestable").on('click', 'tr .action .delete-file', function() {
+      var $tr = $(this).parents('tr');
+      $td = $tr.find(".filename");
+      if ($tr.hasClass('deleting')) {
+        $tr.removeClass('deleting');
+        $tr.find('input[name="delete_filename[]"]').remove()
+      } else {
+        $tr.addClass('deleting');
+        $('<input type="hidden" name="delete_filename[]" value="' + $.trim($td.text()) + '" />').appendTo($td);
+      }
+      return false;
     });
   },
 
@@ -86,14 +97,11 @@ Upload.prototype = {
   alreadyExists: function(name) {
     for (var i = 0; i < this.uploading.length; i++) {
       if (this.uploading[i] == name) {
-        console.log('already uploading', name);
         return true;
       }
     }
-    console.log(name, this.uploaded);
     for (var i = 0; i < this.uploaded.length; i++) {
       if (this.uploaded[i].fileName == name) {
-        console.log('already uploaded', name);
         return true;
       }
     }
@@ -102,7 +110,7 @@ Upload.prototype = {
 
   addRow: function(data) {
     var file = data.files[0];
-    var $tr = $("<tr>").appendTo(this.$table);
+    var $tr = $('<tr class="new-file">').appendTo(this.$table);
     data.context = $tr;
     var $td;
 
@@ -115,7 +123,7 @@ Upload.prototype = {
     $td = $('<td class="size">').appendTo($tr);
     $('<small><code> ' + utils.humanReadableBytes(file.size) + ' </code></small>').appendTo($td);
 
-    $('<td class="action"><small></small></td>').appendTo($tr);
+    $('<td class="action"><a class="delete-file" title="delete this file"></td>').appendTo($tr);
   },
 
   showUpload: function(data, file, types) {

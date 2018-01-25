@@ -359,6 +359,16 @@ tr:nth-child(1)
 	text-align: left;
 }
 
+#entityversionfilestable .deleting {
+  text-decoration: line-through;
+  opacity: 0.3;
+}
+
+#entityversionfilestable .new-file {
+  font-weight: bold;
+  background-color: #ffffe0;
+}
+
 #experimentlist li.experiment-QUEUED,
 #entitydetails p.experiment-QUEUED,
 .experiment-QUEUED
