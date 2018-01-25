@@ -57,7 +57,7 @@ Upload.prototype = {
       $("#fileupload").click();
     });
 
-    $("#entityversionfilestable").on('click', 'tr .action .delete-file', function() {
+    $("form #entityversionfilestable").on('click', 'tr .action .delete-file', function() {
       var $tr = $(this).parents('tr');
       $td = $tr.find(".filename");
       if ($tr.hasClass('deleting')) {
