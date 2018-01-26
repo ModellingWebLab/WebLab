@@ -2,6 +2,7 @@ from django.conf.urls import url
 
 from . import views
 
+_COMMIT = r'(?P<sha>[^^~:/ ]+)'
 
 urlpatterns = [
     url(
@@ -36,13 +37,13 @@ urlpatterns = [
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/versions/(?P<sha>\w+)$',
+        r'^models/(?P<pk>\d+)/versions/%s$' % _COMMIT,
         views.ModelEntityVersionView.as_view(),
         name='model_version',
     ),
 
     url(
-        r'^tag/(?P<pk>\d+)/(?P<sha>\w+)$',
+        r'^tag/(?P<pk>\d+)/%s$' % _COMMIT,
         views.EntityTagVersionView.as_view(),
         name='tag_version',
     ),
@@ -79,7 +80,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^protocols/(?P<pk>\d+)/versions/(?P<sha>\w+)$',
+        r'^protocols/(?P<pk>\d+)/versions/%s$' % _COMMIT,
         views.ProtocolEntityVersionView.as_view(),
         name='protocol_version',
     ),

@@ -63,9 +63,17 @@ def url_tag_version(entity, version):
 
 @register.filter
 def url_version(entity, commit):
+    """Generate the view URL for a specific version of this entity.
+
+    We try to use the last tag name in the URL, but if there isn't
+    a tag, or the tag contains a /, or the tag is one of our reserved
+    names (new, latest), we fall back to the SHA1.
+    """
     url_name = 'entities:{}_version'.format(entity.entity_type)
-    tags = entity.tag_dict
-    args = [entity.id, tags.get(commit, [commit.hexsha])[-1]]
+    last_tag = str(entity.tag_dict.get(commit, ['/'])[-1])
+    if '/' in last_tag or last_tag in ['new', 'latest']:
+        last_tag = commit.hexsha
+    args = [entity.id, last_tag]
     return reverse(url_name, args=args)
 
 
