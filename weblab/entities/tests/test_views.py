@@ -195,6 +195,9 @@ class TestTagging:
         with pytest.raises(git.exc.GitCommandError):
             model.tag_repo('tag/')
 
+        model.tag_repo('my/tag')
+        assert model.tag_dict[next(model.commits)][0].name == 'my/tag'
+
         with pytest.raises(git.exc.GitCommandError):
             model.tag_repo('tag with spaces')
 
