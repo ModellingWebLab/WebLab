@@ -125,23 +125,22 @@ class TestEntityDetail:
 
 @pytest.mark.django_db
 class TestEntityVersionDetail:
-    def check(self, client, url, version, tag):
+    def check(self, client, url, version, tags):
         response = client.get(url)
         assert response.status_code == 200
         assert response.context['version'] == version
-        if tag:
-            assert response.context['tag'].name == tag
-        else:
-            assert response.context['tag'] is None
+        assert len(response.context['tags']) == len(tags)
+        for actual, expected in zip(response.context['tags'], tags):
+            assert actual.name == expected
 
     def test_view_entity_version(self, client, user):
         model = recipes.model.make()
         add_version(model)
         commit = next(model.commits)
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
-                   commit, None)
+                   commit, [])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
-                   commit, None)
+                   commit, [])
 
         # Now add a second version with tag
         assert len(list(model.commits)) == 1
@@ -154,11 +153,11 @@ class TestEntityVersionDetail:
         commit = next(model.commits)
 
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
-                   commit, 'my_tag')
+                   commit, ['my_tag'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'my_tag'),
-                   commit, 'my_tag')
+                   commit, ['my_tag'])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
-                   commit, 'my_tag')
+                   commit, ['my_tag'])
 
     def test_version_with_two_tags(self, client, user):
         model = recipes.model.make()
@@ -167,13 +166,79 @@ class TestEntityVersionDetail:
         model.tag_repo('tag1')
         model.tag_repo('tag2')
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
-                   commit, 'tag2')
+                   commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'),
-                   commit, 'tag2')
+                   commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag2'),
-                   commit, 'tag2')
+                   commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
-                   commit, 'tag2')
+                   commit, ['tag1', 'tag2'])
+
+
+@pytest.mark.django_db
+class TestTagging:
+    def test_tag_specific_ref(self):
+        model = recipes.model.make()
+        add_version(model)
+        commit = next(model.commits)
+        add_version(model)
+        model.tag_repo('tag', ref=commit.hexsha)
+        tags = model.tag_dict
+        assert len(tags) == 1
+        assert tags[commit][0].name == 'tag'
+
+    def test_nasty_tag_chars(self):
+        import git
+        model = recipes.model.make()
+        add_version(model)
+
+        with pytest.raises(git.exc.GitCommandError):
+            model.tag_repo('tag/')
+
+        model.tag_repo('my/tag')
+        assert model.tag_dict[next(model.commits)][0].name == 'my/tag'
+
+        with pytest.raises(git.exc.GitCommandError):
+            model.tag_repo('tag with spaces')
+
+    def test_cant_use_same_tag_twice(self):
+        import git
+        model = recipes.model.make()
+        add_version(model)
+        model.tag_repo('tag')
+        add_version(model)
+        with pytest.raises(git.exc.GitCommandError):
+            model.tag_repo('tag')
+
+    def test_user_can_add_tag(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        add_version(model)
+        commit = next(model.commits)
+        response = client.post(
+            '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
+            data={
+                'tag': 'v1',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha)
+        assert 'v1' in model.repo.tags
+        tags = model.tag_dict
+        assert len(tags) == 1
+        assert tags[commit][0].name == 'v1'
+
+    @pytest.mark.skip('not yet implemented')
+    def test_tag_view_requires_permissions(self, user, client):
+        model = recipes.model.make(author=user)
+        add_version(model)
+        commit = next(model.commits)
+        response = client.post(
+            '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
+            data={},
+        )
+        assert response.status_code == 302
+        assert '/login/' in response.url
 
 
 @pytest.mark.django_db

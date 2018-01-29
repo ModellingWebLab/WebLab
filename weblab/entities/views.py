@@ -22,6 +22,7 @@ from django.views.generic.edit import CreateView, FormMixin
 from django.views.generic.list import ListView
 
 from .forms import (
+    EntityTagVersionForm,
     EntityVersionForm,
     FileUploadForm,
     ModelEntityForm,
@@ -74,7 +75,7 @@ class VersionMixin:
             commit = entity.repo.commit(version)
         kwargs.update(**{
             'version': commit,
-            'tag': tags.get(commit),
+            'tags': tags.get(commit, []),
         })
         return super().get_context_data(**kwargs)
 
@@ -195,6 +196,48 @@ class EntityView(EntityVisibilityMixin, SingleObjectMixin, RedirectView):
     def get_redirect_url(self, *args, **kwargs):
         url_name = 'entities:{}_version'.format(kwargs['entity_type'])
         return reverse(url_name, args=[kwargs['pk'], 'latest'])
+
+
+class EntityTagVersionView(
+    LoginRequiredMixin, FormMixin, VersionMixin, DetailView
+):
+    """Add a new tag to an existing version of an entity."""
+    context_object_name = 'entity'
+    form_class = EntityTagVersionForm
+    model = Entity
+    template_name = 'entities/entity_tag_version.html'
+
+    def get_context_data(self, **kwargs):
+        entity = self.get_object()
+        kwargs['type'] = entity.entity_type
+        return super().get_context_data(**kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """Check the form and possibly add the tag in the repo.
+
+        Called by Django when a form is submitted.
+        """
+        import git
+        form = self.get_form()
+        entity = self.object = self.get_object()
+        if form.is_valid():
+            version = self.kwargs['sha']
+            tag = form.cleaned_data['tag']
+            try:
+                entity.tag_repo(tag, ref=version)
+            except git.exc.GitCommandError as e:
+                msg = e.stderr.strip().split(':', 1)[1][2:-1]
+                form.add_error('tag', msg)
+                return self.form_invalid(form)
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.get_object()
+        version = self.kwargs['sha']
+        return reverse('entities:%s_version' % entity.entity_type, args=[entity.id, version])
 
 
 class EntityNewVersionView(

@@ -48,6 +48,13 @@ class EntityVersionForm(forms.Form):
         widget=forms.Textarea)
 
 
+class EntityTagVersionForm(forms.Form):
+    tag = forms.CharField(
+        label='New tag',
+        help_text='Short label for this version',
+        required=True)
+
+
 class FileUploadForm(forms.ModelForm):
     class Meta:
         model = EntityFile

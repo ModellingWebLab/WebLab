@@ -86,13 +86,14 @@ class Entity(models.Model):
             committer=Actor(author_name, author_email),
         )
 
-    def tag_repo(self, tag):
+    def tag_repo(self, tag, *, ref='HEAD'):
         """
-        Tag the repository at the latest commit, using the given tag
+        Tag the repository at the latest (or a given) commit, using the given tag
 
         :param tag: Tag name to use
+        :param ref: A reference to a specific commit, defaults to the latest
         """
-        self.repo.create_tag(tag)
+        self.repo.create_tag(tag, ref=ref)
 
     @property
     def repo(self):
@@ -127,12 +128,12 @@ class Entity(models.Model):
         """
         Mapping of commits to git tags in the entity repository
 
-        :return: dict of the form { `git.Commit`: 'tag_name' }
+        :return: dict of the form { `git.Commit`: ['tag_name'] }
         """
-        return {
-            tag.commit: tag
-            for tag in self.repo.tags
-        }
+        tags = {}
+        for tag in self.repo.tags:
+            tags.setdefault(tag.commit, []).append(tag)
+        return tags
 
     @property
     def commits(self):

@@ -21,14 +21,12 @@
 
   <div id="entityversionlist_content">
     <ul>
-    {% for tag, commit in versions %}
+    {% for tags, commit in versions %}
     <li>
       <p>
         <strong>
           <a class="entityversionlink" href="{{ entity|url_version:commit }}">
-          {% if tag %} <b>{{ tag.name }}</b> <small>({% endif %}{% spaceless %}
-          <span title="Full identifier: {{ commit.hexsha }}">{{ commit.hexsha|truncatechars:11 }}</span>
-          {% endspaceless %}{% if tag %})</small>{% endif %}
+            {% include "./includes/version_name.html" with tags=tags version=commit only %}
           </a>
         </strong>
         by <em>{{ commit.author }}</em><br />
