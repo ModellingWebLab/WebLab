@@ -3,22 +3,7 @@
 {% load entities %}
 
 {% block content %}
-  <h1 id="entityname">
-    <small>{{ type|capfirst }}: </small><span>{{ entity.name }}</span>
-  </h1>
-
-  <div class="suppl">
-    <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.
-    {% can_delete_entity entity as can_delete %}
-    {% if can_delete %}
-      Delete {{ type }}:
-      <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">
-        <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
-             title="delete all versions of this {{type}}"/></a>
-    {% endif %}
-    <br>Visibility: {{ entity.visibility }}
-    </small>
-  </div>
+  {% include "./includes/entity_header.html" %}
 
   <div id="entityversion">
     <div>
@@ -43,7 +28,7 @@
       <div id="entityversionfiles">
         <h3>Files attached to this version</h3>
 
-       {% include "entities/includes/version_files.html" %}
+       {% include "./includes/version_files.html" %}
 
       </div>
 

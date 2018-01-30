@@ -1,0 +1,20 @@
+{% load staticfiles %}
+{% load entities %}
+
+<h1 id="entityname">
+  <small>{{ type|capfirst }}: </small><span>{{ entity.name }}</span>
+</h1>
+
+<div class="suppl">
+  <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.
+    {% can_delete_entity entity as can_delete %}
+    {% if can_delete %}
+      Delete {{ type }}:
+      <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">
+        <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
+             title="delete all versions of this {{type}}"/></a>
+    {% endif %}
+    <br>
+    Visibility: {{ entity.visibility }}
+  </small>
+</div>

@@ -2,15 +2,7 @@
 {% load entities %}
 
 {% block content %}
-  <h1 id="entityname">
-    <small>{{ type|capfirst }}: </small><span>{{ entity.name }}</span>
-  </h1>
-
-  <div class="suppl">
-    <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
-    <br>
-    <small>Visibility: {{ entity.visibility }}</small>
-  </div>
+  {% include "./includes/entity_header.html" %}
 
   {% can_create_version entity.entity_type as permission %}
   {% if permission %}
