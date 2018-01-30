@@ -9,10 +9,6 @@
 
   <div class="suppl">
     <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
-    {% can_create_version entity.entity_type as permission %}
-    {% if permission %}
-      <small>| <a href="{{ entity|url_newversion }}">add new version</a></small>
-    {% endif %}
   </div>
 
   <h2>New version</h2>

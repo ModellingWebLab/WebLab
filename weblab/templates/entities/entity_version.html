@@ -13,7 +13,13 @@
 
   <div id="entityversion">
     <div class="closebtn">
-      <small><a href="{{ entity|url_versions }}">list all versions</a></small>
+      <small>
+        <a href="{{ entity|url_versions }}">list all versions</a>
+        {% can_create_version entity.entity_type as permission %}
+        {% if permission %}
+          | <a href="{{ entity|url_newversion }}">add new version</a>
+        {% endif %}
+      </small>
     </div>
     <h2 id="entityversionname">
       <small>Version:</small>
