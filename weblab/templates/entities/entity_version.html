@@ -9,17 +9,14 @@
 
   <div class="suppl">
     <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.
-    <br>
-
     {% can_delete_entity entity as can_delete %}
     {% if can_delete %}
-      Delete {{ entity_type }}:
+      Delete {{ type }}:
       <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">
-        <img src="{% static 'res/img/delete.png' %}" alt="delete all versions of this {{ type }}"
-                                                     title="delete all versions of this {{type}}"/></a>
-      <br>
+        <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
+             title="delete all versions of this {{type}}"/></a>
     {% endif %}
-    Visibility: {{ entity.visibility }}
+    <br>Visibility: {{ entity.visibility }}
     </small>
   </div>
 
