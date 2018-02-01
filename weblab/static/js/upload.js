@@ -62,7 +62,7 @@ Upload.prototype = {
       $td = $tr.find(".filename");
       if ($tr.hasClass('deleting')) {
         $tr.removeClass('deleting');
-        $tr.find('input[name="delete_filename[]"]').remove()
+        $tr.find('input[name="delete_filename[]"]').remove();
       } else {
         $tr.addClass('deleting');
         $('<input type="hidden" name="delete_filename[]" value="' + $.trim($td.text()) + '" />').appendTo($td);
