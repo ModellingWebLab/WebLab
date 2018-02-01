@@ -21,6 +21,7 @@ from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
+from git import GitCommandError
 
 from .forms import (
     EntityVersionForm,
@@ -240,13 +241,18 @@ class EntityNewVersionView(
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
-        entity = self.get_object()
+        entity = self.object = self.get_object()
+
+        git_errors = []
 
         if 'delete_filename[]' in request.POST:
             deletions = request.POST.getlist('delete_filename[]')
             for filename in deletions:
                 path = str(entity.repo_abs_path / filename)
-                entity.delete_file_from_repo(path)
+                try:
+                    entity.delete_file_from_repo(path)
+                except GitCommandError as e:
+                    git_errors.append(e.stderr)
 
         if 'filename[]' in request.POST:
             additions = request.POST.getlist('filename[]')
@@ -257,15 +263,29 @@ class EntityNewVersionView(
                 src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
                 dest = str(entity.repo_abs_path / upload.original_name)
                 shutil.move(src, dest)
-                entity.add_file_to_repo(dest)
+                try:
+                    entity.add_file_to_repo(dest)
+                except GitCommandError as e:
+                    git_errors.append(e.stderr)
 
-        entity.commit_repo(request.POST['commit_message'],
-                           request.user.full_name,
-                           request.user.email)
-        entity.tag_repo(request.POST['version'])
-
-        return HttpResponseRedirect(
-            reverse('entities:%s' % entity.entity_type, args=[entity.id]))
+        if git_errors:
+            form = self.get_form()
+            for error in git_errors:
+                form.add_error(None, 'Git command error: %s' % error)
+            return self.form_invalid(form)
+        elif not entity.repo.head.is_valid() or entity.repo.index.diff('HEAD'):
+            entity.commit_repo(
+                request.POST['commit_message'],
+                request.user.full_name,
+                request.user.email
+            )
+            entity.tag_repo(request.POST['version'])
+            return HttpResponseRedirect(
+                reverse('entities:%s' % entity.entity_type, args=[entity.id]))
+        else:
+            form = self.get_form()
+            form.add_error(None, 'No files were changed, added or removed for this version')
+            return self.form_invalid(form)
 
 
 class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):

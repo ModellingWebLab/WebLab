@@ -91,11 +91,7 @@ class Entity(models.Model):
 
         :param file_path: Path of file to be deleted
         """
-        try:
-            self.repo.index.remove([file_path])
-        except GitCommandError:
-            # In case the file doesn't already exist
-            pass
+        self.repo.index.remove([file_path])
 
     def commit_repo(self, message, author_name, author_email):
         """

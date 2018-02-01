@@ -324,10 +324,9 @@ class TestVersionCreation:
                 'version': 'delete-file',
             },
         )
-        assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
-        assert 'delete-file' in model.repo.tags
-        assert model.repo.head.commit.message == 'delete file1'
+        assert response.status_code == 200
+        assert 'delete-file' not in model.repo.tags
+        assert model.repo.head.commit.message != 'delete file2'
 
     def test_create_model_version_requires_permissions(self, user, client):
         model = recipes.model.make(author=user)
