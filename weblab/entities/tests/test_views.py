@@ -123,6 +123,8 @@ class TestEntityDeletion:
         entity = recipe.make(author=user)
         repo_path = entity.repo_abs_path
         add_version(entity)
+        assert Entity.objects.filter(pk=entity.pk).exists()
+        assert repo_path.exists()
 
         response = client.post(url % entity.pk)
 
@@ -237,17 +239,17 @@ class TestVersionCreation:
 
     def test_add_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
-        file1 = recipes.model_file.make(
-            entity__author=user,
+        model = recipes.model.make(author=user)
+        recipes.model_file.make(
+            entity=model,
             upload=SimpleUploadedFile('file1.txt', b'file 1'),
             original_name='file1.txt',
         )
-        file2 = recipes.model_file.make(
-            entity=file1.entity,
+        recipes.model_file.make(
+            entity=model,
             upload=SimpleUploadedFile('file2.txt', b'file 2'),
             original_name='file2.txt',
         )
-        model = file1.entity
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -269,6 +271,7 @@ class TestVersionCreation:
         model = recipes.model.make(author=user)
         add_version(model, 'file1.txt')
         add_version(model, 'file2.txt')
+        assert len(model.repo.head.commit.tree.blobs) == 2
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -283,6 +286,30 @@ class TestVersionCreation:
         assert 'delete-file' in model.repo.tags
         assert model.repo.head.commit.message == 'delete file1'
         assert len(model.repo.head.commit.tree.blobs) == 1
+        assert model.repo.head.commit.tree.blobs[0].name == 'file2.txt'
+
+    def test_delete_multiple_files(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        add_version(model, 'file1.txt')
+        add_version(model, 'file2.txt')
+        add_version(model, 'file3.txt')
+        assert len(model.repo.head.commit.tree.blobs) == 3
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'delete_filename[]': ['file1.txt', 'file2.txt'],
+                'commit_message': 'delete files',
+                'version': 'delete-files',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d' % model.id
+        assert 'delete-files' in model.repo.tags
+        assert model.repo.head.commit.message == 'delete files'
+        assert len(model.repo.head.commit.tree.blobs) == 1
+        assert model.repo.head.commit.tree.blobs[0].name == 'file3.txt'
 
     def test_delete_nonexistent_file(self, user, client):
         add_permission(user, 'create_model_version')
@@ -293,7 +320,7 @@ class TestVersionCreation:
             '/entities/models/%d/versions/new' % model.pk,
             data={
                 'delete_filename[]': ['file2.txt'],
-                'commit_message': 'delete file1',
+                'commit_message': 'delete file2',
                 'version': 'delete-file',
             },
         )
