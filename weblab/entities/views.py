@@ -202,6 +202,8 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
     Delete an entity
     """
     model = Entity
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have delete permissions.
     raise_exception = True
 
     def test_func(self):

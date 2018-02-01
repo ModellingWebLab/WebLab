@@ -287,6 +287,7 @@ class TestVersionCreation:
         assert model.repo.head.commit.message == 'delete file1'
         assert len(model.repo.head.commit.tree.blobs) == 1
         assert model.repo.head.commit.tree.blobs[0].name == 'file2.txt'
+        assert not (model.repo_abs_path / 'file1.txt').exists()
 
     def test_delete_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
@@ -310,6 +311,8 @@ class TestVersionCreation:
         assert model.repo.head.commit.message == 'delete files'
         assert len(model.repo.head.commit.tree.blobs) == 1
         assert model.repo.head.commit.tree.blobs[0].name == 'file3.txt'
+        assert not (model.repo_abs_path / 'file1.txt').exists()
+        assert not (model.repo_abs_path / 'file2.txt').exists()
 
     def test_delete_nonexistent_file(self, user, client):
         add_permission(user, 'create_model_version')

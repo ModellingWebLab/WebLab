@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from shutil import rmtree
 
@@ -92,6 +93,7 @@ class Entity(models.Model):
         :param file_path: Path of file to be deleted
         """
         self.repo.index.remove([file_path])
+        os.remove(file_path)
 
     def commit_repo(self, message, author_name, author_email):
         """
