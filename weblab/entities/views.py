@@ -242,51 +242,62 @@ class EntityNewVersionView(
         kwargs['delete_file'] = self.request.GET.get('deletefile')
         return super().get_context_data(**kwargs)
 
+    def add_and_delete_files(self, deletions, additions):
+        pass
+
     def post(self, request, *args, **kwargs):
         entity = self.object = self.get_object()
 
         git_errors = []
+        files_to_delete = []
 
-        if 'delete_filename[]' in request.POST:
-            deletions = request.POST.getlist('delete_filename[]')
-            for filename in deletions:
-                path = str(entity.repo_abs_path / filename)
-                try:
-                    entity.delete_file_from_repo(path)
-                except GitCommandError as e:
-                    git_errors.append(e.stderr)
+        # Delete files from the index
+        deletions = request.POST.getlist('delete_filename[]')
+        for filename in deletions:
+            path = str(entity.repo_abs_path / filename)
+            try:
+                entity.delete_file_from_repo(path)
+            except GitCommandError as e:
+                git_errors.append(e.stderr)
 
-        if 'filename[]' in request.POST:
-            additions = request.POST.getlist('filename[]')
-            uploads = entity.files.filter(upload__in=additions)
-
-            # Copy each file into the git repo
-            for upload in uploads:
-                src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
-                dest = str(entity.repo_abs_path / upload.original_name)
-                shutil.move(src, dest)
-                try:
-                    entity.add_file_to_repo(dest)
-                except GitCommandError as e:
-                    git_errors.append(e.stderr)
+        # Copy files into the index
+        additions = request.POST.getlist('filename[]')
+        for upload in entity.files.filter(upload__in=additions):
+            src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
+            dest = str(entity.repo_abs_path / upload.original_name)
+            files_to_delete.append(src)
+            shutil.copy(src, dest)
+            try:
+                entity.add_file_to_repo(dest)
+            except GitCommandError as e:
+                git_errors.append(e.stderr)
 
         if git_errors:
+            # If there were any errors with adding or deleting files,
+            # inform the user and reset the index / working tree
+            # (as resubmission of the form will do it all again).
             form = self.get_form()
             for error in git_errors:
                 form.add_error(None, 'Git command error: %s' % error)
+            entity.repo.head.reset(index=True, working_tree=True)
             return self.form_invalid(form)
         elif not entity.repo.head.is_valid() or entity.repo.index.diff('HEAD'):
+            # Commit and tag the repo
             entity.commit_repo(
                 request.POST['commit_message'],
                 request.user.full_name,
                 request.user.email
             )
             entity.tag_repo(request.POST['version'])
+            # Temporary upload files have been safely committed, so can be deleted
+            for filename in files_to_delete:
+                os.remove(filename)
             return HttpResponseRedirect(
                 reverse('entities:%s' % entity.entity_type, args=[entity.id]))
         else:
+            # Nothing changed, so inform the user and do nothing else.
             form = self.get_form()
-            form.add_error(None, 'No files were changed, added or removed for this version')
+            form.add_error(None, 'No changes were made for this version')
             return self.form_invalid(form)
 
 
