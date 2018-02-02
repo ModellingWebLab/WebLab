@@ -17,12 +17,10 @@ var Upload = function(){
   this.$table.find("tbody tr").each(function(i, tr) {
     var $tr = $(tr);
     self.uploaded.push({
-      'fileName': $tr.find(".filename").html(),
-      'fileType': $tr.find(".type").html(),
+      'fileName': $tr.find(".filename").html().trim(),
+      'fileType': $tr.find(".type").html().trim(),
     });
   });
-
-  console.log(self.uploaded);
 };
 
 
@@ -35,7 +33,6 @@ Upload.prototype = {
       dropZone: $("#dropbox"),
       add: function(e, data) {
         var name = data.files[0].name;
-        console.log(name);
         if (self.validName(name)) {
           self.addRow(data);
           data.submit();
@@ -65,7 +62,7 @@ Upload.prototype = {
         $tr.find('input[name="delete_filename[]"]').remove();
       } else {
         $tr.addClass('deleting');
-        $('<input type="hidden" name="delete_filename[]" value="' + $.trim($td.text()) + '" />').appendTo($td);
+        $('<input type="hidden" name="delete_filename[]" value="' + $td.text().trim() + '" />').appendTo($td);
       }
       return false;
     });
