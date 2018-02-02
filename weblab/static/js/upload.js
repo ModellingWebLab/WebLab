@@ -56,17 +56,30 @@ Upload.prototype = {
 
     $("form #entityversionfilestable").on('click', 'tr .action .delete-file', function() {
       var $tr = $(this).parents('tr');
-      $td = $tr.find(".filename");
-      if ($tr.hasClass('deleting')) {
-        $tr.removeClass('deleting');
-        $tr.find('input[name="delete_filename[]"]').remove();
-      } else {
-        $tr.addClass('deleting');
-        $('<input type="hidden" name="delete_filename[]" value="' + $td.text().trim() + '" />').appendTo($td);
-      }
       return false;
     });
   },
+
+  toggleDelete: function($row) {
+      $td = $tr.find(".filename");
+      var filename = $td.text().trim();
+      if ($tr.hasClass('deleting')) {
+        $tr.removeClass('deleting');
+        $tr.find('input[name="delete_filename[]"]').remove();
+        self.uploaded.push(filename);
+      } else {
+        $tr.addClass('deleting');
+        $('<input type="hidden" name="delete_filename[]" value="' + filename + '" />').appendTo($td);
+        for (var i = 0; i < self.uploaded.length; i++) {
+          if (self.uploaded[i].fileName == filename)
+            self.uploaded.splice(i, 1);
+        }
+        for (var i = 0; i < self.uploading.length; i++) {
+          if (self.uploading[i] == filename)
+            self.uploading.splice(i, 1);
+        }
+      }
+  }
 
   validName: function(name) {
     var error;
@@ -113,7 +126,6 @@ Upload.prototype = {
 
     $td = $('<td class="filename">').appendTo($tr);
     $("<code>" + file.name + '</code>').appendTo($td);
-    $('<a class="rm"><img src="' + staticPath + 'img/failed.png" alt="remove from list" /></a>').appendTo($td);
 
     $('<td class="type"><small></small></td>').appendTo($tr);
 
@@ -127,7 +139,6 @@ Upload.prototype = {
     var $tr = data.context;
     var $name = $tr.find(".filename code");
     var $type = $tr.find(".type small");
-    var $rm = $tr.find(".rm");
     var self = this;
 
     var array = {
@@ -164,18 +175,6 @@ Upload.prototype = {
 
     $td = $tr.find(".filename");
     $('<input type="hidden" name="filename[]" value="' + file.stored_name + '" />').appendTo($td);
-
-    $rm.click(function () {
-      for (var i = 0; i < self.uploaded.length; i++) {
-        if (self.uploaded[i].fileName == name)
-          self.uploaded.splice(i, 1);
-      }
-      for (var i = 0; i < self.uploading.length; i++) {
-        if (self.uploading[i] == name)
-          self.uploading.splice(i, 1);
-      }
-      $tr.remove();
-    });
   }
 }
 
