@@ -246,7 +246,7 @@ class EntityNewVersionView(
         entity = self.object = self.get_object()
 
         git_errors = []
-        files_to_delete = []
+        files_to_delete = []  # Temp files to be removed if successful
 
         # Delete files from the index
         deletions = request.POST.getlist('delete_filename[]')
