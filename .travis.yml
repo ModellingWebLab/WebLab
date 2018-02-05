@@ -8,6 +8,9 @@ services:
   postgresql
 env:
   DATABASE_URL=postgres://postgres:@localhost:5432/weblab
+before_install:
+  - openssl aes-256-cbc -K $encrypted_d20cfcf2e381_key -iv $encrypted_d20cfcf2e381_iv -in .travis.tar.enc -out .travis.tar -d
+  - tar xvf .travis.tar
 before_script:
   - psql -c 'create database weblab;' -U postgres
 install:
