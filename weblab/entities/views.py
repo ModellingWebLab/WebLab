@@ -242,9 +242,6 @@ class EntityNewVersionView(
         kwargs['delete_file'] = self.request.GET.get('deletefile')
         return super().get_context_data(**kwargs)
 
-    def add_and_delete_files(self, deletions, additions):
-        pass
-
     def post(self, request, *args, **kwargs):
         entity = self.object = self.get_object()
 
