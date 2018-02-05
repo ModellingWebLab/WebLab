@@ -2,6 +2,9 @@
 weblab/config/settings/deployed.py
 weblab/config/settings/secrets.py
 
+# Unencrypted secrets
+.travis.tar
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
