@@ -56,11 +56,12 @@ Upload.prototype = {
 
     $("form #entityversionfilestable").on('click', 'tr .action .delete-file', function() {
       var $tr = $(this).parents('tr');
+      self.toggleDelete($tr);
       return false;
     });
   },
 
-  toggleDelete: function($row) {
+  toggleDelete: function($tr) {
       $td = $tr.find(".filename");
       var filename = $td.text().trim();
       if ($tr.hasClass('deleting')) {
@@ -79,7 +80,7 @@ Upload.prototype = {
             self.uploading.splice(i, 1);
         }
       }
-  }
+  },
 
   validName: function(name) {
     var error;
