@@ -1,6 +1,7 @@
 # Generated files on deployed systems
 weblab/config/settings/deployed.py
 weblab/config/settings/secrets.py
+weblab/staticfiles/
 
 # Unencrypted secrets
 .travis.tar
