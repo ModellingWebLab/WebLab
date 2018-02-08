@@ -55,31 +55,31 @@ Upload.prototype = {
     });
 
     $("form #entityversionfilestable").on('click', 'tr .action .delete-file', function() {
-      var $tr = $(this).parents('tr');
-      self.toggleDelete($tr);
+      self.toggleDelete($(this).parents('tr'));
       return false;
     });
   },
 
   toggleDelete: function($tr) {
-      $td = $tr.find(".filename");
-      var filename = $td.text().trim();
-      if ($tr.hasClass('deleting')) {
-        $tr.removeClass('deleting');
-        $tr.find('input[name="delete_filename[]"]').remove();
-        self.uploaded.push(filename);
-      } else {
-        $tr.addClass('deleting');
-        $('<input type="hidden" name="delete_filename[]" value="' + filename + '" />').appendTo($td);
-        for (var i = 0; i < self.uploaded.length; i++) {
-          if (self.uploaded[i].fileName == filename)
-            self.uploaded.splice(i, 1);
-        }
-        for (var i = 0; i < self.uploading.length; i++) {
-          if (self.uploading[i] == filename)
-            self.uploading.splice(i, 1);
-        }
+    var self = this;
+    $td = $tr.find(".filename");
+    var filename = $td.text().trim();
+    if ($tr.hasClass('deleting')) {
+      $tr.removeClass('deleting');
+      $tr.find('input[name="delete_filename[]"]').remove();
+      self.uploaded.push(filename);
+    } else {
+      $tr.addClass('deleting');
+      $('<input type="hidden" name="delete_filename[]" value="' + filename + '" />').appendTo($td);
+      for (var i = 0; i < self.uploaded.length; i++) {
+        if (self.uploaded[i].fileName == filename)
+          self.uploaded.splice(i, 1);
       }
+      for (var i = 0; i < self.uploading.length; i++) {
+        if (self.uploading[i] == filename)
+          self.uploading.splice(i, 1);
+      }
+    }
   },
 
   validName: function(name) {
