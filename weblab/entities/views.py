@@ -273,11 +273,8 @@ class EntityNewVersionView(
             # If there were any errors with adding or deleting files,
             # inform the user and reset the index / working tree
             # (as resubmission of the form will do it all again).
-            form = self.get_form()
-            for error in git_errors:
-                form.add_error(None, 'Git command error: %s' % error)
             entity.repo.head.reset(index=True, working_tree=True)
-            return self.form_invalid(form)
+            return self.fail_with_git_errors(git_errors)
         elif not entity.repo.head.is_valid() or entity.repo.index.diff('HEAD'):
             # Commit and tag the repo
             entity.commit_repo(
@@ -285,7 +282,14 @@ class EntityNewVersionView(
                 request.user.full_name,
                 request.user.email
             )
-            entity.tag_repo(request.POST['version'])
+            try:
+                entity.tag_repo(request.POST['version'])
+            except GitCommandError as e:
+                entity.repo.head.reset('HEAD~')
+                for f in entity.repo.untracked_files:
+                    os.remove(str(entity.repo_abs_path / f))
+                return self.fail_with_git_errors([e.stderr])
+
             # Temporary upload files have been safely committed, so can be deleted
             for filename in files_to_delete:
                 os.remove(filename)
@@ -296,6 +300,12 @@ class EntityNewVersionView(
             form = self.get_form()
             form.add_error(None, 'No changes were made for this version')
             return self.form_invalid(form)
+
+    def fail_with_git_errors(self, git_errors):
+        form = self.get_form()
+        for error in git_errors:
+            form.add_error(None, 'Git command error: %s' % error)
+        return self.form_invalid(form)
 
 
 class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):

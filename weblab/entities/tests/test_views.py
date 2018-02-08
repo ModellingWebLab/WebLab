@@ -49,13 +49,16 @@ def fake_upload_path(settings, tmpdir):
     return settings.MEDIA_ROOT
 
 
-def add_version(entity, filename='file1.txt'):
+def add_version(entity, filename='file1.txt', tag_name=None):
     """Add a single commit/version to an entity"""
     entity.init_repo()
     in_repo_path = str(entity.repo_abs_path / filename)
     open(in_repo_path, 'w').write('entity contents')
     entity.add_file_to_repo(in_repo_path)
-    entity.commit_repo('file', 'author', 'author@example.com')
+    commit = entity.commit_repo('file', 'author', 'author@example.com')
+    if tag_name:
+        entity.tag_repo(tag_name)
+    return commit
 
 
 @pytest.mark.django_db
@@ -371,6 +374,28 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert '/login/' in response.url
+
+    def test_rolls_back_if_tag_exists(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        first_commit = add_version(model, tag_name='v1')
+
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('model.txt', b'my test model'),
+            original_name='model.txt',
+        )
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': 'uploads/model.txt',
+                'commit_message': 'first commit',
+                'version': 'v1',
+            },
+        )
+        assert response.status_code == 200
+        assert model.repo.head.commit == first_commit
+        assert not (model.repo_abs_path / 'model.txt').exists()
 
 
 @pytest.mark.django_db
