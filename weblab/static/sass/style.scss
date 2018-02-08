@@ -209,6 +209,8 @@ form {
   }
   .errorlist {
     color: red;
+    list-style-type: none;
+    padding-left: 0;
   }
 }
 
@@ -357,6 +359,16 @@ tr:nth-child(1)
 {
 	font-size:.8em;
 	text-align: left;
+}
+
+#entityversionfilestable .deleting {
+  text-decoration: line-through;
+  opacity: 0.3;
+}
+
+#entityversionfilestable .new-file {
+  font-weight: bold;
+  background-color: #ffffe0;
 }
 
 #experimentlist li.experiment-QUEUED,

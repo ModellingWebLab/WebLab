@@ -24,6 +24,13 @@ urlpatterns = [
     ),
 
     url(
+        r'^models/(?P<pk>\d+)/delete$',
+        views.EntityDeleteView.as_view(),
+        {'entity_type': 'model'},
+        name='model_delete',
+    ),
+
+    url(
         r'^models/(?P<pk>\d+)/versions/$',
         views.ModelEntityVersionListView.as_view(),
         name='model_versions',
@@ -58,6 +65,13 @@ urlpatterns = [
         views.EntityView.as_view(),
         {'entity_type': 'protocol'},
         name='protocol',
+    ),
+
+    url(
+        r'^protocols/(?P<pk>\d+)/delete$',
+        views.EntityDeleteView.as_view(),
+        {'entity_type': 'protocol'},
+        name='protocol_delete',
     ),
 
     url(

@@ -1,16 +1,9 @@
 {% extends "base.html" %}
+{% load static %}
 {% load entities %}
 
 {% block content %}
-  <h1 id="entityname">
-    <small>{{ type|capfirst }}: </small><span>{{ entity.name }}</span>
-  </h1>
-
-  <div class="suppl">
-    <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
-    <br>
-    <small>Visibility: {{ entity.visibility }}</small>
-  </div>
+  {% include "./includes/entity_header.html" %}
 
   <div id="entityversion">
     <div>
@@ -35,7 +28,7 @@
       <div id="entityversionfiles">
         <h3>Files attached to this version</h3>
 
-       {% include "entities/includes/version_files.html" %}
+       {% include "./includes/version_files.html" %}
 
       </div>
 

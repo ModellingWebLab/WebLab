@@ -3,24 +3,14 @@
 
 
 {% block content %}
-  <h1 id="entityname">
-    <small>{{ type|capfirst }}: </small><span>{{ entity.name }}</span>
-  </h1>
-
-  <div class="suppl">
-    <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.</small>
-    {% can_create_version entity.entity_type as permission %}
-    {% if permission %}
-      <small>| <a href="{{ entity|url_newversion }}">add new version</a></small>
-    {% endif %}
-  </div>
+  {% include "./includes/entity_header.html" %}
 
   <h2>New version</h2>
 
   <form method="POST" action="">
-    {% include "entities/includes/version_files.html" with version=latest_version %}
+    {% include "./includes/version_files.html" with version=latest_version %}
 
-    {% include "entities/includes/upload.html" %}
+    {% include "./includes/upload.html" %}
 
     <p>
       <button id="savebutton">Create Version</button>
