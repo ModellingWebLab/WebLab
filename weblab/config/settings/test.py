@@ -1,5 +1,4 @@
 from .base import *  # noqa
 
 
-# Test settings
-SECRET_KEY = 'test-secret-key'
+# Settings file used by pytest, whether locally or on Travis
