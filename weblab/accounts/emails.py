@@ -10,7 +10,8 @@ def send_user_creation_email(user):
     """
 
     # Don't email the created user about it
-    admin_emails = get_user_model().objects.admins().exclude(pk=user.pk).values('email')
+    admin_emails = list(
+        get_user_model().objects.admins().exclude(pk=user.pk).values_list('email', flat=True))
     body = render_to_string(
         'emails/user_created.txt',
         {
