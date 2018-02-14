@@ -1,35 +1,42 @@
 {% extends "base.html" %}
 {% load static %}
 {% load entities %}
+{% load staticfiles %}
 
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
   <div id="entityversion">
-    <div>
-      <small><a href="{{ entity|url_versions }}">all versions</a></small>
+    <div class="closebtn">
+      <small>
+        <a href="{{ entity|url_versions }}">list all versions</a>
+        {% can_create_version entity.entity_type as permission %}
+        {% if permission %}
+          | <a href="{{ entity|url_newversion }}">add new version</a>
+        {% endif %}
+      </small>
     </div>
     <h2 id="entityversionname">
-      {% if tag %}
-        <b>{{ tag.name }}</b> <span class="suppl"><small>({{ version.hexsha }})</small></span>
-      {% else %}
-        <b>{{ version.hexsha }}</b>
-      {% endif %}
+      <small>Version:</small>
+      {% include "./includes/version_name.html" with tags=tags version=version only %}
     </h2>
     <div class="suppl">
       <small>
         Created <time id="entityversiontime">{{ version.committed_date|as_datetime }}</time>
         by <em id="entityversionauthor">{{ version.author }}</em>.
+        Visibility: {{ entity.visibility }}
+          <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />.
+        {% can_create_version entity.entity_type as permission %}
+        {% if permission %}
+          <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
+        {% endif %}
       </small>
     </div>
 
     <div id="entityversiondetails">
 
       <div id="entityversionfiles">
-        <h3>Files attached to this version</h3>
-
        {% include "./includes/version_files.html" %}
-
       </div>
 
     </div>

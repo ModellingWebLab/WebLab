@@ -1,0 +1,8 @@
+{# Common display of version name and tag info #}
+
+{% for tag in tags %}
+<b>{{ tag.name }}</b>{% if not forloop.last %},{% endif %}
+{% endfor %}
+{% if tags %}<small>({% endif %}{% spaceless %}
+<span title="Full identifier: {{ version.hexsha }}">{{ version.hexsha|truncatechars:11 }}</span>
+{% endspaceless %}{% if tags %})</small>{% endif %}

@@ -1,20 +1,8 @@
-{% load staticfiles %}
-
-<!--
-
-    ___     / __      ___      ___    __  ___  ___
-  //   ) ) //   ) ) //   ) ) ((   ) )  / /   //___) )
- //       //   / / //   / /   \ \     / /   //
-((____   //   / / ((___( ( //   ) )  / /   ((____
-
-
--->
-
 <!DOCTYPE html>
 <html>
   <head>
     <title>
-      {% block title %}{% endblock %}Functional Curation @ Chaste - Cardiac Electrophysiology
+      {% block title %}{% endblock %}Web Lab - Cardiac Electrophysiology
     </title>
 
     {% include "includes/head.html" %}
@@ -24,9 +12,7 @@
 
     <header>
       <div id="logo">
-        <a href="{% url "home" %}">
-          <img alt="Chaste - Functional Curation" src="{% static 'img/chaste.jpg' %}" /><br/><br/>
-        </a>
+        <br /><br />
       </div>
 
       {% include "includes/navbar.html" %}

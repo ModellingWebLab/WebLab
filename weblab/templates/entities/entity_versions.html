@@ -4,20 +4,21 @@
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
+  <h2>Versions</h2>
+
   {% can_create_version entity.entity_type as permission %}
   {% if permission %}
-  <a href="{{ entity|url_newversion }}">add new version</a>
+  <a href="{{ entity|url_newversion }}" class="button">Add new version</a>
   {% endif %}
 
   <div id="entityversionlist_content">
     <ul>
-    {% for tag, commit in versions %}
+    {% for tags, commit in versions %}
     <li>
       <p>
         <strong>
           <a class="entityversionlink" href="{{ entity|url_version:commit }}">
-          {{ commit.hexsha }}
-          {% if tag %} <b>({{ tag.name }})</b>{% endif %}
+            {% include "./includes/version_name.html" with tags=tags version=commit only %}
           </a>
         </strong>
         by <em>{{ commit.author }}</em><br />
@@ -26,6 +27,9 @@
           {% with commit|number_of_files as numfiles %}
           <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize}}
           {% endwith %}
+        </span><br />
+        <span class="suppl">
+          {{ commit.message|linebreaksbr }}
         </span>
       </p>
     </li>
