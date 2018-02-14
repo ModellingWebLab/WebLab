@@ -17,12 +17,10 @@ var Upload = function(){
   this.$table.find("tbody tr").each(function(i, tr) {
     var $tr = $(tr);
     self.uploaded.push({
-      'fileName': $tr.find(".filename").html(),
-      'fileType': $tr.find(".type").html(),
+      'fileName': $tr.find(".filename").html().trim(),
+      'fileType': $tr.find(".type").html().trim(),
     });
   });
-
-  console.log(self.uploaded);
 };
 
 
@@ -35,7 +33,6 @@ Upload.prototype = {
       dropZone: $("#dropbox"),
       add: function(e, data) {
         var name = data.files[0].name;
-        console.log(name);
         if (self.validName(name)) {
           self.addRow(data);
           data.submit();
@@ -43,8 +40,6 @@ Upload.prototype = {
       },
       submit: function(e, data) {
         self.uploading.push(data.files[0].name);
-
-        console.log('submit', e, data);
       },
       progress: function(e, data) {
         self.updateProgress(data);
@@ -58,6 +53,33 @@ Upload.prototype = {
     $('#dropbox a').click(function() {
       $("#fileupload").click();
     });
+
+    $("form #entityversionfilestable").on('click', 'tr .action .delete-file', function() {
+      self.toggleDelete($(this).parents('tr'));
+      return false;
+    });
+  },
+
+  toggleDelete: function($tr) {
+    var self = this;
+    $td = $tr.find(".filename");
+    var filename = $td.text().trim();
+    if ($tr.hasClass('deleting')) {
+      $tr.removeClass('deleting');
+      $tr.find('input[name="delete_filename[]"]').remove();
+      self.uploaded.push(filename);
+    } else {
+      $tr.addClass('deleting');
+      $('<input type="hidden" name="delete_filename[]" value="' + filename + '" />').appendTo($td);
+      for (var i = 0; i < self.uploaded.length; i++) {
+        if (self.uploaded[i].fileName == filename)
+          self.uploaded.splice(i, 1);
+      }
+      for (var i = 0; i < self.uploading.length; i++) {
+        if (self.uploading[i] == filename)
+          self.uploading.splice(i, 1);
+      }
+    }
   },
 
   validName: function(name) {
@@ -86,14 +108,11 @@ Upload.prototype = {
   alreadyExists: function(name) {
     for (var i = 0; i < this.uploading.length; i++) {
       if (this.uploading[i] == name) {
-        console.log('already uploading', name);
         return true;
       }
     }
-    console.log(name, this.uploaded);
     for (var i = 0; i < this.uploaded.length; i++) {
       if (this.uploaded[i].fileName == name) {
-        console.log('already uploaded', name);
         return true;
       }
     }
@@ -102,27 +121,25 @@ Upload.prototype = {
 
   addRow: function(data) {
     var file = data.files[0];
-    var $tr = $("<tr>").appendTo(this.$table);
+    var $tr = $('<tr class="new-file">').appendTo(this.$table);
     data.context = $tr;
     var $td;
 
     $td = $('<td class="filename">').appendTo($tr);
     $("<code>" + file.name + '</code>').appendTo($td);
-    $('<a class="rm"><img src="' + staticPath + 'img/failed.png" alt="remove from list" /></a>').appendTo($td);
 
     $('<td class="type"><small></small></td>').appendTo($tr);
 
     $td = $('<td class="size">').appendTo($tr);
     $('<small><code> ' + utils.humanReadableBytes(file.size) + ' </code></small>').appendTo($td);
 
-    $('<td class="action"><small></small></td>').appendTo($tr);
+    $('<td class="action"><a class="delete-file" title="delete this file"></td>').appendTo($tr);
   },
 
   showUpload: function(data, file, types) {
     var $tr = data.context;
     var $name = $tr.find(".filename code");
     var $type = $tr.find(".type small");
-    var $rm = $tr.find(".rm");
     var self = this;
 
     var array = {
@@ -159,18 +176,6 @@ Upload.prototype = {
 
     $td = $tr.find(".filename");
     $('<input type="hidden" name="filename[]" value="' + file.stored_name + '" />').appendTo($td);
-
-    $rm.click(function () {
-      for (var i = 0; i < self.uploaded.length; i++) {
-        if (self.uploaded[i].fileName == name)
-          self.uploaded.splice(i, 1);
-      }
-      for (var i = 0; i < self.uploading.length; i++) {
-        if (self.uploading[i] == name)
-          self.uploading.splice(i, 1);
-      }
-      $tr.remove();
-    });
   }
 }
 

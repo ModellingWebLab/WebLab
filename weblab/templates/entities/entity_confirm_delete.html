@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<form action="" method="post">{% csrf_token %}
+    <p>Are you sure you want to delete all versions of {{ object.entity_type }} "{{ object }}"?</p>
+    <p><strong>This operation cannot be undone.</strong></p>
+    <button>Confirm</button>
+</form>
+
+{% endblock %}

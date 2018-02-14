@@ -1,9 +1,11 @@
+import os
 from pathlib import Path
+from shutil import rmtree
 
 from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
-from git import Actor, Repo
+from git import Actor, Repo, GitCommandError
 
 
 class Entity(models.Model):
@@ -56,11 +58,26 @@ class Entity(models.Model):
     def __str__(self):
         return self.name
 
+    def is_deletable_by(self, user):
+        """
+        Is the entity deletable by the given user?
+
+        :param user: User object
+        :return: True if deletable, False otherwise
+        """
+        return user.is_superuser or user == self.author
+
     def init_repo(self):
         """
         Create an empty repository
         """
         Repo.init(str(self.repo_abs_path))
+
+    def delete_repo(self):
+        """
+        Delete the repository
+        """
+        rmtree(str(self.repo_abs_path))
 
     def add_file_to_repo(self, file_path):
         """
@@ -69,6 +86,15 @@ class Entity(models.Model):
         :param file_path: Path of file to be added
         """
         self.repo.index.add([file_path])
+
+    def delete_file_from_repo(self, file_path):
+        """
+        Delete a file from the repository
+
+        :param file_path: Path of file to be deleted
+        """
+        self.repo.index.remove([file_path])
+        os.remove(file_path)
 
     def commit_repo(self, message, author_name, author_email):
         """

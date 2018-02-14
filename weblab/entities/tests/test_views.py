@@ -49,18 +49,21 @@ def fake_upload_path(settings, tmpdir):
     return settings.MEDIA_ROOT
 
 
-def add_version(entity):
+def add_version(entity, filename='file1.txt', tag_name=None):
     """Add a single commit/version to an entity"""
     entity.init_repo()
-    in_repo_path = str(entity.repo_abs_path / 'entity.txt')
+    in_repo_path = str(entity.repo_abs_path / filename)
     open(in_repo_path, 'w').write('entity contents')
     entity.add_file_to_repo(in_repo_path)
-    entity.commit_repo('file', 'author', 'author@example.com')
+    commit = entity.commit_repo('file', 'author', 'author@example.com')
+    if tag_name:
+        entity.tag_repo(tag_name)
+    return commit
 
 
 @pytest.mark.django_db
 class TestEntityCreation:
-    def test_create_model(self, user, client, fake_repo_path):
+    def test_create_model(self, user, client):
         add_permission(user, 'create_model')
         response = client.post('/entities/models/new', data={
             'name': 'mymodel',
@@ -111,6 +114,40 @@ class TestEntityCreation:
         )
         assert response.status_code == 302
         assert '/login/' in response.url
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("recipe,url,list_url", [
+    (recipes.model, '/entities/models/%d/delete', '/entities/models/'),
+    (recipes.protocol, '/entities/protocols/%d/delete', '/entities/protocols/'),
+])
+class TestEntityDeletion:
+    def test_owner_can_delete_entity(self, user, client, recipe, url, list_url):
+        entity = recipe.make(author=user)
+        repo_path = entity.repo_abs_path
+        add_version(entity)
+        assert Entity.objects.filter(pk=entity.pk).exists()
+        assert repo_path.exists()
+
+        response = client.post(url % entity.pk)
+
+        assert response.status_code == 302
+        assert response.url == list_url
+
+        assert not Entity.objects.filter(pk=entity.pk).exists()
+        assert not repo_path.exists()
+
+    @pytest.mark.usefixtures('user')
+    def test_non_owner_cannot_delete_entity(self, other_user, client, recipe, url, list_url):
+        entity = recipe.make(author=other_user)
+        repo_path = entity.repo_abs_path
+        add_version(entity)
+
+        response = client.post(url % entity.pk)
+
+        assert response.status_code == 403
+        assert Entity.objects.filter(pk=entity.pk).exists()
+        assert repo_path.exists()
 
 
 @pytest.mark.django_db
@@ -306,6 +343,100 @@ class TestVersionCreation:
         assert model.repo.head.commit.message == 'first commit'
         assert model.repo.head.commit.tree.blobs[0].name == 'model.txt'
 
+    def test_add_multiple_files(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('file1.txt', b'file 1'),
+            original_name='file1.txt',
+        )
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('file2.txt', b'file 2'),
+            original_name='file2.txt',
+        )
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': ['uploads/file1.txt', 'uploads/file2.txt'],
+                'commit_message': 'files',
+                'tag': 'v1',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d' % model.id
+        assert 'v1' in model.repo.tags
+        assert model.repo.head.commit.message == 'files'
+        assert model.repo.head.commit.tree.blobs[0].name == 'file1.txt'
+        assert model.repo.head.commit.tree.blobs[1].name == 'file2.txt'
+
+    def test_delete_file(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        add_version(model, 'file1.txt')
+        add_version(model, 'file2.txt')
+        assert len(model.repo.head.commit.tree.blobs) == 2
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'delete_filename[]': ['file1.txt'],
+                'commit_message': 'delete file1',
+                'tag': 'delete-file',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d' % model.id
+        assert 'delete-file' in model.repo.tags
+        assert model.repo.head.commit.message == 'delete file1'
+        assert len(model.repo.head.commit.tree.blobs) == 1
+        assert model.repo.head.commit.tree.blobs[0].name == 'file2.txt'
+        assert not (model.repo_abs_path / 'file1.txt').exists()
+
+    def test_delete_multiple_files(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        add_version(model, 'file1.txt')
+        add_version(model, 'file2.txt')
+        add_version(model, 'file3.txt')
+        assert len(model.repo.head.commit.tree.blobs) == 3
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'delete_filename[]': ['file1.txt', 'file2.txt'],
+                'commit_message': 'delete files',
+                'tag': 'delete-files',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d' % model.id
+        assert 'delete-files' in model.repo.tags
+        assert model.repo.head.commit.message == 'delete files'
+        assert len(model.repo.head.commit.tree.blobs) == 1
+        assert model.repo.head.commit.tree.blobs[0].name == 'file3.txt'
+        assert not (model.repo_abs_path / 'file1.txt').exists()
+        assert not (model.repo_abs_path / 'file2.txt').exists()
+
+    def test_delete_nonexistent_file(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        add_version(model, 'file1.txt')
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'delete_filename[]': ['file2.txt'],
+                'commit_message': 'delete file2',
+                'version': 'delete-file',
+            },
+        )
+        assert response.status_code == 200
+        assert 'delete-file' not in model.repo.tags
+        assert model.repo.head.commit.message != 'delete file2'
+
     def test_create_model_version_requires_permissions(self, user, client):
         model = recipes.model.make(author=user)
         response = client.post(
@@ -346,6 +477,28 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert '/login/' in response.url
+
+    def test_rolls_back_if_tag_exists(self, user, client):
+        add_permission(user, 'create_model_version')
+        model = recipes.model.make(author=user)
+        first_commit = add_version(model, tag_name='v1')
+
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('model.txt', b'my test model'),
+            original_name='model.txt',
+        )
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': 'uploads/model.txt',
+                'commit_message': 'first commit',
+                'tag': 'v1',
+            },
+        )
+        assert response.status_code == 200
+        assert model.repo.head.commit == first_commit
+        assert not (model.repo_abs_path / 'model.txt').exists()
 
 
 @pytest.mark.django_db

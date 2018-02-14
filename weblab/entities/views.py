@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import (
     AccessMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    UserPassesTestMixin,
 )
 from django.core.urlresolvers import reverse
 from django.http import (
@@ -18,8 +19,9 @@ from django.http.response import Http404
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import CreateView, FormMixin
+from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
+from git import GitCommandError
 
 from .forms import (
     EntityTagVersionForm,
@@ -240,6 +242,23 @@ class EntityTagVersionView(
         return reverse('entities:%s_version' % entity.entity_type, args=[entity.id, version])
 
 
+class EntityDeleteView(UserPassesTestMixin, DeleteView):
+    """
+    Delete an entity
+    """
+    model = Entity
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have delete permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        url_name = 'entities:{}s'.format(self.kwargs['entity_type'])
+        return reverse(url_name)
+
+
 class EntityNewVersionView(
     LoginRequiredMixin, PermissionRequiredMixin, FormMixin, DetailView
 ):
@@ -250,6 +269,13 @@ class EntityNewVersionView(
     template_name = 'entities/entity_newversion.html'
     form_class = EntityVersionForm
 
+    def get_initial(self):
+        initial = super().get_initial()
+        delete_file = self.request.GET.get('deletefile')
+        if delete_file:
+            initial['commit_message'] = 'Delete %s' % delete_file
+        return initial
+
     def get_context_data(self, **kwargs):
         entity = self.get_object()
         latest = entity.repo.head
@@ -257,29 +283,75 @@ class EntityNewVersionView(
             kwargs.update(**{
                 'latest_version': latest.commit,
             })
+
+        kwargs['delete_file'] = self.request.GET.get('deletefile')
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
-        entity = self.get_object()
-        uploads = entity.files.filter(
-            upload=request.POST['filename[]']
-        )
+        entity = self.object = self.get_object()
 
-        # Copy each file into the git repo
-        for upload in uploads:
+        git_errors = []
+        files_to_delete = []  # Temp files to be removed if successful
+
+        # Delete files from the index
+        deletions = request.POST.getlist('delete_filename[]')
+        for filename in deletions:
+            path = str(entity.repo_abs_path / filename)
+            try:
+                entity.delete_file_from_repo(path)
+            except GitCommandError as e:
+                git_errors.append(e.stderr)
+
+        # Copy files into the index
+        additions = request.POST.getlist('filename[]')
+        for upload in entity.files.filter(upload__in=additions):
             src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
             dest = str(entity.repo_abs_path / upload.original_name)
-            shutil.move(src, dest)
-            entity.add_file_to_repo(dest)
+            files_to_delete.append(src)
+            shutil.copy(src, dest)
+            try:
+                entity.add_file_to_repo(dest)
+            except GitCommandError as e:
+                git_errors.append(e.stderr)
 
-        entity.commit_repo(request.POST['commit_message'],
-                           request.user.full_name,
-                           request.user.email)
-        if request.POST['tag']:
-            entity.tag_repo(request.POST['tag'])
+        if git_errors:
+            # If there were any errors with adding or deleting files,
+            # inform the user and reset the index / working tree
+            # (as resubmission of the form will do it all again).
+            entity.repo.head.reset(index=True, working_tree=True)
+            return self.fail_with_git_errors(git_errors)
+        elif not entity.repo.head.is_valid() or entity.repo.index.diff('HEAD'):
+            # Commit and tag the repo
+            entity.commit_repo(
+                request.POST['commit_message'],
+                request.user.full_name,
+                request.user.email
+            )
+            if request.POST['tag']:
+                try:
+                    entity.tag_repo(request.POST['tag'])
+                except GitCommandError as e:
+                    entity.repo.head.reset('HEAD~')
+                    for f in entity.repo.untracked_files:
+                        os.remove(str(entity.repo_abs_path / f))
+                    return self.fail_with_git_errors([e.stderr])
 
-        return HttpResponseRedirect(
-            reverse('entities:%s' % entity.entity_type, args=[entity.id]))
+            # Temporary upload files have been safely committed, so can be deleted
+            for filename in files_to_delete:
+                os.remove(filename)
+            return HttpResponseRedirect(
+                reverse('entities:%s' % entity.entity_type, args=[entity.id]))
+        else:
+            # Nothing changed, so inform the user and do nothing else.
+            form = self.get_form()
+            form.add_error(None, 'No changes were made for this version')
+            return self.form_invalid(form)
+
+    def fail_with_git_errors(self, git_errors):
+        form = self.get_form()
+        for error in git_errors:
+            form.add_error(None, 'Git command error: %s' % error)
+        return self.form_invalid(form)
 
 
 class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):

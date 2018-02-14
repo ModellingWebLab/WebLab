@@ -89,6 +89,12 @@ def url_new(entity_type):
     return reverse(url_name)
 
 
+@register.filter
+def url_delete(entity):
+    url_name = 'entities:{}_delete'.format(entity.entity_type)
+    return reverse(url_name, args=[entity.id])
+
+
 @register.simple_tag(takes_context=True)
 def can_create_version(context, entity_type):
     user = context['user']
@@ -99,3 +105,9 @@ def can_create_version(context, entity_type):
 def can_create_entity(context, entity_type):
     user = context['user']
     return user.has_perm('entities.create_{}'.format(entity_type))
+
+
+@register.simple_tag(takes_context=True)
+def can_delete_entity(context, entity):
+    user = context['user']
+    return entity.is_deletable_by(user)

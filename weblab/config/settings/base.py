@@ -15,9 +15,16 @@ from pathlib import Path
 
 import dj_database_url
 
+try:
+    from . import secrets  # isort:skip
+except ImportError:
+    raise Exception("You do not have a secrets.py set up - see "
+                    "secrets.example.py for details")
 
 BASE_DIR = Path(os.path.abspath(__file__)).parents[2]
 
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = secrets.SECRET_KEY
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -153,8 +160,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = str(BASE_DIR / 'staticfiles')
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    str(BASE_DIR / 'static'),
 ]
 
 # Media files (Uploaded files)
@@ -162,12 +170,12 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = str(BASE_DIR / 'media')
 
 # Google OAuth2 - see http://code.google.com/apis/accounts/docs/OAuth2.html#Registering
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ.get('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', '')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', '')
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = secrets.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = secrets.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET
 
 # GitHub - see https://github.com/settings/applications/new
-SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY', '')
-SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET', '')
+SOCIAL_AUTH_GITHUB_KEY = secrets.SOCIAL_AUTH_GITHUB_KEY
+SOCIAL_AUTH_GITHUB_SECRET = secrets.SOCIAL_AUTH_GITHUB_SECRET
 SOCIAL_AUTH_GITHUB_SCOPE = ['user:email']
 
 
