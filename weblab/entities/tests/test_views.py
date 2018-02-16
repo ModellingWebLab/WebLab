@@ -338,7 +338,7 @@ class TestVersionCreation:
         assert response.url == '/entities/models/%d' % model.id
         assert 'v1' in model.repo._repo.tags
         assert model.repo.latest_commit.message == 'first commit'
-        assert model.repo.latest_commit.tree.blobs[0].name == 'model.txt'
+        assert 'model.txt' in model.repo.filenames()
 
     def test_add_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
@@ -366,15 +366,15 @@ class TestVersionCreation:
         assert response.url == '/entities/models/%d' % model.id
         assert 'v1' in model.repo._repo.tags
         assert model.repo.latest_commit.message == 'files'
-        assert model.repo.latest_commit.tree.blobs[0].name == 'file1.txt'
-        assert model.repo.latest_commit.tree.blobs[1].name == 'file2.txt'
+        assert 'file1.txt' in model.repo.filenames()
+        assert 'file2.txt' in model.repo.filenames()
 
     def test_delete_file(self, user, client):
         add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         add_version(model, 'file1.txt')
         add_version(model, 'file2.txt')
-        assert len(model.repo.latest_commit.tree.blobs) == 2
+        assert len(model.repo.latest_commit.tree.blobs) == 3
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -388,8 +388,8 @@ class TestVersionCreation:
         assert response.url == '/entities/models/%d' % model.id
         assert 'delete-file' in model.repo._repo.tags
         assert model.repo.latest_commit.message == 'delete file1'
-        assert len(model.repo.latest_commit.tree.blobs) == 1
-        assert model.repo.latest_commit.tree.blobs[0].name == 'file2.txt'
+        assert len(model.repo.latest_commit.tree.blobs) == 2
+        assert 'file2.txt' in model.repo.filenames()
         assert not (model.repo_abs_path / 'file1.txt').exists()
 
     def test_delete_multiple_files(self, user, client):
@@ -398,7 +398,7 @@ class TestVersionCreation:
         add_version(model, 'file1.txt')
         add_version(model, 'file2.txt')
         add_version(model, 'file3.txt')
-        assert len(model.repo.latest_commit.tree.blobs) == 3
+        assert len(model.repo.latest_commit.tree.blobs) == 4
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -412,8 +412,8 @@ class TestVersionCreation:
         assert response.url == '/entities/models/%d' % model.id
         assert 'delete-files' in model.repo._repo.tags
         assert model.repo.latest_commit.message == 'delete files'
-        assert len(model.repo.latest_commit.tree.blobs) == 1
-        assert model.repo.latest_commit.tree.blobs[0].name == 'file3.txt'
+        assert len(model.repo.latest_commit.tree.blobs) == 2
+        assert 'file3.txt' in model.repo.filenames()
         assert not (model.repo_abs_path / 'file1.txt').exists()
         assert not (model.repo_abs_path / 'file2.txt').exists()
 
@@ -462,7 +462,7 @@ class TestVersionCreation:
         assert response.url == '/entities/protocols/%d' % protocol.id
         assert 'v1' in protocol.repo._repo.tags
         assert protocol.repo.latest_commit.message == 'first commit'
-        assert protocol.repo.latest_commit.tree.blobs[0].name == 'protocol.txt'
+        assert 'protocol.txt' in protocol.repo.filenames()
         assert protocol.repo.latest_commit.author.email == user.email
         assert protocol.repo.latest_commit.author.name == user.full_name
 

@@ -1,9 +1,10 @@
 import os
+from pathlib import Path
 from shutil import rmtree
 
 from django.utils.functional import cached_property
-
 from git import Actor, Repo
+from libcombine import CombineArchive, CaWriter
 
 
 class Repository:
@@ -39,7 +40,7 @@ class Repository:
 
         :param file_path: Absolute path of file to be added
         """
-        self._repo.index.add([file_path])
+        self._repo.index.add([str(file_path)])
 
     def rm_file(self, file_path):
         """
@@ -47,8 +48,8 @@ class Repository:
 
         :param file_path: Absolute Path of file to be deleted
         """
-        self._repo.index.remove([file_path])
-        os.remove(file_path)
+        self._repo.index.remove([str(file_path)])
+        Path(file_path).unlink()
 
     def commit(self, message, author):
         """
@@ -59,6 +60,7 @@ class Repository:
 
         :return: `git.Commit` object
         """
+        self.generate_manifest()
         return self._repo.index.commit(
             message,
             author=Actor(author.full_name, author.email),
@@ -143,3 +145,20 @@ class Repository:
         :return iterable of `git.Commit` objects in the entity repository
         """
         return self._repo.iter_commits()
+
+    def generate_manifest(self):
+        archive = CombineArchive()
+        for (entry, staged) in self._repo.index.entries:
+            ext = ''.join(Path(entry).suffixes)[1:]
+            archive.addFile(entry, entry, ext)
+
+        manifest_path = os.path.join(self._root, 'manifest.xml')
+        writer = CaWriter()
+        writer.writeOMEXToFile(archive.getManifest(), manifest_path)
+        self.add_file(manifest_path)
+
+    def filenames(self, ref='HEAD'):
+        return {
+            blob.name
+            for blob in self._repo.commit(ref).tree.blobs
+        }
