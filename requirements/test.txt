@@ -22,6 +22,7 @@ pyjwt==1.5.2              # via social-auth-core
 pytest-cov==2.5.1
 pytest-django==3.1.2
 pytest==3.2.0
+python-libcombine==0.2.1
 python3-openid==3.1.0     # via social-auth-core
 pytz==2017.2              # via django
 requests-oauthlib==0.8.0  # via social-auth-core
