@@ -4,7 +4,7 @@ from shutil import rmtree
 
 from django.utils.functional import cached_property
 from git import Actor, Repo
-from libcombine import CombineArchive, CaWriter
+from libcombine import CombineArchive, CaReader, CaWriter
 
 
 class Repository:
@@ -60,7 +60,6 @@ class Repository:
 
         :return: `git.Commit` object
         """
-        self.generate_manifest()
         return self._repo.index.commit(
             message,
             author=Actor(author.full_name, author.email),
@@ -146,19 +145,70 @@ class Repository:
         """
         return self._repo.iter_commits()
 
-    def generate_manifest(self):
-        archive = CombineArchive()
-        for (entry, staged) in self._repo.index.entries:
-            ext = ''.join(Path(entry).suffixes)[1:]
-            archive.addFile(entry, entry, ext)
+    @property
+    def manifest_path(self):
+        """
+        Path of COMBINE manifest file
 
-        manifest_path = os.path.join(self._root, 'manifest.xml')
+        :return: absolute path as a string
+        """
+        return os.path.join(self._root, 'manifest.xml')
+
+    def generate_manifest(self, master_filename=None):
+        """
+        Generate COMBINE manifest file for repository index
+
+        Stages the manifest file for commit. Will overwrite existing manifest.
+
+        :param master_filename: Name of main/master file
+        """
+        archive = CombineArchive()
+        for entry in sorted(e for (e, _) in self._repo.index.entries):
+            ext = ''.join(Path(entry).suffixes)[1:]
+            archive.addFile(entry, entry, ext, entry == master_filename)
+
         writer = CaWriter()
-        writer.writeOMEXToFile(archive.getManifest(), manifest_path)
-        self.add_file(manifest_path)
+        writer.writeOMEXToFile(archive.getManifest(), self.manifest_path)
+        self.add_file(self.manifest_path)
+
+    @property
+    def master_filename(self):
+        """
+        Get name of repository master file, as defined by COMBINE manifest
+
+        :return: master filename, or None if no master file
+        """
+        reader = CaReader()
+
+        try:
+            with open(self.manifest_path) as manifest_file:
+                manifest = reader.readOMEXFromString(manifest_file.read())
+
+                return next((
+                    content.getLocation()
+                    for content in manifest.getListOfContents()
+                    if content.isSetMaster() and content.getMaster()
+                ), None)
+        except FileNotFoundError:
+            pass
 
     def filenames(self, ref='HEAD'):
+        """
+        Get all filenames in repository
+
+        :param ref: A reference to a specific commit, defaults to the latest
+        :return: set of all filenames in repository
+        """
         return {
             blob.name
-            for blob in self._repo.commit(ref).tree.blobs
+            for blob in self.files(ref)
         }
+
+    def files(self, ref='HEAD'):
+        """
+        Get all files in repository
+
+        :param ref: A reference to a specific commit, defaults to the latest
+        :return: iterable of all files in repository
+        """
+        return self._repo.commit(ref).tree.blobs

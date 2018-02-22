@@ -339,6 +339,7 @@ class TestVersionCreation:
         assert 'v1' in model.repo._repo.tags
         assert model.repo.latest_commit.message == 'first commit'
         assert 'model.txt' in model.repo.filenames()
+        assert 'manifest.xml' in model.repo.filenames()
 
     def test_add_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
@@ -358,6 +359,7 @@ class TestVersionCreation:
             '/entities/models/%d/versions/new' % model.pk,
             data={
                 'filename[]': ['uploads/file1.txt', 'uploads/file2.txt'],
+                'mainEntry': ['file1.txt'],
                 'commit_message': 'files',
                 'tag': 'v1',
             },
@@ -374,7 +376,7 @@ class TestVersionCreation:
         model = recipes.model.make(author=user)
         add_version(model, 'file1.txt')
         add_version(model, 'file2.txt')
-        assert len(model.repo.latest_commit.tree.blobs) == 3
+        assert len(model.repo.latest_commit.tree.blobs) == 2
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -398,7 +400,7 @@ class TestVersionCreation:
         add_version(model, 'file1.txt')
         add_version(model, 'file2.txt')
         add_version(model, 'file3.txt')
-        assert len(model.repo.latest_commit.tree.blobs) == 4
+        assert len(model.repo.latest_commit.tree.blobs) == 3
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,

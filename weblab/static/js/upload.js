@@ -125,6 +125,9 @@ Upload.prototype = {
     data.context = $tr;
     var $td;
 
+    $td = $('<td>').appendTo($tr)
+    $('<input type="radio" name="mainEntry" value="' + file.name + '">').appendTo($td);
+
     $td = $('<td class="filename">').appendTo($tr);
     $("<code>" + file.name + '</code>').appendTo($td);
 

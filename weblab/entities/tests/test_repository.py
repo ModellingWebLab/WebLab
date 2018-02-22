@@ -47,7 +47,6 @@ class TestRepository:
         repo.commit('commit_message', author)
 
         assert repo.latest_commit.author.email == author.email
-        assert 'manifest.xml' in repo.filenames()
 
     def test_tag(self, repo, repo_file, author):
         repo.add_file(repo_file)
@@ -94,11 +93,26 @@ class TestRepository:
     def test_generate_manifest(self, repo, repo_file):
         repo.add_file(repo_file)
 
-        repo.generate_manifest()
+        path = Path(repo._root) / 'file2.cellml'
+        path.write_text('file2 contents')
+        repo.add_file(path)
+
+        repo.generate_manifest(master_filename='file.cellml')
 
         manifest_file = Path(repo._root) / 'manifest.xml'
         assert manifest_file.read_text() == '''<?xml version="1.0" encoding="UTF-8"?>
 <omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">
-  <content location="file.cellml" format="cellml" master="false"/>
+  <content location="file.cellml" format="cellml" master="true"/>
+  <content location="file2.cellml" format="cellml" master="false"/>
 </omexManifest>
 '''
+        assert repo.master_filename == 'file.cellml'
+
+    def test_master_filename_is_none_if_no_manifest(self, repo):
+        assert repo.master_filename is None
+
+    def test_master_filename_is_none_if_none_selected(self, repo, repo_file):
+        repo.add_file(repo_file)
+        repo.generate_manifest()
+
+        assert repo.master_filename is None

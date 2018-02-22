@@ -75,6 +75,7 @@ class VersionMixin:
         kwargs.update(**{
             'version': commit,
             'tags': tags.get(commit, []),
+            'master_filename': entity.repo.master_filename,
         })
         return super().get_context_data(**kwargs)
 
@@ -279,6 +280,7 @@ class EntityNewVersionView(
         if latest:
             kwargs.update(**{
                 'latest_version': latest,
+                'master_filename': entity.repo.master_filename,
             })
 
         kwargs['delete_file'] = self.request.GET.get('deletefile')
@@ -317,7 +319,11 @@ class EntityNewVersionView(
             # (as resubmission of the form will do it all again).
             entity.repo.hard_reset()
             return self.fail_with_git_errors(git_errors)
-        elif entity.repo.has_changes:
+
+        main_file = request.POST.get('mainEntry')
+        entity.repo.generate_manifest(master_filename=main_file)
+
+        if entity.repo.has_changes:
             # Commit and tag the repo
             entity.repo.commit(request.POST['commit_message'], request.user)
             if request.POST['tag']:
