@@ -1,5 +1,6 @@
-from pathlib import Path
+import os.path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import pytest
 
@@ -15,9 +16,10 @@ def repo(tmpdir):
 @pytest.fixture
 def repo_file(repo):
     repo.create()
-    path = Path(repo._root) / 'file.cellml'
-    path.write_text('file contents')
-    return path
+    path = os.path.join(repo._root, 'file.cellml')
+    with open(path, 'w') as f:
+        f.write('file contents')
+    return Path(path)
 
 
 @pytest.fixture
@@ -70,7 +72,7 @@ class TestRepository:
     def test_rollback(self, repo, repo_file, author):
         repo.add_file(repo_file)
         commit1 = repo.commit('commit 1', author)
-        repo_file.write_text('updated contents')
+        open(str(repo_file), 'w').write('updated contents')
         repo.add_file(repo_file)
         commit2 = repo.commit('commit 2', author)
         assert repo.latest_commit == commit2
@@ -95,7 +97,7 @@ class TestRepository:
         repo.add_file(repo_file)
 
         path = Path(repo._root) / 'file2.cellml'
-        path.write_text('file2 contents')
+        open(str(path), 'w').write('file2 contents')
         repo.add_file(path)
 
         repo.generate_manifest(master_filename='file.cellml')
