@@ -60,13 +60,13 @@ class ManifestReader:
     def __init__(self):
         self._root = None
 
-    def read(self, path):
+    def read(self, source):
         """
         Read in an XML manifest file
 
-        :param path: Absolute path of manifest file
+        :param source: Absolute path of manifest file, or file object
         """
-        self._root = ET.parse(path).getroot()
+        self._root = ET.parse(source).getroot()
 
     @property
     def master_filename(self):
