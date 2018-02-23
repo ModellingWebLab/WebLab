@@ -172,19 +172,25 @@ class Repository:
         writer.write(self.manifest_path)
         self.add_file(self.manifest_path)
 
-    @property
-    def master_filename(self):
+    def master_filename(self, ref=None):
         """
         Get name of repository master file, as defined by COMBINE manifest
 
         :return: master filename, or None if no master file or no manifest
         """
+
         reader = ManifestReader()
-        try:
-            reader.read(self.manifest_path)
-            return reader.master_filename
-        except FileNotFoundError:
-            pass
+        if ref:
+            for file_ in self.files(ref):
+                if file_.name == 'manifest.xml':
+                    reader.read(file_.data_stream)
+                    return reader.master_filename
+        else:
+            try:
+                reader.read(self.manifest_path)
+                return reader.master_filename
+            except FileNotFoundError:
+                pass
 
     def filenames(self, ref='HEAD'):
         """
@@ -205,4 +211,4 @@ class Repository:
         :param ref: A reference to a specific commit, defaults to the latest
         :return: iterable of all files in repository
         """
-        return self._repo.commit(ref).tree.blobs
+        return self.get_commit(ref).tree.blobs

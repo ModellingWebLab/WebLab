@@ -105,13 +105,13 @@ class TestRepository:
         manifest_file = Path(repo._root) / 'manifest.xml'
         root = ET.parse(str(manifest_file)).getroot()
         assert [child.attrib['location'] for child in root] == ['file.cellml', 'file2.cellml']
-        assert repo.master_filename == 'file.cellml'
+        assert repo.master_filename() == 'file.cellml'
 
     def test_master_filename_is_none_if_no_manifest(self, repo):
-        assert repo.master_filename is None
+        assert repo.master_filename() is None
 
     def test_master_filename_is_none_if_none_selected(self, repo, repo_file):
         repo.add_file(repo_file)
         repo.generate_manifest()
 
-        assert repo.master_filename is None
+        assert repo.master_filename() is None

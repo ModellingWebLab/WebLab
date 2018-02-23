@@ -75,7 +75,7 @@ class VersionMixin:
         kwargs.update(**{
             'version': commit,
             'tags': tags.get(commit, []),
-            'master_filename': entity.repo.master_filename,
+            'master_filename': entity.repo.master_filename(version),
         })
         return super().get_context_data(**kwargs)
 
