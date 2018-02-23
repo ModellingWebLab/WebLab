@@ -4,7 +4,8 @@ from shutil import rmtree
 
 from django.utils.functional import cached_property
 from git import Actor, Repo
-from libcombine import CombineArchive, CaReader, CaWriter
+#from libcombine import CombineArchive, CaReader, CaWriter
+from .manifest import ManifestWriter, ManifestReader
 
 
 class Repository:
@@ -162,13 +163,13 @@ class Repository:
 
         :param master_filename: Name of main/master file
         """
-        archive = CombineArchive()
+        writer = ManifestWriter()
+
         for entry in sorted(e for (e, _) in self._repo.index.entries):
             ext = ''.join(Path(entry).suffixes)[1:]
-            archive.addFile(entry, entry, ext, entry == master_filename)
+            writer.add_file(entry, ext, entry == master_filename)
 
-        writer = CaWriter()
-        writer.writeOMEXToFile(archive.getManifest(), self.manifest_path)
+        writer.write(self.manifest_path)
         self.add_file(self.manifest_path)
 
     @property
@@ -176,19 +177,12 @@ class Repository:
         """
         Get name of repository master file, as defined by COMBINE manifest
 
-        :return: master filename, or None if no master file
+        :return: master filename, or None if no master file or no manifest
         """
-        reader = CaReader()
-
+        reader = ManifestReader()
         try:
-            with open(self.manifest_path) as manifest_file:
-                manifest = reader.readOMEXFromString(manifest_file.read())
-
-                return next((
-                    content.getLocation()
-                    for content in manifest.getListOfContents()
-                    if content.isSetMaster() and content.getMaster()
-                ), None)
+            reader.read(self.manifest_path)
+            return reader.master_filename
         except FileNotFoundError:
             pass
 

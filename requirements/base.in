@@ -14,6 +14,3 @@ GitPython==2.1.7
 
 # django helpers
 django-braces==1.11.0
-
-# COMBINE archives
-python-libcombine==0.2.1

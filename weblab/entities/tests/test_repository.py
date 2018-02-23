@@ -1,4 +1,5 @@
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -100,12 +101,8 @@ class TestRepository:
         repo.generate_manifest(master_filename='file.cellml')
 
         manifest_file = Path(repo._root) / 'manifest.xml'
-        assert manifest_file.read_text() == '''<?xml version="1.0" encoding="UTF-8"?>
-<omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">
-  <content location="file.cellml" format="cellml" master="true"/>
-  <content location="file2.cellml" format="cellml" master="false"/>
-</omexManifest>
-'''
+        root = ET.parse(str(manifest_file)).getroot()
+        assert [child.attrib['location'] for child in root] == ['file.cellml', 'file2.cellml']
         assert repo.master_filename == 'file.cellml'
 
     def test_master_filename_is_none_if_no_manifest(self, repo):
