@@ -4,8 +4,8 @@ from shutil import rmtree
 
 from django.utils.functional import cached_property
 from git import Actor, Repo
-#from libcombine import CombineArchive, CaReader, CaWriter
-from .manifest import ManifestWriter, ManifestReader
+
+from .manifest import ManifestReader, ManifestWriter
 
 
 class Repository:
