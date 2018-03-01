@@ -26,9 +26,11 @@ class Entity(models.Model):
 
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
+    ENTITY_TYPE_EXPERIMENT = 'experiment'
     ENTITY_TYPE_CHOICES = (
         (ENTITY_TYPE_MODEL, ENTITY_TYPE_MODEL),
         (ENTITY_TYPE_PROTOCOL, ENTITY_TYPE_PROTOCOL),
+        (ENTITY_TYPE_EXPERIMENT, ENTITY_TYPE_EXPERIMENT),
     )
 
     entity_type = models.CharField(
@@ -110,6 +112,38 @@ class ProtocolEntity(Entity):
     class Meta:
         proxy = True
         verbose_name_plural = 'Protocol entities'
+
+
+class ExperimentEntity(Entity):
+    entity_type = Entity.ENTITY_TYPE_EXPERIMENT
+
+    objects = EntityManager()
+
+    class Meta:
+        proxy = True
+        verbose_name_plural = 'Experiment entities'
+
+
+class Experiment(models.Model):
+    """
+    Stores extra fields related to Experiment
+
+    (since all Entity objects are stored in the same table,
+    experiment-specific fields and their constraints are best stored separately)
+    """
+    entity = models.OneToOneField(
+        ExperimentEntity,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name='experiment'
+    )
+
+    model = models.ForeignKey(ModelEntity, related_name='model_experiments')
+    protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments')
+
+    class Meta:
+        unique_together = ('model', 'protocol')
+        verbose_name_plural = 'Experiments'
 
 
 class EntityFile(models.Model):
