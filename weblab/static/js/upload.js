@@ -136,7 +136,9 @@ Upload.prototype = {
     $td = $('<td class="size">').appendTo($tr);
     $('<small><code> ' + utils.humanReadableBytes(file.size) + ' </code></small>').appendTo($td);
 
-    $('<td class="action"><a class="delete-file" title="delete this file"></td>').appendTo($tr);
+    $('<td class="action"><a class="delete-file" title="delete this file">' +
+      '<img src="/static/img/delete.png" alt="delete this file" title="delete this file"/>' +
+      '</a></td>').appendTo($tr);
   },
 
   showUpload: function(data, file, types) {
