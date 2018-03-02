@@ -8,6 +8,15 @@ function humanReadableBytes (bytes)
     return Math.round (bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
 };
 
+function removeChildren (elem)
+{
+    if (elem)
+        while (elem.firstChild)
+            elem.removeChild(elem.firstChild);
+}
+
+
 module.exports = {
-  humanReadableBytes: humanReadableBytes
+  humanReadableBytes: humanReadableBytes,
+  removeChildren: removeChildren,
 }

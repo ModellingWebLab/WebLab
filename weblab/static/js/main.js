@@ -1,7 +1,9 @@
 var $ = require('jquery');
 require('jquery-ui-browserify');
 var XDate = require('xdate');
+var utils = require('./lib/utils.js')
 require('./entitynew.js');
+require('./db.js');
 var notifications = require('./lib/notifications.js');
 
 /**
@@ -128,13 +130,6 @@ function batchProcessing (jsonObject, actionIndicator, callback)
         }
     };
     xmlhttp.send(JSON.stringify(jsonObject));
-}
-
-function removeChildren (elem)
-{
-    if (elem)
-        while (elem.firstChild)
-            elem.removeChild(elem.firstChild);
 }
 
 function convertForURL (str)

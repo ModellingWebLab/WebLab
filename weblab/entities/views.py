@@ -17,6 +17,7 @@ from django.http import (
 )
 from django.http.response import Http404
 from django.views import View
+from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
@@ -30,7 +31,7 @@ from .forms import (
     ModelEntityForm,
     ProtocolEntityForm,
 )
-from .models import Entity, ModelEntity, ProtocolEntity
+from .models import Entity, ExperimentEntity, ModelEntity, ProtocolEntity
 
 
 class ModelEntityTypeMixin:
@@ -128,6 +129,13 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
 
     def get_queryset(self):
         return self.model.objects.filter(author=self.request.user)
+
+
+class ExperimentsView(LoginRequiredMixin, TemplateView):
+    """
+    List all user's experiments
+    """
+    template_name = 'entities/experiments.html'
 
 
 class EntityVisibilityMixin(AccessMixin, SingleObjectMixin):
@@ -429,3 +437,56 @@ class FileUploadView(View):
 
         else:
             return HttpResponseBadRequest(form.errors)
+
+
+class ExperimentMatrixJsonView(View):
+    """
+    Serve up JSON for experiment matrix
+    """
+    @staticmethod
+    def entity_json(entity):
+        return {
+            'id': entity.id,
+            'entity_id': entity.id,
+            'author': str(entity.author.full_name),
+            'visibility': entity.visibility,
+            'created': entity.creation_date,
+            'name': entity.name,
+            'url': reverse(
+                'entities:%s_version' % entity.entity_type,
+                args=[entity.id, 'latest']
+            ),
+            # TODO: fill these fields in
+            'version': 'HEAD',
+            'tags': '',
+            'commitMessage': '',
+            'numFiles': '',
+        }
+
+    def get(self, request, *args, **kwargs):
+        models = {
+            model.pk: self.entity_json(model)
+            for model in ModelEntity.objects.visible_to_user(request.user)
+        }
+
+        protocols = {
+            protocol.pk: self.entity_json(protocol)
+            for protocol in ProtocolEntity.objects.visible_to_user(request.user)
+        }
+
+        experiments = {
+            exp.pk: {
+                'entity_id': exp.id,
+                'protocol': self.entity_json(exp.experiment.protocol),
+                'model': self.entity_json(exp.experiment.model),
+            }
+            for exp in ExperimentEntity.objects.visible_to_user(request.user)
+        }
+
+        return JsonResponse({
+            'getMatrix': {
+                'models': models,
+                'protocols': protocols,
+                'experiments': experiments,
+            }
+        })

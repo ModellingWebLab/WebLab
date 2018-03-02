@@ -3,6 +3,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
+from django.db.models import Q
 from django.utils.functional import cached_property
 
 from .repository import Repository
@@ -53,6 +54,7 @@ class Entity(models.Model):
         permissions = (
             ('create_model', 'Can create models'),
             ('create_protocol', 'Can create protocols'),
+            ('create_experiment', 'Can create experiments'),
             ('create_model_version', 'Can create new versions of a model'),
             ('create_protocol_version', 'Can create new versions of a protocol'),
         )
@@ -88,6 +90,9 @@ class Entity(models.Model):
 class EntityManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(entity_type=self.model.entity_type)
+
+    def visible_to_user(self, user):
+        return self.get_queryset().filter(Q(author=user) | ~Q(visibility=Entity.VISIBILITY_PRIVATE))
 
     def create(self, **kwargs):
         kwargs['entity_type'] = self.model.entity_type

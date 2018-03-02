@@ -101,6 +101,18 @@ urlpatterns = [
     ),
 
     url(
+        r'^experiments/$',
+        views.ExperimentsView.as_view(),
+        name='experiments',
+    ),
+
+    url(
+        r'^experiments/matrix$',
+        views.ExperimentMatrixJsonView.as_view(),
+        name='experiment_matrix',
+    ),
+
+    url(
         r'^(?P<pk>\d+)/upload-file$',
         views.FileUploadView.as_view(),
         name='upload_file',
