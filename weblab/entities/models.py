@@ -2,7 +2,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.validators import MinLengthValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.utils.functional import cached_property
 
@@ -86,6 +86,20 @@ class Entity(models.Model):
             settings.REPO_BASE, str(self.author.id), '%ss' % self.entity_type, str(self.id)
         )
 
+    def get_joint_visibility(self, other):
+        """
+        :return visibility of the combination of two entities
+        """
+        # Ordered by most conservative first
+        visibilities = [
+            self.VISIBILITY_PRIVATE, self.VISIBILITY_RESTRICTED, self.VISIBILITY_PUBLIC,
+        ]
+        # Use the most conservative of the two entities' visibilities
+        return min(
+            visibilities.index(self.visibility),
+            visibilities.index(other.visibility)
+        )
+
 
 class EntityManager(models.Manager):
     def get_queryset(self):
@@ -129,6 +143,27 @@ class ExperimentEntity(Entity):
         verbose_name_plural = 'Experiment entities'
 
 
+class ExperimentManager(models.Manager):
+    @transaction.atomic
+    def submit_experiment(self, model, protocol, user):
+        experiment = self.filter(model=model, protocol=protocol).first()
+        if not experiment:
+            visibility = model.get_joint_visibility(protocol)
+
+            entity = ExperimentEntity.objects.create(
+                author=user,
+                name='%s / %s' % (model, protocol),
+                visibility=visibility,
+            )
+            experiment = Experiment.objects.create(
+                model=model,
+                protocol=protocol,
+                entity=entity,
+            )
+
+        return experiment
+
+
 class Experiment(models.Model):
     """
     Stores extra fields related to Experiment
@@ -145,6 +180,8 @@ class Experiment(models.Model):
 
     model = models.ForeignKey(ModelEntity, related_name='model_experiments')
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments')
+
+    objects = ExperimentManager()
 
     class Meta:
         unique_together = ('model', 'protocol')

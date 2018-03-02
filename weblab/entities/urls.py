@@ -107,6 +107,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^experiments/new$',
+        views.NewExperimentView.as_view(),
+        name='experiment_new',
+    ),
+
+    url(
         r'^experiments/matrix$',
         views.ExperimentMatrixJsonView.as_view(),
         name='experiment_matrix',

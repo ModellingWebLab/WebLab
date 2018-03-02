@@ -1,4 +1,5 @@
 var $ = require('jquery');
+var notifications = require('./lib/notifications.js')
 var utils = require('./lib/utils.js')
 
 var pages = [ "matrix" ],//, "search" ],
@@ -15,64 +16,37 @@ var pages = [ "matrix" ],//, "search" ],
  */
 function submitNewExperiment(jsonObject, $td, entry)
 {
-	$td.append("<img src='"+contextPath+"/res/img/loading2-new.gif' alt='loading' />");
 
-    var xmlhttp = null;
-    // !IE
-    if (window.XMLHttpRequest)
-    {
-        xmlhttp = new XMLHttpRequest();
-    }
-    // IE -- microsoft, we really hate you. every single day.
-    else if (window.ActiveXObject)
-    {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
+  $td.append("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
 
-    xmlhttp.open("POST", contextPath + '/newexperiment.html', true);
-    xmlhttp.setRequestHeader("Content-type", "application/json");
+  $.post('/entities/experiments/new', jsonObject, function(data) {
+      var msg = data.newExperiment.responseText;
+      $td.removeClass("experiment-QUEUED experiment-RUNNING experiment-INAPPLICABLE experiment-FAILED experiment-PARTIAL experiment-SUCCESS");
 
-    xmlhttp.onreadystatechange = function()
-    {
-        if (xmlhttp.readyState != 4)
-        	return;
-
-    	var json = JSON.parse(xmlhttp.responseText);
-    	displayNotifications(json);
-
-    	$td.removeClass("experiment-QUEUED experiment-RUNNING experiment-INAPPLICABLE experiment-FAILED experiment-PARTIAL experiment-SUCCESS");
-		$td.unbind("click");
-		$td.contents().remove();
-
-    	if (xmlhttp.status == 200)
-        {
-        	if (json.newExperiment)
-        	{
-        		var msg = json.newExperiment.responseText;
-    			if (json.newExperiment.response)
-    			{
-    				addNotification(msg, "info");
-    				entry.experiment = {name: json.newExperiment.expName,
-    									id: json.newExperiment.expId,
-    									latestResult: "QUEUED"};
-    				var expUrl = contextPath + "/experiment/" + convertForURL(entry.experiment.name) + "/" + entry.experiment.id + "/latest";
-    				$td.addClass("experiment-QUEUED");
-    				setExpListeners($td, entry);
-    			}
-    			else
-    			{
-    				addNotification(msg, "error");
-    				$td.addClass("experiment-INAPPLICABLE");
-    			}
-        	}
-        }
-        else
-        {
-        	addNotification("Server-side error occurred submitting experiment.", "error");
-        	$td.addClass("experiment-INAPPLICABLE");
-        }
-    };
-    xmlhttp.send(JSON.stringify(jsonObject));
+      if (data.newExperiment.response)
+      {
+        notifications.add(msg, "info");
+        entry.experiment = {
+          name: data.newExperiment.expName,
+          id: data.newExperiment.expId,
+          latestResult: "QUEUED"
+        };
+        $td.addClass("experiment-QUEUED");
+        setExpListeners($td, entry);
+      }
+      else
+      {
+        notifications.add(msg, "error");
+        $td.addClass("experiment-INAPPLICABLE");
+      }
+  }).fail(function() {
+      notifications.add("Server-side error occurred submitting experiment.", "error");
+      $td.addClass("experiment-INAPPLICABLE");
+  }).always(function(data) {
+    notifications.display(data);
+    $td.unbind("click");
+    $td.contents().remove();
+  });
 }
 
 
@@ -256,7 +230,8 @@ function setExpListeners($td, entry)
 	// Click listener
 	if (entry.experiment)
 	{
-		var expUrl = contextPath + "/experiment/" + convertForURL(entry.experiment.name) + "/" + entry.experiment.id + "/latest";
+		//var expUrl = contextPath + "/experiment/" + convertForURL(entry.experiment.name) + "/" + entry.experiment.id + "/latest";
+    var expUrl = '#'
 		addMatrixClickListener($td, expUrl, entry.experiment.id, entry.experiment.latestResult);
 	}
 	else

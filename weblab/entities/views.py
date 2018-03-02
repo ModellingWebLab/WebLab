@@ -16,6 +16,7 @@ from django.http import (
     JsonResponse,
 )
 from django.http.response import Http404
+from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
@@ -31,7 +32,13 @@ from .forms import (
     ModelEntityForm,
     ProtocolEntityForm,
 )
-from .models import Entity, ExperimentEntity, ModelEntity, ProtocolEntity
+from .models import (
+    Entity,
+    Experiment,
+    ExperimentEntity,
+    ModelEntity,
+    ProtocolEntity,
+)
 
 
 class ModelEntityTypeMixin:
@@ -457,7 +464,7 @@ class ExperimentMatrixJsonView(View):
                 args=[entity.id, 'latest']
             ),
             # TODO: fill these fields in
-            'version': 'HEAD',
+            'version': '',
             'tags': '',
             'commitMessage': '',
             'numFiles': '',
@@ -488,5 +495,28 @@ class ExperimentMatrixJsonView(View):
                 'models': models,
                 'protocols': protocols,
                 'experiments': experiments,
+            }
+        })
+
+
+class NewExperimentView(View):
+    def post(self, request, *args, **kwargs):
+        # Does user have permission to do this?
+        #
+        model = get_object_or_404(ModelEntity, pk=request.POST['model'])
+        protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
+
+        experiment = Experiment.objects.submit_experiment(model, protocol, request.user)
+
+        return JsonResponse({
+            'newExperiment': {
+                'expId': experiment.entity.id,
+                'versionId': '',
+                'expName': experiment.entity.name,
+                'response': True,
+                'responseText': (
+                    "Experiment submitted. Based on the size of the queue "
+                    "it might take some time until we can process your job."
+                )
             }
         })
