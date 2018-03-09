@@ -340,6 +340,7 @@ class TestVersionCreation:
         assert model.repo.latest_commit.message == 'first commit'
         assert 'model.txt' in model.repo.filenames()
         assert 'manifest.xml' in model.repo.filenames()
+        assert model.repo.master_filename() is None
 
     def test_add_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
@@ -370,6 +371,7 @@ class TestVersionCreation:
         assert model.repo.latest_commit.message == 'files'
         assert 'file1.txt' in model.repo.filenames()
         assert 'file2.txt' in model.repo.filenames()
+        assert model.repo.master_filename() == 'file1.txt'
 
     def test_delete_file(self, user, client):
         add_permission(user, 'create_model_version')

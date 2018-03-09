@@ -10,7 +10,7 @@ from .manifest import ManifestReader, ManifestWriter
 
 class Repository:
     """
-    Wrapper class for `git.Repository`
+    Wrapper class for `git.Repo`
     """
 
     def __init__(self, path):
@@ -184,13 +184,13 @@ class Repository:
             for file_ in self.files(ref):
                 if file_.name == 'manifest.xml':
                     reader.read(file_.data_stream)
-                    return reader.master_filename
         else:
             try:
                 reader.read(self.manifest_path)
-                return reader.master_filename
             except FileNotFoundError:
                 pass
+
+        return reader.master_filename
 
     def filenames(self, ref='HEAD'):
         """

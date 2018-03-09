@@ -37,7 +37,7 @@ class TestRepository:
 
     def test_add_and_rm_file(self, repo, repo_file):
         repo.add_file(repo_file)
-        # the 0 means whether the file is staged
+        # the 0 means the file is staged
         assert (repo_file.name, 0) in repo._repo.index.entries
 
         repo.rm_file(repo_file)
@@ -49,6 +49,7 @@ class TestRepository:
 
         repo.commit('commit_message', author)
 
+        assert repo.files()[0].name == repo_file.name
         assert repo.latest_commit.author.email == author.email
 
     def test_tag(self, repo, repo_file, author):
@@ -68,6 +69,8 @@ class TestRepository:
 
     def test_untracked_files(self, repo, repo_file):
         assert repo_file.name in repo.untracked_files
+        repo.add_file(repo_file)
+        assert repo_file.name not in repo.untracked_files
 
     def test_rollback(self, repo, repo_file, author):
         repo.add_file(repo_file)

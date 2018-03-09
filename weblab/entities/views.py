@@ -280,7 +280,7 @@ class EntityNewVersionView(
         if latest:
             kwargs.update(**{
                 'latest_version': latest,
-                'master_filename': entity.repo.master_filename,
+                'master_filename': entity.repo.master_filename(),
             })
 
         kwargs['delete_file'] = self.request.GET.get('deletefile')

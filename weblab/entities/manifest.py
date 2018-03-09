@@ -58,7 +58,7 @@ class ManifestReader:
     Reader for COMBINE manifest file
     """
     def __init__(self):
-        self._root = None
+        self._root = []
 
     def read(self, source):
         """

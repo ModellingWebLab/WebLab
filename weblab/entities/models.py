@@ -3,6 +3,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
+from django.utils.functional import cached_property
 
 from .repository import Repository
 
@@ -66,7 +67,7 @@ class Entity(models.Model):
         """
         return user.is_superuser or user == self.author
 
-    @property
+    @cached_property
     def repo(self):
         return Repository(self.repo_abs_path)
 
