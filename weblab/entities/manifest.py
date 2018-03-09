@@ -1,7 +1,19 @@
+import mimetypes
+from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
-MANIFEST_NS = 'http://identifiers.org/combine.specifications/omex-manifest'
+COMBINE_NS = 'http://identifiers.org/combine.specifications/'
+MANIFEST_NS = '%somex-manifest' % COMBINE_NS
+MIME_NS = 'http://purl.org/NET/mediatypes/'
+
+
+# Spec says to prefer identifiers.org URI over media types.
+# (http://co.mbine.org/specifications/omex.version-1.pdf)
+# combine.specifications as per http://co.mbine.org/standards/specifications/
+COMBINE_FORMATS = {
+    'cellml': 'cellml',
+}
 
 
 class ManifestWriter:
@@ -11,15 +23,54 @@ class ManifestWriter:
     def __init__(self):
         self._files = []
 
-    def add_file(self, path, fmt, is_master):
+    @staticmethod
+    def identify_combine_format(path):
+        """
+        Determine combine.specifications format of a file
+
+        :path: Path of target file
+        :return: namespaced format if identified, empty string otherwise
+        """
+        extension = ''.join(Path(path).suffixes)[1:]
+        fmt = COMBINE_FORMATS.get(extension, '')
+        return COMBINE_NS + fmt if fmt else ''
+
+    @staticmethod
+    def identify_mime_type(path):
+        """
+        Determine mime_type for a file
+
+        :path: Path of target file
+        :return: namespaced mime type if identified, empty string otherwise
+        """
+        fmt, _ = mimetypes.guess_type(path)
+        return MIME_NS + fmt if fmt else ''
+
+    def add_file(self, path, *, is_master=False,
+                 fmt='', mime_type='', combine_format=''):
         """
         Add file to manifest
 
         :param path: Filename, relative to root of archive
         :param fmt: File format as string
+        :param mime_type: Mime type as string
+        :param combine_format: combine format as string
         :param is_master: True if this is master file, False if not
+
+        Caller should specify only one of `fmt`, `mime_type` or `combine_format`.
+        If none of these is specified, the method will attempt to identify format.
         """
-        self._files.append((path, fmt, is_master))
+        format_ = fmt
+        if fmt:
+            format_ = fmt
+        elif combine_format:
+            format_ = COMBINE_NS + combine_format
+        elif mime_type:
+            format_ = MIME_NS + mime_type
+        else:
+            format_ = self.identify_combine_format(path) or self.identify_mime_type(path)
+
+        self._files.append((path, format_, is_master))
 
     @property
     def xml_doc(self):

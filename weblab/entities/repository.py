@@ -166,8 +166,7 @@ class Repository:
         writer = ManifestWriter()
 
         for entry in sorted(e for (e, _) in self._repo.index.entries):
-            ext = ''.join(Path(entry).suffixes)[1:]
-            writer.add_file(entry, ext, entry == master_filename)
+            writer.add_file(entry, is_master=entry == master_filename)
 
         writer.write(self.manifest_path)
         self.add_file(self.manifest_path)
