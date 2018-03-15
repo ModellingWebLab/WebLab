@@ -14,7 +14,7 @@ django==1.11.4
 gitdb2==2.0.3             # via gitpython
 gitpython==2.1.7
 idna==2.6                 # via requests
-model-mommy==1.4.0
+model-mommy==1.5.1
 oauthlib==2.0.2           # via requests-oauthlib, social-auth-core
 psycopg2==2.7.3
 py==1.4.34                # via pytest
