@@ -101,6 +101,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/versions/%s/archive$' % _COMMIT,
+        views.EntityArchiveView.as_view(),
+        name='entity_archive',
+    ),
+
+    url(
         r'^experiments/$',
         views.ExperimentsView.as_view(),
         name='experiments',

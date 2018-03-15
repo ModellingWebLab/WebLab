@@ -1,4 +1,6 @@
 import os
+import zipfile
+from io import BytesIO
 from pathlib import Path
 from shutil import rmtree
 
@@ -153,7 +155,16 @@ class Repository:
 
         :return: absolute path as a string
         """
-        return os.path.join(self._root, 'manifest.xml')
+        return self.full_path('manifest.xml')
+
+    def full_path(self, filename):
+        """
+        Return full filesystem path of file
+
+        :param filename: filename
+        :return: full absolute path of file
+        """
+        return os.path.join(self._root, filename)
 
     def generate_manifest(self, master_filename=None):
         """
@@ -211,3 +222,14 @@ class Repository:
         :return: iterable of all files in repository
         """
         return self.get_commit(ref).tree.blobs
+
+    def archive(self, ref='HEAD'):
+        memfile = BytesIO()
+        archive = zipfile.ZipFile(memfile, 'w', zipfile.ZIP_DEFLATED)
+
+        for filename in self.filenames(ref):
+            archive.write(self.full_path(filename), filename)
+        archive.close()
+
+        memfile.seek(0)
+        return memfile

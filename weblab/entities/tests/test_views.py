@@ -1,5 +1,7 @@
 import io
 import json
+import zipfile
+from io import BytesIO
 
 import pytest
 from django.contrib.auth.models import Permission
@@ -503,6 +505,27 @@ class TestVersionCreation:
 
 
 @pytest.mark.django_db
+class TestEntityArchive:
+    def test_download_archive(self, client):
+        model = recipes.model.make()
+        commit = add_version(model, filename='file1.txt')
+
+        response = client.get('/entities/models/%d/versions/latest/archive' % model.pk)
+        assert response.status_code == 200
+        archive = zipfile.ZipFile(BytesIO(response.content))
+        assert archive.filelist[0].filename == 'file1.txt'
+        assert response['Content-Disposition'] == (
+            'attachment; filename=%s_%s.zip' % (model.name, commit.hexsha)
+        )
+
+    def test_returns_404_if_no_commits_yet(self, user, client):
+        model = recipes.model.make()
+
+        response = client.get('/entities/models/%d/versions/latest/archive' % model.pk)
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
 class TestFileUpload:
     def test_upload_file(self, user, client):
         model = recipes.model.make(author=user)
@@ -538,9 +561,11 @@ class TestFileUpload:
     (recipes.model, '/entities/models/%d'),
     (recipes.model, '/entities/models/%d/versions/'),
     (recipes.model, '/entities/models/%d/versions/latest'),
+    (recipes.model, '/entities/models/%d/versions/latest/archive'),
     (recipes.protocol, '/entities/protocols/%d'),
     (recipes.protocol, '/entities/protocols/%d/versions/'),
     (recipes.protocol, '/entities/protocols/%d/versions/latest'),
+    (recipes.protocol, '/entities/protocols/%d/versions/latest/archive'),
 ])
 class TestEntityVisibility:
     def test_private_entity_visible_to_self(self, client, user, recipe, url):

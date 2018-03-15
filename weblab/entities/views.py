@@ -11,12 +11,14 @@ from django.contrib.auth.mixins import (
 )
 from django.core.urlresolvers import reverse
 from django.http import (
+    Http404,
+    HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.http.response import Http404
 from django.shortcuts import get_object_or_404
+from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
@@ -305,7 +307,7 @@ class EntityNewVersionView(
         entity = self.object = self.get_object()
 
         git_errors = []
-        files_to_delete = []  # Temp files to be removed if successful
+        files_to_delete = set()  # Temp files to be removed if successful
 
         # Delete files from the index
         deletions = request.POST.getlist('delete_filename[]')
@@ -321,7 +323,7 @@ class EntityNewVersionView(
         for upload in entity.files.filter(upload__in=additions):
             src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
             dest = str(entity.repo_abs_path / upload.original_name)
-            files_to_delete.append(src)
+            files_to_delete.add(src)
             shutil.copy(src, dest)
             try:
                 entity.repo.add_file(dest)
@@ -413,6 +415,33 @@ class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
     List versions of a protocol
     """
     pass
+
+
+class EntityArchiveView(EntityVisibilityMixin, SingleObjectMixin, View):
+    """
+    Download a version of a model
+    """
+    model = Entity
+
+    def get(self, request, *args, **kwargs):
+        entity = self.get_object()
+        ref = self.kwargs['sha']
+        commit = entity.repo.get_commit(ref)
+
+        if not commit:
+            raise Http404
+
+        zipfile_name = os.path.join(
+            get_valid_filename('%s_%s.zip' % (entity.name, commit.hexsha))
+        )
+
+        archive = entity.repo.archive(ref)
+
+        response = HttpResponse(content_type='application/zip')
+        response['Content-Disposition'] = 'attachment; filename=%s' % zipfile_name
+        response.write(archive.read())
+
+        return response
 
 
 class FileUploadView(View):
