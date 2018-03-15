@@ -70,7 +70,7 @@ def url_version(entity, commit):
     names (new, latest), we fall back to the SHA1.
     """
     url_name = 'entities:{}_version'.format(entity.entity_type)
-    last_tag = str(entity.tag_dict.get(commit, ['/'])[-1])
+    last_tag = str(entity.repo.tag_dict.get(commit, ['/'])[-1])
     if '/' in last_tag or last_tag in ['new', 'latest']:
         last_tag = commit.hexsha
     args = [entity.id, last_tag]

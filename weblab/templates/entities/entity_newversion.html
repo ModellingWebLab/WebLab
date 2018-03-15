@@ -8,7 +8,7 @@
   <h2>New version</h2>
 
   <form method="POST" action="">
-    {% include "./includes/version_files.html" with version=latest_version %}
+    {% include "./includes/version_files.html" with version=latest_version edit=True master=master_filename %}
 
     {% include "./includes/upload.html" %}
 

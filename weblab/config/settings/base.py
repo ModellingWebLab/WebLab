@@ -15,6 +15,7 @@ from pathlib import Path
 
 import dj_database_url
 
+
 try:
     from . import secrets  # isort:skip
 except ImportError:

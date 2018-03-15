@@ -51,13 +51,13 @@ def fake_upload_path(settings, tmpdir):
 
 def add_version(entity, filename='file1.txt', tag_name=None):
     """Add a single commit/version to an entity"""
-    entity.init_repo()
+    entity.repo.create()
     in_repo_path = str(entity.repo_abs_path / filename)
     open(in_repo_path, 'w').write('entity contents')
-    entity.add_file_to_repo(in_repo_path)
-    commit = entity.commit_repo('file', 'author', 'author@example.com')
+    entity.repo.add_file(in_repo_path)
+    commit = entity.repo.commit('file', User(full_name='author', email='author@example.com'))
     if tag_name:
-        entity.tag_repo(tag_name)
+        entity.repo.tag(tag_name)
     return commit
 
 
@@ -173,21 +173,21 @@ class TestEntityVersionDetail:
     def test_view_entity_version(self, client, user):
         model = recipes.model.make()
         add_version(model)
-        commit = next(model.commits)
+        commit = model.repo.latest_commit
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
                    commit, [])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
                    commit, [])
 
         # Now add a second version with tag
-        assert len(list(model.commits)) == 1
+        assert len(list(model.repo.commits)) == 1
         add_version(model)
-        model.tag_repo('my_tag')
+        model.repo.tag('my_tag')
 
         # Commits are yielded newest first
-        assert len(list(model.commits)) == 2
-        assert commit == list(model.commits)[-1]
-        commit = next(model.commits)
+        assert len(list(model.repo.commits)) == 2
+        assert commit == list(model.repo.commits)[-1]
+        commit = model.repo.latest_commit
 
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
                    commit, ['my_tag'])
@@ -199,9 +199,9 @@ class TestEntityVersionDetail:
     def test_version_with_two_tags(self, client, user):
         model = recipes.model.make()
         add_version(model)
-        commit = next(model.commits)
-        model.tag_repo('tag1')
-        model.tag_repo('tag2')
+        commit = model.repo.latest_commit
+        model.repo.tag('tag1')
+        model.repo.tag('tag2')
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
                    commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'),
@@ -216,11 +216,10 @@ class TestEntityVersionDetail:
 class TestTagging:
     def test_tag_specific_ref(self):
         model = recipes.model.make()
+        commit = add_version(model)
         add_version(model)
-        commit = next(model.commits)
-        add_version(model)
-        model.tag_repo('tag', ref=commit.hexsha)
-        tags = model.tag_dict
+        model.repo.tag('tag', ref=commit.hexsha)
+        tags = model.repo.tag_dict
         assert len(tags) == 1
         assert tags[commit][0].name == 'tag'
 
@@ -230,28 +229,28 @@ class TestTagging:
         add_version(model)
 
         with pytest.raises(git.exc.GitCommandError):
-            model.tag_repo('tag/')
+            model.repo.tag('tag/')
 
-        model.tag_repo('my/tag')
-        assert model.tag_dict[next(model.commits)][0].name == 'my/tag'
+        model.repo.tag('my/tag')
+        assert model.repo.tag_dict[model.repo.latest_commit][0].name == 'my/tag'
 
         with pytest.raises(git.exc.GitCommandError):
-            model.tag_repo('tag with spaces')
+            model.repo.tag('tag with spaces')
 
     def test_cant_use_same_tag_twice(self):
         import git
         model = recipes.model.make()
         add_version(model)
-        model.tag_repo('tag')
+        model.repo.tag('tag')
         add_version(model)
         with pytest.raises(git.exc.GitCommandError):
-            model.tag_repo('tag')
+            model.repo.tag('tag')
 
     def test_user_can_add_tag(self, user, client):
         add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         add_version(model)
-        commit = next(model.commits)
+        commit = model.repo.latest_commit
         response = client.post(
             '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
             data={
@@ -260,16 +259,15 @@ class TestTagging:
         )
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha)
-        assert 'v1' in model.repo.tags
-        tags = model.tag_dict
+        assert 'v1' in model.repo._repo.tags
+        tags = model.repo.tag_dict
         assert len(tags) == 1
         assert tags[commit][0].name == 'v1'
 
     @pytest.mark.skip('not yet implemented')
     def test_tag_view_requires_permissions(self, user, client):
         model = recipes.model.make(author=user)
-        add_version(model)
-        commit = next(model.commits)
+        commit = add_version(model)
         response = client.post(
             '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
             data={},
@@ -286,7 +284,7 @@ class TestEntityVersionList:
 
         response = client.get('/entities/models/%d/versions/' % model.pk)
         assert response.status_code == 200
-        assert response.context['versions'] == [(None, next(model.commits))]
+        assert response.context['versions'] == [(None, model.repo.latest_commit)]
 
 
 @pytest.mark.django_db
@@ -308,9 +306,8 @@ class TestEntityList:
 class TestVersionCreation:
     def test_new_version_form_includes_latest_version(self, client, user):
         model = recipes.model.make()
-        add_version(model)
+        commit = add_version(model)
         add_permission(user, 'create_model_version')
-        commit = next(model.commits)
         response = client.get('/entities/models/%d/versions/new' % model.pk)
         assert response.status_code == 200
         assert response.context['latest_version'] == commit
@@ -339,9 +336,11 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert response.url == '/entities/models/%d' % model.id
-        assert 'v1' in model.repo.tags
-        assert model.repo.head.commit.message == 'first commit'
-        assert model.repo.head.commit.tree.blobs[0].name == 'model.txt'
+        assert 'v1' in model.repo._repo.tags
+        assert model.repo.latest_commit.message == 'first commit'
+        assert 'model.txt' in model.repo.filenames()
+        assert 'manifest.xml' in model.repo.filenames()
+        assert model.repo.master_filename() is None
 
     def test_add_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
@@ -361,23 +360,25 @@ class TestVersionCreation:
             '/entities/models/%d/versions/new' % model.pk,
             data={
                 'filename[]': ['uploads/file1.txt', 'uploads/file2.txt'],
+                'mainEntry': ['file1.txt'],
                 'commit_message': 'files',
                 'tag': 'v1',
             },
         )
         assert response.status_code == 302
         assert response.url == '/entities/models/%d' % model.id
-        assert 'v1' in model.repo.tags
-        assert model.repo.head.commit.message == 'files'
-        assert model.repo.head.commit.tree.blobs[0].name == 'file1.txt'
-        assert model.repo.head.commit.tree.blobs[1].name == 'file2.txt'
+        assert 'v1' in model.repo._repo.tags
+        assert model.repo.latest_commit.message == 'files'
+        assert 'file1.txt' in model.repo.filenames()
+        assert 'file2.txt' in model.repo.filenames()
+        assert model.repo.master_filename() == 'file1.txt'
 
     def test_delete_file(self, user, client):
         add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         add_version(model, 'file1.txt')
         add_version(model, 'file2.txt')
-        assert len(model.repo.head.commit.tree.blobs) == 2
+        assert len(model.repo.latest_commit.tree.blobs) == 2
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -389,10 +390,10 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert response.url == '/entities/models/%d' % model.id
-        assert 'delete-file' in model.repo.tags
-        assert model.repo.head.commit.message == 'delete file1'
-        assert len(model.repo.head.commit.tree.blobs) == 1
-        assert model.repo.head.commit.tree.blobs[0].name == 'file2.txt'
+        assert 'delete-file' in model.repo._repo.tags
+        assert model.repo.latest_commit.message == 'delete file1'
+        assert len(model.repo.latest_commit.tree.blobs) == 2
+        assert 'file2.txt' in model.repo.filenames()
         assert not (model.repo_abs_path / 'file1.txt').exists()
 
     def test_delete_multiple_files(self, user, client):
@@ -401,7 +402,7 @@ class TestVersionCreation:
         add_version(model, 'file1.txt')
         add_version(model, 'file2.txt')
         add_version(model, 'file3.txt')
-        assert len(model.repo.head.commit.tree.blobs) == 3
+        assert len(model.repo.latest_commit.tree.blobs) == 3
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -413,10 +414,10 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert response.url == '/entities/models/%d' % model.id
-        assert 'delete-files' in model.repo.tags
-        assert model.repo.head.commit.message == 'delete files'
-        assert len(model.repo.head.commit.tree.blobs) == 1
-        assert model.repo.head.commit.tree.blobs[0].name == 'file3.txt'
+        assert 'delete-files' in model.repo._repo.tags
+        assert model.repo.latest_commit.message == 'delete files'
+        assert len(model.repo.latest_commit.tree.blobs) == 2
+        assert 'file3.txt' in model.repo.filenames()
         assert not (model.repo_abs_path / 'file1.txt').exists()
         assert not (model.repo_abs_path / 'file2.txt').exists()
 
@@ -434,8 +435,8 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 200
-        assert 'delete-file' not in model.repo.tags
-        assert model.repo.head.commit.message != 'delete file2'
+        assert 'delete-file' not in model.repo._repo.tags
+        assert model.repo.latest_commit.message != 'delete file2'
 
     def test_create_model_version_requires_permissions(self, user, client):
         model = recipes.model.make(author=user)
@@ -463,11 +464,11 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d' % protocol.id
-        assert 'v1' in protocol.repo.tags
-        assert protocol.repo.head.commit.message == 'first commit'
-        assert protocol.repo.head.commit.tree.blobs[0].name == 'protocol.txt'
-        assert protocol.repo.head.commit.author.email == user.email
-        assert protocol.repo.head.commit.author.name == user.full_name
+        assert 'v1' in protocol.repo._repo.tags
+        assert protocol.repo.latest_commit.message == 'first commit'
+        assert 'protocol.txt' in protocol.repo.filenames()
+        assert protocol.repo.latest_commit.author.email == user.email
+        assert protocol.repo.latest_commit.author.name == user.full_name
 
     def test_create_protocol_version_requires_permissions(self, user, client):
         protocol = recipes.protocol.make(author=user)
@@ -497,7 +498,7 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 200
-        assert model.repo.head.commit == first_commit
+        assert model.repo.latest_commit == first_commit
         assert not (model.repo_abs_path / 'model.txt').exists()
 
 

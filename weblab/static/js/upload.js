@@ -125,6 +125,9 @@ Upload.prototype = {
     data.context = $tr;
     var $td;
 
+    $td = $('<td>').appendTo($tr)
+    $('<input type="radio" name="mainEntry" value="' + file.name + '">').appendTo($td);
+
     $td = $('<td class="filename">').appendTo($tr);
     $("<code>" + file.name + '</code>').appendTo($td);
 
@@ -133,7 +136,9 @@ Upload.prototype = {
     $td = $('<td class="size">').appendTo($tr);
     $('<small><code> ' + utils.humanReadableBytes(file.size) + ' </code></small>').appendTo($td);
 
-    $('<td class="action"><a class="delete-file" title="delete this file"></td>').appendTo($tr);
+    $('<td class="action"><a class="delete-file" title="delete this file">' +
+      '<img src="/static/img/delete.png" alt="delete this file" title="delete this file"/>' +
+      '</a></td>').appendTo($tr);
   },
 
   showUpload: function(data, file, types) {

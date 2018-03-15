@@ -3,6 +3,7 @@
 
 import os
 
+
 # Create a unique random character string at least 50 characters long,
 # e.g. with: import secrets; print(secrets.token_hex(50))
 SECRET_KEY = ''

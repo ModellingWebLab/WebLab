@@ -69,15 +69,13 @@ class VersionMixin:
 
     def get_context_data(self, **kwargs):
         entity = self.get_object()
-        tags = entity.tag_dict
+        tags = entity.repo.tag_dict
         version = self.kwargs['sha']
-        if version == 'latest':
-            commit = entity.repo.head.commit
-        else:
-            commit = entity.repo.commit(version)
+        commit = entity.repo.get_commit(version)
         kwargs.update(**{
             'version': commit,
             'tags': tags.get(commit, []),
+            'master_filename': entity.repo.master_filename(version),
         })
         return super().get_context_data(**kwargs)
 
@@ -226,7 +224,7 @@ class EntityTagVersionView(
             version = self.kwargs['sha']
             tag = form.cleaned_data['tag']
             try:
-                entity.tag_repo(tag, ref=version)
+                entity.repo.tag(tag, ref=version)
             except git.exc.GitCommandError as e:
                 msg = e.stderr.strip().split(':', 1)[1][2:-1]
                 form.add_error('tag', msg)
@@ -278,10 +276,11 @@ class EntityNewVersionView(
 
     def get_context_data(self, **kwargs):
         entity = self.get_object()
-        latest = entity.repo.head
-        if latest.is_valid():
+        latest = entity.repo.latest_commit
+        if latest:
             kwargs.update(**{
-                'latest_version': latest.commit,
+                'latest_version': latest,
+                'master_filename': entity.repo.master_filename(),
             })
 
         kwargs['delete_file'] = self.request.GET.get('deletefile')
@@ -298,7 +297,7 @@ class EntityNewVersionView(
         for filename in deletions:
             path = str(entity.repo_abs_path / filename)
             try:
-                entity.delete_file_from_repo(path)
+                entity.repo.rm_file(path)
             except GitCommandError as e:
                 git_errors.append(e.stderr)
 
@@ -310,7 +309,7 @@ class EntityNewVersionView(
             files_to_delete.append(src)
             shutil.copy(src, dest)
             try:
-                entity.add_file_to_repo(dest)
+                entity.repo.add_file(dest)
             except GitCommandError as e:
                 git_errors.append(e.stderr)
 
@@ -318,20 +317,20 @@ class EntityNewVersionView(
             # If there were any errors with adding or deleting files,
             # inform the user and reset the index / working tree
             # (as resubmission of the form will do it all again).
-            entity.repo.head.reset(index=True, working_tree=True)
+            entity.repo.hard_reset()
             return self.fail_with_git_errors(git_errors)
-        elif not entity.repo.head.is_valid() or entity.repo.index.diff('HEAD'):
+
+        main_file = request.POST.get('mainEntry')
+        entity.repo.generate_manifest(master_filename=main_file)
+
+        if entity.repo.has_changes:
             # Commit and tag the repo
-            entity.commit_repo(
-                request.POST['commit_message'],
-                request.user.full_name,
-                request.user.email
-            )
+            entity.repo.commit(request.POST['commit_message'], request.user)
             if request.POST['tag']:
                 try:
-                    entity.tag_repo(request.POST['tag'])
+                    entity.repo.tag(request.POST['tag'])
                 except GitCommandError as e:
-                    entity.repo.head.reset('HEAD~')
+                    entity.repo.rollback()
                     for f in entity.repo.untracked_files:
                         os.remove(str(entity.repo_abs_path / f))
                     return self.fail_with_git_errors([e.stderr])
@@ -377,28 +376,24 @@ class VersionListView(EntityVisibilityMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         entity = self.get_object()
-        tags = entity.tag_dict
+        tags = entity.repo.tag_dict
         kwargs.update(**{
             'versions': list(
                 (tags.get(commit), commit)
-                for commit in entity.commits
+                for commit in entity.repo.commits
             )
         })
         return super().get_context_data(**kwargs)
 
 
-class ModelEntityVersionListView(
-    ModelEntityTypeMixin, VersionListView
-):
+class ModelEntityVersionListView(ModelEntityTypeMixin, VersionListView):
     """
     List versions of a model
     """
     pass
 
 
-class ProtocolEntityVersionListView(
-    ProtocolEntityTypeMixin, VersionListView
-):
+class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
     """
     List versions of a protocol
     """

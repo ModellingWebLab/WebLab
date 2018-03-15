@@ -5,6 +5,7 @@
 <table id="entityversionfilestable">
   <thead>
     <tr>
+      <th>Main File</th>
       <th>Name</th>
       <th>Type</th>
       <th>Size</th>
@@ -15,7 +16,15 @@
   <tbody>
   {% if version %}
     {% for file in version.tree.blobs %}
+      {% if file.name != 'manifest.xml' %}
       <tr {% if file.name == delete_file %} class="deleting"{% endif %}>
+        <td>
+          {% if edit %}
+            <input type="radio" name="mainEntry" value="{{ file.name }}" {% if file.name == master_filename %}checked="checked"{% endif %}>
+          {% else %}
+            {% if file.name == master_filename %}<img src="{% static 'img/check.png' %}" />{% endif %}
+          {% endif %}
+        </td>
         <td class="filename">
           {{ file.name }}
           {% if file.name == delete_file %}
@@ -31,6 +40,7 @@
           {% endif %}
         </td>
       </tr>
+      {% endif %}
     {% endfor %}
   {% endif %}
   </tbody>

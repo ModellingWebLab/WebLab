@@ -1,11 +1,11 @@
-import os
 from pathlib import Path
-from shutil import rmtree
 
 from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
-from git import Actor, Repo, GitCommandError
+from django.utils.functional import cached_property
+
+from .repository import Repository
 
 
 class Entity(models.Model):
@@ -67,68 +67,9 @@ class Entity(models.Model):
         """
         return user.is_superuser or user == self.author
 
-    def init_repo(self):
-        """
-        Create an empty repository
-        """
-        Repo.init(str(self.repo_abs_path))
-
-    def delete_repo(self):
-        """
-        Delete the repository
-        """
-        rmtree(str(self.repo_abs_path))
-
-    def add_file_to_repo(self, file_path):
-        """
-        Add a file to the repository
-
-        :param file_path: Path of file to be added
-        """
-        self.repo.index.add([file_path])
-
-    def delete_file_from_repo(self, file_path):
-        """
-        Delete a file from the repository
-
-        :param file_path: Path of file to be deleted
-        """
-        self.repo.index.remove([file_path])
-        os.remove(file_path)
-
-    def commit_repo(self, message, author_name, author_email):
-        """
-        Commit changes to the repository
-
-        :param message: Commit message
-        :param author_name: Name of commit author (and also committer)
-        :param author_email: Email of commit author (and also committer)
-
-        :return: `git.Commit` object
-        """
-        return self.repo.index.commit(
-            message,
-            author=Actor(author_name, author_email),
-            committer=Actor(author_name, author_email),
-        )
-
-    def tag_repo(self, tag, *, ref='HEAD'):
-        """
-        Tag the repository at the latest (or a given) commit, using the given tag
-
-        :param tag: Tag name to use
-        :param ref: A reference to a specific commit, defaults to the latest
-        """
-        self.repo.create_tag(tag, ref=ref)
-
-    @property
+    @cached_property
     def repo(self):
-        """
-        Get a repository object for this entity
-
-        :return: `git.Repo` object
-        """
-        return Repo(str(self.repo_abs_path))
+        return Repository(self.repo_abs_path)
 
     @property
     def repo_abs_path(self):
@@ -137,36 +78,9 @@ class Entity(models.Model):
 
         :return: `Path` object
         """
-        return Path(settings.REPO_BASE, self.repo_rel_path)
-
-    @property
-    def repo_rel_path(self):
-        """
-        Filesystem path for this entity's repository relative to repo base dir
-
-
-        :return: `Path` object
-        """
-        return Path('%d/%ss/%d' % (self.author.id, self.entity_type, self.id))
-
-    @property
-    def tag_dict(self):
-        """
-        Mapping of commits to git tags in the entity repository
-
-        :return: dict of the form { `git.Commit`: ['tag_name'] }
-        """
-        tags = {}
-        for tag in self.repo.tags:
-            tags.setdefault(tag.commit, []).append(tag)
-        return tags
-
-    @property
-    def commits(self):
-        """
-        :return iterable of `git.Commit` objects in the entity repository
-        """
-        return self.repo.iter_commits()
+        return Path(
+            settings.REPO_BASE, str(self.author.id), '%ss' % self.entity_type, str(self.id)
+        )
 
 
 class EntityManager(models.Manager):
