@@ -17,15 +17,15 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.shortcuts import get_object_or_404
 from django.utils.text import get_valid_filename
 from django.views import View
-from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import GitCommandError
+
+from core import visibility
 
 from .forms import (
     EntityTagVersionForm,
@@ -34,13 +34,7 @@ from .forms import (
     ModelEntityForm,
     ProtocolEntityForm,
 )
-from .models import (
-    Entity,
-    Experiment,
-    ExperimentEntity,
-    ModelEntity,
-    ProtocolEntity,
-)
+from .models import Entity, ModelEntity, ProtocolEntity
 
 
 class ModelEntityTypeMixin:
@@ -140,13 +134,6 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class ExperimentsView(LoginRequiredMixin, TemplateView):
-    """
-    List all user's experiments
-    """
-    template_name = 'entities/experiments.html'
-
-
 class EntityVisibilityMixin(AccessMixin, SingleObjectMixin):
     """
     View mixin implementing visiblity restrictions on entity.
@@ -171,12 +158,12 @@ class EntityVisibilityMixin(AccessMixin, SingleObjectMixin):
             # Logged in user can view all except other people's private stuff
             if not obj or (
                 obj.author != self.request.user and
-                obj.visibility == Entity.VISIBILITY_PRIVATE
+                obj.visibility == visibility.PRIVATE
             ):
                 raise Http404
         else:
             # Anonymous user can only see public entities
-            if not obj or (obj.visibility != Entity.VISIBILITY_PUBLIC):
+            if not obj or (obj.visibility != visibility.PUBLIC):
                 return self.handle_no_permission()
 
         return super().dispatch(request, *args, **kwargs)
@@ -473,79 +460,3 @@ class FileUploadView(View):
 
         else:
             return HttpResponseBadRequest(form.errors)
-
-
-class ExperimentMatrixJsonView(View):
-    """
-    Serve up JSON for experiment matrix
-    """
-    @staticmethod
-    def entity_json(entity):
-        return {
-            'id': entity.id,
-            'entity_id': entity.id,
-            'author': str(entity.author.full_name),
-            'visibility': entity.visibility,
-            'created': entity.creation_date,
-            'name': entity.name,
-            'url': reverse(
-                'entities:%s_version' % entity.entity_type,
-                args=[entity.id, 'latest']
-            ),
-            # TODO: fill these fields in
-            'version': '',
-            'tags': '',
-            'commitMessage': '',
-            'numFiles': '',
-        }
-
-    def get(self, request, *args, **kwargs):
-        models = {
-            model.pk: self.entity_json(model)
-            for model in ModelEntity.objects.visible_to_user(request.user)
-        }
-
-        protocols = {
-            protocol.pk: self.entity_json(protocol)
-            for protocol in ProtocolEntity.objects.visible_to_user(request.user)
-        }
-
-        experiments = {
-            exp.pk: {
-                'entity_id': exp.id,
-                'protocol': self.entity_json(exp.experiment.protocol),
-                'model': self.entity_json(exp.experiment.model),
-            }
-            for exp in ExperimentEntity.objects.visible_to_user(request.user)
-        }
-
-        return JsonResponse({
-            'getMatrix': {
-                'models': models,
-                'protocols': protocols,
-                'experiments': experiments,
-            }
-        })
-
-
-class NewExperimentView(View):
-    def post(self, request, *args, **kwargs):
-        # Does user have permission to do this?
-        #
-        model = get_object_or_404(ModelEntity, pk=request.POST['model'])
-        protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
-
-        experiment = Experiment.objects.submit_experiment(model, protocol, request.user)
-
-        return JsonResponse({
-            'newExperiment': {
-                'expId': experiment.entity.id,
-                'versionId': '',
-                'expName': experiment.entity.name,
-                'response': True,
-                'responseText': (
-                    "Experiment submitted. Based on the size of the queue "
-                    "it might take some time until we can process your job."
-                )
-            }
-        })

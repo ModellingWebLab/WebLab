@@ -1,6 +1,9 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
+
+from core import visibility
 
 from .managers import UserManager
 
@@ -40,3 +43,7 @@ class User(PermissionsMixin, AbstractBaseUser):
 
     def get_full_name(self):
         return self.full_name
+
+    @property
+    def visibility_query(self):
+        return Q(author=self) | ~Q(visibility=visibility.PRIVATE)

@@ -19,7 +19,7 @@ function submitNewExperiment(jsonObject, $td, entry)
 
   $td.append("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
 
-  $.post('/entities/experiments/new', jsonObject, function(data) {
+  $.post('/experiments/new', jsonObject, function(data) {
       var msg = data.newExperiment.responseText;
       $td.removeClass("experiment-QUEUED experiment-RUNNING experiment-INAPPLICABLE experiment-FAILED experiment-PARTIAL experiment-SUCCESS");
 

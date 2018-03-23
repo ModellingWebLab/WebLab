@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load entities %}
 
 {% block content %}
   <h1>Available experiments</h1>
@@ -19,8 +18,7 @@
   </p-->
     <p>
     This matrix shows the latest versions (visible to you) of the models and protocols in our database, with the corresponding experiments.
-    {% can_create_entity 'experiment' as permission %}
-    {% if permission %}
+    {% if perms.create_experiment %}
       If you can't see experiments you expect to be there, this is probably because they are associated with an older version of a listed model or protocol.
       You can click on the white squares to launch experiments using the latest versions.
     {% endif %}
@@ -38,7 +36,7 @@
         <button id="comparisonMatrix" title="Show matrix featuring only selected models and/or protocols">Show sub-matrix</button>
     </span>
     </p-->
-    <div id="matrixdiv" data-href="{% url 'entities:experiment_matrix' %}"></div>
+    <div id="matrixdiv" data-href="{% url 'experiments:matrix' %}"></div>
     <br/>
     Key:
     <table class="matrixTable small">

@@ -12,11 +12,7 @@ protocol = Recipe(
     visibility='public', entity_type='protocol', name=seq('myprotocol')
 )
 
-experiment_entity = Recipe(
-    'ExperimentEntity',
-    visibility='public', entity_type='experiment', name=seq('myexperiment')
-)
-experiment = Recipe('Experiment', entity=experiment_entity.make)
-
 model_file = Recipe('EntityFile', entity=model.make)
 protocol_file = Recipe('EntityFile', entity=protocol.make)
+
+experiment = Recipe('Experiment', visibility='public', model=model.make, protocol=protocol.make)

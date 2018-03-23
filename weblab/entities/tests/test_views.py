@@ -611,19 +611,3 @@ class TestEntityVisibility:
     def test_nonexistent_entity_generates_404_for_user(self, client, user, recipe, url):
         response = client.get(url % 10000)
         assert response.status_code == 404
-
-
-@pytest.mark.django_db
-class TestExperimentMatrix:
-    def test_matrix(self, client, user):
-        model = recipes.model.make()
-        protocol = recipes.protocol.make()
-        exp = recipes.experiment.make(model=model, protocol=protocol)
-
-        response = client.get('/entities/experiments/matrix')
-        data = json.loads(response.content.decode())
-        assert 'getMatrix' in data
-
-        assert str(model.pk) in data['getMatrix']['models']
-        assert str(protocol.pk) in data['getMatrix']['protocols']
-        assert str(exp.pk) in data['getMatrix']['experiments']

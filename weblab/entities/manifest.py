@@ -1,6 +1,6 @@
 import mimetypes
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 
 COMBINE_NS = 'http://identifiers.org/combine.specifications/'

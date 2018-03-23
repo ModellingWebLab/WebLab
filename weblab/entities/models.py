@@ -2,36 +2,20 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.validators import MinLengthValidator
-from django.db import models, transaction
-from django.db.models import Q
+from django.db import models
 from django.utils.functional import cached_property
+
+from core import visibility
 
 from .repository import Repository
 
 
 class Entity(models.Model):
-    VISIBILITY_PRIVATE = 'private'
-    VISIBILITY_RESTRICTED = 'restricted'
-    VISIBILITY_PUBLIC = 'public'
-
-    VISIBILITY_CHOICES = (
-        (VISIBILITY_PRIVATE, 'Private'),
-        (VISIBILITY_RESTRICTED, 'Restricted'),
-        (VISIBILITY_PUBLIC, 'Public')
-    )
-    VISIBILITY_HELP = (
-        'Public = anyone can view\n'
-        'Restricted = logged in users can view\n'
-        'Private = only you can view'
-    )
-
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
-    ENTITY_TYPE_EXPERIMENT = 'experiment'
     ENTITY_TYPE_CHOICES = (
         (ENTITY_TYPE_MODEL, ENTITY_TYPE_MODEL),
         (ENTITY_TYPE_PROTOCOL, ENTITY_TYPE_PROTOCOL),
-        (ENTITY_TYPE_EXPERIMENT, ENTITY_TYPE_EXPERIMENT),
     )
 
     entity_type = models.CharField(
@@ -44,8 +28,8 @@ class Entity(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL)
     visibility = models.CharField(
         max_length=16,
-        choices=VISIBILITY_CHOICES,
-        help_text=VISIBILITY_HELP.replace('\n', '<br />'),
+        choices=visibility.CHOICES,
+        help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
     )
 
     class Meta:
@@ -54,7 +38,6 @@ class Entity(models.Model):
         permissions = (
             ('create_model', 'Can create models'),
             ('create_protocol', 'Can create protocols'),
-            ('create_experiment', 'Can create experiments'),
             ('create_model_version', 'Can create new versions of a model'),
             ('create_protocol_version', 'Can create new versions of a protocol'),
         )
@@ -86,27 +69,10 @@ class Entity(models.Model):
             settings.REPO_BASE, str(self.author.id), '%ss' % self.entity_type, str(self.id)
         )
 
-    def get_joint_visibility(self, other):
-        """
-        :return visibility of the combination of two entities
-        """
-        # Ordered by most conservative first
-        visibilities = [
-            self.VISIBILITY_PRIVATE, self.VISIBILITY_RESTRICTED, self.VISIBILITY_PUBLIC,
-        ]
-        # Use the most conservative of the two entities' visibilities
-        return min(
-            visibilities.index(self.visibility),
-            visibilities.index(other.visibility)
-        )
-
 
 class EntityManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(entity_type=self.model.entity_type)
-
-    def visible_to_user(self, user):
-        return self.get_queryset().filter(Q(author=user) | ~Q(visibility=Entity.VISIBILITY_PRIVATE))
 
     def create(self, **kwargs):
         kwargs['entity_type'] = self.model.entity_type
@@ -131,61 +97,6 @@ class ProtocolEntity(Entity):
     class Meta:
         proxy = True
         verbose_name_plural = 'Protocol entities'
-
-
-class ExperimentEntity(Entity):
-    entity_type = Entity.ENTITY_TYPE_EXPERIMENT
-
-    objects = EntityManager()
-
-    class Meta:
-        proxy = True
-        verbose_name_plural = 'Experiment entities'
-
-
-class ExperimentManager(models.Manager):
-    @transaction.atomic
-    def submit_experiment(self, model, protocol, user):
-        experiment = self.filter(model=model, protocol=protocol).first()
-        if not experiment:
-            visibility = model.get_joint_visibility(protocol)
-
-            entity = ExperimentEntity.objects.create(
-                author=user,
-                name='%s / %s' % (model, protocol),
-                visibility=visibility,
-            )
-            experiment = Experiment.objects.create(
-                model=model,
-                protocol=protocol,
-                entity=entity,
-            )
-
-        return experiment
-
-
-class Experiment(models.Model):
-    """
-    Stores extra fields related to Experiment
-
-    (since all Entity objects are stored in the same table,
-    experiment-specific fields and their constraints are best stored separately)
-    """
-    entity = models.OneToOneField(
-        ExperimentEntity,
-        on_delete=models.CASCADE,
-        primary_key=True,
-        related_name='experiment'
-    )
-
-    model = models.ForeignKey(ModelEntity, related_name='model_experiments')
-    protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments')
-
-    objects = ExperimentManager()
-
-    class Meta:
-        unique_together = ('model', 'protocol')
-        verbose_name_plural = 'Experiments'
 
 
 class EntityFile(models.Model):

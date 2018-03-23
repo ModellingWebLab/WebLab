@@ -5,7 +5,7 @@
 
   <a class="button {% if type == 'model' %}selected{% endif %}" href="{% url "entities:models" %}" id="modelchooser">models</a>
   <a class="button {% if type == 'protocol' %}selected{% endif %}" href="{% url "entities:protocols" %}" id="protocolchooser">protocols</a>
-  <a class="button {% if type == 'experiment' %}selected{% endif %}" href="{% url "entities:experiments" %}" id="experimentchooser">experiments</a>
+  <a class="button {% if type == 'experiment' %}selected{% endif %}" href="{% url "experiments:list" %}" id="experimentchooser">experiments</a>
 
   <section id="{{ type }}list">
     <h2>Your {{ type }}s</h2>

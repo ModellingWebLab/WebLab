@@ -1,6 +1,6 @@
-import pytest
-
 import xml.etree.ElementTree as ET
+
+import pytest
 
 from entities.manifest import ManifestReader, ManifestWriter
 
@@ -25,15 +25,24 @@ class TestManifestWriter:
 
     def test_add_file_with_combine_format(self, writer):
         writer.add_file('file.cellml', combine_format='cellml')
-        assert ('file.cellml', 'http://identifiers.org/combine.specifications/cellml', False) in writer._files
+        assert (
+            ('file.cellml', 'http://identifiers.org/combine.specifications/cellml', False)
+            in writer._files
+        )
 
     def test_add_file_with_mime_type(self, writer):
         writer.add_file('file.cellml', mime_type='application/cellml+xml')
-        assert ('file.cellml', 'http://purl.org/NET/mediatypes/application/cellml+xml', False) in writer._files
+        assert (
+            ('file.cellml', 'http://purl.org/NET/mediatypes/application/cellml+xml', False)
+            in writer._files
+        )
 
     def test_chooses_combine_type_if_available(self, writer):
         writer.add_file('file.cellml')
-        assert ('file.cellml', 'http://identifiers.org/combine.specifications/cellml', False) in writer._files
+        assert (
+            ('file.cellml', 'http://identifiers.org/combine.specifications/cellml', False)
+            in writer._files
+        )
 
     def test_chooses_mime_type_if_no_spec_given(self, writer):
         writer.add_file('file.txt')

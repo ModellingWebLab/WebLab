@@ -37,15 +37,14 @@ def test_deletion():
 
 
 @pytest.mark.django_db
-class TestEntityManager:
-    def test_visible_to_user(self):
-        user, other_user = recipes.user.make(_quantity=2)
-        mine = recipes.model.make(author=user)
-        other_restricted = recipes.model.make(author=other_user, visibility='restricted')
+def test_visibility():
+    user, other_user = recipes.user.make(_quantity=2)
+    mine = recipes.model.make(author=user)
+    other_restricted = recipes.model.make(author=other_user, visibility='restricted')
 
-        # should not be visible
-        recipes.model.make(author=other_user, visibility='private')
+    # should not be visible
+    recipes.model.make(author=other_user, visibility='private')
 
-        assert list(ModelEntity.objects.visible_to_user(user)) == [
-            mine, other_restricted
-        ]
+    assert list(ModelEntity.objects.filter(user.visibility_query)) == [
+        mine, other_restricted
+    ]
