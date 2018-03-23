@@ -1,24 +1,8 @@
 from django.conf import settings
-from django.db import models, transaction
+from django.db import models
 
 from core import visibility
 from entities.models import ModelEntity, ProtocolEntity
-
-
-class ExperimentManager(models.Manager):
-    @transaction.atomic
-    def submit_experiment(self, model, protocol, user):
-
-        experiment, _ = Experiment.objects.get_or_create(
-            model=model,
-            protocol=protocol,
-            defaults={
-                'author': user,
-                'visibility': visibility.get_joint_visibility(model.visibility, protocol.visibility)
-            }
-        )
-
-        return experiment
 
 
 class Experiment(models.Model):
@@ -33,16 +17,47 @@ class Experiment(models.Model):
     model = models.ForeignKey(ModelEntity, related_name='model_experiments')
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments')
 
-    objects = ExperimentManager()
-
     class Meta:
         unique_together = ('model', 'protocol')
         verbose_name_plural = 'Experiments'
 
         permissions = (
             ('create_experiment', 'Can create experiments'),
+            ('force_new_experiment_version', 'Can force new experiment version'),
         )
 
     @property
     def name(self):
         return '%s / %s' % (self.model.name, self.protocol.name)
+
+
+class ExperimentVersion(models.Model):
+    STATUS_QUEUED = "QUEUED"
+    STATUS_RUNNING = "RUNNING"
+    STATUS_SUCCESS = "SUCCESS"
+    STATUS_PARTIAL = "PARTIAL"
+    STATUS_FAILED = "FAILED"
+    STATUS_INAPPLICABLE = "INAPPLICABLE"
+
+    STATUS_CHOICES = (
+        (STATUS_QUEUED, STATUS_QUEUED),
+        (STATUS_RUNNING, STATUS_RUNNING),
+        (STATUS_SUCCESS, STATUS_SUCCESS),
+        (STATUS_PARTIAL, STATUS_PARTIAL),
+        (STATUS_FAILED, STATUS_FAILED),
+        (STATUS_INAPPLICABLE, STATUS_INAPPLICABLE),
+    )
+
+    experiment = models.ForeignKey(Experiment)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL)
+    created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True)
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_QUEUED,
+    )
+    return_text = models.TextField(blank=True)
+    task_id = models.CharField(max_length=50, null=True)
+    model_version = models.CharField(max_length=50)
+    protocol_version = models.CharField(max_length=50)
