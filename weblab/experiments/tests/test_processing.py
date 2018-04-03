@@ -1,29 +1,16 @@
 import pytest
 
-from accounts.models import User
 from core import recipes
 from experiments.processing import submit_experiment
 
 
-def add_version(entity, filename='file1.txt', tag_name=None):
-    """Add a single commit/version to an entity"""
-    entity.repo.create()
-    in_repo_path = str(entity.repo_abs_path / filename)
-    open(in_repo_path, 'w').write('entity contents')
-    entity.repo.add_file(in_repo_path)
-    commit = entity.repo.commit('file', User(full_name='author', email='author@example.com'))
-    if tag_name:
-        entity.repo.tag(tag_name)
-    return commit
-
-
 @pytest.mark.django_db
 class TestSubmitExperiment:
-    def test_creates_new_experiment(self):
+    def test_creates_new_experiment(self, helpers):
         model = recipes.model.make()
-        model_version = add_version(model)
+        model_version = helpers.add_version(model)
         protocol = recipes.protocol.make()
-        protocol_version = add_version(protocol)
+        protocol_version = helpers.add_version(protocol)
         user = recipes.user.make()
 
         version = submit_experiment(model, protocol, user)
@@ -35,11 +22,11 @@ class TestSubmitExperiment:
         assert version.protocol_version == protocol_version.hexsha
         assert version.experiment.author == user
 
-    def test_uses_existing_experiment(self):
+    def test_uses_existing_experiment(self, helpers):
         model = recipes.model.make()
-        add_version(model)
+        helpers.add_version(model)
         protocol = recipes.protocol.make()
-        add_version(protocol)
+        helpers.add_version(protocol)
         user = recipes.user.make()
         experiment = recipes.experiment.make(model=model, protocol=protocol)
 

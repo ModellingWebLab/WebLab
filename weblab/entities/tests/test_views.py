@@ -51,18 +51,6 @@ def fake_upload_path(settings, tmpdir):
     return settings.MEDIA_ROOT
 
 
-def add_version(entity, filename='file1.txt', tag_name=None):
-    """Add a single commit/version to an entity"""
-    entity.repo.create()
-    in_repo_path = str(entity.repo_abs_path / filename)
-    open(in_repo_path, 'w').write('entity contents')
-    entity.repo.add_file(in_repo_path)
-    commit = entity.repo.commit('file', User(full_name='author', email='author@example.com'))
-    if tag_name:
-        entity.repo.tag(tag_name)
-    return commit
-
-
 @pytest.mark.django_db
 class TestEntityCreation:
     def test_create_model(self, user, client):
@@ -124,10 +112,14 @@ class TestEntityCreation:
     (recipes.protocol, '/entities/protocols/%d/delete', '/entities/protocols/'),
 ])
 class TestEntityDeletion:
-    def test_owner_can_delete_entity(self, user, client, recipe, url, list_url):
+    def test_owner_can_delete_entity(
+        self,
+        user, client, helpers,      # fixtures
+        recipe, url, list_url       # parameters
+    ):
         entity = recipe.make(author=user)
         repo_path = entity.repo_abs_path
-        add_version(entity)
+        helpers.add_version(entity)
         assert Entity.objects.filter(pk=entity.pk).exists()
         assert repo_path.exists()
 
@@ -140,10 +132,14 @@ class TestEntityDeletion:
         assert not repo_path.exists()
 
     @pytest.mark.usefixtures('user')
-    def test_non_owner_cannot_delete_entity(self, other_user, client, recipe, url, list_url):
+    def test_non_owner_cannot_delete_entity(
+        self,
+        other_user, client, helpers,
+        recipe, url, list_url
+    ):
         entity = recipe.make(author=other_user)
         repo_path = entity.repo_abs_path
-        add_version(entity)
+        helpers.add_version(entity)
 
         response = client.post(url % entity.pk)
 
@@ -154,9 +150,9 @@ class TestEntityDeletion:
 
 @pytest.mark.django_db
 class TestEntityDetail:
-    def test_redirects_to_latest_version(self, client, user):
+    def test_redirects_to_latest_version(self, client, user, helpers):
         model = recipes.model.make()
-        add_version(model)
+        helpers.add_version(model)
         response = client.get('/entities/models/%d' % model.pk)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
@@ -172,9 +168,9 @@ class TestEntityVersionDetail:
         for actual, expected in zip(response.context['tags'], tags):
             assert actual.name == expected
 
-    def test_view_entity_version(self, client, user):
+    def test_view_entity_version(self, client, user, helpers):
         model = recipes.model.make()
-        add_version(model)
+        helpers.add_version(model)
         commit = model.repo.latest_commit
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
                    commit, [])
@@ -183,7 +179,7 @@ class TestEntityVersionDetail:
 
         # Now add a second version with tag
         assert len(list(model.repo.commits)) == 1
-        add_version(model)
+        helpers.add_version(model)
         model.repo.tag('my_tag')
 
         # Commits are yielded newest first
@@ -198,9 +194,9 @@ class TestEntityVersionDetail:
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
                    commit, ['my_tag'])
 
-    def test_version_with_two_tags(self, client, user):
+    def test_version_with_two_tags(self, client, user, helpers):
         model = recipes.model.make()
-        add_version(model)
+        helpers.add_version(model)
         commit = model.repo.latest_commit
         model.repo.tag('tag1')
         model.repo.tag('tag2')
@@ -216,19 +212,19 @@ class TestEntityVersionDetail:
 
 @pytest.mark.django_db
 class TestTagging:
-    def test_tag_specific_ref(self):
+    def test_tag_specific_ref(self, helpers):
         model = recipes.model.make()
-        commit = add_version(model)
-        add_version(model)
+        commit = helpers.add_version(model)
+        helpers.add_version(model)
         model.repo.tag('tag', ref=commit.hexsha)
         tags = model.repo.tag_dict
         assert len(tags) == 1
         assert tags[commit][0].name == 'tag'
 
-    def test_nasty_tag_chars(self):
+    def test_nasty_tag_chars(self, helpers):
         import git
         model = recipes.model.make()
-        add_version(model)
+        helpers.add_version(model)
 
         with pytest.raises(git.exc.GitCommandError):
             model.repo.tag('tag/')
@@ -239,19 +235,19 @@ class TestTagging:
         with pytest.raises(git.exc.GitCommandError):
             model.repo.tag('tag with spaces')
 
-    def test_cant_use_same_tag_twice(self):
+    def test_cant_use_same_tag_twice(self, helpers):
         import git
         model = recipes.model.make()
-        add_version(model)
+        helpers.add_version(model)
         model.repo.tag('tag')
-        add_version(model)
+        helpers.add_version(model)
         with pytest.raises(git.exc.GitCommandError):
             model.repo.tag('tag')
 
-    def test_user_can_add_tag(self, user, client):
+    def test_user_can_add_tag(self, user, client, helpers):
         add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
-        add_version(model)
+        helpers.add_version(model)
         commit = model.repo.latest_commit
         response = client.post(
             '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
@@ -267,9 +263,9 @@ class TestTagging:
         assert tags[commit][0].name == 'v1'
 
     @pytest.mark.skip('not yet implemented')
-    def test_tag_view_requires_permissions(self, user, client):
+    def test_tag_view_requires_permissions(self, user, client, helpers):
         model = recipes.model.make(author=user)
-        commit = add_version(model)
+        commit = helpers.add_version(model)
         response = client.post(
             '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
             data={},
@@ -280,9 +276,9 @@ class TestTagging:
 
 @pytest.mark.django_db
 class TestEntityVersionList:
-    def test_view_entity_version_list(self, client, user):
+    def test_view_entity_version_list(self, client, user, helpers):
         model = recipes.model.make()
-        add_version(model)
+        helpers.add_version(model)
 
         response = client.get('/entities/models/%d/versions/' % model.pk)
         assert response.status_code == 200
@@ -306,9 +302,9 @@ class TestEntityList:
 
 @pytest.mark.django_db
 class TestVersionCreation:
-    def test_new_version_form_includes_latest_version(self, client, user):
+    def test_new_version_form_includes_latest_version(self, client, user, helpers):
         model = recipes.model.make()
-        commit = add_version(model)
+        commit = helpers.add_version(model)
         add_permission(user, 'create_model_version')
         response = client.get('/entities/models/%d/versions/new' % model.pk)
         assert response.status_code == 200
@@ -375,11 +371,11 @@ class TestVersionCreation:
         assert 'file2.txt' in model.repo.filenames()
         assert model.repo.master_filename() == 'file1.txt'
 
-    def test_delete_file(self, user, client):
+    def test_delete_file(self, user, client, helpers):
         add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
-        add_version(model, 'file1.txt')
-        add_version(model, 'file2.txt')
+        helpers.add_version(model, 'file1.txt')
+        helpers.add_version(model, 'file2.txt')
         assert len(model.repo.latest_commit.tree.blobs) == 2
 
         response = client.post(
@@ -398,12 +394,12 @@ class TestVersionCreation:
         assert 'file2.txt' in model.repo.filenames()
         assert not (model.repo_abs_path / 'file1.txt').exists()
 
-    def test_delete_multiple_files(self, user, client):
+    def test_delete_multiple_files(self, user, client, helpers):
         add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
-        add_version(model, 'file1.txt')
-        add_version(model, 'file2.txt')
-        add_version(model, 'file3.txt')
+        helpers.add_version(model, 'file1.txt')
+        helpers.add_version(model, 'file2.txt')
+        helpers.add_version(model, 'file3.txt')
         assert len(model.repo.latest_commit.tree.blobs) == 3
 
         response = client.post(
@@ -423,10 +419,10 @@ class TestVersionCreation:
         assert not (model.repo_abs_path / 'file1.txt').exists()
         assert not (model.repo_abs_path / 'file2.txt').exists()
 
-    def test_delete_nonexistent_file(self, user, client):
+    def test_delete_nonexistent_file(self, user, client, helpers):
         add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
-        add_version(model, 'file1.txt')
+        helpers.add_version(model, 'file1.txt')
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -481,10 +477,10 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
-    def test_rolls_back_if_tag_exists(self, user, client):
+    def test_rolls_back_if_tag_exists(self, user, client, helpers):
         add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
-        first_commit = add_version(model, tag_name='v1')
+        first_commit = helpers.add_version(model, tag_name='v1')
 
         recipes.model_file.make(
             entity=model,
@@ -506,9 +502,9 @@ class TestVersionCreation:
 
 @pytest.mark.django_db
 class TestEntityArchive:
-    def test_download_archive(self, client):
+    def test_download_archive(self, client, helpers):
         model = recipes.model.make()
-        commit = add_version(model, filename='file1.txt')
+        commit = helpers.add_version(model, filename='file1.txt')
 
         response = client.get('/entities/models/%d/versions/latest/archive' % model.pk)
         assert response.status_code == 200
@@ -568,46 +564,53 @@ class TestFileUpload:
     (recipes.protocol, '/entities/protocols/%d/versions/latest/archive'),
 ])
 class TestEntityVisibility:
-    def test_private_entity_visible_to_self(self, client, user, recipe, url):
+    def test_private_entity_visible_to_self(self, client, user, helpers, recipe, url):
         entity = recipe.make(visibility='private', author=user)
-        add_version(entity)
+        helpers.add_version(entity)
         assert client.get(url % entity.pk, follow=True).status_code == 200
 
-    def test_private_entity_invisible_to_other_user(self, client, user, other_user, recipe, url):
+    def test_private_entity_invisible_to_other_user(
+        self,
+        client, user, other_user, helpers,
+        recipe, url
+    ):
         entity = recipe.make(visibility='private', author=other_user)
-        add_version(entity)
+        helpers.add_version(entity)
         response = client.get(url % entity.pk)
         assert response.status_code == 404
 
-    def test_private_entity_requires_login_for_anonymous(self, client, recipe, url):
+    def test_private_entity_requires_login_for_anonymous(self, client, helpers, recipe, url):
         entity = recipe.make(visibility='private')
-        add_version(entity)
+        helpers.add_version(entity)
         response = client.get(url % entity.pk)
         assert response.status_code == 302
         assert '/login' in response.url
 
-    def test_restricted_entity_visible_to_other_user(self, client, user, other_user, recipe, url):
+    def test_restricted_entity_visible_to_other_user(
+        self, client, user, other_user, helpers,
+        recipe, url
+    ):
         entity = recipe.make(visibility='restricted', author=other_user)
-        add_version(entity)
+        helpers.add_version(entity)
         assert client.get(url % entity.pk, follow=True).status_code == 200
 
-    def test_restricted_entity_requires_login_for_anonymous(self, client, recipe, url):
+    def test_restricted_entity_requires_login_for_anonymous(self, client, helpers, recipe, url):
         entity = recipe.make(visibility='restricted')
-        add_version(entity)
+        helpers.add_version(entity)
         response = client.get(url % entity.pk)
         assert response.status_code == 302
         assert '/login' in response.url
 
-    def test_public_entity_visible_to_anonymous(self, client, recipe, url):
+    def test_public_entity_visible_to_anonymous(self, client, helpers, recipe, url):
         entity = recipe.make(visibility='public')
-        add_version(entity)
+        helpers.add_version(entity)
         assert client.get(url % entity.pk, follow=True).status_code == 200
 
-    def test_nonexistent_entity_redirects_anonymous_to_login(self, client, recipe, url):
+    def test_nonexistent_entity_redirects_anonymous_to_login(self, client, helpers, recipe, url):
         response = client.get(url % 10000)
         assert response.status_code == 302
         assert '/login' in response.url
 
-    def test_nonexistent_entity_generates_404_for_user(self, client, user, recipe, url):
+    def test_nonexistent_entity_generates_404_for_user(self, client, user, helpers, recipe, url):
         response = client.get(url % 10000)
         assert response.status_code == 404
