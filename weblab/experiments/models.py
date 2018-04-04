@@ -48,7 +48,7 @@ class ExperimentVersion(models.Model):
         (STATUS_INAPPLICABLE, STATUS_INAPPLICABLE),
     )
 
-    experiment = models.ForeignKey(Experiment)
+    experiment = models.ForeignKey(Experiment, related_name='versions')
     author = models.ForeignKey(settings.AUTH_USER_MODEL)
     created_at = models.DateTimeField(auto_now_add=True)
     finished_at = models.DateTimeField(null=True)

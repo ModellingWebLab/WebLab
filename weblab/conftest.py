@@ -1,6 +1,7 @@
 import pytest
 
 from accounts.models import User
+from core import recipes
 
 
 class Helpers:
@@ -20,3 +21,33 @@ class Helpers:
 @pytest.fixture
 def helpers():
     return Helpers
+
+
+@pytest.fixture
+def model_with_version():
+    model = recipes.model.make()
+    Helpers.add_version(model)
+    return model
+
+
+@pytest.fixture
+def protocol_with_version():
+    protocol = recipes.protocol.make()
+    Helpers.add_version(protocol)
+    return protocol
+
+
+@pytest.fixture
+def user():
+    return User.objects.create_user(
+        email='test@example.com',
+        full_name='Test User',
+        institution='UCL',
+        password='password',
+    )
+
+
+@pytest.fixture
+def logged_in_user(client, user):
+    client.login(username=user.email, password='password')
+    return user

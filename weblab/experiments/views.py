@@ -8,6 +8,7 @@ from django.views.generic import TemplateView
 from entities.models import ModelEntity, ProtocolEntity
 
 from .models import Experiment
+from .processing import submit_experiment
 
 
 class ExperimentsView(LoginRequiredMixin, TemplateView):
@@ -78,13 +79,13 @@ class NewExperimentView(View):
         model = get_object_or_404(ModelEntity, pk=request.POST['model'])
         protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
 
-        experiment = Experiment.objects.submit_experiment(model, protocol, request.user)
+        version = submit_experiment(model, protocol, request.user)
 
         return JsonResponse({
             'newExperiment': {
-                'expId': experiment.id,
-                'versionId': '',
-                'expName': experiment.name,
+                'expId': version.experiment.id,
+                'versionId': version.id,
+                'expName': version.experiment.name,
                 'response': True,
                 'responseText': (
                     "Experiment submitted. Based on the size of the queue "
