@@ -10,8 +10,9 @@ Generic fields:
   This should be settable from the Django config so it can be provided as a secret when deployed.
 
 An error response here means (currently) a small HTML page with an error message in the body.
-We could easily change that to pass back just the message as plain text / markdown / HTML.
 The message may include a Python traceback in rare cases, so some formatting is helpful.
+
+We could easily change all responses to be consistently JSON formatted data, or anything else sensible.
 
 ## Get protocol interface (and check syntax)
 
@@ -33,6 +34,10 @@ The callback will POST JSON data consisting of a single object with fields:
 * `required`: if success, a list of strings (the required ontology terms in the protocol's interface)
 * `optional`: if success, a list of strings (the optional ontology terms in the protocol's interface)
 
+This callback will be retried up to a configurable number of times if there is no response.
+After that, a new Celery task will be scheduled to send a brief error message (to the same callback URL) reporting that it gave up trying.
+This error payload will similarly be a JSON object with `returntype` and `returnmsg` fields.
+
 ## Run experiment
 
 Fields:
@@ -46,7 +51,9 @@ Fields:
 Response: `text/plain` unless one of the above fields is missing, in which case an error message as above.
 
 This schedules a Celery task to run the experiment and return the results to the callBack URL.
-Once the task is submitted it returns immediately with the string `'{} succ {}'.format(signature, task_id)`.
+Once the task is submitted the original web service call returns immediately with the string `'{} succ {}'.format(signature, task_id)`.
+
+### Experiment task responses
 
 ## Cancel experiment
 
