@@ -52,8 +52,45 @@ Response: `text/plain` unless one of the above fields is missing, in which case 
 
 This schedules a Celery task to run the experiment and return the results to the callBack URL.
 Once the task is submitted the original web service call returns immediately with the string `'{} succ {}'.format(signature, task_id)`.
+When this is received the front-end sets the experiment status as 'queued'.
+
+The run experiment task performs several steps:
+1. Download model & protocol from supplied URLs
+2. Check protocol is applicable to model; send an 'inapplicable' callback if not and stop
+3. Send a 'running' callback ping
+4. Runs the experiment
+5. Sends a callback response with the results
 
 ### Experiment task responses
+
+The Celery task will POST to the callback URL at various stages of job running.
+In each case it will supply JSON data consisting of a single object with fields:
+* `signature`: as supplied above
+* `returntype`: an experiment status code as a string;
+  one of 'inapplicable', 'failed', 'running', 'partial', 'success'
+* `returnmsg`: a message string formatted with simple HTML (`br` tags and `&nbsp;` only I think),
+  depending on the status code:
+    - for 'inapplicable' it lists the missing required and optional ontology terms
+    - for 'failed' it will typically include the Python traceback for the error, but may be omitted
+      if the failure occurred after the experiment started
+    - for 'running', 'partial', 'success' and some 'failure' cases this field is omitted
+
+If the experiment got as far as starting, there will also be a file upload named 'experiment' of a COMBINE Archive with the experiment results.
+This archive will contain at least:
+* `stdout.txt`: stdout and stderr combined from the experiment run
+* `errors.txt`: a summary of key errors if the experiment did not succeed (status is 'partial' or 'failure')
+
+If the experiment was successful, there will be some additional metadata files:
+* `outputs-default-plots.csv` lists the plots produced in the order defined by the protocol.
+  It has columns: Plot title,File name,Data file name,Line style,First variable id,Optional second variable id,Optional key variable id
+* `outputs-contents.csv` lists all data CSV files produced by the protocol.
+  It has columns: Variable id,Variable name,Units,Number of dimensions,File name,Type,Dimensions
+
+(When displaying an entity, WL1 will show one of its files automatically: error.txt if it exists; otherwise readme.md if a model/protocol or the first plot if an experiment. This is done by the JS code.)
+
+The final status is 'success' if the experiment ran without error,
+'partial' if there was an error but at least some of the expected output graphs were produced,
+and 'failure' otherwise.
 
 ## Cancel experiment
 
