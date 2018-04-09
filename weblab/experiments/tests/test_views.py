@@ -1,9 +1,14 @@
 import json
+from unittest.mock import Mock, patch
 
 import pytest
 
 from core import recipes
 from experiments.models import ExperimentVersion
+
+
+def mock_submit(url, body):
+    return Mock(content=('%s succ' % body['signature']).encode())
 
 
 @pytest.mark.django_db
@@ -23,10 +28,11 @@ class TestExperimentMatrix:
         assert str(exp.pk) in data['getMatrix']['experiments']
 
 
+@patch('requests.post', side_effect=mock_submit)
 @pytest.mark.django_db
 class TestNewExperimentView:
     @pytest.mark.usefixtures('logged_in_user')
-    def test_submits_experiment(self, client, model_with_version, protocol_with_version):
+    def test_submits_experiment(self, mock_post, client, model_with_version, protocol_with_version):
         response = client.post(
             '/experiments/new',
             {

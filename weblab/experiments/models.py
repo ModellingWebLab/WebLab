@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.conf import settings
 from django.db import models
 
@@ -61,3 +63,7 @@ class ExperimentVersion(models.Model):
     task_id = models.CharField(max_length=50, null=True)
     model_version = models.CharField(max_length=50)
     protocol_version = models.CharField(max_length=50)
+
+    @property
+    def abs_path(self):
+        return Path(settings.EXPERIMENT_BASE, str(self.id))
