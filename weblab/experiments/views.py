@@ -57,6 +57,7 @@ class ExperimentMatrixJsonView(View):
         experiments = {
             exp.pk: {
                 'entity_id': exp.id,
+                'latestResult': exp.latest_result,
                 'protocol': self.entity_json(exp.protocol),
                 'model': self.entity_json(exp.model),
             }

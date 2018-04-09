@@ -32,6 +32,17 @@ class Experiment(models.Model):
     def name(self):
         return '%s / %s' % (self.model.name, self.protocol.name)
 
+    @property
+    def latest_version(self):
+        return self.versions.latest('created_at')
+
+    @property
+    def latest_result(self):
+        try:
+            return self.latest_version.status
+        except ExperimentVersion.DoesNotExist:
+            return ''
+
 
 class ExperimentVersion(models.Model):
     STATUS_QUEUED = "QUEUED"
