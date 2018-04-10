@@ -7,7 +7,7 @@ from django.views.generic import TemplateView
 
 from entities.models import ModelEntity, ProtocolEntity
 
-from .models import Experiment
+from .models import Experiment, ExperimentVersion
 from .processing import submit_experiment
 
 
@@ -81,16 +81,17 @@ class NewExperimentView(View):
         protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
 
         version = submit_experiment(model, protocol, request.user)
+        success = version.experiment.latest_result == ExperimentVersion.STATUS_QUEUED
 
         return JsonResponse({
             'newExperiment': {
                 'expId': version.experiment.id,
                 'versionId': version.id,
                 'expName': version.experiment.name,
-                'response': True,
+                'response': success,
                 'responseText': (
                     "Experiment submitted. Based on the size of the queue "
                     "it might take some time until we can process your job."
-                )
+                ) if success else version.return_text
             }
         })
