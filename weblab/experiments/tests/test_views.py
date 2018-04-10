@@ -8,7 +8,7 @@ from experiments.models import ExperimentVersion
 
 
 def mock_submit(url, body):
-    return Mock(content=('%s succ' % body['signature']).encode())
+    return Mock(content=('%s succ celery-task-id' % body['signature']).encode())
 
 
 @pytest.mark.django_db

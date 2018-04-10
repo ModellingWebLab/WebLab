@@ -8,7 +8,7 @@ from experiments.models import ExperimentVersion
 from experiments.processing import ProcessingException, submit_experiment
 
 
-def generate_response(template='%s succ'):
+def generate_response(template='%s succ celery-task-id'):
     def mock_submit(url, body):
         return Mock(content=(template % body['signature']).encode())
     return mock_submit
@@ -67,6 +67,7 @@ class TestSubmitExperiment:
         }
 
         assert version.status == ExperimentVersion.STATUS_QUEUED
+        assert version.task_id == 'celery-task-id'
 
     def test_raises_exception_on_webservice_error(self, mock_post,
                                                   model_with_version, protocol_with_version):

@@ -63,10 +63,10 @@ def submit_experiment(model, protocol, user):
         logger.error('Chaste backend answered with something unexpected: %s' % res)
         raise ProcessingException(res)
 
-    _, status = res.split(' ', 1)
+    status = res[len(signature):].strip()
 
-    if status == 'succ':
-        pass    # No need to do anything since default status is queued
+    if status.startswith('succ'):
+        version.task_id = status[4:].strip()
     elif status == 'inapplicable':
         version.status = ExperimentVersion.STATUS_INAPPLICABLE
     else:
