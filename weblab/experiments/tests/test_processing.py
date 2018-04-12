@@ -59,7 +59,7 @@ class TestSubmitExperiment:
         assert mock_post.call_args[0][1] == {
             'model': settings.BASE_URL + model_url,
             'protocol': settings.BASE_URL + protocol_url,
-            'signature': '%s/experiments/%s' % (settings.BASE_DIR, str(version.id)),
+            'signature': version.signature,
             'callBack': settings.BASE_URL,
             'user': 'Test User',
             'isAdmin': False,

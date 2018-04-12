@@ -38,6 +38,15 @@ def protocol_with_version():
 
 
 @pytest.fixture
+def queued_experiment(model_with_version, protocol_with_version):
+    return recipes.experiment_version.make(
+        status='QUEUED',
+        experiment__model=model_with_version,
+        experiment__protocol=protocol_with_version,
+    )
+
+
+@pytest.fixture
 def user():
     return User.objects.create_user(
         email='test@example.com',

@@ -78,3 +78,19 @@ class ExperimentVersion(models.Model):
     @property
     def abs_path(self):
         return Path(settings.EXPERIMENT_BASE, str(self.id))
+
+    @property
+    def signature(self):
+        return str(self.id)
+
+    @property
+    def is_running(self):
+        return self.status == self.STATUS_RUNNING
+
+    @property
+    def is_finished(self):
+        return self.status in (
+            self.STATUS_SUCCESS,
+            self.STATUS_PARTIAL,
+            self.STATUS_INAPPLICABLE,
+        )

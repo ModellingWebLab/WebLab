@@ -52,3 +52,70 @@ class TestNewExperimentView:
         assert data['newExperiment']['versionId'] == version.id
         assert data['newExperiment']['expName'] == version.experiment.name
         assert data['newExperiment']['response']
+
+
+@pytest.mark.django_db
+class TestExperimentCallbackView:
+    @pytest.mark.parametrize('returned_status,stored_status', [
+        ('success', 'SUCCESS'),
+        ('running', 'RUNNING'),
+        ('partial', 'PARTIAL'),
+        ('inapplicable', 'INAPPLICABLE'),
+        ('failed', 'FAILED'),
+        ('something else', 'FAILED'),
+    ])
+    def test_records_status(self, returned_status, stored_status,
+                            client, queued_experiment):
+        response = client.post('/experiments/callback', {
+            'signature': queued_experiment.signature,
+            'returntype': returned_status,
+        })
+
+        assert response.status_code == 200
+
+        queued_experiment.refresh_from_db()
+        assert queued_experiment.status == stored_status
+
+    @pytest.mark.parametrize('status,message', [
+        ('inapplicable', 'list, of, missing, terms'),
+        ('failed', 'python stacktrace'),
+    ])
+    def test_records_errormessage(self, status, message,
+                                  client, queued_experiment):
+        response = client.post('/experiments/callback', {
+            'signature': queued_experiment.signature,
+            'returntype': status,
+            'returnmsg': message,
+        })
+
+        assert response.status_code == 200
+        queued_experiment.refresh_from_db()
+        assert queued_experiment.return_text == message
+
+    @pytest.mark.parametrize('status,message', [
+        ('success', 'finished'),
+        ('partial', 'finished'),
+        ('failed', 'finished'),
+        ('running', 'running'),
+    ])
+    def test_records_default_errormessage(self, status, message,
+                                          client, queued_experiment):
+        response = client.post('/experiments/callback', {
+            'signature': queued_experiment.signature,
+            'returntype': status,
+        })
+
+        assert response.status_code == 200
+        queued_experiment.refresh_from_db()
+        assert queued_experiment.return_text == message
+
+    def test_records_task_id(self, client, queued_experiment):
+        response = client.post('/experiments/callback', {
+            'signature': queued_experiment.signature,
+            'returntype': 'running',
+            'taskid': 'task-id-1',
+        })
+
+        assert response.status_code == 200
+        queued_experiment.refresh_from_db()
+        assert queued_experiment.task_id == 'task-id-1'

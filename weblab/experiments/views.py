@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 
 from entities.models import ModelEntity, ProtocolEntity
 
+from .forms import ExperimentCallbackForm
 from .models import Experiment, ExperimentVersion
 from .processing import submit_experiment
 
@@ -95,3 +96,15 @@ class NewExperimentView(View):
                 ) if success else version.return_text
             }
         })
+
+
+class ExperimentCallbackView(View):
+    def post(self, request, *args, **kwargs):
+        form = ExperimentCallbackForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            return JsonResponse({})
+
+        else:
+            return JsonResponse({'error': form.errors})

@@ -17,6 +17,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^callback$',
+        views.ExperimentCallbackView.as_view(),
+        name='callback',
+    ),
+
+    url(
         r'^matrix$',
         views.ExperimentMatrixJsonView.as_view(),
         name='matrix',

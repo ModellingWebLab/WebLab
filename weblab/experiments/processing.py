@@ -13,6 +13,26 @@ from .models import Experiment, ExperimentVersion
 logger = logging.getLogger(__name__)
 
 
+class ChasteProcessingStatus:
+    RUNNING = "running"
+    SUCCESS = "success"
+    PARTIAL = "partial"
+    FAILED = "failed"
+    INAPPLICABLE = "inapplicable"
+
+    MODEL_STATUSES = {
+        SUCCESS: ExperimentVersion.STATUS_SUCCESS,
+        RUNNING: ExperimentVersion.STATUS_RUNNING,
+        PARTIAL: ExperimentVersion.STATUS_PARTIAL,
+        FAILED: ExperimentVersion.STATUS_FAILED,
+        INAPPLICABLE: ExperimentVersion.STATUS_INAPPLICABLE,
+    }
+
+    @classmethod
+    def get_model_status(cls, status):
+        return cls.MODEL_STATUSES.get(status, ExperimentVersion.STATUS_FAILED)
+
+
 class ProcessingException(Exception):
     pass
 
@@ -35,7 +55,6 @@ def submit_experiment(model, protocol, user):
         protocol_version=protocol.repo.latest_commit.hexsha
     )
 
-    signature = str(version.abs_path)
     model_url = reverse(
         'entities:entity_archive',
         args=['model', model.pk, version.model_version]
@@ -47,7 +66,7 @@ def submit_experiment(model, protocol, user):
     body = {
         'model': settings.BASE_URL + model_url,
         'protocol': settings.BASE_URL + protocol_url,
-        'signature': signature,
+        'signature': version.signature,
         'callBack': settings.BASE_URL,
         'user': user.full_name,
         'password': settings.CHASTE_PASSWORD,
@@ -59,11 +78,11 @@ def submit_experiment(model, protocol, user):
     res = response.content.decode().strip()
     logger.debug('Response from chaste backend: %s' % res)
 
-    if not res.startswith(signature):
+    if not res.startswith(version.signature):
         logger.error('Chaste backend answered with something unexpected: %s' % res)
         raise ProcessingException(res)
 
-    status = res[len(signature):].strip()
+    status = res[len(version.signature):].strip()
 
     if status.startswith('succ'):
         version.task_id = status[4:].strip()
