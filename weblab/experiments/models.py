@@ -92,5 +92,5 @@ class ExperimentVersion(models.Model):
         return self.status in (
             self.STATUS_SUCCESS,
             self.STATUS_PARTIAL,
-            self.STATUS_INAPPLICABLE,
+            self.STATUS_FAILED,
         )

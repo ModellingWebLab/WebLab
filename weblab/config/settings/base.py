@@ -201,8 +201,8 @@ SOCIAL_AUTH_PIPELINE = (
 # Trailing slashes should be removed
 BASE_URL = os.environ.get('WEBLAB_BASE_URL', 'http://127.0.0.1:8000')
 
-REPO_BASE = BASE_DIR / 'repositories'
-EXPERIMENT_BASE = BASE_DIR / 'experiments'
+REPO_BASE = BASE_DIR / 'data/repositories'
+EXPERIMENT_BASE = BASE_DIR / 'data/experiments'
 
 CHASTE_URL = 'http://localhost:5000/chaste'
 CHASTE_PASSWORD = os.environ.get('CHASTE_PASSWORD', 'YOUR_BACKEND_PASSWORD')

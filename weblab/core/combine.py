@@ -1,5 +1,7 @@
 import mimetypes
 import xml.etree.ElementTree as ET
+import zipfile
+from io import BytesIO
 from pathlib import Path
 
 
@@ -131,3 +133,25 @@ class ManifestReader:
             for child in self._root
             if child.attrib['master'] == 'true'
         ), None)
+
+
+def write_archive(filenames):
+    """
+    Write files to a combine archive
+
+    Assumes manifest already exists in the file collection
+
+    @param filenames Iterable of (full_path, filename) pairs
+        where full_path is the full path to the original file
+        and filename is the filename/path to use in the zipfile
+    @return BytesIO object to which archive data has been written
+    """
+    memfile = BytesIO()
+    archive = zipfile.ZipFile(memfile, 'w', zipfile.ZIP_DEFLATED)
+
+    for full_path, filename in filenames:
+        archive.write(full_path, filename)
+    archive.close()
+
+    memfile.seek(0)
+    return memfile

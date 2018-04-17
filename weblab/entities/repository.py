@@ -1,13 +1,11 @@
 import os
-import zipfile
-from io import BytesIO
 from pathlib import Path
 from shutil import rmtree
 
 from django.utils.functional import cached_property
 from git import Actor, Repo
 
-from .manifest import ManifestReader, ManifestWriter
+from core.combine import ManifestReader, ManifestWriter, write_archive
 
 
 class Repository:
@@ -224,12 +222,4 @@ class Repository:
         return self.get_commit(ref).tree.blobs
 
     def archive(self, ref='HEAD'):
-        memfile = BytesIO()
-        archive = zipfile.ZipFile(memfile, 'w', zipfile.ZIP_DEFLATED)
-
-        for filename in self.filenames(ref):
-            archive.write(self.full_path(filename), filename)
-        archive.close()
-
-        memfile.seek(0)
-        return memfile
+        return write_archive(((self.full_path(fn), fn) for fn in self.filenames(ref)))

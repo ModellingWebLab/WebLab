@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from entities.manifest import ManifestReader, ManifestWriter
+from core.combine import ManifestReader, ManifestWriter
 
 
 @pytest.fixture

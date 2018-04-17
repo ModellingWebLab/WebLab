@@ -107,8 +107,8 @@ ENV/
 # mypy
 .mypy_cache/
 
-# repo directory
-weblab/repositories/
+# repo and experiment directories
+weblab/data/
 
 # media directory
 weblab/media/

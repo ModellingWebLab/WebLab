@@ -1,3 +1,5 @@
+from itertools import chain
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse
@@ -100,11 +102,13 @@ class NewExperimentView(View):
 
 class ExperimentCallbackView(View):
     def post(self, request, *args, **kwargs):
-        form = ExperimentCallbackForm(request.POST)
+        form = ExperimentCallbackForm(request.POST, request.FILES)
 
         if form.is_valid():
-            form.save()
+            form.extract_archive()
             return JsonResponse({})
 
         else:
-            return JsonResponse({'error': form.errors})
+            return JsonResponse({
+                'error': ''.join(chain.from_iterable(form.errors.values()))
+            })

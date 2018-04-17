@@ -1,10 +1,17 @@
 import json
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
 from core import recipes
 from experiments.models import ExperimentVersion
+
+
+@pytest.fixture(autouse=True)
+def fake_experiment_path(settings, tmpdir):
+    settings.EXPERIMENT_BASE = str(tmpdir)
+    return settings.EXPERIMENT_BASE
 
 
 def mock_submit(url, body):
@@ -54,68 +61,36 @@ class TestNewExperimentView:
         assert data['newExperiment']['response']
 
 
+@pytest.yield_fixture
+def omex_file():
+    omex_path = str(Path(__file__).absolute().parent.joinpath('./test.omex'))
+    with open(omex_path, 'rb') as fp:
+        yield fp
+
+
 @pytest.mark.django_db
 class TestExperimentCallbackView:
-    @pytest.mark.parametrize('returned_status,stored_status', [
-        ('success', 'SUCCESS'),
-        ('running', 'RUNNING'),
-        ('partial', 'PARTIAL'),
-        ('inapplicable', 'INAPPLICABLE'),
-        ('failed', 'FAILED'),
-        ('something else', 'FAILED'),
-    ])
-    def test_records_status(self, returned_status, stored_status,
-                            client, queued_experiment):
+
+    def test_saves_valid_experiment_results(self, client, queued_experiment, omex_file):
         response = client.post('/experiments/callback', {
             'signature': queued_experiment.signature,
-            'returntype': returned_status,
+            'returntype': 'success',
+            'experiment': omex_file,
         })
 
         assert response.status_code == 200
 
+        # this checks that the form was saved
         queued_experiment.refresh_from_db()
-        assert queued_experiment.status == stored_status
+        assert queued_experiment.status == 'SUCCESS'
 
-    @pytest.mark.parametrize('status,message', [
-        ('inapplicable', 'list, of, missing, terms'),
-        ('failed', 'python stacktrace'),
-    ])
-    def test_records_errormessage(self, status, message,
-                                  client, queued_experiment):
+    def test_returns_form_errors(self, client):
         response = client.post('/experiments/callback', {
-            'signature': queued_experiment.signature,
-            'returntype': status,
-            'returnmsg': message,
+            'signature': 1,
+            'returntype': 'success',
         })
 
         assert response.status_code == 200
-        queued_experiment.refresh_from_db()
-        assert queued_experiment.return_text == message
 
-    @pytest.mark.parametrize('status,message', [
-        ('success', 'finished'),
-        ('partial', 'finished'),
-        ('failed', 'finished'),
-        ('running', 'running'),
-    ])
-    def test_records_default_errormessage(self, status, message,
-                                          client, queued_experiment):
-        response = client.post('/experiments/callback', {
-            'signature': queued_experiment.signature,
-            'returntype': status,
-        })
-
-        assert response.status_code == 200
-        queued_experiment.refresh_from_db()
-        assert queued_experiment.return_text == message
-
-    def test_records_task_id(self, client, queued_experiment):
-        response = client.post('/experiments/callback', {
-            'signature': queued_experiment.signature,
-            'returntype': 'running',
-            'taskid': 'task-id-1',
-        })
-
-        assert response.status_code == 200
-        queued_experiment.refresh_from_db()
-        assert queued_experiment.task_id == 'task-id-1'
+        data = json.loads(response.content.decode())
+        assert data['error'] == 'invalid signature'
