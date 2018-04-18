@@ -94,3 +94,11 @@ class ExperimentVersion(models.Model):
             self.STATUS_PARTIAL,
             self.STATUS_FAILED,
         )
+
+    def update(self, status, txt):
+        """
+        Update the results / status of the experiment
+        """
+        self.status = status
+        self.return_text = txt
+        self.save()

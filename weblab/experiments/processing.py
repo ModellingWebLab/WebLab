@@ -1,4 +1,5 @@
 import logging
+import zipfile
 
 import requests
 from django.conf import settings
@@ -96,3 +97,52 @@ def submit_experiment(model, protocol, user):
     version.save()
 
     return version
+
+
+class ExperimentException(Exception):
+    def __init__(self, stored_message, returned_message):
+        self.stored_message = stored_message
+        self.returned_message = returned_message
+        super().__init__(stored_message)
+
+
+def process_callback(data, files):
+    signature = data.get('signature')
+    if not signature:
+        return {'error': 'missing signature'}
+
+    try:
+        exp = ExperimentVersion.objects.get(id=signature)
+    except ExperimentVersion.DoesNotExist:
+        return {'error': 'invalid signature'}
+
+    task_id = data.get('taskid')
+    if task_id:
+        exp.task_id = task_id
+
+    status = data.get('returntype', ChasteProcessingStatus.SUCCESS)
+    exp.status = ChasteProcessingStatus.get_model_status(status)
+
+    exp.return_text = data.get('returnmsg') or 'finished'
+    if exp.is_running:
+        exp.return_text = 'running'
+
+    exp.save()
+
+    if exp.is_finished:
+        if not files.get('experiment'):
+            exp.update(ExperimentVersion.STATUS_FAILED,
+                       '%s (backend returned no archive)' % exp.return_text)
+            return {'error': 'no archive found'}
+
+        try:
+            exp.abs_path.mkdir()
+            archive = zipfile.ZipFile(files['experiment'], 'r', zipfile.ZIP_DEFLATED)
+            archive.extractall(str(exp.abs_path))
+        except zipfile.BadZipFile as e:
+            exp.update(ExperimentVersion.STATUS_FAILED, 'error reading archive: %s' % e)
+            return {'experiment': 'failed'}
+
+        return {'experiment': 'ok'}
+
+    return {}
