@@ -3,6 +3,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from django.conf import settings
+from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core import recipes
@@ -256,6 +257,31 @@ class TestProcessCallback:
         assert queued_experiment.status == 'FAILED'
         assert queued_experiment.return_text == 'error reading archive: File is not a zip file'
 
-    @pytest.mark.skip('not implemented yet')
-    def test_sends_mail_when_experiment_is_finished(self, queued_experiment):
-        pass
+    def test_sends_mail_when_experiment_is_finished(self, queued_experiment, omex_upload):
+        queued_experiment.author.receive_emails = True
+        queued_experiment.author.save()
+
+        process_callback({
+            'signature': queued_experiment.signature,
+            'returntype': 'success',
+        }, {
+            'experiment': omex_upload,
+        })
+
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].subject == 'Web Lab experiment finished'
+        assert mail.outbox[0].to[0] == queued_experiment.author.email
+        assert 'SUCCESS' in mail.outbox[0].body
+
+    def test_respects_receive_emails_flag(self, queued_experiment, omex_upload):
+        queued_experiment.author.receive_emails = False
+        queued_experiment.author.save()
+
+        process_callback({
+            'signature': queued_experiment.signature,
+            'returntype': 'success',
+        }, {
+            'experiment': omex_upload,
+        })
+
+        assert len(mail.outbox) == 0

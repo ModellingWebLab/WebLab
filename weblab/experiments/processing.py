@@ -8,6 +8,7 @@ from django.db import transaction
 
 from core import visibility
 
+from .emails import send_experiment_finished_email
 from .models import Experiment, ExperimentVersion
 
 
@@ -130,6 +131,8 @@ def process_callback(data, files):
     exp.save()
 
     if exp.is_finished:
+        send_experiment_finished_email(exp)
+
         if not files.get('experiment'):
             exp.update(ExperimentVersion.STATUS_FAILED,
                        '%s (backend returned no archive)' % exp.return_text)

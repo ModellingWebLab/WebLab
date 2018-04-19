@@ -27,4 +27,10 @@ urlpatterns = [
         views.ExperimentMatrixJsonView.as_view(),
         name='matrix',
     ),
+
+    url(
+        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)$',
+        views.ExperimentVersionView.as_view(),
+        name='version',
+    ),
 ]

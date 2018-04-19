@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import TemplateView
+from django.views.generic.detail import DetailView
 
 from entities.models import ModelEntity, ProtocolEntity
 
@@ -101,3 +102,7 @@ class ExperimentCallbackView(View):
     def post(self, request, *args, **kwargs):
         result = process_callback(request.POST, request.FILES)
         return JsonResponse(result)
+
+
+class ExperimentVersionView(DetailView):
+    model = ExperimentVersion
