@@ -33,4 +33,10 @@ urlpatterns = [
         views.ExperimentVersionView.as_view(),
         name='version',
     ),
+
+    url(
+        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/callback$',
+        views.ExperimentSimulateCallbackView.as_view(),
+        name='simulate_callback',
+    ),
 ]

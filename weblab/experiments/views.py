@@ -1,13 +1,18 @@
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView
+from django.views.generic.edit import FormMixin
 
 from entities.models import ModelEntity, ProtocolEntity
 
+from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion
 from .processing import process_callback, submit_experiment
 
@@ -106,3 +111,38 @@ class ExperimentCallbackView(View):
 
 class ExperimentVersionView(DetailView):
     model = ExperimentVersion
+
+
+@method_decorator(staff_member_required, name='dispatch')
+class ExperimentSimulateCallbackView(FormMixin, DetailView):
+    model = ExperimentVersion
+    form_class = ExperimentSimulateCallbackForm
+    template_name = 'experiments/simulate_callback_form.html'
+    context_object_name = 'version'
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        return reverse('experiments:simulate_callback',
+                       args=[self.object.experiment.pk, self.object.pk])
+
+    def form_valid(self, form):
+        self.request.POST
+
+        data = dict(
+            signature=self.kwargs['pk'],
+            **form.data
+        )
+
+        result = process_callback(data, {'experiment': form.files.get('upload')})
+
+        if 'error' in result:
+            messages.error(self.request, result['error'])
+
+        return super().form_valid(form)

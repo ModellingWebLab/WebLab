@@ -28,6 +28,9 @@ class Experiment(models.Model):
             ('force_new_experiment_version', 'Can force new experiment version'),
         )
 
+    def __str__(self):
+        return self.name
+
     @property
     def name(self):
         return '%s / %s' % (self.model.name, self.protocol.name)
@@ -71,9 +74,12 @@ class ExperimentVersion(models.Model):
         default=STATUS_QUEUED,
     )
     return_text = models.TextField(blank=True)
-    task_id = models.CharField(max_length=50, null=True)
+    task_id = models.CharField(max_length=50, blank=True)
     model_version = models.CharField(max_length=50)
     protocol_version = models.CharField(max_length=50)
+
+    def __str__(self):
+        return '%s at %s: (%s)' % (self.experiment, self.created_at, self.status)
 
     @property
     def abs_path(self):
