@@ -80,7 +80,7 @@ class TestSubmitExperiment:
             'model': settings.BASE_URL + model_url,
             'protocol': settings.BASE_URL + protocol_url,
             'signature': version.signature,
-            'callBack': settings.BASE_URL,
+            'callBack': settings.BASE_URL + '/experiments/callback',
             'user': 'Test User',
             'isAdmin': False,
             'password': settings.CHASTE_PASSWORD,

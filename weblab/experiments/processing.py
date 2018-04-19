@@ -69,7 +69,7 @@ def submit_experiment(model, protocol, user):
         'model': settings.BASE_URL + model_url,
         'protocol': settings.BASE_URL + protocol_url,
         'signature': version.signature,
-        'callBack': settings.BASE_URL,
+        'callBack': settings.BASE_URL + reverse('experiments:callback'),
         'user': user.full_name,
         'password': settings.CHASTE_PASSWORD,
         'isAdmin': user.is_staff,
