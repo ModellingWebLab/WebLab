@@ -58,8 +58,8 @@ The run experiment task performs several steps:
 1. Download model & protocol from supplied URLs
 2. Check protocol is applicable to model; send an 'inapplicable' callback if not and stop
 3. Send a 'running' callback ping
-4. Runs the experiment
-5. Sends a callback response with the results
+4. Runs the experiment, maybe sending further occasional 'running' callback pings
+5. Sends a final callback response with the results
 
 ### Experiment task responses
 
@@ -79,6 +79,9 @@ If the experiment got as far as starting, there will also be a file upload named
 This archive will contain at least:
 * `stdout.txt`: stdout and stderr combined from the experiment run
 * `errors.txt`: a summary of key errors if the experiment did not succeed (status is 'partial' or 'failure')
+
+For the 'running' pings during execution, `stdout.txt` will be the only file.
+Each time the complete output from the start of the run will be submitted, so any previously sent file can be replaced.
 
 If the experiment was successful, there will be some additional metadata files:
 * `outputs-default-plots.csv` lists the plots produced in the order defined by the protocol.
