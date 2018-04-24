@@ -28,8 +28,8 @@ class ExperimentMatrixJsonView(View):
     """
     Serve up JSON for experiment matrix
     """
-    @staticmethod
-    def entity_json(entity):
+    @classmethod
+    def entity_json(cls, entity):
         return {
             'id': entity.id,
             'entity_id': entity.id,
@@ -48,6 +48,24 @@ class ExperimentMatrixJsonView(View):
             'numFiles': '',
         }
 
+    @classmethod
+    def experiment_json(cls, experiment):
+        try:
+            version = experiment.latest_version
+        except ExperimentVersion.DoesNotExist:
+            version = None
+
+        return {
+            'entity_id': experiment.id,
+            'latestResult': experiment.latest_result,
+            'protocol': cls.entity_json(experiment.protocol),
+            'model': cls.entity_json(experiment.model),
+            'url': reverse(
+                'experiments:version',
+                args=[experiment.id, version.id]
+            ) if version else '',
+        }
+
     def get(self, request, *args, **kwargs):
         q_visibility = request.user.visibility_query
         models = {
@@ -61,12 +79,7 @@ class ExperimentMatrixJsonView(View):
         }
 
         experiments = {
-            exp.pk: {
-                'entity_id': exp.id,
-                'latestResult': exp.latest_result,
-                'protocol': self.entity_json(exp.protocol),
-                'model': self.entity_json(exp.model),
-            }
+            exp.pk: self.experiment_json(exp)
             for exp in Experiment.objects.filter(q_visibility)
         }
 

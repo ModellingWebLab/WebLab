@@ -230,9 +230,7 @@ function setExpListeners($td, entry)
 	// Click listener
 	if (entry.experiment)
 	{
-		//var expUrl = contextPath + "/experiment/" + convertForURL(entry.experiment.name) + "/" + entry.experiment.id + "/latest";
-    var expUrl = '#'
-		addMatrixClickListener($td, expUrl, entry.experiment.id, entry.experiment.latestResult);
+		addMatrixClickListener($td, entry.experiment.url, entry.experiment.id, entry.experiment.latestResult);
 	}
 	else
 	{
