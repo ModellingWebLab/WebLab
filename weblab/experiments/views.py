@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.generic import TemplateView
-from django.views.generic.detail import DetailView
+from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
 
 from entities.models import ModelEntity, ProtocolEntity
@@ -124,6 +124,7 @@ class ExperimentCallbackView(View):
 
 class ExperimentVersionView(DetailView):
     model = ExperimentVersion
+    context_object_name = 'version'
 
 
 @method_decorator(staff_member_required, name='dispatch')
@@ -159,3 +160,43 @@ class ExperimentSimulateCallbackView(FormMixin, DetailView):
             messages.error(self.request, result['error'])
 
         return super().form_valid(form)
+
+
+class ExperimentFileListJsonView(SingleObjectMixin, View):
+    model = ExperimentVersion
+
+    def _file_json(self, archive_file):
+        version = self.get_object()
+        stat = version.get_file(archive_file.name).stat()
+        return {
+            'id': archive_file.name,
+            'author': version.author.full_name,
+            'created': stat.st_ctime,
+            'name': archive_file.name,
+            'filetype': archive_file.fmt,
+            'masterFile': archive_file.is_master,
+            'size': stat.st_size,
+        }
+
+    def get(self, request, *args, **kwargs):
+        version = self.get_object()
+        files = [
+            self._file_json(f)
+            for f in version.files
+        ]
+
+        return JsonResponse({
+            'version': {
+                'id': version.id,
+                'author': version.author.full_name,
+                'status': version.status,
+                'parsedOk': False,
+                'visibility': version.experiment.creation_date,
+                'created': version.created_at,
+                'name': version.experiment.name,
+                'experimentId': version.experiment.id,
+                'version': version.created_at,
+                'files': files,
+                'numFiles': len(files),
+            }
+        })

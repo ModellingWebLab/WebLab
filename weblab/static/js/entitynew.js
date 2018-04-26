@@ -1,4 +1,5 @@
 var Upload = require('./upload.js');
+var utils = require('./lib/utils.js')
 
 var uploadedFiles = new Array ();
 var knownTypes = ["unknown", "CellML", "CSV", "HDF5", "EPS", "PNG", "XMLPROTOCOL", "TXTPROTOCOL", "COMBINE archive"];
@@ -13,7 +14,7 @@ function initNewEntity() {
     if ($versionName.length)
     {
       $versionName.focus();
-      $versionName.value = getYMDHMS(new Date());
+      $versionName.value = utils.getYMDHMS(new Date());
       $versionName.blur();
     }
   });

@@ -1,9 +1,9 @@
 var $ = require('jquery');
 require('jquery-ui-browserify');
-var XDate = require('xdate');
 var utils = require('./lib/utils.js')
 require('./entitynew.js');
 require('./db.js');
+require('./experiment.js');
 var notifications = require('./lib/notifications.js');
 
 /**
@@ -142,37 +142,6 @@ function convertForURL (str)
   return url.substring (0, 5);
 }
 
-function beautifyTimeStamp (datestring)
-{
-  var date = new XDate(datestring, true);
-  if (date && date.valid())
-  {
-    return date.toString ("MMM d'<sup>'S'</sup>', yyyy 'at' h:mm tt");
-  }
-  return datestring;
-}
-
-function beautifyTimeStamps()
-{
-  $("time").each(function () {
-    var tm = this.innerHTML;
-    if (tm)
-    {
-      this.setAttribute("datetime", tm);
-      this.innerHTML = beautifyTimeStamp(tm);
-    }
-  });
-}
-
-function getYMDHMS (datestring)
-{
-  var date = new XDate(datestring, true);
-  if (date && date.valid ())
-  {
-    return date.toString ("yyyy-MM-dd_HH-mm-ss");
-  }
-  return datestring;
-}
 function sortChildrenByAttribute (elem, reverse, attr)
 {
   //console.log (elem);
@@ -255,7 +224,7 @@ function initPage ()
     notifications.clear("info");
   });
 
-  beautifyTimeStamps();
+  utils.beautifyTimeStamps();
 
   var csrftoken = utils.getCookie('csrftoken');
   function csrfSafeMethod(method) {

@@ -25,7 +25,7 @@ def get_joint_visibility(*visibilities):
     ]
 
     # Use the most conservative of the two entities' visibilities
-    return min(
+    return levels[min(
         levels.index(vis)
         for vis in visibilities
-    )
+    )]

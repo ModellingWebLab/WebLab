@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db import models
 
 from core import visibility
+from core.combine import ManifestReader
 from entities.models import ModelEntity, ProtocolEntity
 
 
@@ -108,3 +109,15 @@ class ExperimentVersion(models.Model):
         self.status = status
         self.return_text = txt
         self.save()
+
+    @property
+    def files(self):
+        reader = ManifestReader()
+        if self.abs_path.exists():
+            reader.read(str(self.abs_path / 'manifest.xml'))
+            return reader.files
+        else:
+            return []
+
+    def get_file(self, name):
+        return self.abs_path / name

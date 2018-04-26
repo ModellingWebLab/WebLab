@@ -134,6 +134,24 @@ class ManifestReader:
             if child.attrib['master'] == 'true'
         ), None)
 
+    @property
+    def files(self):
+        return [
+            ArchiveFile(
+                child.attrib['location'].lstrip('/'),
+                child.attrib['format'],
+                child.attrib.get('master') == 'true'
+            )
+            for child in self._root
+        ]
+
+
+class ArchiveFile:
+    def __init__(self, name, fmt, is_master=False):
+        self.name = name
+        self.fmt = fmt
+        self.is_master = is_master
+
 
 def write_archive(filenames):
     """

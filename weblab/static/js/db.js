@@ -117,7 +117,7 @@ function drawMatrix (matrix)
 	
 	var div = document.getElementById("matrixdiv"),
 		table = document.createElement("table");
-	utils.removeChildren(div);
+	$(div).empty();
 	table.setAttribute("class", "matrixTable");
 	div.appendChild(table);
 

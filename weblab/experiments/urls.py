@@ -39,4 +39,10 @@ urlpatterns = [
         views.ExperimentSimulateCallbackView.as_view(),
         name='simulate_callback',
     ),
+
+    url(
+        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/files.json$',
+        views.ExperimentFileListJsonView.as_view(),
+        name='version-files-json',
+    ),
 ]
