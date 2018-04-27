@@ -1,3 +1,5 @@
+var utils = require('../../lib/utils.js');
+
 var choicesDivId = 'choices',
 	resetButtonDivId = 'flot-buttons-div',
 	colouredSpanIdPrefix = 'span',
@@ -657,11 +659,11 @@ function flotContent ()
     this.name = "displayPlotFlot";
     this.icon = "displayPlotFlot.png";
     this.description = "display graphs using flot library";
-    
-    addScript (contextPath + "/res/js/visualizers/displayPlotFlot/flot/jquery.flot.min.js");
-    addScript (contextPath + "/res/js/visualizers/displayPlotFlot/flot/jquery.flot.navigate.min.js");
-    addScript (contextPath + "/res/js/visualizers/displayPlotFlot/flot/jquery.flot.axislabels.js");
-    addScript (contextPath + "/res/js/visualizers/displayPlotFlot/flot/jquery.flot.selection.js");
+
+    utils.addScript(staticPath + "js/visualizers/displayPlotFlot/flot/jquery.flot.min.js");
+    utils.addScript(staticPath + "js/visualizers/displayPlotFlot/flot/jquery.flot.navigate.min.js");
+    utils.addScript(staticPath + "js/visualizers/displayPlotFlot/flot/jquery.flot.axislabels.js");
+    utils.addScript(staticPath + "js/visualizers/displayPlotFlot/flot/jquery.flot.selection.js");
 };
 
 flotContent.prototype.canRead = function (file)
@@ -694,10 +696,7 @@ flotContent.prototype.setUpComparision = function (files, div)
     return new contentFlotPlotComparer (files, div);
 };
 
-
-function initFlotContent ()
-{
-    visualizers["displayPlotFlot"] = new flotContent ();
+module.exports = {
+  'name': 'displayPlotFlot',
+  'get_visualizer': function() { return new flotContent(); }
 }
-
-document.addEventListener("DOMContentLoaded", initFlotContent, false);

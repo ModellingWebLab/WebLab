@@ -1,4 +1,3 @@
-
 /**
  * Actually create a plot using the HighCharts library.
  * 
@@ -277,7 +276,7 @@ function HCPlot ()
 	
 	var el = document.createElement('script');
 	el.async = false;
-	el.src = contextPath + "/res/js/visualizers/displayPlotHC/js/highcharts.js";//excanvas.min.js";
+	el.src = staticPath + "js/visualizers/displayPlotHC/js/highcharts.js";//excanvas.min.js";
 	el.type = 'text/javascript';
 
 	(document.getElementsByTagName('head')[0]||document.body).appendChild(el);
@@ -313,9 +312,7 @@ HCPlot.prototype.setUpComparision = function (files, div)
 	return new HCPlotterComparer (files, div);
 };
 
-function initHCPlotContent ()
-{
-	visualizers["displayPlotHC"] = new HCPlot ();
+module.exports = {
+  'name': 'displayPlotHC',
+  'get_visualizer': function() { return new HCPlot(); }
 }
-
-document.addEventListener("DOMContentLoaded", initHCPlotContent, false);

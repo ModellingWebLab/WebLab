@@ -1,3 +1,4 @@
+var utils = require('../../lib/utils.js');
 
 /**
  * Create the 'visualiser' portion of the plugin, responsible for displaying content within the div for this file.
@@ -597,7 +598,7 @@ function editMetadata()
     this.icon = "editMetadata.png";
     this.description = "edit the metadata annotations in this model";
 
-    addScript(contextPath + "/res/js/3rd/jquery.rdfquery.core.min-1.0.js");
+    utils.addScript(staticPath + "js/3rd/jquery.rdfquery.core.min-1.0.js");
 };
 
 /**
@@ -639,12 +640,7 @@ editMetadata.prototype.setUp = function (file, div)
     return new metadataEditor(file, div);
 };
 
-/**
- * Add ourselves to the available plugins for 'visualising' entities.
- */
-function initEditMetadata ()
-{
-    visualizers["editMetadata"] = new editMetadata();
+module.exports = {
+  'name': 'editMetadata',
+  'get_visualizer': function() { return new editMetadata(); }
 }
-
-document.addEventListener("DOMContentLoaded", initEditMetadata, false);

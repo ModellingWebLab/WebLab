@@ -186,10 +186,7 @@ unixDiffContent.prototype.setUpComparision = function (files, div)
     return new unixDiffer (files, div);
 };
 
-
-function initUnixDiffContent ()
-{
-    visualizers["displayUnixDiff"] = new unixDiffContent ();
+module.exports = {
+  'name': 'displayUnixDiff',
+  'get_visualizer': function() { return new unixDiffContent(); }
 }
-
-document.addEventListener("DOMContentLoaded", initUnixDiffContent, false);

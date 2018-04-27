@@ -62,11 +62,42 @@ function getYMDHMS (datestring)
   return datestring;
 }
 
+function convertForURL (str)
+{
+  var url = str.replace(/\W/g, '');
+  if (url.length >= 5)
+    return url;
+  while (url.length < 7)
+    url += Math.random().toString(36).substring(7);
+  return url.substring (0, 5);
+}
+
+function addScript (link)
+{
+  var el = document.createElement('script');
+  el.async = false;
+  el.src = link;
+  el.type = 'text/javascript';
+  (document.getElementsByTagName('head')[0]||document.body).appendChild(el);
+}
+
+function addLink (link)
+{
+  var el = document.createElement('link');
+  el.rel = "stylesheet";
+  el.href = link;
+  el.type = 'text/css';
+  (document.getElementsByTagName('head')[0]||document.body).appendChild(el);
+}
+
 module.exports = {
   humanReadableBytes: humanReadableBytes,
   removeChildren: removeChildren,
   getCookie: getCookie,
   beautifyTimeStamp: beautifyTimeStamp,
   beautifyTimeStamps: beautifyTimeStamps,
-  getYMDHMS: getYMDHMS
+  getYMDHMS: getYMDHMS,
+  convertForURL: convertForURL,
+  addScript: addScript,
+  addLink: addLink
 }

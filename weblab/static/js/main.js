@@ -1,4 +1,6 @@
 var $ = require('jquery');
+require('jquery-migrate');
+$.migrateMute = true;
 require('jquery-ui-browserify');
 var utils = require('./lib/utils.js')
 require('./entitynew.js');
@@ -132,16 +134,6 @@ function batchProcessing (jsonObject, actionIndicator, callback)
     xmlhttp.send(JSON.stringify(jsonObject));
 }
 
-function convertForURL (str)
-{
-  var url = str.replace(/\W/g, '');
-  if (url.length >= 5)
-    return url;
-  while (url.length < 7)
-    url += Math.random().toString(36).substring(7);
-  return url.substring (0, 5);
-}
-
 function sortChildrenByAttribute (elem, reverse, attr)
 {
   //console.log (elem);
@@ -174,24 +166,6 @@ function sortChildrenByAttribute (elem, reverse, attr)
   for (var i = 0; i < items.length; i++)
     elem.appendChild (items[i]);
 
-}
-
-function addScript (link)
-{
-  var el = document.createElement('script');
-  el.async = false;
-  el.src = link;
-  el.type = 'text/javascript';
-  (document.getElementsByTagName('head')[0]||document.body).appendChild(el);
-}
-
-function addLink (link)
-{
-  var el = document.createElement('link');
-  el.rel = "stylesheet";
-  el.href = link;
-  el.type = 'text/css';
-  (document.getElementsByTagName('head')[0]||document.body).appendChild(el);
 }
 
 function initPage ()

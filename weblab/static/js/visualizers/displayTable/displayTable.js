@@ -82,9 +82,7 @@ tabularizeContent.prototype.setUp = function (file, div)
 	return new contentTabularizer (file, div);
 };
 
-function initTabularizeContent ()
-{
-	visualizers["displayTable"] = new tabularizeContent ();
+module.exports = {
+  'name': 'displayTable',
+  'get_visualizer': function() { return new tabularizeContent(); }
 }
-
-document.addEventListener("DOMContentLoaded", initTabularizeContent, false);

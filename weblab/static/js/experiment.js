@@ -1,6 +1,16 @@
 var showdown = require('showdown');
 var notifications = require('./lib/notifications.js');
 var utils = require('./lib/utils.js')
+var plugins = [
+  require('./visualizers/displayBivesDiff/displayBivesDiff.js'),
+  require('./visualizers/displayContent/displayContent.js'),
+  require('./visualizers/displayPlotD3/displayPlotD3.js'),
+  require('./visualizers/displayPlotFlot/displayPlotFlot.js'),
+  require('./visualizers/displayPlotHC/displayPlotHC.js'),
+  require('./visualizers/displayTable/displayTable.js'),
+  require('./visualizers/displayUnixDiff/displayUnixDiff.js'),
+  require('./visualizers/editMetadata/editMetadata.js'),
+];
 
 var versions = {},
 	files = {},
@@ -360,7 +370,7 @@ function displayVersion (versionId, showDefault)
     //if (entityType != "experiment" && ROLE.isAllowedToCreateNewExperiment)
    // {
         // Specify links to create new experiments using this model/protocol
-     //   $(".runExpts").each(function (){this.href = staticPath + "/batch/" + entityType + "/" + convertForURL (v.name) + "/" + v.id;});
+     //   $(".runExpts").each(function (){this.href = staticPath + "/batch/" + entityType + "/" + utils.convertForURL (v.name) + "/" + v.id;});
     //}
     
 	dv.author.innerHTML = v.author;
@@ -442,9 +452,9 @@ function displayVersion (versionId, showDefault)
 				continue;
 			var a = document.createElement("a");
 			a.setAttribute("id", "filerow-" + file.name + "-viz-" + viz.getName ());
-			a.href = basicurl + convertForURL (v.name) + "/" + v.id + "/" + convertForURL (file.name) + "/" + file.id + "/" + vi;
+			a.href = basicurl + utils.convertForURL (v.name) + "/" + v.id + "/" + utils.convertForURL (file.name) + "/" + file.id + "/" + vi;
 			var img = document.createElement("img");
-			img.src = staticPath + "/res/js/visualizers/" + vi + "/" + viz.getIcon ();
+			img.src = staticPath + "js/visualizers/" + vi + "/" + viz.getIcon ();
 			img.alt = viz.getDescription ();
 			img.title = img.alt;
 			a.appendChild(img);
@@ -462,14 +472,14 @@ function displayVersion (versionId, showDefault)
 		var a = document.createElement("a");
 		a.href = file.url;
 		img = document.createElement("img");
-		img.src = staticPath + "/res/img/document-save-5.png";
+		img.src = staticPath + "img/document-save-5.png";
 		img.alt = "download document";
 		img.title = "download document";
 		a.appendChild(img);
 		td.appendChild(a);
 		tr.appendChild(td);
 		dv.filestable.appendChild(tr);
-		dv.archivelink.href = staticPath; // TODO: + "/download/" + entityType.charAt(0) + "/" + convertForURL (v.name) + "/" + v.id + "/a/archive";
+		dv.archivelink.href = staticPath; // TODO: + "/download/" + entityType.charAt(0) + "/" + utils.convertForURL (v.name) + "/" + v.id + "/a/archive";
 	}
 	
 	if (!v.hasOwnProperty('outputContents') && !v.hasOwnProperty('plotDescription') && showDefault && v.errorsLink)
@@ -707,7 +717,7 @@ function updateFile (rf, v)
 	f.name = rf.name;
 	f.masterFile = rf.masterFile;
 	f.size = rf.size;
-	f.url = staticPath; // TODO + "/download/" + entityType.charAt(0) + "/" + convertForURL (v.name) + "/" + v.id + "/" + f.id + "/" + convertForURL (f.name);
+	f.url = staticPath; // TODO + "/download/" + entityType.charAt(0) + "/" + utils.convertForURL (v.name) + "/" + v.id + "/" + f.id + "/" + utils.convertForURL (f.name);
 	f.div = {};
 	f.viz = {};
 	f.contents = null;
@@ -901,7 +911,7 @@ function render ()
 		if (curFileId && pluginName)
 		{
 			displayFile (v, curFileId, pluginName);
-			doc.file.close.href = basicurl + convertForURL (v.name) + "/" + v.id + "/";
+			doc.file.close.href = basicurl + utils.convertForURL (v.name) + "/" + v.id + "/";
 		}
 		else
 			doc.version.filedetails.style.display = "none";
@@ -1128,6 +1138,11 @@ function initModel ()
 		else
 			window.alert("No experiments available to compare!");
 	});
+
+  $(plugins).each(function(i, plugin) {
+    visualizers[plugin.name] = plugin.get_visualizer()
+  });
+
 }
 
 document.addEventListener("DOMContentLoaded", initModel, false);

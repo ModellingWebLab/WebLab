@@ -1,3 +1,4 @@
+var utils = require('../../lib/utils.js');
 
 function bivesDiffer (file, div)
 {
@@ -307,13 +308,13 @@ bivesDiffer.prototype.show = function ()
 
 function bivesDiffContent ()
 {
-    this.name = "displayBivesDiff";
-    this.icon = "displayBivesDiff.png";
-    this.description = "use BiVeS to compare versions";
+  this.name = "displayBivesDiff";
+  this.icon = "displayBivesDiff.png";
+  this.description = "use BiVeS to compare versions";
 
-	addLink (contextPath + "/res/js/visualizers/displayBivesDiff/graphene-sems/graphene.css");
-  	addScript (contextPath + "/res/js/visualizers/displayBivesDiff/graphene-sems/fda44d5a.vendor.js");
-  	addScript (contextPath + "/res/js/visualizers/displayBivesDiff/graphene-sems/11726d3b.scripts.js");
+  utils.addLink (staticPath + "js/visualizers/displayBivesDiff/graphene-sems/graphene.css");
+  utils.addScript (staticPath + "js/visualizers/displayBivesDiff/graphene-sems/fda44d5a.vendor.js");
+  utils.addScript (staticPath + "js/visualizers/displayBivesDiff/graphene-sems/11726d3b.scripts.js");
 };
 
 bivesDiffContent.prototype.canRead = function (file)
@@ -353,9 +354,7 @@ bivesDiffContent.prototype.setUpComparision = function (files, div)
 };
 
 
-function initbivesDiffContent ()
-{
-    visualizers["displayBivesDiff"] = new bivesDiffContent ();
+module.exports = {
+  'name': 'displayBivesDiff',
+  'get_visualizer': function() { return new bivesDiffContent(); }
 }
-
-document.addEventListener("DOMContentLoaded", initbivesDiffContent, false);
