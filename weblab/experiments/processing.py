@@ -138,13 +138,17 @@ def process_callback(data, files):
                        '%s (backend returned no archive)' % exp.return_text)
             return {'error': 'no archive found'}
 
-        try:
-            exp.abs_path.mkdir()
-            archive = zipfile.ZipFile(files['experiment'], 'r', zipfile.ZIP_DEFLATED)
-            archive.extractall(str(exp.abs_path))
-        except zipfile.BadZipFile as e:
-            exp.update(ExperimentVersion.STATUS_FAILED, 'error reading archive: %s' % e)
-            return {'experiment': 'failed'}
+        exp.abs_path.mkdir()
+        with (exp.abs_path / 'results.omex').open('wb+') as dest:
+            for chunk in files['experiment'].chunks():
+                dest.write(chunk)
+
+            # Make sure it's a valid zip
+            try:
+                zipfile.ZipFile(dest)
+            except zipfile.BadZipFile as e:
+                exp.update(ExperimentVersion.STATUS_FAILED, 'error reading archive: %s' % e)
+                return {'experiment': 'failed'}
 
         return {'experiment': 'ok'}
 

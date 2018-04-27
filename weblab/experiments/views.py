@@ -167,15 +167,14 @@ class ExperimentFileListJsonView(SingleObjectMixin, View):
 
     def _file_json(self, archive_file):
         version = self.get_object()
-        stat = version.get_file(archive_file.name).stat()
         return {
             'id': archive_file.name,
             'author': version.author.full_name,
-            'created': stat.st_ctime,
+            'created': version.created_at,
             'name': archive_file.name,
             'filetype': archive_file.fmt,
             'masterFile': archive_file.is_master,
-            'size': stat.st_size,
+            'size': archive_file.size,
         }
 
     def get(self, request, *args, **kwargs):

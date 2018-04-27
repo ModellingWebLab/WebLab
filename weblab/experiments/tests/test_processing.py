@@ -219,7 +219,7 @@ class TestProcessCallback:
         queued_experiment.refresh_from_db()
         assert queued_experiment.task_id == 'task-id-1'
 
-    def test_extracts_archive(self, queued_experiment, omex_upload):
+    def test_stores_archive(self, queued_experiment, omex_upload):
         result = process_callback({
             'signature': queued_experiment.signature,
             'returntype': 'success',
@@ -229,8 +229,7 @@ class TestProcessCallback:
 
         assert result == {'experiment': 'ok'}
 
-        assert queued_experiment.abs_path.exists()
-        assert (queued_experiment.abs_path / 'errors.txt').exists()
+        assert (queued_experiment.abs_path / 'results.omex').exists()
 
     def test_finished_experiment_must_have_attachment(self, queued_experiment):
         result = process_callback({
@@ -244,7 +243,7 @@ class TestProcessCallback:
         assert queued_experiment.status == 'FAILED'
         assert queued_experiment.return_text == 'message (backend returned no archive)'
 
-    def test_returns_error_on_invalid_cardhive(self, queued_experiment):
+    def test_returns_error_on_invalid_archive(self, queued_experiment):
         result = process_callback({
             'signature': queued_experiment.signature,
             'returntype': 'success',

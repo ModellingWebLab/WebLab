@@ -146,11 +146,27 @@ class ManifestReader:
         ]
 
 
+class ZippedArchiveReader:
+    def __init__(self, path):
+        self._path = path
+
+    @property
+    def files(self):
+        with zipfile.ZipFile(self._path) as archive:
+            reader = ManifestReader()
+            reader.read(archive.open('manifest.xml'))
+            files = reader.files
+            for f in files:
+                f.size = archive.getinfo(f.name).file_size
+            return files
+
+
 class ArchiveFile:
     def __init__(self, name, fmt, is_master=False):
         self.name = name
         self.fmt = fmt
         self.is_master = is_master
+        self.size = None
 
 
 def write_archive(filenames):

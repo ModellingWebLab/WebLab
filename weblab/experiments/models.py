@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 
 from core import visibility
-from core.combine import ManifestReader
+from core.combine import ZippedArchiveReader
 from entities.models import ModelEntity, ProtocolEntity
 
 
@@ -87,6 +87,10 @@ class ExperimentVersion(models.Model):
         return Path(settings.EXPERIMENT_BASE, str(self.id))
 
     @property
+    def archive_path(self):
+        return self.abs_path / 'results.omex'
+
+    @property
     def signature(self):
         return str(self.id)
 
@@ -112,10 +116,8 @@ class ExperimentVersion(models.Model):
 
     @property
     def files(self):
-        reader = ManifestReader()
-        if self.abs_path.exists():
-            reader.read(str(self.abs_path / 'manifest.xml'))
-            return reader.files
+        if self.archive_path.exists():
+            return ZippedArchiveReader(str(self.archive_path)).files
         else:
             return []
 
