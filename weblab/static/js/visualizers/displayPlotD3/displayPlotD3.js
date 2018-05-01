@@ -1,4 +1,5 @@
 var utils = require('../../lib/utils.js');
+var common = require('../../expt_common.js');
 
 function D3Plotter (file, div)
 {
@@ -12,12 +13,12 @@ D3Plotter.prototype.getContentsCallback = function (succ)
 {
 	//console.log ("insert content");
 	//console.log (this.div);
-	removeChildren (this.div);
+	$(this.div).empty();
 	if (!succ)
 		this.div.appendChild (document.createTextNode ("failed to load the contents"));
 	else
 	{
-		var csvData = getCSVColumnsDownsampled (this.file);
+		var csvData = common.getCSVColumnsDownsampled (this.file);
 		
 		var div = document.createElement("div");
 		var id = "D3Plot-" + this.file.id;

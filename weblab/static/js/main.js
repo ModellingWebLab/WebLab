@@ -8,74 +8,12 @@ require('./db.js');
 require('./experiment.js');
 var notifications = require('./lib/notifications.js');
 
-/**
- * Raw parsing function for CSV files into columns of numerical/textual data
- * @param file  the loaded file to parse
- */
-function parseCsvRaw(file)
-{
-    var str = file.contents.replace(/\s*#.*\n/gm,"");
-    var delimiter = ",";
-    var patterns = new RegExp(
-            (
-                // Delimiters.
-                "(\\" + delimiter + "|\\r?\\n|\\r|^)" +
-                // Quoted fields.
-                "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
-                // Standard fields.
-                "([^\"\\" + delimiter + "\\r\\n]*))"
-            ),
-            "gi"
-            );
-    var csv = [[]];
-    var matches = null;
-    while (matches = patterns.exec (str))
-    {
-        var value;
-        var matchDel = matches[1];
-        if (matchDel.length && matchDel != delimiter)
-            csv.push([]);
-        if (matches[2])
-            value = matches[2].replace (new RegExp ("\"\"", "g"), "\"");
-        else
-            value = matches[3];
-
-        csv[csv.length - 1].push (value);
-    }
-    file.csv = csv;
-}
 
 function removeListeners (element)
 {
   var new_element = element.cloneNode(true);
   element.parentNode.replaceChild (new_element, element);
   return new_element;
-}
-function keys (obj)
-{
-    var keys = [];
-
-    for(var key in obj)
-        if(obj.hasOwnProperty(key))
-            keys.push(key);
-
-    return keys;
-}
-function getPos (ele)
-{
-    var x = 0;
-    var y = 0;
-    while (true)
-    {
-      if (!ele)
-        break;
-        x += ele.offsetLeft;
-        y += ele.offsetTop;
-        if (ele.offsetParent === null)
-            break;
-        ele = ele.offsetParent;
-    }
-    return {xPos:x, yPos:y};
 }
 
 function batchProcessing (jsonObject, actionIndicator, callback)

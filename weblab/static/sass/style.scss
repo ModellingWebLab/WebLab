@@ -1,5 +1,10 @@
 @import url("fonts.css");
 @import "colors";
+@import "displayContent/displayContent";
+@import "displayPlotD3/displayPlotD3";
+@import "displayPlotFlot/displayPlotFlot";
+@import "displayPlotHC/displayPlotHC";
+@import "displayTable/displayTable";
 
 body {
 	font-family: 'Open Sans', sans-serif;

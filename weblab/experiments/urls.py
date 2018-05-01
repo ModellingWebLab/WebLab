@@ -29,7 +29,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)$',
+        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)(?:/(?P<filename>[\w.]+)/(?P<viz>\w+))?$',
         views.ExperimentVersionView.as_view(),
         name='version',
     ),
@@ -43,6 +43,12 @@ urlpatterns = [
     url(
         r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/files.json$',
         views.ExperimentFileListJsonView.as_view(),
-        name='version-files-json',
+        name='version_files_json',
+    ),
+
+    url(
+        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/download/(?P<filename>[\w\-.]+)$',
+        views.ExperimentFileDownloadView.as_view(),
+        name='file_download',
     ),
 ]

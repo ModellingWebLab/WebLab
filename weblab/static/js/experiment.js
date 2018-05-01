@@ -1,14 +1,15 @@
 var showdown = require('showdown');
 var notifications = require('./lib/notifications.js');
 var utils = require('./lib/utils.js')
+var expt_common = require('./expt_common.js');
 var plugins = [
-  require('./visualizers/displayBivesDiff/displayBivesDiff.js'),
+  //require('./visualizers/displayBivesDiff/displayBivesDiff.js'),
   require('./visualizers/displayContent/displayContent.js'),
   require('./visualizers/displayPlotD3/displayPlotD3.js'),
   require('./visualizers/displayPlotFlot/displayPlotFlot.js'),
   require('./visualizers/displayPlotHC/displayPlotHC.js'),
   require('./visualizers/displayTable/displayTable.js'),
-  require('./visualizers/displayUnixDiff/displayUnixDiff.js'),
+  //require('./visualizers/displayUnixDiff/displayUnixDiff.js'),
   require('./visualizers/editMetadata/editMetadata.js'),
 ];
 
@@ -32,6 +33,7 @@ function parseUrl (location)
 	var t = location.pathname.substr(contextLen+1).split("/");
 	if (t.length < 3)
 		return null;
+
 	basicurl = location.href.substr(0, location.href.length-location.pathname.length+contextLen) + "/" + t.slice(0,3).join("/") + "/";
 	entityId = t[2];
 	return t.slice(3);
@@ -244,7 +246,7 @@ function highlightPlots (version, showDefault)
 		
 		plots.push (plotDescription[i][2]);
 	}
-	sortTable (plots);
+	expt_common.sortTable (filesTable, plots);
 	
 	// If there were no graphs to show, but we do have an errors.txt file and want to show a default, then show the errors
 	if (showDefault && version.errorsLink)
@@ -259,7 +261,7 @@ function parseOutputContents (file, version, showDefault)
 		{
 			if (succ)
 			{
-			    parseCsvRaw(file);
+			    utils.parseCsvRaw(file);
 				version.outputContents = file.csv;
                 if (version.plotDescription)
                     highlightPlots (version, showDefault);
@@ -282,7 +284,7 @@ function parsePlotDescription (file, version, showDefault)
 		{
 			if (succ)
 			{
-			    parseCsvRaw(file);
+			    utils.parseCsvRaw(file);
 				version.plotDescription = file.csv;
 				if (version.outputContents)
 				    highlightPlots (version, showDefault);
@@ -408,7 +410,7 @@ function displayVersion (versionId, showDefault)
 	{
 		var file = files[v.files[i]];
 		tr = document.createElement("tr");
-		tr.setAttribute("id", "filerow-" + file.name.hashCode ());
+		tr.setAttribute("id", "filerow-" + file.name.hashCode());
 		if (file.masterFile)
 			tr.setAttribute("class", "masterFile");
 		td = document.createElement("td");
@@ -444,7 +446,6 @@ function displayVersion (versionId, showDefault)
 		});
 		
 		
-		
 		for (var vi in visualizers)
 		{
 			var viz = visualizers[vi];
@@ -452,7 +453,7 @@ function displayVersion (versionId, showDefault)
 				continue;
 			var a = document.createElement("a");
 			a.setAttribute("id", "filerow-" + file.name + "-viz-" + viz.getName ());
-			a.href = basicurl + utils.convertForURL (v.name) + "/" + v.id + "/" + utils.convertForURL (file.name) + "/" + file.id + "/" + vi;
+			a.href = basicurl + '/' + encodeURIComponent(file.name) + "/" + vi;
 			var img = document.createElement("img");
 			img.src = staticPath + "js/visualizers/" + vi + "/" + viz.getIcon ();
 			img.alt = viz.getDescription ();
@@ -479,7 +480,7 @@ function displayVersion (versionId, showDefault)
 		td.appendChild(a);
 		tr.appendChild(td);
 		dv.filestable.appendChild(tr);
-		dv.archivelink.href = staticPath; // TODO: + "/download/" + entityType.charAt(0) + "/" + utils.convertForURL (v.name) + "/" + v.id + "/a/archive";
+		dv.archivelink.href = '#' //staticPath + '/archivelink/' //"/download/" + entityType.charAt(0) + "/" + utils.convertForURL (v.name) + "/" + v.id + "/a/archive";
 	}
 	
 	if (!v.hasOwnProperty('outputContents') && !v.hasOwnProperty('plotDescription') && showDefault && v.errorsLink)
@@ -717,7 +718,8 @@ function updateFile (rf, v)
 	f.name = rf.name;
 	f.masterFile = rf.masterFile;
 	f.size = rf.size;
-	f.url = staticPath; // TODO + "/download/" + entityType.charAt(0) + "/" + utils.convertForURL (v.name) + "/" + v.id + "/" + f.id + "/" + utils.convertForURL (f.name);
+  f.url = rf.url;
+//	f.url = '/experiments/' + v.entity_id + "/" + v.id + "/" + f.id + "/" + utils.convertForURL (f.name);
 	f.div = {};
 	f.viz = {};
 	f.contents = null;
@@ -758,38 +760,39 @@ function zoomHandler()
 
 function displayFile (version, id, pluginName)
 {
-    if (version.plotDescription === null || version.outputContents === null)
-    {
-        // Try again in 0.1s, by which time hopefully they have been parsed
-        console.log("Waiting for metadata to be parsed.");
-        window.setTimeout(function(){displayFile(version, id, pluginName)}, 100);
-        return;
-    }
-	var f = files[id];
-	if (!f)
-	{
-		addNotification ("no such file", "error");
-		return;
-	}
-	var df = doc.file;
-	df.name.innerHTML = "<small>File: </small>" + f.name;
-	df.time.setAttribute ("datetime", f.created);
-	df.time.innerHTML = utils.beautifyTimeStamp (f.created);
-	df.author.innerHTML = f.author;
-	
-	if (!f.div[pluginName])
-	{
-		f.div[pluginName] = document.createElement("div");
-		f.viz[pluginName] = visualizers[pluginName].setUp (f, f.div[pluginName]);
-	}
-    $(df.display).empty();
-	df.display.appendChild (f.div[pluginName]);
-    f.viz[pluginName].show ();
-	
-    // Show parent div of the file display, and scroll there
-	doc.version.filedetails.style.display = "block";
-	var pos = getPos (doc.version.filedetails);
-	window.scrollTo(pos.xPos, pos.yPos);
+  if (version.plotDescription === null || version.outputContents === null)
+  {
+    // Try again in 0.1s, by which time hopefully they have been parsed
+    console.log("Waiting for metadata to be parsed.");
+    window.setTimeout(function(){displayFile(version, id, pluginName)}, 100);
+    return;
+  }
+
+  var f = files[id];
+  if (!f)
+  {
+    addNotification ("no such file", "error");
+    return;
+  }
+  var df = doc.file;
+  df.name.innerHTML = "<small>File: </small>" + f.name;
+  df.time.setAttribute ("datetime", f.created);
+  df.time.innerHTML = utils.beautifyTimeStamp (f.created);
+  df.author.innerHTML = f.author;
+
+  if (!f.div[pluginName])
+  {
+    f.div[pluginName] = document.createElement("div");
+    f.viz[pluginName] = visualizers[pluginName].setUp (f, f.div[pluginName]);
+  }
+  $(df.display).empty();
+  df.display.appendChild (f.div[pluginName]);
+  f.viz[pluginName].show ();
+
+  // Show parent div of the file display, and scroll there
+  doc.version.filedetails.style.display = "block";
+  var pos = utils.getPos (doc.version.filedetails);
+  window.scrollTo(pos.xPos, pos.yPos);
 }
 
 function requestInformation (url, onSuccess)
@@ -862,59 +865,47 @@ function nextPage (url, replace)
 
 function render ()
 {
-	var url = parseUrl (document.location);
+  basicurl = $('#entityversion').data('version-href');
+	var url = document.location.pathname.substr(basicurl.length + 1);
+  var parts = url.split('/')
+  var curFileName = parts[0];
+  var pluginName = parts[1];
 	//var curVersionId = getCurVersionId (url);
 	
 	//console.log ("curVersionId " + curVersionId);
 	//if (curVersionId)
 	//{
-		var curFileId = null; //getCurFileId (url);
-		var pluginName = null; //getCurPluginName (url);
+		//var curFileId = getCurFileId (url);
+		//var pluginName = getCurPluginName (url);
 
-		//console.log ("curFileId  " + curFileId);
-		//console.log ("pluginName " + pluginName);
+		console.log ("curFileName  " + curFileName);
+		console.log ("pluginName " + pluginName);
 		
+    basicurl = $('#entityversion').data('version-href');
     var versionUrl = $('#entityversion').data('file-list-href');
 
-    $.getJSON(versionUrl, function(data) {
-      notifications.display (data);
-      if (data.version)
-      {
-        var rv = data.version;
-        updateVersion (rv);
-        //onSuccess();
-        curVersionId = data.version.id
-        displayVersion (curVersionId, !(curFileId && pluginName));
-      }
-    });
+    if (!curVersion) {
+      $.getJSON(versionUrl, function(data) {
+        notifications.display (data);
+        if (data.version) {
+          var rv = data.version;
+          updateVersion (rv);
+          //onSuccess();
+          curVersionId = data.version.id;
+          curVersion = data.version;
+          displayVersion (curVersionId, !(curFileName && pluginName));
 
-   // });
-    /*
-		var v = versions[curVersionId];
-		if (!v)
-		{
-			//console.log ("missing version. calling for: " + curVersionId);
-			// request info about version only
-			requestInformation ({
-		    	task: "getInfo",
-		    	version: curVersionId
-			}, render);
-			return;
-		}
-		else if (v != curVersion)
-		{
-			displayVersion (curVersionId, !(curFileId && pluginName));
-			curVersion = v;
-		}
-    */
-		
-		if (curFileId && pluginName)
-		{
-			displayFile (v, curFileId, pluginName);
-			doc.file.close.href = basicurl + utils.convertForURL (v.name) + "/" + v.id + "/";
-		}
-		else
-			doc.version.filedetails.style.display = "none";
+          if (curFileName && pluginName)
+          {
+            displayFile (data.version, curFileName, pluginName);
+            doc.file.close.href = basicurl;
+          }
+          else {
+            doc.version.filedetails.style.display = "none";
+          }
+        }
+      });
+    }
 			
 	//}
   /*

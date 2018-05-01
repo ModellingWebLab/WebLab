@@ -1,4 +1,5 @@
 var utils = require('../../lib/utils.js');
+var common = require('../../expt_common.js');
 
 var choicesDivId = 'choices',
 	resetButtonDivId = 'flot-buttons-div',
@@ -361,7 +362,7 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
     var thisFileId = thisFile.id;
     var thisDiv = this.div;
 
-    removeChildren (thisDiv);
+    $(thisDiv).empty();
     if (!succ)
         thisDiv.appendChild (document.createTextNode ("failed to load the contents"));
     else
@@ -375,9 +376,9 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
         }
 
         var styleLinespointsOrPoints = isStyleLinespointsOrPoints(thisFile.linestyle);
-        var csvData = styleLinespointsOrPoints ? getCSVColumnsNonDownsampled (thisFile) :
-                                                 getCSVColumnsDownsampled (thisFile);
-        var keyVals = getKeyValues(thisFile, csvData.length);
+        var csvData = styleLinespointsOrPoints ? common.getCSVColumnsNonDownsampled (thisFile) :
+                                                 common.getCSVColumnsDownsampled (thisFile);
+        var keyVals = common.getKeyValues(thisFile, csvData.length);
 
         var datasets = {};
         for (var i = 1; i < csvData.length; i++)
@@ -404,7 +405,7 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
         });
         var lastDatasetNumber = datasetNumber - 1;
 
-        var flotPlotDivId = 'flotplot-' + thisFileId;
+        var flotPlotDivId = 'flotplot-' + thisFileId.replace(/\W/g, '');
         createAppendFlotPlotDiv(thisDiv, flotPlotDivId);
         (datasetNumber > 1) && createAppendSelectToggler(thisDiv);
         createAppendResetButton(thisDiv);
@@ -453,7 +454,7 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
         setListeners(plotProperties, (datasetNumber > 1));
 
         // Save data for export if user requests it
-        allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
+        common.allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
     }
 };
 
@@ -549,8 +550,8 @@ contentFlotPlotComparer.prototype.showContents = function ()
         for (var i = 0; i < thisFile.entities.length; i++)
         {
             csvDatas.push ({
-                data: (styleLinespointsOrPoints) ? getCSVColumnsNonDownsampled (thisFile.entities[i].entityFileLink) :
-                                                   getCSVColumnsDownsampled (thisFile.entities[i].entityFileLink),
+                data: (styleLinespointsOrPoints) ? common.getCSVColumnsNonDownsampled (thisFile.entities[i].entityFileLink) :
+                                                   common.getCSVColumnsDownsampled (thisFile.entities[i].entityFileLink),
                 entity: thisFile.entities[i].entityLink,
                 file: thisFile.entities[i].entityFileLink
             });
@@ -580,7 +581,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
             var entityId = eachCSVData.entity.id;
             var fileSig = eachCSVData.file.sig;
             var csvData = eachCSVData.data;
-            var keyVals = getKeyValues(eachCSVData.file, csvData.length);
+            var keyVals = common.getKeyValues(eachCSVData.file, csvData.length);
 
             //var paragraph = $('<p />').html(eachCSVData.entity.name).css('font-weight', 'bold');
             //choicesContainer.append(paragraph);
@@ -635,7 +636,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
         setListeners(plotProperties, true);
         
         // Save data for export if user requests it
-        allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
+        common.allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
     }
 };
 

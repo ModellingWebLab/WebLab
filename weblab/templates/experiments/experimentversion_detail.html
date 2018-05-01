@@ -26,7 +26,8 @@
   <div id="entitydetails"></div>
 
   <div id="entityversion"
-      data-file-list-href="{% url 'experiments:version-files-json' experiment.id version.id %}">
+       data-version-href="{% url 'experiments:version' experiment.id version.id %}"
+       data-file-list-href="{% url 'experiments:version_files_json' experiment.id version.id %}">
     <div class="closebtn">
       <small>
         {#<a href="{{ entity|url_versions }}">list all versions</a>#}

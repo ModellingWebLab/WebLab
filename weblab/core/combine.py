@@ -160,6 +160,10 @@ class ZippedArchiveReader:
                 f.size = archive.getinfo(f.name).file_size
             return files
 
+    def open_file(self, name):
+        with zipfile.ZipFile(self._path) as archive:
+            return archive.open(name)
+
 
 class ArchiveFile:
     def __init__(self, name, fmt, is_master=False):

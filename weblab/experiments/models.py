@@ -121,5 +121,5 @@ class ExperimentVersion(models.Model):
         else:
             return []
 
-    def get_file(self, name):
-        return self.abs_path / name
+    def open_file(self, name):
+        return ZippedArchiveReader(str(self.archive_path)).open_file(name)

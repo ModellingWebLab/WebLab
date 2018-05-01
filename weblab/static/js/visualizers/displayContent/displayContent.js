@@ -61,7 +61,7 @@ function contentDumper (file, div)
 
 contentDumper.prototype.getContentsCallback = function (succ)
 {
-	removeChildren (this.div);
+	$(this.div).empty();
 	if (!succ)
 		this.div.appendChild (document.createTextNode ("failed to load the contents"));
 	else

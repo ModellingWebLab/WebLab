@@ -1,8 +1,11 @@
+import mimetypes
+import urllib.parse
+
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -175,6 +178,10 @@ class ExperimentFileListJsonView(SingleObjectMixin, View):
             'filetype': archive_file.fmt,
             'masterFile': archive_file.is_master,
             'size': archive_file.size,
+            'url': reverse(
+                'experiments:file_download',
+                args=[version.experiment.id, version.id, urllib.parse.quote(archive_file.name)]
+            )
         }
 
     def get(self, request, *args, **kwargs):
@@ -199,3 +206,25 @@ class ExperimentFileListJsonView(SingleObjectMixin, View):
                 'numFiles': len(files),
             }
         })
+
+
+class ExperimentFileDownloadView(SingleObjectMixin, View):
+    """
+    Download an individual file from an experiment
+    """
+    model = ExperimentVersion
+
+    def get(self, request, *args, **kwargs):
+        filename = self.kwargs['filename']
+        version = self.get_object()
+
+        content_type, _ = mimetypes.guess_type(filename)
+        if content_type is None:
+            content_type = 'application/octet-stream'
+
+        with version.open_file(filename) as file_:
+            response = HttpResponse(content_type=content_type)
+            response['Content-Disposition'] = 'attachment; filename=%s' % filename
+            response.write(file_.read())
+
+        return response
