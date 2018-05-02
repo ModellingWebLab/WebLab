@@ -180,15 +180,18 @@ class TestProcessCallback:
         assert queued_experiment.status == 'FAILED'
         assert queued_experiment.return_text == 'python stack trace'
 
-    def test_default_status_is_success(self, queued_experiment, omex_upload):
-        process_callback({
+    def test_returns_error_if_no_returntype(self, queued_experiment):
+        result = process_callback({
             'signature': queued_experiment.signature,
-        }, {
-            'experiment': omex_upload,
-        })
+        }, {})
+        assert result['error'] == 'missing returntype'
 
-        queued_experiment.refresh_from_db()
-        assert queued_experiment.status == 'SUCCESS'
+    def test_returns_error_if_invalid_returntype(self, queued_experiment):
+        result = process_callback({
+            'signature': queued_experiment.signature,
+            'returntype': 'something invalid',
+        }, {})
+        assert result['error'] == 'invalid returntype'
 
     @pytest.mark.parametrize('returned_status,stored_status', [
         ('success', 'SUCCESS'),

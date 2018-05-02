@@ -32,7 +32,7 @@ class ChasteProcessingStatus:
 
     @classmethod
     def get_model_status(cls, status):
-        return cls.MODEL_STATUSES.get(status, ExperimentVersion.STATUS_FAILED)
+        return cls.MODEL_STATUSES.get(status)
 
 
 class ProcessingException(Exception):
@@ -121,8 +121,14 @@ def process_callback(data, files):
     if task_id:
         exp.task_id = task_id
 
-    status = data.get('returntype', ChasteProcessingStatus.SUCCESS)
-    exp.status = ChasteProcessingStatus.get_model_status(status)
+    if 'returntype' not in data:
+        return {'error': 'missing returntype'}
+
+    status = ChasteProcessingStatus.get_model_status(data['returntype'])
+    if status:
+        exp.status = status
+    else:
+        return {'error': 'invalid returntype'}
 
     exp.return_text = data.get('returnmsg') or 'finished'
     if exp.is_running:
