@@ -1,13 +1,15 @@
 import mimetypes
+import os.path
 import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
@@ -204,6 +206,9 @@ class ExperimentFileListJsonView(SingleObjectMixin, View):
                 'version': version.created_at,
                 'files': files,
                 'numFiles': len(files),
+                'download_url': reverse(
+                    'experiments:archive', args=[version.experiment.id, version.id]
+                ),
             }
         })
 
@@ -226,5 +231,30 @@ class ExperimentFileDownloadView(SingleObjectMixin, View):
             response = HttpResponse(content_type=content_type)
             response['Content-Disposition'] = 'attachment; filename=%s' % filename
             response.write(file_.read())
+
+        return response
+
+
+class ExperimentArchiveView(SingleObjectMixin, View):
+    """
+    Download a combine archive of an experiment version
+    """
+    model = ExperimentVersion
+
+    def get(self, request, *args, **kwargs):
+        version = self.get_object()
+        path = version.archive_path
+
+        if not path.exists():
+            raise Http404
+
+        zipfile_name = os.path.join(
+            get_valid_filename('%s.zip' % version.experiment.name)
+        )
+
+        with path.open('rb') as archive:
+            response = HttpResponse(content_type='application/zip')
+            response['Content-Disposition'] = 'attachment; filename=%s' % zipfile_name
+            response.write(archive.read())
 
         return response

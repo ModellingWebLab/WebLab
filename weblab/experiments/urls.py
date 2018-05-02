@@ -51,4 +51,10 @@ urlpatterns = [
         views.ExperimentFileDownloadView.as_view(),
         name='file_download',
     ),
+
+    url(
+        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/archive$',
+        views.ExperimentArchiveView.as_view(),
+        name='archive',
+    ),
 ]

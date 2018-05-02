@@ -435,7 +435,7 @@ function displayVersion (versionId, showDefault) {
     td.appendChild(a);
     tr.appendChild(td);
     dv.filestable.appendChild(tr);
-    dv.archivelink.href = '#' //staticPath + '/archivelink/' //"/download/" + entityType.charAt(0) + "/" + utils.convertForURL (v.name) + "/" + v.id + "/a/archive";
+    dv.archivelink.href = v.download_url;
   }
 
   if (!v.hasOwnProperty('outputContents') && !v.hasOwnProperty('plotDescription') && showDefault && v.errorsLink) {
@@ -562,6 +562,7 @@ function updateVersion (rv) {
   v.author = rv.author;
   v.created = rv.created;
   v.visibility = rv.visibility;
+  v.download_url = rv.download_url;
   v.id = rv.id;
   v.status = rv.status;
   v.commitMessage = rv.commitMessage;
