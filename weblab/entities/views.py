@@ -406,7 +406,7 @@ class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
 
 class EntityArchiveView(EntityVisibilityMixin, SingleObjectMixin, View):
     """
-    Download a version of a model
+    Download a version of an entity as a COMBINE archive
     """
     model = Entity
 
