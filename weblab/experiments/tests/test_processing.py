@@ -284,3 +284,27 @@ class TestProcessCallback:
         })
 
         assert len(mail.outbox) == 0
+
+    def test_overwrites_previous_results(self, queued_experiment, omex_upload):
+        result = process_callback({
+            'signature': queued_experiment.signature,
+            'returntype': 'running',
+        }, {})
+
+        assert result == {}
+        queued_experiment.refresh_from_db()
+        assert queued_experiment.status == 'RUNNING'
+        assert not (queued_experiment.abs_path / 'results.omex').exists()
+
+        result = process_callback({
+            'signature': queued_experiment.signature,
+            'returntype': 'success',
+        }, {
+            'experiment': omex_upload,
+        })
+
+        assert result == {'experiment': 'ok'}
+
+        queued_experiment.refresh_from_db()
+        assert queued_experiment.status == 'SUCCESS'
+        assert (queued_experiment.abs_path / 'results.omex').exists()
