@@ -51,8 +51,8 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    'accounts.apps.AccountsConfig',
-    'entities.apps.EntitiesConfig',
+    'accounts',
+    'entities',
     'experiments',
 ]
 
