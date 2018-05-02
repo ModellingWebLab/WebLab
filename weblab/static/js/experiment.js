@@ -10,7 +10,7 @@ var plugins = [
   require('./visualizers/displayPlotHC/displayPlotHC.js'),
   require('./visualizers/displayTable/displayTable.js'),
   //require('./visualizers/displayUnixDiff/displayUnixDiff.js'),
-  require('./visualizers/editMetadata/editMetadata.js'),
+  //require('./visualizers/editMetadata/editMetadata.js'),
 ];
 
 var versions = {},
