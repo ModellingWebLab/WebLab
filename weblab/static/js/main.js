@@ -5,7 +5,7 @@ require('jquery-ui-browserify');
 var utils = require('./lib/utils.js')
 require('./entitynew.js');
 require('./db.js');
-require('./experiment.js');
+var experiment =require('./experiment.js');
 var notifications = require('./lib/notifications.js');
 
 
@@ -150,6 +150,10 @@ function initPage ()
       }
     }
   });
+
+  if ($('#experiment-version').length > 0) {
+    experiment.init()
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initPage, false);

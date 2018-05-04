@@ -1,3 +1,4 @@
+import logging
 import mimetypes
 import os.path
 import urllib.parse
@@ -20,6 +21,9 @@ from entities.models import ModelEntity, ProtocolEntity
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion
 from .processing import process_callback, submit_experiment
+
+
+logger = logging.getLogger(__name__)
 
 
 class ExperimentsView(LoginRequiredMixin, TemplateView):
@@ -46,8 +50,8 @@ class ExperimentMatrixJsonView(View):
                 'entities:%s_version' % entity.entity_type,
                 args=[entity.id, 'latest']
             ),
+            'version': entity.repo.latest_commit.hexsha,
             # TODO: fill these fields in
-            'version': '',
             'tags': '',
             'commitMessage': '',
             'numFiles': '',
@@ -103,8 +107,10 @@ class NewExperimentView(View):
         #
         model = get_object_or_404(ModelEntity, pk=request.POST['model'])
         protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
+        model_version = request.POST['model_version']
+        protocol_version = request.POST['protocol_version']
 
-        version = submit_experiment(model, protocol, request.user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, request.user)
         success = version.experiment.latest_result == ExperimentVersion.STATUS_QUEUED
 
         return JsonResponse({
@@ -134,6 +140,11 @@ class ExperimentVersionView(DetailView):
 
 @method_decorator(staff_member_required, name='dispatch')
 class ExperimentSimulateCallbackView(FormMixin, DetailView):
+    """
+    Allow a staff member to simulate the experiment result callback.
+
+    This is mainly for debug purposes.
+    """
     model = ExperimentVersion
     form_class = ExperimentSimulateCallbackForm
     template_name = 'experiments/simulate_callback_form.html'
@@ -152,22 +163,25 @@ class ExperimentSimulateCallbackView(FormMixin, DetailView):
                        args=[self.object.experiment.pk, self.object.pk])
 
     def form_valid(self, form):
-        self.request.POST
-
         data = dict(
-            signature=self.kwargs['pk'],
-            **form.data
+            signature=self.get_object().signature,
+            **form.cleaned_data
         )
 
         result = process_callback(data, {'experiment': form.files.get('upload')})
+        print(result)
 
         if 'error' in result:
             messages.error(self.request, result['error'])
+            logger.error(result['error'])
 
         return super().form_valid(form)
 
 
-class ExperimentFileListJsonView(SingleObjectMixin, View):
+class ExperimentVersionJsonView(SingleObjectMixin, View):
+    """
+    Serve up json view of an experiment verson
+    """
     model = ExperimentVersion
 
     def _file_json(self, archive_file):

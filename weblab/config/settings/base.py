@@ -207,3 +207,4 @@ EXPERIMENT_BASE = BASE_DIR / 'data/experiments'
 
 CHASTE_URL = 'http://localhost:5000/chaste'
 CHASTE_PASSWORD = os.environ.get('CHASTE_PASSWORD', 'YOUR_BACKEND_PASSWORD')
+CALLBACK_HOST = 'http://localhost:8000'

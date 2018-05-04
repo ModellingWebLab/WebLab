@@ -39,12 +39,20 @@ class TestExperimentMatrix:
 @pytest.mark.django_db
 class TestNewExperimentView:
     @pytest.mark.usefixtures('logged_in_user')
-    def test_submits_experiment(self, mock_post, client, model_with_version, protocol_with_version):
+    def test_submits_experiment(self, mock_post,
+                                client, model_with_version, protocol_with_version):
+
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
         response = client.post(
             '/experiments/new',
             {
-                'model': model_with_version.pk,
-                'protocol': protocol_with_version.pk,
+                'model': model.pk,
+                'protocol': protocol.pk,
+                'model_version': model_version,
+                'protocol_version': protocol_version,
             }
         )
 

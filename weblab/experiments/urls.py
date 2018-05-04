@@ -42,8 +42,8 @@ urlpatterns = [
 
     url(
         r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/files.json$',
-        views.ExperimentFileListJsonView.as_view(),
-        name='version_files_json',
+        views.ExperimentVersionJsonView.as_view(),
+        name='version_json',
     ),
 
     url(

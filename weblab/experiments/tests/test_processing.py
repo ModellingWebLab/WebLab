@@ -38,41 +38,47 @@ def omex_upload():
 @pytest.mark.django_db
 class TestSubmitExperiment:
     def test_creates_new_experiment(self, mock_post,
-                                    model_with_version, protocol_with_version):
-        user = recipes.user.make()
+                                    user, model_with_version, protocol_with_version):
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
 
-        version = submit_experiment(model_with_version, protocol_with_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user)
 
-        assert version.experiment.model == model_with_version
-        assert version.experiment.protocol == protocol_with_version
+        assert version.experiment.model == model
+        assert version.experiment.protocol == protocol
         assert version.author == user
-        assert version.model_version == model_with_version.repo.latest_commit.hexsha
-        assert version.protocol_version == protocol_with_version.repo.latest_commit.hexsha
+        assert version.model_version == model_version
+        assert version.protocol_version == protocol_version
         assert version.experiment.author == user
 
     def test_uses_existing_experiment(self, mock_post,
-                                      model_with_version, protocol_with_version):
-        user = recipes.user.make()
-        experiment = recipes.experiment.make(
-            model=model_with_version,
-            protocol=protocol_with_version
-        )
+                                      user, model_with_version, protocol_with_version):
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
 
-        version = submit_experiment(
-            model_with_version, protocol_with_version, user
-        )
+        experiment = recipes.experiment.make(model=model, protocol=protocol)
+
+        version = submit_experiment(model, model_version, protocol, protocol_version, user)
 
         assert version.experiment == experiment
 
-    def test_submits_to_webservice(self, mock_post, model_with_version, protocol_with_version):
-        user = recipes.user.make(full_name='Test User')
+    def test_submits_to_webservice(self, mock_post,
+                                   user, model_with_version, protocol_with_version):
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
 
-        version = submit_experiment(model_with_version, protocol_with_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user)
 
-        model_url = '/entities/models/%d/versions/%s/archive' % \
-            (model_with_version.pk, model_with_version.repo.latest_commit.hexsha)
-        protocol_url = '/entities/protocols/%d/versions/%s/archive' % \
-            (protocol_with_version.pk, protocol_with_version.repo.latest_commit.hexsha)
+        model_url = '/entities/models/%d/versions/%s/archive' % (model.pk, model_version)
+        protocol_url = (
+            '/entities/protocols/%d/versions/%s/archive' %
+            (protocol.pk, protocol_version))
 
         assert mock_post.call_count == 1
         assert mock_post.call_args[0][0] == settings.CHASTE_URL
@@ -80,7 +86,7 @@ class TestSubmitExperiment:
             'model': settings.BASE_URL + model_url,
             'protocol': settings.BASE_URL + protocol_url,
             'signature': version.signature,
-            'callBack': settings.BASE_URL + '/experiments/callback',
+            'callBack': settings.CALLBACK_HOST + '/experiments/callback',
             'user': 'Test User',
             'isAdmin': False,
             'password': settings.CHASTE_PASSWORD,
@@ -90,30 +96,40 @@ class TestSubmitExperiment:
         assert version.task_id == 'celery-task-id'
 
     def test_raises_exception_on_webservice_error(self, mock_post,
-                                                  model_with_version, protocol_with_version):
-        user = recipes.user.make()
+                                                  user, model_with_version, protocol_with_version):
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
 
         mock_post.side_effect = generate_response('something %s')
         with pytest.raises(ProcessingException):
-            submit_experiment(model_with_version, protocol_with_version, user)
+            submit_experiment(model, model_version, protocol, protocol_version, user)
 
     def test_records_submission_error(self, mock_post,
-                                      model_with_version, protocol_with_version):
-        user = recipes.user.make()
+                                      user, model_with_version, protocol_with_version):
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
+
         mock_post.side_effect = generate_response('%s an error occurred')
 
-        version = submit_experiment(model_with_version, protocol_with_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user)
 
         assert version.status == ExperimentVersion.STATUS_FAILED
         assert version.return_text == 'an error occurred'
 
     def test_records_inapplicable_result(self, mock_post,
-                                         model_with_version, protocol_with_version):
-        user = recipes.user.make()
+                                         user, model_with_version, protocol_with_version):
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
 
         mock_post.side_effect = generate_response('%s inapplicable')
 
-        version = submit_experiment(model_with_version, protocol_with_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user)
 
         assert version.status == ExperimentVersion.STATUS_INAPPLICABLE
 

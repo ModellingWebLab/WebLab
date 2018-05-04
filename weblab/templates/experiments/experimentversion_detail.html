@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load staticfiles %}
 
+{% block body_id %}experiment-version{% endblock %}
+
 {% block content %}
 {% with version.experiment as experiment %}
 
@@ -27,7 +29,7 @@
 
   <div id="entityversion"
        data-version-href="{% url 'experiments:version' experiment.id version.id %}"
-       data-file-list-href="{% url 'experiments:version_files_json' experiment.id version.id %}">
+       data-version-json-href="{% url 'experiments:version_json' experiment.id version.id %}">
     <div class="closebtn">
       <small>
         {#<a href="{{ entity|url_versions }}">list all versions</a>#}

@@ -40,7 +40,7 @@ class ProcessingException(Exception):
 
 
 @transaction.atomic
-def submit_experiment(model, protocol, user):
+def submit_experiment(model, model_version, protocol, protocol_version, user):
     experiment, _ = Experiment.objects.get_or_create(
         model=model,
         protocol=protocol,
@@ -69,7 +69,7 @@ def submit_experiment(model, protocol, user):
         'model': settings.BASE_URL + model_url,
         'protocol': settings.BASE_URL + protocol_url,
         'signature': version.signature,
-        'callBack': settings.BASE_URL + reverse('experiments:callback'),
+        'callBack': settings.CALLBACK_HOST + reverse('experiments:callback'),
         'user': user.full_name,
         'password': settings.CHASTE_PASSWORD,
         'isAdmin': user.is_staff,
@@ -144,17 +144,17 @@ def process_callback(data, files):
                        '%s (backend returned no archive)' % exp.return_text)
             return {'error': 'no archive found'}
 
-        exp.abs_path.mkdir()
-        with (exp.abs_path / 'results.omex').open('wb+') as dest:
+        exp.abs_path.mkdir(exist_ok=True)
+        with exp.archive_path.open('wb+') as dest:
             for chunk in files['experiment'].chunks():
                 dest.write(chunk)
 
-            # Make sure it's a valid zip
-            try:
-                zipfile.ZipFile(dest)
-            except zipfile.BadZipFile as e:
-                exp.update(ExperimentVersion.STATUS_FAILED, 'error reading archive: %s' % e)
-                return {'experiment': 'failed'}
+        # Make sure it's a valid zip
+        try:
+            zipfile.ZipFile(str(exp.archive_path))
+        except zipfile.BadZipFile as e:
+            exp.update(ExperimentVersion.STATUS_FAILED, 'error reading archive: %s' % e)
+            return {'experiment': 'failed'}
 
         return {'experiment': 'ok'}
 

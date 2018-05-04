@@ -238,7 +238,9 @@ function setExpListeners($td, entry)
 			submitNewExperiment ({
 				task: "newExperiment",
 				model: entry.model.id,
-				protocol: entry.protocol.id
+        model_version: entry.model.version,
+				protocol: entry.protocol.id,
+        protocol_version: entry.protocol.version,
 			}, $td, entry);
 		});
 	}

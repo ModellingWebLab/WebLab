@@ -749,12 +749,12 @@ function render() {
   console.log ("pluginName " + pluginName);
 
   basicurl = $('#entityversion').data('version-href');
-  var versionUrl = $('#entityversion').data('file-list-href');
+  var jsonUrl = $('#entityversion').data('version-json-href');
 
   if (curVersion) {
     displayFile(fileName, pluginName);
   } else {
-    $.getJSON(versionUrl, function(data) {
+    $.getJSON(jsonUrl, function(data) {
       notifications.display (data);
       if (data.version) {
         curVersion = data.version;
@@ -791,7 +791,7 @@ function deleteVersionCallback() {
   }
 }
 
-function initModel () {
+function init () {
   doc = {
     entity : {
       details : document.getElementById("entitydetails"),
@@ -990,4 +990,6 @@ function initModel () {
   });
 }
 
-document.addEventListener("DOMContentLoaded", initModel, false);
+module.exports = {
+  init: init,
+}
