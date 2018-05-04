@@ -53,8 +53,8 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     version = ExperimentVersion.objects.create(
         experiment=experiment,
         author=user,
-        model_version=model.repo.latest_commit.hexsha,
-        protocol_version=protocol.repo.latest_commit.hexsha
+        model_version=model_version,
+        protocol_version=protocol_version,
     )
 
     model_url = reverse(
