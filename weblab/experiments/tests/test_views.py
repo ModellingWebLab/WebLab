@@ -14,6 +14,12 @@ def fake_experiment_path(settings, tmpdir):
     return settings.EXPERIMENT_BASE
 
 
+@pytest.fixture(autouse=True)
+def fake_repo_path(settings, tmpdir):
+    settings.REPO_BASE = str(tmpdir)
+    return settings.REPO_BASE
+
+
 def mock_submit(url, body):
     return Mock(content=('%s succ celery-task-id' % body['signature']).encode())
 
@@ -21,17 +27,15 @@ def mock_submit(url, body):
 @pytest.mark.django_db
 class TestExperimentMatrix:
     @pytest.mark.usefixtures('logged_in_user')
-    def test_matrix(self, client):
-        model = recipes.model.make()
-        protocol = recipes.protocol.make()
-        exp = recipes.experiment.make(model=model, protocol=protocol)
+    def test_matrix(self, client, model_with_version, protocol_with_version):
+        exp = recipes.experiment.make(model=model_with_version, protocol=protocol_with_version)
 
         response = client.get('/experiments/matrix')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert str(model.pk) in data['getMatrix']['models']
-        assert str(protocol.pk) in data['getMatrix']['protocols']
+        assert str(model_with_version.pk) in data['getMatrix']['models']
+        assert str(protocol_with_version.pk) in data['getMatrix']['protocols']
         assert str(exp.pk) in data['getMatrix']['experiments']
 
 
