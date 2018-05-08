@@ -5,7 +5,10 @@ import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import (
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+)
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -101,10 +104,18 @@ class ExperimentMatrixJsonView(View):
         })
 
 
-class NewExperimentView(View):
+class NewExperimentView(PermissionRequiredMixin, View):
+    permission_required = 'experiments.create_experiment'
+
+    def handle_no_permission(self):
+        return JsonResponse({
+            'newExperiment': {
+                'response': False,
+                'responseText': 'You are not allowed to create a new experiment',
+            }
+        })
+
     def post(self, request, *args, **kwargs):
-        # Does user have permission to do this?
-        #
         model = get_object_or_404(ModelEntity, pk=request.POST['model'])
         protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
         model_version = request.POST['model_version']
