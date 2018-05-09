@@ -66,10 +66,10 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         args=['protocol', protocol.pk, version.protocol_version]
     )
     body = {
-        'model': settings.BASE_URL + model_url,
-        'protocol': settings.BASE_URL + protocol_url,
+        'model': settings.CALLBACK_BASE_URL + model_url,
+        'protocol': settings.CALLBACK_BASE_URL + protocol_url,
         'signature': version.signature,
-        'callBack': settings.CALLBACK_HOST + reverse('experiments:callback'),
+        'callBack': settings.CALLBACK_BASE_URL + reverse('experiments:callback'),
         'user': user.full_name,
         'password': settings.CHASTE_PASSWORD,
         'isAdmin': user.is_staff,

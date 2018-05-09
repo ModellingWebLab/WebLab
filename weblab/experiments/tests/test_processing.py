@@ -87,10 +87,10 @@ class TestSubmitExperiment:
         assert mock_post.call_count == 1
         assert mock_post.call_args[0][0] == settings.CHASTE_URL
         assert mock_post.call_args[0][1] == {
-            'model': settings.BASE_URL + model_url,
-            'protocol': settings.BASE_URL + protocol_url,
+            'model': settings.CALLBACK_BASE_URL + model_url,
+            'protocol': settings.CALLBACK_BASE_URL + protocol_url,
             'signature': version.signature,
-            'callBack': settings.CALLBACK_HOST + '/experiments/callback',
+            'callBack': settings.CALLBACK_BASE_URL + '/experiments/callback',
             'user': 'Test User',
             'isAdmin': False,
             'password': settings.CHASTE_PASSWORD,
