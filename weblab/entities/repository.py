@@ -5,7 +5,12 @@ from shutil import rmtree
 from django.utils.functional import cached_property
 from git import Actor, Repo
 
-from core.combine import ManifestReader, ManifestWriter, write_archive
+from core.combine import (
+    MANIFEST_FILENAME,
+    ArchiveWriter,
+    ManifestReader,
+    ManifestWriter,
+)
 
 
 class Repository:
@@ -153,7 +158,7 @@ class Repository:
 
         :return: absolute path as a string
         """
-        return self.full_path('manifest.xml')
+        return self.full_path(MANIFEST_FILENAME)
 
     def full_path(self, filename):
         """
@@ -190,7 +195,7 @@ class Repository:
         reader = ManifestReader()
         if ref:
             for file_ in self.files(ref):
-                if file_.name == 'manifest.xml':
+                if file_.name == MANIFEST_FILENAME:
                     reader.read(file_.data_stream)
         else:
             try:
@@ -222,4 +227,6 @@ class Repository:
         return self.get_commit(ref).tree.blobs
 
     def archive(self, ref='HEAD'):
-        return write_archive(((self.full_path(fn), fn) for fn in self.filenames(ref)))
+        return ArchiveWriter().write(
+            (self.full_path(fn), fn) for fn in self.filenames(ref)
+        )

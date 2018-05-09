@@ -5,6 +5,9 @@ from core import recipes
 
 
 class Helpers:
+    """
+    Helper functions for tests - this can be passed into tests via a fixture
+    """
     @staticmethod
     def add_version(entity, filename='file1.txt', tag_name=None):
         """Add a single commit/version to an entity"""
@@ -20,6 +23,9 @@ class Helpers:
 
 @pytest.fixture
 def helpers():
+    """
+    Provide helpers in the form of a fixture
+    """
     return Helpers
 
 

@@ -3,7 +3,7 @@ from pathlib import Path
 from django.conf import settings
 from django.db import models
 
-from core.combine import ZippedArchiveReader
+from core.combine import ArchiveReader
 from core.visibility import VisibilityModelMixin
 from entities.models import ModelEntity, ProtocolEntity
 
@@ -112,9 +112,9 @@ class ExperimentVersion(VisibilityModelMixin, models.Model):
     @property
     def files(self):
         if self.archive_path.exists():
-            return ZippedArchiveReader(str(self.archive_path)).files
+            return ArchiveReader(str(self.archive_path)).files
         else:
             return []
 
     def open_file(self, name):
-        return ZippedArchiveReader(str(self.archive_path)).open_file(name)
+        return ArchiveReader(str(self.archive_path)).open_file(name)
