@@ -501,7 +501,7 @@ class TestVersionCreation:
 
 
 @pytest.mark.django_db
-class TestEntityArchive:
+class TestEntityArchiveView:
     def test_download_archive(self, client, helpers):
         model = recipes.model.make()
         commit = helpers.add_version(model, filename='file1.txt')

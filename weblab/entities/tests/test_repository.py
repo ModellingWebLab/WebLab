@@ -1,5 +1,6 @@
 import os.path
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -122,3 +123,17 @@ class TestRepository:
         repo.generate_manifest()
 
         assert repo.master_filename() is None
+
+    def test_files(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        repo.commit('commit 1', author)
+        repo.generate_manifest()
+
+        assert list(repo.filenames()) == ['file.cellml']
+
+    def test_archive(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        repo.commit('commit 1', author)
+        repo.generate_manifest()
+
+        assert zipfile.ZipFile(repo.archive()).namelist() == ['file.cellml']

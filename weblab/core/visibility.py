@@ -1,7 +1,6 @@
 from django.contrib.auth.mixins import AccessMixin
 from django.db import models
 from django.http import Http404
-from django.views.generic.detail import SingleObjectMixin
 
 
 class Visibility:
@@ -25,7 +24,7 @@ CHOICES = (
 
 def get_joint_visibility(*visibilities):
     """
-    :return joint visibility of a set of visibilities
+    :return: joint visibility of a set of visibilities
     """
     # Ordered by most conservative first
     levels = [
@@ -39,7 +38,7 @@ def get_joint_visibility(*visibilities):
     )]
 
 
-class VisibilityMixin(AccessMixin, SingleObjectMixin):
+class VisibilityMixin(AccessMixin):
     """
     View mixin implementing visiblity restrictions
 
