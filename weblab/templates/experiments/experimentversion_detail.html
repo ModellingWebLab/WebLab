@@ -21,7 +21,7 @@
       {% endif %}
       {% endcomment %}
       <br>
-      Visibility: {{ experiment.visibility }}
+      Visibility: {{ version.visibility }}
     </small>
   </div>
 
@@ -42,7 +42,7 @@
       <small>
         Created <time id="entityversiontime">{{ version.created_at }}</time>
         by <em id="entityversionauthor">{{ version.author.full_name }}</em>.
-        Visibility: {{ version.experiment.visibility }}
+        Visibility: {{ version.visibility }}
         <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
         <span id="exptStatus"></span>
 

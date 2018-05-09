@@ -5,12 +5,12 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.functional import cached_property
 
-from core import visibility
+from core.visibility import VisibilityModelMixin
 
 from .repository import Repository
 
 
-class Entity(models.Model):
+class Entity(VisibilityModelMixin, models.Model):
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
     ENTITY_TYPE_CHOICES = (
@@ -26,11 +26,6 @@ class Entity(models.Model):
     name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
     creation_date = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL)
-    visibility = models.CharField(
-        max_length=16,
-        choices=visibility.CHOICES,
-        help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
-    )
 
     class Meta:
         ordering = ['name']

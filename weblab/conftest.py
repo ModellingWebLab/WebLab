@@ -47,10 +47,29 @@ def queued_experiment(model_with_version, protocol_with_version):
 
 
 @pytest.fixture
+def experiment(model_with_version, protocol_with_version):
+    return recipes.experiment_version.make(
+        status='SUCCESS',
+        experiment__model=model_with_version,
+        experiment__protocol=protocol_with_version,
+    )
+
+
+@pytest.fixture
 def user():
     return User.objects.create_user(
         email='test@example.com',
         full_name='Test User',
+        institution='UCL',
+        password='password',
+    )
+
+
+@pytest.fixture
+def other_user():
+    return User.objects.create_user(
+        email='other@example.com',
+        full_name='Other User',
         institution='UCL',
         password='password',
     )

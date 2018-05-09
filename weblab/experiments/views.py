@@ -19,6 +19,7 @@ from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
 
+from core.visibility import VisibilityMixin
 from entities.models import ModelEntity, ProtocolEntity
 
 from .forms import ExperimentSimulateCallbackForm
@@ -92,7 +93,7 @@ class ExperimentMatrixJsonView(View):
 
         experiments = {
             exp.pk: self.experiment_json(exp)
-            for exp in Experiment.objects.filter(q_visibility)
+            for exp in Experiment.objects.all()
         }
 
         return JsonResponse({
@@ -144,7 +145,7 @@ class ExperimentCallbackView(View):
         return JsonResponse(result)
 
 
-class ExperimentVersionView(DetailView):
+class ExperimentVersionView(VisibilityMixin, DetailView):
     model = ExperimentVersion
     context_object_name = 'version'
 
@@ -189,7 +190,7 @@ class ExperimentSimulateCallbackView(FormMixin, DetailView):
         return super().form_valid(form)
 
 
-class ExperimentVersionJsonView(SingleObjectMixin, View):
+class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
     """
     Serve up json view of an experiment verson
     """
@@ -238,7 +239,7 @@ class ExperimentVersionJsonView(SingleObjectMixin, View):
         })
 
 
-class ExperimentFileDownloadView(SingleObjectMixin, View):
+class ExperimentFileDownloadView(VisibilityMixin, SingleObjectMixin, View):
     """
     Download an individual file from an experiment
     """
@@ -260,7 +261,7 @@ class ExperimentFileDownloadView(SingleObjectMixin, View):
         return response
 
 
-class ExperimentArchiveView(SingleObjectMixin, View):
+class ExperimentVersionArchiveView(VisibilityMixin, SingleObjectMixin, View):
     """
     Download a combine archive of an experiment version
     """

@@ -46,7 +46,6 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         protocol=protocol,
         defaults={
             'author': user,
-            'visibility': visibility.get_joint_visibility(model.visibility, protocol.visibility)
         }
     )
 
@@ -55,6 +54,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         author=user,
         model_version=model_version,
         protocol_version=protocol_version,
+        visibility=visibility.get_joint_visibility(model.visibility, protocol.visibility),
     )
 
     model_url = reverse(

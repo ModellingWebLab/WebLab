@@ -4,7 +4,6 @@ import shutil
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
 from django.contrib.auth.mixins import (
-    AccessMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     UserPassesTestMixin,
@@ -25,7 +24,7 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import GitCommandError
 
-from core import visibility
+from core.visibility import VisibilityMixin
 
 from .forms import (
     EntityTagVersionForm,
@@ -134,43 +133,8 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class EntityVisibilityMixin(AccessMixin, SingleObjectMixin):
-    """
-    View mixin implementing visiblity restrictions on entity.
-
-    Public entities can be seen by all.
-    Restricted entities can be seen only by logged in users.
-    Private entities can be seen only by their owner.
-
-    If an entity is not visible to a logged in user, we generate a 404
-    If an entity is not visible to an anonymous visitor, redirect to login page
-    """
-
-    def dispatch(self, request, *args, **kwargs):
-        # We don't necessarily want 'object not found' to give a 404 response
-        # (if the user is anonymous it makes more sense to login-redirect them)
-        try:
-            obj = self.get_object()
-        except Http404:
-            obj = None
-
-        if self.request.user.is_authenticated():
-            # Logged in user can view all except other people's private stuff
-            if not obj or (
-                obj.author != self.request.user and
-                obj.visibility == visibility.PRIVATE
-            ):
-                raise Http404
-        else:
-            # Anonymous user can only see public entities
-            if not obj or (obj.visibility != visibility.PUBLIC):
-                return self.handle_no_permission()
-
-        return super().dispatch(request, *args, **kwargs)
-
-
 class ModelEntityVersionView(
-    EntityVisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
+    VisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
 ):
     """
     View a version of a model
@@ -180,7 +144,7 @@ class ModelEntityVersionView(
 
 
 class ProtocolEntityVersionView(
-    EntityVisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
+    VisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
 ):
     """
     View a version of a protocol
@@ -189,7 +153,7 @@ class ProtocolEntityVersionView(
     template_name = 'entities/entity_version.html'
 
 
-class EntityView(EntityVisibilityMixin, SingleObjectMixin, RedirectView):
+class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
     """
     View an entity
 
@@ -371,7 +335,7 @@ class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView
     permission_required = 'entities.create_protocol_version'
 
 
-class VersionListView(EntityVisibilityMixin, DetailView):
+class VersionListView(VisibilityMixin, DetailView):
     """
     Base class for listing versions of an entity
     """
@@ -404,7 +368,7 @@ class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
     pass
 
 
-class EntityArchiveView(EntityVisibilityMixin, SingleObjectMixin, View):
+class EntityArchiveView(VisibilityMixin, SingleObjectMixin, View):
     """
     Download a version of an entity as a COMBINE archive
     """

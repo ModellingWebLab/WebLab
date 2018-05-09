@@ -28,9 +28,13 @@ def generate_response(template='%s succ celery-task-id'):
 
 
 @pytest.fixture
-def omex_upload():
-    omex_path = str(Path(__file__).absolute().parent.joinpath('./test.omex'))
-    with open(omex_path, 'rb') as fp:
+def test_archive_path():
+    return str(Path(__file__).absolute().parent.joinpath('./test.omex'))
+
+
+@pytest.fixture
+def archive_upload(test_archive_path):
+    with open(test_archive_path, 'rb') as fp:
         return SimpleUploadedFile('test.omex', fp.read())
 
 
@@ -181,13 +185,13 @@ class TestProcessCallback:
         assert queued_experiment.status == 'INAPPLICABLE'
         assert queued_experiment.return_text == 'experiment cannot be run'
 
-    def test_records_failed_status(self, queued_experiment, omex_upload):
+    def test_records_failed_status(self, queued_experiment, archive_upload):
         result = process_callback({
             'signature': queued_experiment.signature,
             'returntype': 'failed',
             'returnmsg': 'python stack trace'
         }, {
-            'experiment': omex_upload,
+            'experiment': archive_upload,
         })
 
         assert result == {'experiment': 'ok'}
@@ -214,12 +218,12 @@ class TestProcessCallback:
         ('partial', 'PARTIAL'),
     ])
     def test_records_finished_status(self, returned_status, stored_status,
-                                     omex_upload, queued_experiment):
+                                     archive_upload, queued_experiment):
         result = process_callback({
             'signature': queued_experiment.signature,
             'returntype': returned_status,
         }, {
-            'experiment': omex_upload,
+            'experiment': archive_upload,
         })
 
         assert result == {'experiment': 'ok'}
@@ -238,12 +242,12 @@ class TestProcessCallback:
         queued_experiment.refresh_from_db()
         assert queued_experiment.task_id == 'task-id-1'
 
-    def test_stores_archive(self, queued_experiment, omex_upload):
+    def test_stores_archive(self, queued_experiment, archive_upload):
         result = process_callback({
             'signature': queued_experiment.signature,
             'returntype': 'success',
         }, {
-            'experiment': omex_upload,
+            'experiment': archive_upload,
         })
 
         assert result == {'experiment': 'ok'}
@@ -275,7 +279,7 @@ class TestProcessCallback:
         assert queued_experiment.status == 'FAILED'
         assert queued_experiment.return_text == 'error reading archive: File is not a zip file'
 
-    def test_sends_mail_when_experiment_is_finished(self, queued_experiment, omex_upload):
+    def test_sends_mail_when_experiment_is_finished(self, queued_experiment, archive_upload):
         queued_experiment.author.receive_emails = True
         queued_experiment.author.save()
 
@@ -283,7 +287,7 @@ class TestProcessCallback:
             'signature': queued_experiment.signature,
             'returntype': 'success',
         }, {
-            'experiment': omex_upload,
+            'experiment': archive_upload,
         })
 
         assert len(mail.outbox) == 1
@@ -291,7 +295,7 @@ class TestProcessCallback:
         assert mail.outbox[0].to[0] == queued_experiment.author.email
         assert 'SUCCESS' in mail.outbox[0].body
 
-    def test_respects_receive_emails_flag(self, queued_experiment, omex_upload):
+    def test_respects_receive_emails_flag(self, queued_experiment, archive_upload):
         queued_experiment.author.receive_emails = False
         queued_experiment.author.save()
 
@@ -299,12 +303,12 @@ class TestProcessCallback:
             'signature': queued_experiment.signature,
             'returntype': 'success',
         }, {
-            'experiment': omex_upload,
+            'experiment': archive_upload,
         })
 
         assert len(mail.outbox) == 0
 
-    def test_overwrites_previous_results(self, queued_experiment, omex_upload):
+    def test_overwrites_previous_results(self, queued_experiment, archive_upload):
         result = process_callback({
             'signature': queued_experiment.signature,
             'returntype': 'running',
@@ -319,7 +323,7 @@ class TestProcessCallback:
             'signature': queued_experiment.signature,
             'returntype': 'success',
         }, {
-            'experiment': omex_upload,
+            'experiment': archive_upload,
         })
 
         assert result == {'experiment': 'ok'}

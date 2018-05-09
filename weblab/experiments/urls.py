@@ -54,7 +54,7 @@ urlpatterns = [
 
     url(
         r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/archive$',
-        views.ExperimentArchiveView.as_view(),
+        views.ExperimentVersionArchiveView.as_view(),
         name='archive',
     ),
 ]

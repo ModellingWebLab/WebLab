@@ -15,5 +15,5 @@ protocol = Recipe(
 model_file = Recipe('EntityFile', entity=model.make)
 protocol_file = Recipe('EntityFile', entity=protocol.make)
 
-experiment = Recipe('Experiment', visibility='public', model=model.make, protocol=protocol.make)
-experiment_version = Recipe('ExperimentVersion', experiment=experiment.make)
+experiment = Recipe('Experiment', model=model.make, protocol=protocol.make)
+experiment_version = Recipe('ExperimentVersion', experiment=experiment.make, visibility='public')

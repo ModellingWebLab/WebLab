@@ -1,4 +1,6 @@
 import json
+import os
+import shutil
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -100,20 +102,24 @@ class TestNewExperimentView:
         )
 
 
+@pytest.fixture
+def test_archive_path():
+    return str(Path(__file__).absolute().parent.joinpath('./test.omex'))
+
+
 @pytest.yield_fixture
-def omex_file():
-    omex_path = str(Path(__file__).absolute().parent.joinpath('./test.omex'))
-    with open(omex_path, 'rb') as fp:
+def archive_file(test_archive_path):
+    with open(test_archive_path, 'rb') as fp:
         yield fp
 
 
 @pytest.mark.django_db
 class TestExperimentCallbackView:
-    def test_saves_valid_experiment_results(self, client, queued_experiment, omex_file):
+    def test_saves_valid_experiment_results(self, client, queued_experiment, archive_file):
         response = client.post('/experiments/callback', {
             'signature': queued_experiment.signature,
             'returntype': 'success',
-            'experiment': omex_file,
+            'experiment': archive_file,
         })
 
         assert response.status_code == 200
@@ -132,3 +138,48 @@ class TestExperimentCallbackView:
 
         data = json.loads(response.content.decode())
         assert data['error'] == 'invalid signature'
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("url", [
+    ('/experiments/%d/versions/%d'),
+    ('/experiments/%d/versions/%d/files.json'),
+    ('/experiments/%d/versions/%d/download/stdout.txt'),
+    ('/experiments/%d/versions/%d/archive'),
+])
+class TestEnforcesExperimentVersionVisibility:
+    """
+    Visibility logic is fully tested in TestEntityVisibility
+    """
+    def test_private_expt_visible_to_self(
+        self,
+        client, logged_in_user, test_archive_path, experiment,
+        url
+    ):
+        experiment.author = logged_in_user
+        experiment.visibility = 'private'
+        experiment.save()
+        os.mkdir(str(experiment.abs_path))
+        shutil.copyfile(test_archive_path, str(experiment.archive_path))
+
+        exp_url = url % (experiment.experiment.pk, experiment.pk)
+        assert client.get(exp_url, follow=True).status_code == 200
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_private_expt_invisible_to_other_user(self, client, other_user, experiment, url):
+        experiment.author = other_user
+        experiment.visibility = 'private'
+        experiment.save()
+
+        exp_url = url % (experiment.experiment.pk, experiment.pk)
+        response = client.get(exp_url)
+        assert response.status_code == 404
+
+    def test_private_entity_requires_login_for_anonymous(self, client, experiment, url):
+        experiment.visibility = 'private'
+        experiment.save()
+
+        exp_url = url % (experiment.experiment.pk, experiment.pk)
+        response = client.get(exp_url)
+        assert response.status_code == 302
+        assert '/login' in response.url
