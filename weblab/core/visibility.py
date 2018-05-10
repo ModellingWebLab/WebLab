@@ -1,5 +1,4 @@
 from django.contrib.auth.mixins import AccessMixin
-from django.db import models
 from django.http import Http404
 
 
@@ -71,17 +70,3 @@ class VisibilityMixin(AccessMixin):
                 return self.handle_no_permission()
 
         return super().dispatch(request, *args, **kwargs)
-
-
-class VisibilityModelMixin(models.Model):
-    """
-    Model mixin for giving objects different levels of visibility
-    """
-    visibility = models.CharField(
-        max_length=16,
-        choices=CHOICES,
-        help_text=HELP_TEXT.replace('\n', '<br />'),
-    )
-
-    class Meta:
-        abstract = True

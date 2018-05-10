@@ -4,14 +4,11 @@ from django.conf import settings
 from django.db import models
 
 from core.combine import ArchiveReader
-from core.visibility import VisibilityModelMixin
+from core.models import UserCreatedModelMixin, VisibilityModelMixin
 from entities.models import ModelEntity, ProtocolEntity
 
 
-class Experiment(models.Model):
-    creation_date = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL)
-
+class Experiment(UserCreatedModelMixin, models.Model):
     model = models.ForeignKey(ModelEntity, related_name='model_experiments')
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments')
 
@@ -43,7 +40,7 @@ class Experiment(models.Model):
             return ''
 
 
-class ExperimentVersion(VisibilityModelMixin, models.Model):
+class ExperimentVersion(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
     STATUS_QUEUED = "QUEUED"
     STATUS_RUNNING = "RUNNING"
     STATUS_SUCCESS = "SUCCESS"
@@ -61,8 +58,6 @@ class ExperimentVersion(VisibilityModelMixin, models.Model):
     )
 
     experiment = models.ForeignKey(Experiment, related_name='versions')
-    author = models.ForeignKey(settings.AUTH_USER_MODEL)
-    created_at = models.DateTimeField(auto_now_add=True)
     finished_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
         max_length=16,

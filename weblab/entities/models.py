@@ -5,12 +5,12 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.functional import cached_property
 
-from core.visibility import VisibilityModelMixin
+from core.models import UserCreatedModelMixin, VisibilityModelMixin
 
 from .repository import Repository
 
 
-class Entity(VisibilityModelMixin, models.Model):
+class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
     ENTITY_TYPE_CHOICES = (
@@ -24,8 +24,6 @@ class Entity(VisibilityModelMixin, models.Model):
     )
 
     name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
-    creation_date = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL)
 
     class Meta:
         ordering = ['name']
@@ -39,15 +37,6 @@ class Entity(VisibilityModelMixin, models.Model):
 
     def __str__(self):
         return self.name
-
-    def is_deletable_by(self, user):
-        """
-        Is the entity deletable by the given user?
-
-        :param user: User object
-        :return: True if deletable, False otherwise
-        """
-        return user.is_superuser or user == self.author
 
     @cached_property
     def repo(self):
