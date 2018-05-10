@@ -8,7 +8,7 @@ from core import recipes
 
 
 @pytest.fixture
-def test_archive_path():
+def archive_file_path():
     return str(Path(__file__).absolute().parent.joinpath('./test.omex'))
 
 
@@ -85,10 +85,10 @@ class TestExperimentVersion:
         assert version.status == 'SUCCESS'
         assert version.return_text == 'successful experiment'
 
-    def test_files(self, test_archive_path):
+    def test_files(self, archive_file_path):
         version = recipes.experiment_version.make()
         version.abs_path.mkdir()
-        shutil.copy(test_archive_path, str(version.archive_path))
+        shutil.copy(archive_file_path, str(version.archive_path))
 
         assert len(version.files) == 3
         assert version.files[0].name == 'manifest.xml'
@@ -99,9 +99,9 @@ class TestExperimentVersion:
         version = recipes.experiment_version.make()
         assert len(version.files) == 0
 
-    def test_open_file(self, test_archive_path):
+    def test_open_file(self, archive_file_path):
         version = recipes.experiment_version.make()
         version.abs_path.mkdir()
-        shutil.copy(test_archive_path, str(version.archive_path))
+        shutil.copy(archive_file_path, str(version.archive_path))
 
         assert version.open_file('stdout.txt').readline() == b'line of output\n'

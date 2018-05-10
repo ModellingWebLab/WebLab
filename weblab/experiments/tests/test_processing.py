@@ -22,13 +22,13 @@ def generate_response(template='%s succ celery-task-id'):
 
 
 @pytest.fixture
-def test_archive_path():
+def archive_file_path():
     return str(Path(__file__).absolute().parent.joinpath('./test.omex'))
 
 
 @pytest.fixture
-def archive_upload(test_archive_path):
-    with open(test_archive_path, 'rb') as fp:
+def archive_upload(archive_file_path):
+    with open(archive_file_path, 'rb') as fp:
         return SimpleUploadedFile('test.omex', fp.read())
 
 

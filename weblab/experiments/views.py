@@ -227,11 +227,11 @@ class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
                 'author': version.author.full_name,
                 'status': version.status,
                 'parsedOk': False,
-                'visibility': version.experiment.created_at,
+                'visibility': version.visibility,
                 'created': version.created_at,
                 'name': version.experiment.name,
                 'experimentId': version.experiment.id,
-                'version': version.created_at,
+                'version': version.id,
                 'files': files,
                 'numFiles': len(files),
                 'download_url': reverse(
