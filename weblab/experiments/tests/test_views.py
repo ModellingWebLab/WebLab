@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 import pytest
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.test import Client
 
 from core import recipes
 from experiments.models import Experiment, ExperimentVersion
@@ -138,6 +139,15 @@ class TestExperimentCallbackView:
 
         data = json.loads(response.content.decode())
         assert data['error'] == 'invalid signature'
+
+    def test_doesnt_cause_csrf_errors(self, client):
+        csrf_client = Client(enforce_csrf_checks=True)
+        response = csrf_client.post('/experiments/callback', {
+            'signature': 1,
+            'returntype': 'success',
+        })
+
+        assert response.status_code == 200
 
 
 @pytest.mark.django_db

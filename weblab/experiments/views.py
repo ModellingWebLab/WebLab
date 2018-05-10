@@ -15,6 +15,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
@@ -139,6 +140,7 @@ class NewExperimentView(PermissionRequiredMixin, View):
         })
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ExperimentCallbackView(View):
     def post(self, request, *args, **kwargs):
         result = process_callback(request.POST, request.FILES)
