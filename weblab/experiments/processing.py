@@ -1,5 +1,6 @@
 import logging
 import zipfile
+from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
@@ -66,10 +67,10 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         args=['protocol', protocol.pk, version.protocol_version]
     )
     body = {
-        'model': settings.CALLBACK_BASE_URL + model_url,
-        'protocol': settings.CALLBACK_BASE_URL + protocol_url,
+        'model': urljoin(settings.CALLBACK_BASE_URL, model_url),
+        'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
         'signature': version.signature,
-        'callBack': settings.CALLBACK_BASE_URL + reverse('experiments:callback'),
+        'callBack': urljoin(settings.CALLBACK_BASE_URL, reverse('experiments:callback')),
         'user': user.full_name,
         'password': settings.CHASTE_PASSWORD,
         'isAdmin': user.is_staff,
