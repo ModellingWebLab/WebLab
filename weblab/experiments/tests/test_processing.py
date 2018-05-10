@@ -15,12 +15,6 @@ from experiments.processing import (
 )
 
 
-@pytest.fixture(autouse=True)
-def fake_experiment_path(settings, tmpdir):
-    settings.EXPERIMENT_BASE = str(tmpdir)
-    return settings.EXPERIMENT_BASE
-
-
 def generate_response(template='%s succ celery-task-id'):
     def mock_submit(url, body):
         return Mock(content=(template % body['signature']).encode())

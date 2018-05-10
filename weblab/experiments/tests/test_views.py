@@ -13,18 +13,6 @@ from core import recipes
 from experiments.models import Experiment, ExperimentVersion
 
 
-@pytest.fixture(autouse=True)
-def fake_experiment_path(settings, tmpdir):
-    settings.EXPERIMENT_BASE = str(tmpdir)
-    return settings.EXPERIMENT_BASE
-
-
-@pytest.fixture(autouse=True)
-def fake_repo_path(settings, tmpdir):
-    settings.REPO_BASE = str(tmpdir)
-    return settings.REPO_BASE
-
-
 def mock_submit(url, body):
     return Mock(content=('%s succ celery-task-id' % body['signature']).encode())
 

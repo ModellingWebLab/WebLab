@@ -29,6 +29,24 @@ def helpers():
     return Helpers
 
 
+@pytest.fixture(autouse=True)
+def fake_upload_path(settings, tmpdir):
+    settings.MEDIA_ROOT = str(tmpdir)
+    return settings.MEDIA_ROOT
+
+
+@pytest.fixture(autouse=True)
+def fake_experiment_path(settings, tmpdir):
+    settings.EXPERIMENT_BASE = str(tmpdir)
+    return settings.EXPERIMENT_BASE
+
+
+@pytest.fixture(autouse=True)
+def fake_repo_path(settings, tmpdir):
+    settings.REPO_BASE = str(tmpdir)
+    return settings.REPO_BASE
+
+
 @pytest.fixture
 def model_with_version():
     model = recipes.model.make()
