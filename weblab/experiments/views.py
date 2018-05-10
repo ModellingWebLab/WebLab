@@ -48,7 +48,7 @@ class ExperimentMatrixJsonView(View):
             'entity_id': entity.id,
             'author': str(entity.author.full_name),
             'visibility': entity.visibility,
-            'created': entity.creation_date,
+            'created': entity.created_at,
             'name': entity.name,
             'url': reverse(
                 'entities:%s_version' % entity.entity_type,
@@ -225,7 +225,7 @@ class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
                 'author': version.author.full_name,
                 'status': version.status,
                 'parsedOk': False,
-                'visibility': version.experiment.creation_date,
+                'visibility': version.experiment.created_at,
                 'created': version.created_at,
                 'name': version.experiment.name,
                 'experimentId': version.experiment.id,
