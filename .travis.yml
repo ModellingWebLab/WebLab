@@ -15,4 +15,4 @@ before_script:
 install:
   pip install -r requirements/test.txt
 script:
-  pytest weblab
+  pytest --cov=weblab weblab
