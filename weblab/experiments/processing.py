@@ -101,13 +101,6 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     return version
 
 
-class ExperimentException(Exception):
-    def __init__(self, stored_message, returned_message):
-        self.stored_message = stored_message
-        self.returned_message = returned_message
-        super().__init__(stored_message)
-
-
 def process_callback(data, files):
     signature = data.get('signature')
     if not signature:
