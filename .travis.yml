@@ -16,3 +16,5 @@ install:
   pip install -r requirements/test.txt
 script:
   pytest --cov=weblab weblab
+after_success:
+  - codecov

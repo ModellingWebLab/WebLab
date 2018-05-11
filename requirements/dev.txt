@@ -7,7 +7,8 @@
 certifi==2017.7.27.1      # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools
-coverage==4.4.1           # via pytest-cov
+codecov==2.0.15
+coverage==4.4.1           # via codecov, pytest-cov
 decorator==4.1.2          # via ipython, traitlets
 defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2
@@ -43,7 +44,7 @@ pytest==3.2.0
 python3-openid==3.1.0     # via social-auth-core
 pytz==2017.2              # via django
 requests-oauthlib==0.8.0  # via social-auth-core
-requests==2.18.4          # via requests-oauthlib, social-auth-core
+requests==2.18.4          # via codecov, requests-oauthlib, social-auth-core
 simplegeneric==0.8.1      # via ipython
 six==1.10.0               # via model-mommy, pip-tools, prompt-toolkit, social-auth-app-django, social-auth-core, traitlets
 smmap2==2.0.3             # via gitdb2

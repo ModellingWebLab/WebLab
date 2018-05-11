@@ -1,5 +1,6 @@
 -r base.in
 
+codecov
 model-mommy==1.5.1
 pytest==3.2.0
 pytest-django==3.1.2
