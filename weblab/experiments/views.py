@@ -44,6 +44,8 @@ class ExperimentMatrixJsonView(View):
     """
     @classmethod
     def entity_json(cls, entity):
+        commit = entity.repo.latest_commit
+        version = commit.hexsha if commit else ''
         return {
             'id': entity.id,
             'entity_id': entity.id,
@@ -55,11 +57,7 @@ class ExperimentMatrixJsonView(View):
                 'entities:%s_version' % entity.entity_type,
                 args=[entity.id, 'latest']
             ),
-            'version': entity.repo.latest_commit.hexsha,
-            # TODO: fill these fields in
-            'tags': '',
-            'commitMessage': '',
-            'numFiles': '',
+            'version': version
         }
 
     @classmethod
