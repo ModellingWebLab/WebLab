@@ -31,9 +31,9 @@ from .processing import process_callback, submit_experiment
 logger = logging.getLogger(__name__)
 
 
-class ExperimentsView(LoginRequiredMixin, TemplateView):
+class ExperimentsView(TemplateView):
     """
-    List all user's experiments
+    Show the default experiment matrix view for this user (or the public)
     """
     template_name = 'experiments/experiments.html'
 
