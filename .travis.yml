@@ -15,6 +15,6 @@ before_script:
 install:
   pip install -r requirements/test.txt
 script:
-  pytest --cov=weblab weblab
+  pytest --cov=weblab --cov-config=weblab/.coveragerc weblab
 after_success:
   - codecov
