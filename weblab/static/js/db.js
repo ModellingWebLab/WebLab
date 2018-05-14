@@ -37,11 +37,11 @@ function submitNewExperiment(jsonObject, $td, entry)
       else
       {
         notifications.add(msg, "error");
-        $td.addClass("experiment-INAPPLICABLE");
+        $td.addClass("experiment-FAILED");
       }
   }).fail(function() {
       notifications.add("Server-side error occurred submitting experiment.", "error");
-      $td.addClass("experiment-INAPPLICABLE");
+      $td.addClass("experiment-FAILED");
   }).always(function(data) {
     notifications.display(data);
     $td.unbind("click");
