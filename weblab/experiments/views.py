@@ -5,10 +5,7 @@ import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-)
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -128,6 +125,10 @@ class NewExperimentView(PermissionRequiredMixin, View):
             'newExperiment': {
                 'expId': version.experiment.id,
                 'versionId': version.id,
+                'url': reverse(
+                    'experiments:version',
+                    args=[version.experiment.id, version.id],
+                ),
                 'expName': version.experiment.name,
                 'response': success,
                 'responseText': (

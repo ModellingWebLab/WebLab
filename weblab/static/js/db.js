@@ -22,6 +22,7 @@ function submitNewExperiment(jsonObject, $td, entry)
   $.post('/experiments/new', jsonObject, function(data) {
       var msg = data.newExperiment.responseText;
       $td.removeClass("experiment-QUEUED experiment-RUNNING experiment-INAPPLICABLE experiment-FAILED experiment-PARTIAL experiment-SUCCESS");
+      $td.unbind("click");
 
       if (data.newExperiment.response)
       {
@@ -29,7 +30,8 @@ function submitNewExperiment(jsonObject, $td, entry)
         entry.experiment = {
           name: data.newExperiment.expName,
           id: data.newExperiment.expId,
-          latestResult: "QUEUED"
+          latestResult: "QUEUED",
+          url: data.newExperiment.url,
         };
         $td.addClass("experiment-QUEUED");
         setExpListeners($td, entry);
@@ -44,7 +46,6 @@ function submitNewExperiment(jsonObject, $td, entry)
       $td.addClass("experiment-FAILED");
   }).always(function(data) {
     notifications.display(data);
-    $td.unbind("click");
     $td.contents().remove();
   });
 }
