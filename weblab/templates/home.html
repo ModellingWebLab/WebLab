@@ -36,7 +36,7 @@
     For the first time, we can thus easily compare how different models react to the same protocol,
     or compare how a model behaves under different protocols.
   </p>
-  <!-- <p class="right"><a href=" url 'about' ">Read more...</a></p> -->
+  <p class="right"><a href="{% url 'about' %}">Read more...</a></p>
 
   <p>
     This website is our prototype Web Lab for the domain of cardiac electrophysiology.
@@ -55,8 +55,8 @@
   {% endif %}
 
   <p>
-    Have a look at the <a href="{% url 'experiments:list' %}">main experiment database</a> to get started<!--,
-    or <a href=" url 'about' ">read more about the system</a>-->.
+    Have a look at the <a href="{% url 'experiments:list' %}">main experiment database</a> to get started,
+    or <a href="{% url 'about' %}">read more about the system</a>.
   </p>
 
 {% endblock content %}
