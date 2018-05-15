@@ -14,7 +14,7 @@
     {% if permission %}
     <small><a href="{{ type|url_new }}" id="add{{ type }}link" class="pointer">create a new {{ type }}</a></small>
     {% else %}
-    <small>Your account doesn't have the authority to upload {{ type }}s; please <a href="">contact us</a> to request permission.</small>
+    <small>Your account doesn't have the authority to upload {{ type }}s; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
     {% endif %}
 
     <ul>
