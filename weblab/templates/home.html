@@ -1,5 +1,62 @@
 {% extends "base.html" %}
+{% load entities %}
 
 {% block content %}
   <h1>Cardiac Electrophysiology Web Lab</h1>
+
+  <p>
+    This is the beta version of 'Web Lab 2', a second generation Web Lab incorporating experimental data and parameter fitting.
+    You can read more about our plans in a <a href="https://www.biorxiv.org/content/early/2018/01/31/257683">preprint of our next Web Lab paper</a>.
+  </p>
+
+  <h2>Quick start links</h2>
+  <ul>
+    <li><a href="{% url 'experiments:list' %}">View results of experiments</a> stored on this site.</li>
+    <!-- <li>Compare the results of different experiments, e.g. ...; or <a href="{% url 'experiments:list' %}">set up your own comparisons</a>.</li> -->
+    {% if user.is_authenticated %}
+      {% url 'entities:models' as analyse_link %}
+    {% else %}
+      {% url 'accounts:register' as analyse_link %}
+    {% endif %}
+    <li><a href="{{ analyse_link }}">Analyse your own models/protocols</a>.</li>
+    <li>Find out more about this site - read on!</li>
+  </ul>
+
+  <h2>What is the Web Lab?</h2>
+  <p>
+    Modellers have adopted XML-based markup languages to describe mathematical models over the past decade.
+    This is great, as it means that models can be defined unambiguously, and shared easily, in a machine-readable format.
+  </p>
+  <p>
+    We have been trying to do the same thing with 'protocols' - to define what you have to
+    do to replicate/simulate an experiment, and analyse the results.
+    We can then curate models according to their functional behaviour under a range of experimental scenarios.
+  </p>
+  <p>
+    For the first time, we can thus easily compare how different models react to the same protocol,
+    or compare how a model behaves under different protocols.
+  </p>
+  <!-- <p class="right"><a href=" url 'about' ">Read more...</a></p> -->
+
+  <p>
+    This website is our prototype Web Lab for the domain of cardiac electrophysiology.
+    It brings together models encoded using <a href="http://www.cellml.org/">CellML</a> and
+    virtual experiment protocols encoded in <a href="https://chaste.cs.ox.ac.uk/trac/wiki/FunctionalCuration/ProtocolSyntax">our own language</a>,
+    using <a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/CodeGenerationFromCellML#Standardisednames">
+    standardised tags</a> to generate interfaces between them, doing all the necessary units conversions.
+    The <a href="{% url 'experiments:list' %}">stored results of these experiments can be viewed</a> and compared.
+  </p>
+
+  {% can_create_entity 'protocol' as create_proto_perm %}
+  {% if not user.is_authenticated or not create_proto_perm %}
+  <p>
+    If you wish to analyse your own models or create new protocols, you will need to <a href="{% url 'accounts:register' %}">register for an account</a> and have it approved by a site admin.
+  </p>
+  {% endif %}
+
+  <p>
+    Have a look at the <a href="{% url 'experiments:list' %}">main experiment database</a> to get started<!--,
+    or <a href=" url 'about' ">read more about the system</a>-->.
+  </p>
+
 {% endblock content %}
