@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load entities %}
+
+{% block content %}
+<h1>Privacy notice</h1>
+
+<p>
+  The purpose of the Web Lab is to support the use and development of models of cardiac electrophysiology.
+  It is developed as a research collaboration between the universities of Oxford, UCL, and Nottingham.
+  You can <a href="{% url 'contact' %}">contact the team</a> with any questions.
+</p>
+
+<p>
+  Below we describe what information we collect and store about you as a user of the Web Lab, how we will use this information, and who it will be shared with.
+</p>
+
+<p>
+  By uploading information to the Web Lab, you are confirming that you are happy for your information to be used as set out below, that the information entered is correct to the best of your knowledge, and that you have the authority to share this information.
+</p>
+
+<h2>What information do we store?</h2>
+
+<p>
+  We store the information about you that you supply when you <a href="{% url 'accounts:register' %}">register</a>,
+  or when you <a href="{% url 'accounts:myaccount' %}">make changes to your account</a>.
+  We also store any entities (models, protocols, and datasets) that you upload to the Web Lab, and the results of experiments run using these.
+</p>
+
+<p>
+  When you log in to the Web Lab we also store a cookie on your machine so that you can access protected features of the Web Lab.
+</p>
+
+<p>
+  All information we store is held on computers within the University of Oxford's network.
+  All web access to the Web Lab uses the secure 'HTTPS' protocol.
+</p>
+
+<h2>Who can see this information?</h2>
+
+<p>
+  By default all entities (models, protocols, and datasets) you upload are private, visible only to you.
+  You can choose who else is able to see any (version of any) entity by changing its <i>visibility</i> (making it visible to logged in users or the general public) or by explicitly sharing it with another user.
+</p>
+
+<p>
+  Your name and institution (as supplied by you) will be displayed to other users identifying you as the owner of any of your entities that they have permission to view.
+  Your email address is kept private.
+</p>
+
+<p>
+  The <a href="{% url 'contact' %}">Web Lab administrators</a>, who are researchers based at Oxford, UCL and Nottingham, can however see all information added to the Web Lab, since encryption is not used when it is stored, and we have administrative access to the computer.
+</p>
+
+<h2>How will this information be used?</h2>
+
+<p>
+  Any entities (models, protocols, and datasets) you upload to the Web Lab can be used by you to evaluate and compare model behaviours, using the tools the Web Lab provides.
+  If you choose to share an entity with others, they may do so as well.
+  Anyone with access to view an entity may also download it and make use of it in other ways &mdash; we do not impose any licensing restrictions on users.
+</p>
+
+<p>
+  Your email address is used solely so the Web Lab may contact you (at your request) to provide features such as password resets and notification when your experiments complete.
+</p>
+
+<h2>How do I change my mind?</h2>
+
+<p>
+  When logged in to your account you can <a href="{% url 'accounts:myaccount' %}">update your contact details and preferences</a>,
+  and <a href="{% url 'entities:models' %}">make changes to your models, protocols and datasets</a>, including deleting any you own.
+  We will be adding the facility to delete your account shortly.
+</p>
+
+<h2>Further information</h2>
+
+<p>
+  The Computer Science department at Oxford, where this Web Lab is hosted, has its own <a href="http://www.cs.ox.ac.uk/privacy-policy.html">privacy policy</a>.
+</p>
+
+<p>
+  <a href="https://www.ucl.ac.uk/legal-services/privacy">UCL's privacy web site</a> provides general information on how UCL meets its responsibilites to respect your privacy, and indicates relevant policies and practices in this area.
+</p>
+
+{% endblock content %}

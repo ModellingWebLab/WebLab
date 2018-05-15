@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^for_authors$',
         TemplateView.as_view(template_name='for_authors.html'),
         name="for_authors"),
+    url(r'^privacy$', TemplateView.as_view(template_name='privacy.html'), name="privacy"),
     url(r'^accounts/', include('accounts.urls', namespace='accounts')),
     url(r'^accounts/', include('django.contrib.auth.urls')),
     url(r'^social/', include('social_django.urls', namespace='social')),
