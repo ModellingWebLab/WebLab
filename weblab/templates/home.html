@@ -12,7 +12,7 @@
   <h2>Quick start links</h2>
   <ul>
     <li><a href="{% url 'experiments:list' %}">View results of experiments</a> stored on this site.</li>
-    <!-- <li>Compare the results of different experiments, e.g. ...; or <a href="{% url 'experiments:list' %}">set up your own comparisons</a>.</li> -->
+    <li>Compare the results of different experiments, e.g. ...; or <a href="{% url 'experiments:list' %}">set up your own comparisons</a>.</li>
     {% if user.is_authenticated %}
       {% url 'entities:models' as analyse_link %}
     {% else %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+  <h1>Information for model authors</h1>
+  <p>
+    Despite our efforts to produce reliable virtual experiments with this system,
+    unexpected behaviour may not necessarily reflect a real consequence of the model.
+    Mathematical singularities or other numerical simulation issues may cause the simulated experiment to fail.
+    Sometimes the published representation of the model is in error, or its CellML encoding is.
+    On other occasions the protocol, especially the post-processing section,
+    may need further refinement to account for raw simulation results that fall somewhat outside the expected regime
+    &mdash; computing a robust APD that accounts for any shape of AP, particularly pathological cases, is surprisingly complex.
+  </p>
+
+  <p>
+    If therefore you find differences in behaviour between the Web Lab and other model implementations,
+    there are several likely avenues for investigation.
+  </p>
+  <ol>
+    <li>
+    <i>Check any error messages produced by the virtual experiment run.</i>
+    These will be listed (in brief) in a file called 'errors.txt' as part of the experiment's results,
+    under the 'Experiment information' section.
+    If no graphs are produced by an experiment, this file is displayed by default (if it exists).
+    Often the full textual output from the simulator is necessary to understand fully what caused the error,
+    and this can be found in the 'stdout.txt' file.
+    Unfortunately some errors are rather opaque to new users (although we are working to improve this),
+    so do feel free to <a href="{% url 'contact' %}">contact us</a> if anything is unclear.
+    </li>
+    <li>
+    <i>Check that the metadata annotations on the model are correct.</i>
+    These metadata annotations tell the Web Lab which variables in the model encode particular biophysical quantities of interest.
+    It may be that a variable has not been annotated when it should be, so for instance a concentration clamp might not be applied.
+    It may be that an annotation has been used on a variable which doesn't actually represent the biophysical quantity concerned,
+    and a different variable should be annotated instead.
+    <br/>
+    If the model is one you have created, the easiest way to check annotations is using the 'edit metadata' tool
+    (the <img src="{% static 'js/visualizers/editMetadata/editMetadata.png' %}"/> icon).
+    Otherwise you will need to view the model as CellML and look for 'bqbiol:is' content.
+    <br/>
+    More information about these annotations can be found on the <a href="https://chaste.cs.ox.ac.uk/trac/wiki/ChasteGuides/CodeGenerationFromCellML#ModelannotationwithRDF">Chaste wiki</a>.
+    </li>
+    <li>
+    <i>Check the CellML representation of the model's mathematics.</i>
+    It may be that the equations or parameters in the CellML file don't match the original model implementation.
+    Since reading CellML directly is rather painful, we advise downloading the CellML file from the Web Lab and
+    loading it in <a href="http://www.opencor.ws/">OpenCor</a>, an open source CellML editor and simulator.
+    </li>
+    <li>
+    <i>Contact the Web Lab team.</i>
+        We always invite users who find any examples of behaviour that do not match other model implementations to
+        <a href="{% url 'contact' %}">contact us</a> and we will attempt to determine the cause.
+    </li>
+  </ol>
+{% endblock content %}
