@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load entities %}
+{% load staticfiles %}
 
 {% block content %}
   <h1>Cardiac Electrophysiology Web Lab</h1>
@@ -53,6 +54,15 @@
     If you wish to analyse your own models or create new protocols, you will need to <a href="{% url 'accounts:register' %}">register for an account</a> and have it approved by a site admin.
   </p>
   {% endif %}
+
+  <div align="center" style="width: 790px; text-align: center; margin: 0.5em 0pt 0.5em 0.8em; border: 1px solid #D1D1D1; padding: 10px;">
+    <img alt="Web Lab overview schematic" src="{% static 'img/wl2-overview.png' %}" width="780" />
+    <div style="width: 770px; text-align: center;">
+      A schematic of the planned Web Lab 2 functionality.<br/>
+      This website will store models, protocols and results (from both wet lab and <i>in silico</i> experiments),
+      allowing comparisons to be made, and model parameters to be fit to data.
+    </div>
+  </div>
 
   <p>
     Have a look at the <a href="{% url 'experiments:list' %}">main experiment database</a> to get started,
