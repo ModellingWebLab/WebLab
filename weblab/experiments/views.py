@@ -17,7 +17,7 @@ from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
 
-from core.visibility import VisibilityMixin
+from core.visibility import VisibilityMixin, visibility_query
 from entities.models import ModelEntity, ProtocolEntity
 
 from .forms import ExperimentSimulateCallbackForm
@@ -76,7 +76,7 @@ class ExperimentMatrixJsonView(View):
         }
 
     def get(self, request, *args, **kwargs):
-        q_visibility = request.user.visibility_query
+        q_visibility = visibility_query(request.user)
         models = {
             model.pk: self.entity_json(model)
             for model in ModelEntity.objects.filter(q_visibility)

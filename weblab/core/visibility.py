@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import AccessMixin
+from django.db.models import Q
 from django.http import Http404
 
 
@@ -35,6 +36,17 @@ def get_joint_visibility(*visibilities):
         levels.index(vis)
         for vis in visibilities
     )]
+
+
+def visibility_query(user):
+    """Get a query filter for whether the given user can see something
+
+    This also handles the case of non-logged-in users.
+    """
+    if user.is_authenticated:
+        return Q(author=user) | ~Q(visibility=Visibility.PRIVATE)
+    else:
+        return Q(visibility=Visibility.PUBLIC)
 
 
 class VisibilityMixin(AccessMixin):
