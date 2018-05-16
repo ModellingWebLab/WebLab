@@ -15,3 +15,6 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ.get('SOCIAL_AUTH_GOOGLE_OAUTH2_SEC
 # GitHub - see https://github.com/settings/applications/new
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get('SOCIAL_AUTH_GITHUB_KEY', '')
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get('SOCIAL_AUTH_GITHUB_SECRET', '')
+
+# Sign up for a free tier at https://rollbar.com/signup/
+ROLLBAR_POST_SERVER_ITEM_ACCESS_TOKEN = ''
