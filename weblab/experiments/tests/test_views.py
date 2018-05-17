@@ -44,8 +44,8 @@ def archive_file(archive_file_path):
 @pytest.mark.django_db
 class TestExperimentMatrix:
     @pytest.mark.usefixtures('logged_in_user')
-    def test_matrix(self, client, experiment):
-        exp = experiment.experiment
+    def test_matrix(self, client, experiment_version):
+        exp = experiment_version.experiment
 
         response = client.get('/experiments/matrix')
         data = json.loads(response.content.decode())
@@ -55,15 +55,16 @@ class TestExperimentMatrix:
         assert str(exp.protocol.pk) in data['getMatrix']['protocols']
         assert str(exp.pk) in data['getMatrix']['experiments']
 
-    def test_anonymous_can_see_public_data(self, client, experiment):
+    def test_anonymous_can_see_public_data(self, client, experiment_version):
         response = client.get('/experiments/matrix')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert str(experiment.experiment.pk) in data['getMatrix']['experiments']
+        assert str(experiment_version.experiment.pk) in data['getMatrix']['experiments']
 
-    def test_anonymous_cannot_see_private_data(self, client, experiment):
-        experiment.experiment.model.visibility = Visibility.PRIVATE
-        experiment.experiment.model.save()
+    def test_anonymous_cannot_see_private_data(self, client, experiment_version):
+        model = experiment_version.experiment.model
+        model.visibility = Visibility.PRIVATE
+        model.save()
 
         response = client.get('/experiments/matrix')
         data = json.loads(response.content.decode())
@@ -72,7 +73,7 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['protocols']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
-    def test_old_version_is_hidden(self, client, model_with_version, experiment, helpers):
+    def test_old_version_is_hidden(self, client, model_with_version, experiment_version, helpers):
         # Add a new model version without corresponding experiment
         helpers.add_version(model_with_version, filename='file2.txt')
 
@@ -81,7 +82,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert str(model_with_version.pk) in data['getMatrix']['models']
-        assert str(experiment.experiment.protocol.pk) in data['getMatrix']['protocols']
+        assert str(experiment_version.experiment.protocol.pk) in data['getMatrix']['protocols']
         assert len(data['getMatrix']['experiments']) == 0
 
 
@@ -173,9 +174,10 @@ class TestExperimentCallbackView:
 
 @pytest.mark.django_db
 class TestExperimentVersionView:
-    def test_view_experiment_version(self, client, experiment):
+    def test_view_experiment_version(self, client, experiment_version):
         response = client.get(
-            ('/experiments/%d/versions/%d' % (experiment.experiment.pk, experiment.pk))
+            ('/experiments/%d/versions/%d' % (experiment_version.experiment.pk,
+                                              experiment_version.pk))
         )
 
         assert response.status_code == 200
@@ -302,33 +304,34 @@ class TestEnforcesExperimentVersionVisibility:
 
     def test_private_expt_visible_to_self(
         self,
-        client, logged_in_user, archive_file_path, experiment,
+        client, logged_in_user, archive_file_path, experiment_version,
         url
     ):
-        experiment.author = logged_in_user
-        experiment.visibility = 'private'
-        experiment.save()
-        os.mkdir(str(experiment.abs_path))
-        shutil.copyfile(archive_file_path, str(experiment.archive_path))
+        experiment_version.author = logged_in_user
+        experiment_version.visibility = 'private'
+        experiment_version.save()
+        os.mkdir(str(experiment_version.abs_path))
+        shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 
-        exp_url = url % (experiment.experiment.pk, experiment.pk)
+        exp_url = url % (experiment_version.experiment.pk, experiment_version.pk)
         assert client.get(exp_url, follow=True).status_code == 200
 
     @pytest.mark.usefixtures('logged_in_user')
-    def test_private_expt_invisible_to_other_user(self, client, other_user, experiment, url):
-        experiment.author = other_user
-        experiment.visibility = 'private'
-        experiment.save()
+    def test_private_expt_invisible_to_other_user(self, client, other_user,
+                                                  experiment_version, url):
+        experiment_version.author = other_user
+        experiment_version.visibility = 'private'
+        experiment_version.save()
 
-        exp_url = url % (experiment.experiment.pk, experiment.pk)
+        exp_url = url % (experiment_version.experiment.pk, experiment_version.pk)
         response = client.get(exp_url)
         assert response.status_code == 404
 
-    def test_private_entity_requires_login_for_anonymous(self, client, experiment, url):
-        experiment.visibility = 'private'
-        experiment.save()
+    def test_private_entity_requires_login_for_anonymous(self, client, experiment_version, url):
+        experiment_version.visibility = 'private'
+        experiment_version.save()
 
-        exp_url = url % (experiment.experiment.pk, experiment.pk)
+        exp_url = url % (experiment_version.experiment.pk, experiment_version.pk)
         response = client.get(exp_url)
         assert response.status_code == 302
         assert '/login' in response.url

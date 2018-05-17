@@ -71,7 +71,7 @@ def queued_experiment(model_with_version, protocol_with_version):
 
 
 @pytest.fixture
-def experiment(model_with_version, protocol_with_version):
+def experiment_version(model_with_version, protocol_with_version):
     return recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=model_with_version,
