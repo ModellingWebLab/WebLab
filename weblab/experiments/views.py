@@ -119,7 +119,7 @@ class NewExperimentView(PermissionRequiredMixin, View):
         protocol_version = request.POST['protocol_version']
 
         version = submit_experiment(model, model_version, protocol, protocol_version, request.user)
-        success = version.experiment.latest_result == ExperimentVersion.STATUS_QUEUED
+        success = version.status == ExperimentVersion.STATUS_QUEUED
 
         return JsonResponse({
             'newExperiment': {
