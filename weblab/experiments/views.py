@@ -77,20 +77,25 @@ class ExperimentMatrixJsonView(View):
 
     def get(self, request, *args, **kwargs):
         q_visibility = visibility_query(request.user)
+        q_models = ModelEntity.objects.filter(q_visibility)
+        q_protocols = ProtocolEntity.objects.filter(q_visibility)
+
         models = {
             model.pk: self.entity_json(model)
-            for model in ModelEntity.objects.filter(q_visibility)
+            for model in q_models
         }
 
         protocols = {
             protocol.pk: self.entity_json(protocol)
-            for protocol in ProtocolEntity.objects.filter(q_visibility)
+            for protocol in q_protocols
         }
 
-        experiments = {
-            exp.pk: self.experiment_json(exp)
-            for exp in Experiment.objects.all()
-        }
+        # Only give info on experiments involving the correct entity versions
+        experiments = {}
+        for exp in Experiment.objects.filter(model__in=q_models, protocol__in=q_protocols):
+            if (exp.model_version == models[exp.model.pk]['version'] and
+                    exp.protocol_version == protocols[exp.protocol.pk]['version']):
+                experiments[exp.pk] = self.experiment_json(exp)
 
         return JsonResponse({
             'getMatrix': {

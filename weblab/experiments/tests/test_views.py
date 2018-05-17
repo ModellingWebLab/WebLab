@@ -13,6 +13,7 @@ from django.test import Client
 from django.utils.dateparse import parse_datetime
 
 from core import recipes
+from core.visibility import Visibility
 from experiments.models import Experiment, ExperimentVersion
 
 
@@ -43,16 +44,45 @@ def archive_file(archive_file_path):
 @pytest.mark.django_db
 class TestExperimentMatrix:
     @pytest.mark.usefixtures('logged_in_user')
-    def test_matrix(self, client, model_with_version, protocol_with_version):
-        exp = recipes.experiment.make(model=model_with_version, protocol=protocol_with_version)
+    def test_matrix(self, client, experiment):
+        exp = experiment.experiment
 
         response = client.get('/experiments/matrix')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert str(model_with_version.pk) in data['getMatrix']['models']
-        assert str(protocol_with_version.pk) in data['getMatrix']['protocols']
+        assert str(exp.model.pk) in data['getMatrix']['models']
+        assert str(exp.protocol.pk) in data['getMatrix']['protocols']
         assert str(exp.pk) in data['getMatrix']['experiments']
+
+    def test_anonymous_can_see_public_data(self, client, experiment):
+        response = client.get('/experiments/matrix')
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert str(experiment.experiment.pk) in data['getMatrix']['experiments']
+
+    def test_anonymous_cannot_see_private_data(self, client, experiment):
+        experiment.experiment.model.visibility = Visibility.PRIVATE
+        experiment.experiment.model.save()
+
+        response = client.get('/experiments/matrix')
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert len(data['getMatrix']['models']) == 0
+        assert len(data['getMatrix']['protocols']) == 1
+        assert len(data['getMatrix']['experiments']) == 0
+
+    def test_old_version_is_hidden(self, client, model_with_version, experiment, helpers):
+        # Add a new model version without corresponding experiment
+        helpers.add_version(model_with_version, filename='file2.txt')
+
+        # We should now see this version in the matrix, but no experiments
+        response = client.get('/experiments/matrix')
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert str(model_with_version.pk) in data['getMatrix']['models']
+        assert str(experiment.experiment.protocol.pk) in data['getMatrix']['protocols']
+        assert len(data['getMatrix']['experiments']) == 0
 
 
 @patch('requests.post', side_effect=mock_submit)
