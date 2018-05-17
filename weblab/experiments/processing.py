@@ -45,6 +45,8 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     experiment, _ = Experiment.objects.get_or_create(
         model=model,
         protocol=protocol,
+        model_version=model_version,
+        protocol_version=protocol_version,
         defaults={
             'author': user,
         }
@@ -53,18 +55,16 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     version = ExperimentVersion.objects.create(
         experiment=experiment,
         author=user,
-        model_version=model_version,
-        protocol_version=protocol_version,
         visibility=visibility.get_joint_visibility(model.visibility, protocol.visibility),
     )
 
     model_url = reverse(
         'entities:entity_archive',
-        args=['model', model.pk, version.model_version]
+        args=['model', model.pk, model_version]
     )
     protocol_url = reverse(
         'entities:entity_archive',
-        args=['protocol', protocol.pk, version.protocol_version]
+        args=['protocol', protocol.pk, protocol_version]
     )
     body = {
         'model': urljoin(settings.CALLBACK_BASE_URL, model_url),

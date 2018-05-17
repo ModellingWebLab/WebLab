@@ -9,11 +9,25 @@ from entities.models import ModelEntity, ProtocolEntity
 
 
 class Experiment(UserCreatedModelMixin, models.Model):
+    """A specific version of a protocol run on a specific version of a model
+
+    This class essentially just stores the model & protocol links. The results are
+    contained within ExperimentVersion instances, available as .versions, that
+    represent specific runs of the experiment.
+
+    There will only ever be one Experiment for a given combination of model version
+    and protocol version.
+    """
     model = models.ForeignKey(ModelEntity, related_name='model_experiments')
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments')
 
+    # Note that we can't use a ForeignKey here, because versions of models and protocols
+    # are not stored in the DB - they are just commits in the associated git repo.
+    model_version = models.CharField(max_length=50)     # The full git commit SHA
+    protocol_version = models.CharField(max_length=50)  # The full git commit SHA
+
     class Meta:
-        unique_together = ('model', 'protocol')
+        unique_together = ('model', 'protocol', 'model_version', 'protocol_version')
         verbose_name_plural = 'Experiments'
 
         permissions = (
@@ -66,8 +80,6 @@ class ExperimentVersion(UserCreatedModelMixin, VisibilityModelMixin, models.Mode
     )
     return_text = models.TextField(blank=True)
     task_id = models.CharField(max_length=50, blank=True)
-    model_version = models.CharField(max_length=50)     # The full git commit SHA
-    protocol_version = models.CharField(max_length=50)  # The full git commit SHA
 
     def __str__(self):
         return '%s at %s: (%s)' % (self.experiment, self.created_at, self.status)
@@ -76,8 +88,8 @@ class ExperimentVersion(UserCreatedModelMixin, VisibilityModelMixin, models.Mode
     def name(self):
         model_repo = self.experiment.model.repo
         protocol_repo = self.experiment.protocol.repo
-        return '%s / %s' % (model_repo.get_name_for_commit(self.model_version),
-                            protocol_repo.get_name_for_commit(self.protocol_version))
+        return '%s / %s' % (model_repo.get_name_for_commit(self.experiment.model_version),
+                            protocol_repo.get_name_for_commit(self.experiment.protocol_version))
 
     @property
     def abs_path(self):

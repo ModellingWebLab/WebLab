@@ -47,8 +47,8 @@ class TestSubmitExperiment:
         assert version.experiment.model == model
         assert version.experiment.protocol == protocol
         assert version.author == user
-        assert version.model_version == model_version
-        assert version.protocol_version == protocol_version
+        assert version.experiment.model_version == model_version
+        assert version.experiment.protocol_version == protocol_version
         assert version.experiment.author == user
 
     def test_uses_existing_experiment(self, mock_post,
@@ -58,7 +58,8 @@ class TestSubmitExperiment:
         model_version = model.repo.latest_commit.hexsha
         protocol_version = protocol.repo.latest_commit.hexsha
 
-        experiment = recipes.experiment.make(model=model, protocol=protocol)
+        experiment = recipes.experiment.make(model=model, model_version=model_version,
+                                             protocol=protocol, protocol_version=protocol_version)
 
         version = submit_experiment(model, model_version, protocol, protocol_version, user)
 

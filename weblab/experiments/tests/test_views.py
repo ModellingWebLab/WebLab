@@ -158,8 +158,8 @@ class TestExperimentVersionJsonView:
             author__full_name='test user',
             status='SUCCESS',
             visibility='public',
-            model_version='latest',
-            protocol_version='latest',
+            experiment__model_version='latest',
+            experiment__protocol_version='latest',
         )
 
         response = client.get(
@@ -189,8 +189,8 @@ class TestExperimentVersionJsonView:
     def test_file_json(self, client, archive_file_path):
         version = recipes.experiment_version.make(
             author__full_name='test user',
-            model_version='latest',
-            protocol_version='latest')
+            experiment__model_version='latest',
+            experiment__protocol_version='latest')
         version.abs_path.mkdir()
         shutil.copyfile(archive_file_path, str(version.archive_path))
 
@@ -269,6 +269,7 @@ class TestEnforcesExperimentVersionVisibility:
     """
     Visibility logic is fully tested in TestEntityVisibility
     """
+
     def test_private_expt_visible_to_self(
         self,
         client, logged_in_user, archive_file_path, experiment,
