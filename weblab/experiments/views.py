@@ -228,7 +228,7 @@ class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
                 'parsedOk': False,
                 'visibility': version.visibility,
                 'created': version.created_at,
-                'name': version.experiment.name,
+                'name': version.name,
                 'experimentId': version.experiment.id,
                 'version': version.id,
                 'files': files,

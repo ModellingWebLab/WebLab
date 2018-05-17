@@ -66,11 +66,18 @@ class ExperimentVersion(UserCreatedModelMixin, VisibilityModelMixin, models.Mode
     )
     return_text = models.TextField(blank=True)
     task_id = models.CharField(max_length=50, blank=True)
-    model_version = models.CharField(max_length=50)
-    protocol_version = models.CharField(max_length=50)
+    model_version = models.CharField(max_length=50)     # The full git commit SHA
+    protocol_version = models.CharField(max_length=50)  # The full git commit SHA
 
     def __str__(self):
         return '%s at %s: (%s)' % (self.experiment, self.created_at, self.status)
+
+    @property
+    def name(self):
+        model_repo = self.experiment.model.repo
+        protocol_repo = self.experiment.protocol.repo
+        return '%s / %s' % (model_repo.get_name_for_commit(self.model_version),
+                            protocol_repo.get_name_for_commit(self.protocol_version))
 
     @property
     def abs_path(self):

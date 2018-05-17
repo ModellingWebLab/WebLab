@@ -558,7 +558,7 @@ function updateVersion (rv) {
     versions[rv.id] = v;
   }
 
-  v.name = rv.version;
+  v.name = rv.name;
   v.author = rv.author;
   v.created = rv.created;
   v.visibility = rv.visibility;

@@ -158,8 +158,8 @@ class TestExperimentVersionJsonView:
             author__full_name='test user',
             status='SUCCESS',
             visibility='public',
-            experiment__model__name='my model',
-            experiment__protocol__name='my protocol',
+            model_version='latest',
+            protocol_version='latest',
         )
 
         response = client.get(
@@ -177,7 +177,7 @@ class TestExperimentVersionJsonView:
             parse_datetime(ver['created']).replace(microsecond=0) ==
             version.created_at.replace(microsecond=0)
         )
-        assert ver['name'] == 'my model / my protocol'
+        assert ver['name'] == 'latest / latest'
         assert ver['experimentId'] == version.experiment.id
         assert ver['version'] == version.id
         assert ver['files'] == []
@@ -187,7 +187,10 @@ class TestExperimentVersionJsonView:
         )
 
     def test_file_json(self, client, archive_file_path):
-        version = recipes.experiment_version.make(author__full_name='test user')
+        version = recipes.experiment_version.make(
+            author__full_name='test user',
+            model_version='latest',
+            protocol_version='latest')
         version.abs_path.mkdir()
         shutil.copyfile(archive_file_path, str(version.archive_path))
 
