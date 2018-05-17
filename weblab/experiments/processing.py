@@ -76,7 +76,14 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         'isAdmin': user.is_staff,
     }
 
-    response = requests.post(settings.CHASTE_URL, body)
+    try:
+        response = requests.post(settings.CHASTE_URL, body)
+    except requests.exceptions.ConnectionError:
+        version.status = ExperimentVersion.STATUS_FAILED
+        version.return_text = 'Unable to connect to experiment runner service'
+        logger.exception(version.return_text)
+        version.save()
+        return version
 
     res = response.content.decode().strip()
     logger.debug('Response from chaste backend: %s' % res)
