@@ -132,8 +132,7 @@ class NewExperimentView(PermissionRequiredMixin, View):
                 'expName': version.experiment.name,
                 'response': success,
                 'responseText': (
-                    "Experiment submitted. Based on the size of the queue "
-                    "it might take some time until we can process your job."
+                    "Experiment submitted to the queue."
                 ) if success else version.return_text
             }
         })

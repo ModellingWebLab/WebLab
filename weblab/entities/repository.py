@@ -240,6 +240,11 @@ class Repository:
         return self.get_commit(ref).tree.blobs
 
     def archive(self, ref='HEAD'):
+        """
+        Create a Combine Archive of all files in the repository
+
+        :param ref: A reference to a specific commit, defaults to the latest
+        """
         return ArchiveWriter().write(
             (self.full_path(fn), fn) for fn in self.filenames(ref)
         )
