@@ -209,7 +209,7 @@ class TestExperimentVersionJsonView:
             parse_datetime(ver['created']).replace(microsecond=0) ==
             version.created_at.replace(microsecond=0)
         )
-        assert ver['name'] == 'latest / latest'
+        assert ver['name'] == '1'
         assert ver['experimentId'] == version.experiment.id
         assert ver['version'] == version.id
         assert ver['files'] == []

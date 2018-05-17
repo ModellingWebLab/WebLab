@@ -38,6 +38,18 @@ class TestExperiment:
 
         assert exp.latest_result == ''
 
+    def test_nice_versions(self, experiment_version):
+        exp = experiment_version.experiment
+
+        assert exp.nice_model_version == exp.model.repo.latest_commit.hexsha[:8] + '...'
+        assert exp.nice_protocol_version == exp.protocol.repo.latest_commit.hexsha[:8] + '...'
+
+        exp.model.repo.tag('v1')
+        assert exp.nice_model_version == 'v1'
+
+        exp.protocol.repo.tag('v2')
+        assert exp.nice_protocol_version == 'v2'
+
 
 @pytest.mark.django_db
 class TestExperimentVersion:

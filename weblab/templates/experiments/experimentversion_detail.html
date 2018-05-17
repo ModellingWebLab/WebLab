@@ -53,9 +53,9 @@
         {% endcomment %}
 
         <br/>Corresponding model:
-        <a href="{% url 'entities:model_version' experiment.model.pk experiment.model_version %}">{{ experiment.model.name }}</a>
+        <a href="{% url 'entities:model_version' experiment.model.pk experiment.model_version %}">{{ experiment.model.name }} @ {{ experiment.nice_model_version }}</a>
           &amp; protocol:
-          <a href="{% url 'entities:protocol_version' experiment.protocol.pk experiment.protocol_version %}">{{ experiment.protocol.name }}</a>
+          <a href="{% url 'entities:protocol_version' experiment.protocol.pk experiment.protocol_version %}">{{ experiment.protocol.name }} @ {{ experiment.nice_protocol_version }}</a>
         </c:if>
 
       </small>

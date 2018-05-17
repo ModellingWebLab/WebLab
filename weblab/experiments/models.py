@@ -48,6 +48,22 @@ class Experiment(UserCreatedModelMixin, models.Model):
         return self.versions.latest('created_at')
 
     @property
+    def nice_model_version(self):
+        """Use tags to give a nicer representation of the commit id"""
+        version = self.model.repo.get_name_for_commit(self.model_version)
+        if len(version) > 20:
+            version = version[:8] + '...'
+        return version
+
+    @property
+    def nice_protocol_version(self):
+        """Use tags to give a nicer representation of the commit id"""
+        version = self.protocol.repo.get_name_for_commit(self.protocol_version)
+        if len(version) > 20:
+            version = version[:8] + '...'
+        return version
+
+    @property
     def latest_result(self):
         try:
             return self.latest_version.status
@@ -87,10 +103,7 @@ class ExperimentVersion(UserCreatedModelMixin, VisibilityModelMixin, models.Mode
 
     @property
     def name(self):
-        model_repo = self.experiment.model.repo
-        protocol_repo = self.experiment.protocol.repo
-        return '%s / %s' % (model_repo.get_name_for_commit(self.experiment.model_version),
-                            protocol_repo.get_name_for_commit(self.experiment.protocol_version))
+        return str(self.experiment.versions.filter(pk__lte=self.pk).count())
 
     @property
     def abs_path(self):
