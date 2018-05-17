@@ -23,8 +23,9 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
     # Note that we can't use a ForeignKey here, because versions of models and protocols
     # are not stored in the DB - they are just commits in the associated git repo.
-    model_version = models.CharField(max_length=50)     # The full git commit SHA
-    protocol_version = models.CharField(max_length=50)  # The full git commit SHA
+    # So instead we store the full git SHA as a string.
+    model_version = models.CharField(max_length=50)
+    protocol_version = models.CharField(max_length=50)
 
     class Meta:
         unique_together = ('model', 'protocol', 'model_version', 'protocol_version')
