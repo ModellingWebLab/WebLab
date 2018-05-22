@@ -118,10 +118,18 @@ class NewExperimentView(PermissionRequiredMixin, View):
         })
 
     def post(self, request, *args, **kwargs):
-        model = get_object_or_404(ModelEntity, pk=request.POST['model'])
-        protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
-        model_version = request.POST['model_version']
-        protocol_version = request.POST['protocol_version']
+        if 'rerun' in request.POST:
+            exp_ver = get_object_or_404(ExperimentVersion, pk=request.POST['rerun'])
+            exp = exp_ver.experiment
+            model = exp.model
+            protocol = exp.protocol
+            model_version = exp.model_version
+            protocol_version = exp.protocol_version
+        else:
+            model = get_object_or_404(ModelEntity, pk=request.POST['model'])
+            protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
+            model_version = request.POST['model_version']
+            protocol_version = request.POST['protocol_version']
 
         version = submit_experiment(model, model_version, protocol, protocol_version, request.user)
         success = version.status == ExperimentVersion.STATUS_QUEUED

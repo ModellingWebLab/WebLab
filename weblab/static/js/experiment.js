@@ -883,12 +883,28 @@ function init () {
   if (resubmit && resubmitAction)
   {
     resubmit.addEventListener("click", function (ev) {
-      batchProcessing ({
-        batchTasks : [{
-          experiment : entityId
-        }],
-        force: true
-      }, resubmitAction, addNewVersion);
+      resubmitAction.innerHTML = "<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />";
+      var exp_ver = versions[curVersion.id],
+          jsonObject = {
+            rerun: exp_ver.id,
+          };
+      $.post('/experiments/new', jsonObject, function(data) {
+        var msg = data.newExperiment.responseText;
+        if (data.newExperiment.response)
+        {
+          notifications.add(msg, "info");
+          resubmitAction.innerHTML = "<img src='"+staticPath+"img/check.png' alt='valid' /> " + msg;
+        }
+        else
+        {
+          notifications.add(msg, "error");
+          resubmitAction.innerHTML = "<img src='"+staticPath+"img/failed.png' alt='invalid' /> " + msg;
+        }
+      }).fail(function() {
+        notifications.add("Server-side error occurred submitting experiment.", "error");
+      }).always(function(data) {
+        notifications.display(data);
+      });
     });
   }
 

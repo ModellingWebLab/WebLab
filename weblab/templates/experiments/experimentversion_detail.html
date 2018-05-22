@@ -46,11 +46,9 @@
         <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
         <span id="exptStatus"></span>
 
-        {% comment %}
-        <c:if test="${User.allowedToForceNewExperiment && entity.type == 'experiment'}">
-          <a id="rerunExperiment"><img src="${contextPath}/res/img/refresh.png" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
-        </c:if>
-        {% endcomment %}
+        {% if perms.experiments.force_new_experiment_version %}
+          <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        {% endif %}
 
         <br/>Corresponding model:
         <a href="{% url 'entities:model_version' experiment.model.pk experiment.model_version %}">{{ experiment.model.name }} @ {{ experiment.nice_model_version }}</a>

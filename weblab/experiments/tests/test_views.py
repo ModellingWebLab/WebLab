@@ -135,6 +135,34 @@ class TestNewExperimentView:
             'You are not allowed to create a new experiment'
         )
 
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_rerun_experiment(
+        self, mock_post,
+        client, logged_in_user, experiment_version
+    ):
+        add_permission(logged_in_user, 'create_experiment')
+        add_permission(logged_in_user, 'force_new_experiment_version')
+        response = client.post(
+            '/experiments/new',
+            {
+                'rerun': experiment_version.pk,
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+
+        assert 'newExperiment' in data
+        assert data['newExperiment']['response']
+        assert data['newExperiment']['expId'] == experiment_version.experiment.id
+
+        new_version = ExperimentVersion.objects.all().last()
+
+        assert new_version.experiment.id == experiment_version.experiment.id
+        assert new_version.id != experiment_version.id
+        assert data['newExperiment']['versionId'] == new_version.id
+        assert data['newExperiment']['expName'] == new_version.experiment.name
+
 
 @pytest.mark.django_db
 class TestExperimentCallbackView:
