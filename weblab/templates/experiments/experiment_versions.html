@@ -29,7 +29,7 @@
 
   <div id="entityversionlist_content">
     <ul>
-    {% for version in experiment.versions.all %}
+    {% for version in experiment.versions.all|dictsortreversed:"created_at" %}
     <li>
       <p class="experiment-{{ version.status }}">
         <strong>
