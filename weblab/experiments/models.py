@@ -5,6 +5,7 @@ from django.db import models
 
 from core.combine import ArchiveReader
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
+from core.visibility import get_joint_visibility
 from entities.models import ModelEntity, ProtocolEntity
 
 
@@ -42,6 +43,10 @@ class Experiment(UserCreatedModelMixin, models.Model):
     @property
     def name(self):
         return '%s / %s' % (self.model.name, self.protocol.name)
+
+    @property
+    def visibility(self):
+        return get_joint_visibility(self.model.visibility, self.protocol.visibility)
 
     @property
     def latest_version(self):

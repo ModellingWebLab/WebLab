@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+  <h1 id="entityname">
+    <small>Experiment: </small><span>{{ experiment.name }}</span>
+  </h1>
+
+  <div class="suppl">
+    <small>Created <time>{{experiment.created_at}}</time> by <em>{{experiment.author.full_name}}</em>.
+      {% comment %}
+      {% if can_delete %}
+        Delete {{ type }}:
+        <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">
+          <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
+              title="delete all versions of this {{type}}"/></a>
+      {% endif %}
+      {% endcomment %}
+      <br>
+      Visibility: {{ experiment.visibility }}
+    </small>
+  </div>
+
+  <h2>Versions</h2>
+
+  {% if perms.experiments.force_new_experiment_version %}
+    <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/>Re-run experiment</a> <span id="rerunExperimentAction"></span>
+  {% endif %}
+
+  <div id="entityversionlist_content">
+    <ul>
+    {% for version in experiment.versions.all %}
+    <li>
+      <p class="experiment-{{ version.status }}">
+        <strong>
+          <a class="entityversionlink" href="{% url 'experiments:version' experiment.id version.id %}">
+            {{ version.name }}
+          </a>
+        </strong>
+        by <em>{{ version.author.full_name }}</em>
+        <!-- TODO: Add delete version link -->
+        <br />
+        <span class="suppl">
+          <small>created </small> <time>{{ version.created_at }}</time>
+          {% with version.files|length as numfiles %}
+          <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
+          {% endwith %}
+        </span><br />
+        <span class="suppl">
+          {{ version.return_text|linebreaksbr }}
+        </span>
+      </p>
+    </li>
+    {% endfor %}
+    </ul>
+
+    <p id='expversioncolorlegend'>
+      Status Legend:
+      <span class="experiment-QUEUED">queued</span>
+      <span class="experiment-RUNNING">running</span>
+      <span class="experiment-INAPPLICABLE">inapplicable</span>
+      <span class="experiment-FAILED">failed</span>
+      <span class="experiment-PARTIAL">partial failure</span>
+      <span class="experiment-SUCCESS">success</span>
+    </p>
+  </div>
+{% endblock %}

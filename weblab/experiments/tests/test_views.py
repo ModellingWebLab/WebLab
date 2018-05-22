@@ -156,6 +156,7 @@ class TestNewExperimentView:
         assert data['newExperiment']['response']
         assert data['newExperiment']['expId'] == experiment_version.experiment.id
 
+        assert ExperimentVersion.objects.count() == 2
         new_version = ExperimentVersion.objects.all().last()
 
         assert new_version.experiment.id == experiment_version.experiment.id
@@ -201,6 +202,17 @@ class TestExperimentCallbackView:
 
 
 @pytest.mark.django_db
+class TestExperimentVersionsView:
+    def test_view_experiment_versions(self, client, experiment_version):
+        response = client.get(
+            ('/experiments/%d/versions' % experiment_version.experiment.pk)
+        )
+
+        assert response.status_code == 200
+        assert response.context['experiment'] == experiment_version.experiment
+
+
+@pytest.mark.django_db
 class TestExperimentVersionView:
     def test_view_experiment_version(self, client, experiment_version):
         response = client.get(
@@ -209,6 +221,7 @@ class TestExperimentVersionView:
         )
 
         assert response.status_code == 200
+        assert response.context['version'] == experiment_version
 
 
 @pytest.mark.django_db

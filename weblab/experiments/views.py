@@ -163,6 +163,13 @@ class ExperimentVersionView(VisibilityMixin, DetailView):
     context_object_name = 'version'
 
 
+class ExperimentVersionListView(VisibilityMixin, DetailView):
+    """Show all versions of an experiment"""
+    model = Experiment
+    context_object_name = 'experiment'
+    template_name = 'experiments/experiment_versions.html'
+
+
 @method_decorator(staff_member_required, name='dispatch')
 class ExperimentSimulateCallbackView(FormMixin, DetailView):
     """

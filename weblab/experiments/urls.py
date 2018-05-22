@@ -29,6 +29,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^(?P<pk>\d+)/versions$',
+        views.ExperimentVersionListView.as_view(),
+        name='versions',
+    ),
+
+    url(
         r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)(?:/(?P<filename>[\w.]+)/(?P<viz>\w+))?$',
         views.ExperimentVersionView.as_view(),
         name='version',

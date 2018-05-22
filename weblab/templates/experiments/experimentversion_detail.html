@@ -32,7 +32,7 @@
        data-version-json-href="{% url 'experiments:version_json' experiment.id version.id %}">
     <div class="closebtn">
       <small>
-        {#<a href="{{ entity|url_versions }}">list all versions</a>#}
+        <a href="{% url 'experiments:versions' experiment.id %}">list all versions</a>
       </small>
     </div>
     <h2 id="entityversionname">
