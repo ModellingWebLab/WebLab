@@ -23,9 +23,11 @@
 
   <h2>Versions</h2>
 
+  {% comment %}
   {% if perms.experiments.force_new_experiment_version %}
     <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/>Re-run experiment</a> <span id="rerunExperimentAction"></span>
   {% endif %}
+  {% comment %}
 
   <div id="entityversionlist_content">
     <ul>

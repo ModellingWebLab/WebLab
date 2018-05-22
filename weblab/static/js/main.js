@@ -5,7 +5,7 @@ require('jquery-ui-browserify');
 var utils = require('./lib/utils.js')
 require('./entitynew.js');
 require('./db.js');
-var experiment =require('./experiment.js');
+var experiment = require('./experiment.js');
 var notifications = require('./lib/notifications.js');
 
 
