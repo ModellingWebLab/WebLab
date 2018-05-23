@@ -34,7 +34,6 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
         permissions = (
             ('create_experiment', 'Can create experiments'),
-            ('force_new_experiment_version', 'Can force new experiment version'),
         )
 
     def __str__(self):

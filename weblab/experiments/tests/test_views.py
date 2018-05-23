@@ -141,7 +141,6 @@ class TestNewExperimentView:
         client, logged_in_user, experiment_version
     ):
         add_permission(logged_in_user, 'create_experiment')
-        add_permission(logged_in_user, 'force_new_experiment_version')
         response = client.post(
             '/experiments/new',
             {

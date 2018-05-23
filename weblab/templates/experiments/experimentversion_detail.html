@@ -46,7 +46,7 @@
         <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
         <span id="exptStatus"></span>
 
-        {% if perms.experiments.force_new_experiment_version %}
+        {% if perms.create_experiment %}
           <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
