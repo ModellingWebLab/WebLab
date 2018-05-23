@@ -75,7 +75,7 @@ class Experiment(UserCreatedModelMixin, models.Model):
             return ''
 
 
-class ExperimentVersion(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
+class ExperimentVersion(UserCreatedModelMixin, models.Model):
     STATUS_QUEUED = "QUEUED"
     STATUS_RUNNING = "RUNNING"
     STATUS_SUCCESS = "SUCCESS"
@@ -108,6 +108,10 @@ class ExperimentVersion(UserCreatedModelMixin, VisibilityModelMixin, models.Mode
     @property
     def name(self):
         return str(self.experiment.versions.filter(pk__lte=self.pk).count())
+
+    @property
+    def visibility(self):
+        return self.experiment.visibility
 
     @property
     def abs_path(self):

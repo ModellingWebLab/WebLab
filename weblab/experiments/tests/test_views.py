@@ -229,7 +229,6 @@ class TestExperimentVersionJsonView:
         version = recipes.experiment_version.make(
             author__full_name='test user',
             status='SUCCESS',
-            visibility='public',
             experiment__model_version='latest',
             experiment__protocol_version='latest',
         )
@@ -348,8 +347,9 @@ class TestEnforcesExperimentVersionVisibility:
         url
     ):
         experiment_version.author = logged_in_user
-        experiment_version.visibility = 'private'
+        experiment_version.experiment.model.visibility = 'private'
         experiment_version.save()
+        experiment_version.experiment.model.save()
         os.mkdir(str(experiment_version.abs_path))
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 
@@ -360,16 +360,17 @@ class TestEnforcesExperimentVersionVisibility:
     def test_private_expt_invisible_to_other_user(self, client, other_user,
                                                   experiment_version, url):
         experiment_version.author = other_user
-        experiment_version.visibility = 'private'
+        experiment_version.experiment.protocol.visibility = 'private'
         experiment_version.save()
+        experiment_version.experiment.protocol.save()
 
         exp_url = url % (experiment_version.experiment.pk, experiment_version.pk)
         response = client.get(exp_url)
         assert response.status_code == 404
 
     def test_private_entity_requires_login_for_anonymous(self, client, experiment_version, url):
-        experiment_version.visibility = 'private'
-        experiment_version.save()
+        experiment_version.experiment.model.visibility = 'private'
+        experiment_version.experiment.model.save()
 
         exp_url = url % (experiment_version.experiment.pk, experiment_version.pk)
         response = client.get(exp_url)

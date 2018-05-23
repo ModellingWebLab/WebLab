@@ -23,5 +23,4 @@ experiment = Recipe(
 experiment_version = Recipe(
     'ExperimentVersion',
     experiment=foreign_key(experiment),
-    visibility='public'
 )

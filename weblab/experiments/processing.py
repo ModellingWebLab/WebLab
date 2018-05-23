@@ -7,8 +7,6 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db import transaction
 
-from core import visibility
-
 from .emails import send_experiment_finished_email
 from .models import Experiment, ExperimentVersion
 
@@ -55,7 +53,6 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     version = ExperimentVersion.objects.create(
         experiment=experiment,
         author=user,
-        visibility=visibility.get_joint_visibility(model.visibility, protocol.visibility),
     )
 
     model_url = reverse(
