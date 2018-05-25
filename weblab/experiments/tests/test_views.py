@@ -204,7 +204,7 @@ class TestExperimentCallbackView:
 class TestExperimentVersionsView:
     def test_view_experiment_versions(self, client, experiment_version):
         response = client.get(
-            ('/experiments/%d/versions' % experiment_version.experiment.pk)
+            ('/experiments/%d/versions/' % experiment_version.experiment.pk)
         )
 
         assert response.status_code == 200

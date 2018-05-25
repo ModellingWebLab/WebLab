@@ -29,7 +29,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^(?P<pk>\d+)/versions$',
+        r'^(?P<pk>\d+)/versions/$',
         views.ExperimentVersionListView.as_view(),
         name='versions',
     ),
