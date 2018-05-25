@@ -5,7 +5,12 @@ from shutil import rmtree
 from django.utils.functional import cached_property
 from git import Actor, Repo
 
-from .manifest import ManifestReader, ManifestWriter
+from core.combine import (
+    MANIFEST_FILENAME,
+    ArchiveWriter,
+    ManifestReader,
+    ManifestWriter,
+)
 
 
 class Repository:
@@ -110,6 +115,19 @@ class Repository:
             tags.setdefault(tag.commit, []).append(tag)
         return tags
 
+    def get_name_for_commit(self, version):
+        """Get a human-friendly display name for the given version
+
+        :param version: Revision specification (sha, branch name, tag etc.)
+            or 'latest' to get latest revision
+        :return: tag for this commit, if any, or version if not
+        """
+        commit = self.get_commit(version)
+        for tag in self._repo.tags:
+            if tag.commit == commit:
+                return tag.name
+        return version
+
     def hard_reset(self):
         """
         Reset the working tree
@@ -153,7 +171,16 @@ class Repository:
 
         :return: absolute path as a string
         """
-        return os.path.join(self._root, 'manifest.xml')
+        return self.full_path(MANIFEST_FILENAME)
+
+    def full_path(self, filename):
+        """
+        Return full filesystem path of file
+
+        :param filename: filename
+        :return: full absolute path of file
+        """
+        return os.path.join(self._root, filename)
 
     def generate_manifest(self, master_filename=None):
         """
@@ -181,7 +208,7 @@ class Repository:
         reader = ManifestReader()
         if ref:
             for file_ in self.files(ref):
-                if file_.name == 'manifest.xml':
+                if file_.name == MANIFEST_FILENAME:
                     reader.read(file_.data_stream)
         else:
             try:
@@ -211,3 +238,13 @@ class Repository:
         :return: iterable of all files in repository
         """
         return self.get_commit(ref).tree.blobs
+
+    def archive(self, ref='HEAD'):
+        """
+        Create a Combine Archive of all files in the repository
+
+        :param ref: A reference to a specific commit, defaults to the latest
+        """
+        return ArchiveWriter().write(
+            (self.full_path(fn), fn) for fn in self.filenames(ref)
+        )

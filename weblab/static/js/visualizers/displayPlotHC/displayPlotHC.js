@@ -1,3 +1,4 @@
+var common = require('../../expt_common.js');
 
 /**
  * Actually create a plot using the HighCharts library.
@@ -72,7 +73,7 @@ function HCPlotter (file, div)
 
 HCPlotter.prototype.getContentsCallback = function (succ)
 {
-    removeChildren (this.div);
+    $(this.div).empty();
 	if (!succ)
 		this.div.appendChild (document.createTextNode ("failed to load the contents"));
 	else
@@ -87,11 +88,11 @@ HCPlotter.prototype.getContentsCallback = function (succ)
             return;
         }
 
-		var csvData = (thisFile.linestyle == "linespoints" || thisFile.linestyle == "points") ? getCSVColumnsNonDownsampled (thisFile) : getCSVColumnsDownsampled (thisFile);
-		var keyVals = getKeyValues(thisFile, csvData.length);
+		var csvData = (thisFile.linestyle == "linespoints" || thisFile.linestyle == "points") ? common.getCSVColumnsNonDownsampled (thisFile) : common.getCSVColumnsDownsampled (thisFile);
+		var keyVals = common.getKeyValues(thisFile, csvData.length);
 		
 		var div = document.createElement("div");
-		var id = "hcplot-" + thisFile.id;
+		var id = "hcplot-" + thisFile.id.replace(/\W/g, '');
 		div.id = id;
 		div.style.width = "780px";
 		div.style.height = "450px";
@@ -168,7 +169,8 @@ HCPlotterComparer.prototype.showContents = function ()
         window.setTimeout(function(){t.showContents()}, 100);
         return;
     }
-	removeChildren (thisDiv);
+
+	$(thisDiv).empty();
 	if (!this.ok)
 		thisDiv.appendChild (document.createTextNode ("failed to load the contents"));
 	else
@@ -214,14 +216,14 @@ HCPlotterComparer.prototype.showContents = function ()
 		{
 			csvDatas.push ({
 					data: (lineStyle == "linespoints" || lineStyle == "points") ?
-							getCSVColumnsNonDownsampled (thisFile.entities[i].entityFileLink) : getCSVColumnsDownsampled (thisFile.entities[i].entityFileLink),
+							common.getCSVColumnsNonDownsampled (thisFile.entities[i].entityFileLink) : common.getCSVColumnsDownsampled (thisFile.entities[i].entityFileLink),
 					entity: thisFile.entities[i].entityLink,
 					file: thisFile.entities[i].entityFileLink
 			});
 		}
 		
 		var div = document.createElement("div");
-		var id = "hcplot-" + thisFile.id;
+		var id = "hcplot-" + thisFile.id.replace(/\W/g, '');
 		div.id = id;
 		div.style.width = "780px";
 		div.style.height = "450px";
@@ -277,7 +279,7 @@ function HCPlot ()
 	
 	var el = document.createElement('script');
 	el.async = false;
-	el.src = contextPath + "/res/js/visualizers/displayPlotHC/js/highcharts.js";//excanvas.min.js";
+	el.src = staticPath + "js/visualizers/displayPlotHC/js/highcharts.js";//excanvas.min.js";
 	el.type = 'text/javascript';
 
 	(document.getElementsByTagName('head')[0]||document.body).appendChild(el);
@@ -313,9 +315,7 @@ HCPlot.prototype.setUpComparision = function (files, div)
 	return new HCPlotterComparer (files, div);
 };
 
-function initHCPlotContent ()
-{
-	visualizers["displayPlotHC"] = new HCPlot ();
+module.exports = {
+  'name': 'displayPlotHC',
+  'get_visualizer': function() { return new HCPlot(); }
 }
-
-document.addEventListener("DOMContentLoaded", initHCPlotContent, false);

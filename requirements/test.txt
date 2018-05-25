@@ -6,15 +6,16 @@
 #
 certifi==2017.7.27.1      # via requests
 chardet==3.0.4            # via requests
-coverage==4.4.1           # via pytest-cov
+codecov==2.0.15
+coverage==4.4.1           # via codecov, pytest-cov
 defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2
 django-braces==1.11.0
-django==1.11.4
+django==1.11.13
 gitdb2==2.0.3             # via gitpython
 gitpython==2.1.7
 idna==2.6                 # via requests
-model-mommy==1.4.0
+model-mommy==1.5.1
 oauthlib==2.0.2           # via requests-oauthlib, social-auth-core
 psycopg2==2.7.3
 py==1.4.34                # via pytest
@@ -25,8 +26,9 @@ pytest==3.2.0
 python3-openid==3.1.0     # via social-auth-core
 pytz==2017.2              # via django
 requests-oauthlib==0.8.0  # via social-auth-core
-requests==2.18.4          # via requests-oauthlib, social-auth-core
-six==1.10.0               # via model-mommy, social-auth-app-django, social-auth-core
+requests==2.18.4          # via codecov, requests-oauthlib, rollbar, social-auth-core
+rollbar==0.13.18
+six==1.10.0               # via model-mommy, rollbar, social-auth-app-django, social-auth-core
 smmap2==2.0.3             # via gitdb2
 social-auth-app-django==1.2.0
 social-auth-core==1.4.0   # via social-auth-app-django

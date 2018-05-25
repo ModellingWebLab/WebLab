@@ -5,25 +5,12 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.functional import cached_property
 
+from core.models import UserCreatedModelMixin, VisibilityModelMixin
+
 from .repository import Repository
 
 
-class Entity(models.Model):
-    VISIBILITY_PRIVATE = 'private'
-    VISIBILITY_RESTRICTED = 'restricted'
-    VISIBILITY_PUBLIC = 'public'
-
-    VISIBILITY_CHOICES = (
-        (VISIBILITY_PRIVATE, 'Private'),
-        (VISIBILITY_RESTRICTED, 'Restricted'),
-        (VISIBILITY_PUBLIC, 'Public')
-    )
-    VISIBILITY_HELP = (
-        'Public = anyone can view\n'
-        'Restricted = logged in users can view\n'
-        'Private = only you can view'
-    )
-
+class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
     ENTITY_TYPE_CHOICES = (
@@ -37,13 +24,6 @@ class Entity(models.Model):
     )
 
     name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
-    creation_date = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL)
-    visibility = models.CharField(
-        max_length=16,
-        choices=VISIBILITY_CHOICES,
-        help_text=VISIBILITY_HELP.replace('\n', '<br />'),
-    )
 
     class Meta:
         ordering = ['name']
@@ -57,15 +37,6 @@ class Entity(models.Model):
 
     def __str__(self):
         return self.name
-
-    def is_deletable_by(self, user):
-        """
-        Is the entity deletable by the given user?
-
-        :param user: User object
-        :return: True if deletable, False otherwise
-        """
-        return user.is_superuser or user == self.author
 
     @cached_property
     def repo(self):

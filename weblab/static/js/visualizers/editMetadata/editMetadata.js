@@ -1,3 +1,4 @@
+var utils = require('../../lib/utils.js');
 
 /**
  * Create the 'visualiser' portion of the plugin, responsible for displaying content within the div for this file.
@@ -169,7 +170,7 @@ metadataEditor.prototype.getContentsCallback = function (succ)
                 });
             });
         });
-        console.log("Found " + keys(this.vars_by_name).length + " variables");
+        console.log("Found " + utils.keys(this.vars_by_name).length + " variables");
         this.modelDiv.append("<h4>Model variables</h4>", var_list);
 
         // Find the existing annotations
@@ -211,7 +212,7 @@ metadataEditor.prototype.addAnnotation = function (v, bindings)
     var self = this,
         s = $('<span></span>', {'class': 'editmeta_annotation editmeta_spaced'}),
         title = 'Use oxmeta:' + bindings.ann.value.fragment + ' to refer to this variable in a protocol.',
-        del = $('<img>', {src: contextPath + '/res/img/delete.png',
+        del = $('<img>', {src: staticPath + 'img/delete.png',
                           alt: 'remove this annotation',
                           title: 'remove this annotation',
                           'class': 'editmeta_spaced pointer'});
@@ -554,11 +555,12 @@ metadataEditor.prototype.show = function ()
     if (!this.loadedModel)
         this.file.getContents(this);
     if (!this.loadedOntology)
-        $.ajax(contextPath + '/res/js/visualizers/editMetadata/oxford-metadata.rdf',
+        $.ajax(staticPath + 'js/visualizers/editMetadata/oxford-metadata.rdf',
                {dataType: 'xml',
                 success: function(d,s,j) {self.ontologyLoaded(d,s,j);}
                });
 	if (!this.loadedFilters)
+    /* TODO
 		$.ajax(contextPath + '/protocol/get_interfaces',
 				{method: 'post',
 				 contentType : 'application/json; charset=utf-8',
@@ -566,6 +568,7 @@ metadataEditor.prototype.show = function ()
 				 dataType: 'json',
 				 success: function(d,s,j) {self.filtersLoaded(d,s,j);}
 				});
+        */
 
     // Initialise some event handlers
     $('#versionname').blur(function() {
@@ -597,7 +600,7 @@ function editMetadata()
     this.icon = "editMetadata.png";
     this.description = "edit the metadata annotations in this model";
 
-    addScript(contextPath + "/res/js/3rd/jquery.rdfquery.core.min-1.0.js");
+    utils.addScript(staticPath + "js/3rd/jquery.rdfquery.core.min-1.0.js");
 };
 
 /**
@@ -639,12 +642,7 @@ editMetadata.prototype.setUp = function (file, div)
     return new metadataEditor(file, div);
 };
 
-/**
- * Add ourselves to the available plugins for 'visualising' entities.
- */
-function initEditMetadata ()
-{
-    visualizers["editMetadata"] = new editMetadata();
+module.exports = {
+  'name': 'editMetadata',
+  'get_visualizer': function() { return new editMetadata(); }
 }
-
-document.addEventListener("DOMContentLoaded", initEditMetadata, false);

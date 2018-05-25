@@ -1,3 +1,6 @@
+var $ = require('jquery');
+var notifications = require('./lib/notifications.js')
+var utils = require('./lib/utils.js')
 
 var pages = [ "matrix" ],//, "search" ],
 	comparisonMode = false,
@@ -13,64 +16,38 @@ var pages = [ "matrix" ],//, "search" ],
  */
 function submitNewExperiment(jsonObject, $td, entry)
 {
-	$td.append("<img src='"+contextPath+"/res/img/loading2-new.gif' alt='loading' />");
 
-    var xmlhttp = null;
-    // !IE
-    if (window.XMLHttpRequest)
-    {
-        xmlhttp = new XMLHttpRequest();
-    }
-    // IE -- microsoft, we really hate you. every single day.
-    else if (window.ActiveXObject)
-    {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
+  $td.append("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
 
-    xmlhttp.open("POST", contextPath + '/newexperiment.html', true);
-    xmlhttp.setRequestHeader("Content-type", "application/json");
+  $.post('/experiments/new', jsonObject, function(data) {
+      var msg = data.newExperiment.responseText;
+      $td.removeClass("experiment-QUEUED experiment-RUNNING experiment-INAPPLICABLE experiment-FAILED experiment-PARTIAL experiment-SUCCESS");
+      $td.unbind("click");
 
-    xmlhttp.onreadystatechange = function()
-    {
-        if (xmlhttp.readyState != 4)
-        	return;
-
-    	var json = JSON.parse(xmlhttp.responseText);
-    	displayNotifications(json);
-
-    	$td.removeClass("experiment-QUEUED experiment-RUNNING experiment-INAPPLICABLE experiment-FAILED experiment-PARTIAL experiment-SUCCESS");
-		$td.unbind("click");
-		$td.contents().remove();
-
-    	if (xmlhttp.status == 200)
-        {
-        	if (json.newExperiment)
-        	{
-        		var msg = json.newExperiment.responseText;
-    			if (json.newExperiment.response)
-    			{
-    				addNotification(msg, "info");
-    				entry.experiment = {name: json.newExperiment.expName,
-    									id: json.newExperiment.expId,
-    									latestResult: "QUEUED"};
-    				var expUrl = contextPath + "/experiment/" + convertForURL(entry.experiment.name) + "/" + entry.experiment.id + "/latest";
-    				$td.addClass("experiment-QUEUED");
-    				setExpListeners($td, entry);
-    			}
-    			else
-    			{
-    				addNotification(msg, "error");
-    				$td.addClass("experiment-INAPPLICABLE");
-    			}
-        	}
-        }
-        else
-        {
-        	addNotification("Server-side error occurred submitting experiment.", "error");
-        	$td.addClass("experiment-INAPPLICABLE");
-        }
-    };
-    xmlhttp.send(JSON.stringify(jsonObject));
+      if (data.newExperiment.response)
+      {
+        notifications.add(msg, "info");
+        entry.experiment = {
+          name: data.newExperiment.expName,
+          id: data.newExperiment.expId,
+          latestResult: "QUEUED",
+          url: data.newExperiment.url,
+        };
+        $td.addClass("experiment-QUEUED");
+        setExpListeners($td, entry);
+      }
+      else
+      {
+        notifications.add(msg, "error");
+        $td.addClass("experiment-FAILED");
+      }
+  }).fail(function() {
+      notifications.add("Server-side error occurred submitting experiment.", "error");
+      $td.addClass("experiment-FAILED");
+  }).always(function(data) {
+    notifications.display(data);
+    $td.contents().remove();
+  });
 }
 
 
@@ -141,7 +118,7 @@ function drawMatrix (matrix)
 	
 	var div = document.getElementById("matrixdiv"),
 		table = document.createElement("table");
-	removeChildren(div);
+	$(div).empty();
 	table.setAttribute("class", "matrixTable");
 	div.appendChild(table);
 
@@ -174,8 +151,7 @@ function drawMatrix (matrix)
 					d2 = document.createElement("div"),
 					a = document.createElement("a"),
 					proto = mat[0][col].protocol;
-				a.href = contextPath + "/protocol/" + convertForURL(proto.name) + "/" + proto.entityId
-					+ "/" + convertForURL(proto.version) + "/" + proto.id;
+        a.href = proto.url;
 				d2.setAttribute("class", "vertical-text");
 				d1.setAttribute("class", "vertical-text__inner");
 				d2.appendChild(d1);
@@ -198,8 +174,7 @@ function drawMatrix (matrix)
 			{
 				var a = document.createElement("a"),
 					model = mat[row][0].model;
-				a.href = contextPath + "/model/" + convertForURL(model.name) + "/" + model.entityId
-					+ "/" + convertForURL(model.version) + "/" + model.id;
+        a.href = model.url;
 				a.appendChild(document.createTextNode(model.name));
 				td.appendChild(a);
 				$td.addClass("matrixTableRow")
@@ -256,8 +231,7 @@ function setExpListeners($td, entry)
 	// Click listener
 	if (entry.experiment)
 	{
-		var expUrl = contextPath + "/experiment/" + convertForURL(entry.experiment.name) + "/" + entry.experiment.id + "/latest";
-		addMatrixClickListener($td, expUrl, entry.experiment.id, entry.experiment.latestResult);
+		addMatrixClickListener($td, entry.experiment.url, entry.experiment.id, entry.experiment.latestResult);
 	}
 	else
 	{
@@ -265,7 +239,9 @@ function setExpListeners($td, entry)
 			submitNewExperiment ({
 				task: "newExperiment",
 				model: entry.model.id,
-				protocol: entry.protocol.id
+        model_version: entry.model.version,
+				protocol: entry.protocol.id,
+        protocol_version: entry.protocol.version,
 			}, $td, entry);
 		});
 	}
@@ -436,46 +412,13 @@ function addMatrixClickListener($td, link, expId, result)
 }
 
 
-function getMatrix (jsonObject, actionIndicator)
-{
-    var xmlhttp = null;
-    // !IE
-    if (window.XMLHttpRequest)
-    {
-        xmlhttp = new XMLHttpRequest();
-    }
-    // IE -- microsoft, we really hate you. every single day.
-    else if (window.ActiveXObject)
-    {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    
-    xmlhttp.open("POST", document.location.href, true);
-    xmlhttp.setRequestHeader("Content-type", "application/json");
-
-    xmlhttp.onreadystatechange = function()
-    {
-        if(xmlhttp.readyState != 4)
-        	return;
-        
-    	var json = JSON.parse(xmlhttp.responseText);
-    	//console.log (json);
-    	displayNotifications (json);
-    	
-        if(xmlhttp.status == 200)
-        {
-        	if (json.getMatrix)
-        	{
-        		drawMatrix (json.getMatrix);
-        	}
-        }
-        else
-        {
-        	actionIndicator.innerHTML = "<img src='"+contextPath+"/res/img/failed.png' alt='error' />Sorry, serverside error occurred.";
-        }
-    };
-    xmlhttp.send(JSON.stringify(jsonObject));
+function getMatrix(div) {
+  // For now just display all experiments.
+  $.getJSON($(div).data('href'), function(data) {
+    drawMatrix(data.getMatrix);
+  });
 }
+
 
 /**
  * Parse the current location URL to determine what part of the matrix to show.
@@ -484,9 +427,10 @@ function getMatrix (jsonObject, actionIndicator)
  * The URL can also be {contextPath}/db/public to show only what anonymous users can view.
  * Returns a JSON object to be passed to getMatrix();
  */
+/*
 function parseLocation ()
 {
-	var base = contextPath + "/db/",
+	var base = staticPath + "/db/",
 		rest = "",
 		ret = { task: "getMatrix" };
 	if (document.location.pathname.substr(0, base.length) == base)
@@ -552,17 +496,19 @@ function parseLocation ()
 		$('#showModeratedExpts').addClass("selected");
 	return ret;
 }
+*/
 
 function prepareMatrix ()
 {
 	var div = document.getElementById("matrixdiv");
 	
 	var loadingImg = document.createElement("img");
-	loadingImg.src = contextPath+"/res/img/loading2-new.gif";
+	loadingImg.src = staticPath + "/img/loading2-new.gif";
 	div.appendChild(loadingImg);
 	div.appendChild(document.createTextNode("Preparing experiment matrix; please be patient."));
 
-	getMatrix(parseLocation(), div);
+  getMatrix(div);
+	//getMatrix(parseLocation(), div);
 	
 	$("#comparisonModeButton").text(comparisonMode ? "Disable" : "Enable")
 	                          .click(function () {
@@ -687,13 +633,9 @@ function registerSwitchPagesListener (btn, page)
 
 function initDb ()
 {
-//	for (var i = 0; i < pages.length; i++)
-//	{
-//		var btn = document.getElementById(pages[i] + "chooser");
-//		registerSwitchPagesListener (btn, pages[i]);
-//	}
-	switchPage (pages[0]);
-	
-	prepareMatrix ();
+  if ($("#matrixdiv").length > 0) {
+    switchPage (pages[0]);
+    prepareMatrix ();
+  }
 }
 document.addEventListener("DOMContentLoaded", initDb, false);

@@ -1,5 +1,11 @@
 @import url("fonts.css");
 @import "colors";
+@import "displayContent/displayContent";
+@import "displayPlotD3/displayPlotD3";
+@import "displayPlotFlot/displayPlotFlot";
+@import "displayPlotHC/displayPlotHC";
+@import "displayTable/displayTable";
+@import "editMetadata/editMetadata";
 
 body {
 	font-family: 'Open Sans', sans-serif;
@@ -179,8 +185,11 @@ a,a:active,a:visited
 	cursor: pointer;
 	/*border-bottom: 1px solid #263e6a;*/
 }
-a,a:active,a:visited,h1,h2,h3,h4,h5,#comparisonModeIndicator {
-	color: #263e6a;
+a,a:active,a:visited,#comparisonModeIndicator {
+	color: #263eca;
+}
+h1,h2,h3,h4,h5 {
+    color: #263e6a;
 }
 h1 a,h2 a,h3 a,h4 a,h5 a
 {

@@ -1,3 +1,5 @@
+var utils = require('../../lib/utils.js');
+var common = require('../../expt_common.js');
 
 function D3Plotter (file, div)
 {
@@ -11,12 +13,12 @@ D3Plotter.prototype.getContentsCallback = function (succ)
 {
 	//console.log ("insert content");
 	//console.log (this.div);
-	removeChildren (this.div);
+	$(this.div).empty();
 	if (!succ)
 		this.div.appendChild (document.createTextNode ("failed to load the contents"));
 	else
 	{
-		var csvData = getCSVColumnsDownsampled (this.file);
+		var csvData = common.getCSVColumnsDownsampled (this.file);
 		
 		var div = document.createElement("div");
 		var id = "D3Plot-" + this.file.id;
@@ -61,11 +63,11 @@ function D3Plot ()
 	this.icon = "displayPlotD3.png";
 	this.description = "display graphs using D3JS library";
 		
-	addLink (contextPath + "/res/js/visualizers/displayPlotD3/d3js-1.0.1/css/d3.css");
+	utils.addLink(staticPath + "js/visualizers/displayPlotD3/d3js-1.0.1/css/d3.css");
 
-	addScript (contextPath + "/res/js/visualizers/displayPlotD3/d3js-1.0.1/script/rx.js");
-	addScript (contextPath + "/res/js/visualizers/displayPlotD3/d3js-1.0.1/script/rx.jQuery.js");
-	addScript (contextPath + "/res/js/visualizers/displayPlotD3/d3js-1.0.1/script/d3-1.0.1.min.js");
+	utils.addScript(staticPath + "js/visualizers/displayPlotD3/d3js-1.0.1/script/rx.js");
+	utils.addScript(staticPath + "js/visualizers/displayPlotD3/d3js-1.0.1/script/rx.jQuery.js");
+	utils.addScript(staticPath + "js/visualizers/displayPlotD3/d3js-1.0.1/script/d3-1.0.1.min.js");
 };
 
 D3Plot.prototype.canRead = function (file)
@@ -93,9 +95,7 @@ D3Plot.prototype.setUp = function (file, div)
 	return new D3Plotter (file, div);
 };
 
-function initD3PlotContent ()
-{
-	visualizers["displayPlotD3"] = new D3Plot ();
+module.exports = {
+  'name': 'displayPlotD3',
+  'get_visualizer': function() { return new D3Plot(); }
 }
-
-document.addEventListener("DOMContentLoaded", initD3PlotContent, false);

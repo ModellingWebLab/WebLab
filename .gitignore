@@ -44,6 +44,7 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
+coverage/
 .tox/
 .coverage
 .coverage.*
@@ -107,8 +108,8 @@ ENV/
 # mypy
 .mypy_cache/
 
-# repo directory
-weblab/repositories/
+# repo and experiment directories
+weblab/data/
 
 # media directory
 weblab/media/

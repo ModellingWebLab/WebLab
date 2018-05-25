@@ -1,3 +1,5 @@
+var utils = require('./lib/utils.js')
+
 /*
  * Routines related to displaying the results of experiments, common to both
  * entity.js and compare.js.
@@ -12,7 +14,7 @@
  * of the compared experiments which has both metadata files) so the sorting has to be cumulative:
  * any one experiment might not list all the possible plots, if it didn't fully complete.
  */
-function sortTable (plots)
+function sortTable (filesTable, plots)
 {
     // What remains to be sorted?
     var to_be_sorted;
@@ -66,7 +68,7 @@ function sortTable (plots)
     // Function to sort each category individually
     var resortPartially = function (arr, css, title, startHidden)
     {
-        var cur = keys(arr).sort();
+        var cur = utils.keys(arr).sort();
 //        console.log("Resorting " + css + " " + cur.length);
         if (cur.length > 0)
         {
@@ -152,7 +154,7 @@ function maxDist (val1, val2, val3)
  */
 function parseCSVContent (file)
 {
-    parseCsvRaw(file);
+    utils.parseCsvRaw(file);
     var csv = file.csv;
 
     file.columns = [];
@@ -304,4 +306,13 @@ function allowPlotExport(filename, datasets, axisLabels)
 		var blob = new Blob(rows, {type: "text/csv;charset=utf-8", endings: "native"});
 		saveAs(blob, filename);
 	}).show();
+}
+
+module.exports = {
+  sortTable: sortTable,
+  getCSVColumnsNonDownsampled: getCSVColumnsNonDownsampled,
+  getCSVColumnsDownsampled: getCSVColumnsDownsampled,
+  getCSV: getCSV,
+  getKeyValues: getKeyValues,
+  allowPlotExport: allowPlotExport
 }

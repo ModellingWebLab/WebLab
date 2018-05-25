@@ -4,24 +4,27 @@ import shutil
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
 from django.contrib.auth.mixins import (
-    AccessMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     UserPassesTestMixin,
 )
 from django.core.urlresolvers import reverse
 from django.http import (
+    Http404,
+    HttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.http.response import Http404
+from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import GitCommandError
+
+from core.visibility import VisibilityMixin
 
 from .forms import (
     EntityTagVersionForm,
@@ -130,43 +133,8 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class EntityVisibilityMixin(AccessMixin, SingleObjectMixin):
-    """
-    View mixin implementing visiblity restrictions on entity.
-
-    Public entities can be seen by all.
-    Restricted entities can be seen only by logged in users.
-    Private entities can be seen only by their owner.
-
-    If an entity is not visible to a logged in user, we generate a 404
-    If an entity is not visible to an anonymous visitor, redirect to login page
-    """
-
-    def dispatch(self, request, *args, **kwargs):
-        # We don't necessarily want 'object not found' to give a 404 response
-        # (if the user is anonymous it makes more sense to login-redirect them)
-        try:
-            obj = self.get_object()
-        except Http404:
-            obj = None
-
-        if self.request.user.is_authenticated():
-            # Logged in user can view all except other people's private stuff
-            if not obj or (
-                obj.author != self.request.user and
-                obj.visibility == Entity.VISIBILITY_PRIVATE
-            ):
-                raise Http404
-        else:
-            # Anonymous user can only see public entities
-            if not obj or (obj.visibility != Entity.VISIBILITY_PUBLIC):
-                return self.handle_no_permission()
-
-        return super().dispatch(request, *args, **kwargs)
-
-
 class ModelEntityVersionView(
-    EntityVisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
+    VisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
 ):
     """
     View a version of a model
@@ -176,7 +144,7 @@ class ModelEntityVersionView(
 
 
 class ProtocolEntityVersionView(
-    EntityVisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
+    VisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
 ):
     """
     View a version of a protocol
@@ -185,7 +153,7 @@ class ProtocolEntityVersionView(
     template_name = 'entities/entity_version.html'
 
 
-class EntityView(EntityVisibilityMixin, SingleObjectMixin, RedirectView):
+class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
     """
     View an entity
 
@@ -290,7 +258,7 @@ class EntityNewVersionView(
         entity = self.object = self.get_object()
 
         git_errors = []
-        files_to_delete = []  # Temp files to be removed if successful
+        files_to_delete = set()  # Temp files to be removed if successful
 
         # Delete files from the index
         deletions = request.POST.getlist('delete_filename[]')
@@ -306,7 +274,7 @@ class EntityNewVersionView(
         for upload in entity.files.filter(upload__in=additions):
             src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
             dest = str(entity.repo_abs_path / upload.original_name)
-            files_to_delete.append(src)
+            files_to_delete.add(src)
             shutil.copy(src, dest)
             try:
                 entity.repo.add_file(dest)
@@ -367,7 +335,7 @@ class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView
     permission_required = 'entities.create_protocol_version'
 
 
-class VersionListView(EntityVisibilityMixin, DetailView):
+class VersionListView(VisibilityMixin, DetailView):
     """
     Base class for listing versions of an entity
     """
@@ -398,6 +366,33 @@ class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
     List versions of a protocol
     """
     pass
+
+
+class EntityArchiveView(VisibilityMixin, SingleObjectMixin, View):
+    """
+    Download a version of an entity as a COMBINE archive
+    """
+    model = Entity
+
+    def get(self, request, *args, **kwargs):
+        entity = self.get_object()
+        ref = self.kwargs['sha']
+        commit = entity.repo.get_commit(ref)
+
+        if not commit:
+            raise Http404
+
+        zipfile_name = os.path.join(
+            get_valid_filename('%s_%s.zip' % (entity.name, commit.hexsha))
+        )
+
+        archive = entity.repo.archive(ref)
+
+        response = HttpResponse(content_type='application/zip')
+        response['Content-Disposition'] = 'attachment; filename=%s' % zipfile_name
+        response.write(archive.read())
+
+        return response
 
 
 class FileUploadView(View):

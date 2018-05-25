@@ -20,9 +20,16 @@ from django.views.generic import TemplateView
 
 urlpatterns = [
     url(r'^$', TemplateView.as_view(template_name='home.html'), name="home"),
+    url(r'^about$', TemplateView.as_view(template_name='about.html'), name="about"),
+    url(r'^contact$', TemplateView.as_view(template_name='contact.html'), name="contact"),
+    url(r'^for_authors$',
+        TemplateView.as_view(template_name='for_authors.html'),
+        name="for_authors"),
+    url(r'^privacy$', TemplateView.as_view(template_name='privacy.html'), name="privacy"),
     url(r'^accounts/', include('accounts.urls', namespace='accounts')),
     url(r'^accounts/', include('django.contrib.auth.urls')),
     url(r'^social/', include('social_django.urls', namespace='social')),
     url(r'^entities/', include('entities.urls', namespace='entities')),
+    url(r'^experiments/', include('experiments.urls', namespace='experiments')),
     url(r'^admin/', admin.site.urls),
 ]

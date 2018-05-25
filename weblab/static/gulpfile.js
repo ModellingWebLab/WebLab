@@ -17,11 +17,13 @@ var config = {
   sass: {
     src: './sass/**/*.scss',
     dest: './css',
+    include: ['./js/visualizers/']
   }
 }
 
 gulp.task('sass', function () {
   return gulp.src(config.sass.src)
+    .pipe(sass({includePaths: config.sass.include}))
     .pipe(sass().on('error', sass.logError))
     .pipe(gulp.dest(config.sass.dest));
 });

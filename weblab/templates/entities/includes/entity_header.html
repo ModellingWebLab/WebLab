@@ -6,7 +6,7 @@
 </h1>
 
 <div class="suppl">
-  <small>Created <time>{{entity.creation_date}}</time> by <em>{{entity.author.full_name}}</em>.
+  <small>Created <time>{{entity.created_at}}</time> by <em>{{entity.author.full_name}}</em>.
     {% can_delete_entity entity as can_delete %}
     {% if can_delete %}
       Delete {{ type }}:

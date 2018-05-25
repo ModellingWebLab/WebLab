@@ -7,12 +7,13 @@
 certifi==2017.7.27.1      # via requests
 chardet==3.0.4            # via requests
 click==6.7                # via pip-tools
-coverage==4.4.1           # via pytest-cov
+codecov==2.0.15
+coverage==4.4.1           # via codecov, pytest-cov
 decorator==4.1.2          # via ipython, traitlets
 defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2
 django-braces==1.11.0
-django==1.11.4
+django==1.11.13
 first==2.0.1              # via pip-tools
 flake8==3.4.1
 gitdb2==2.0.3             # via gitpython
@@ -24,7 +25,7 @@ ipython==6.1.0            # via ipdb
 isort==4.2.15
 jedi==0.10.2              # via ipython
 mccabe==0.6.1             # via flake8
-model-mommy==1.4.0
+model-mommy==1.5.1
 oauthlib==2.0.2           # via requests-oauthlib, social-auth-core
 pexpect==4.2.1            # via ipython
 pickleshare==0.7.4        # via ipython
@@ -43,9 +44,10 @@ pytest==3.2.0
 python3-openid==3.1.0     # via social-auth-core
 pytz==2017.2              # via django
 requests-oauthlib==0.8.0  # via social-auth-core
-requests==2.18.4          # via requests-oauthlib, social-auth-core
+requests==2.18.4          # via codecov, requests-oauthlib, rollbar, social-auth-core
+rollbar==0.13.18
 simplegeneric==0.8.1      # via ipython
-six==1.10.0               # via model-mommy, pip-tools, prompt-toolkit, social-auth-app-django, social-auth-core, traitlets
+six==1.10.0               # via model-mommy, pip-tools, prompt-toolkit, rollbar, social-auth-app-django, social-auth-core, traitlets
 smmap2==2.0.3             # via gitdb2
 social-auth-app-django==1.2.0
 social-auth-core==1.4.0   # via social-auth-app-django

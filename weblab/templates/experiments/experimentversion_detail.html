@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block body_id %}experiment-version{% endblock %}
+
+{% block content %}
+{% with version.experiment as experiment %}
+
+<h1 id="entityname">
+  <small>Experiment: </small><span>{{ experiment.name }}</span>
+</h1>
+
+  <div class="suppl">
+    <small>Created <time>{{experiment.created_at}}</time> by <em>{{experiment.author.full_name}}</em>.
+      {% comment %}
+      {% if can_delete %}
+        Delete {{ type }}:
+        <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">
+          <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
+              title="delete all versions of this {{type}}"/></a>
+      {% endif %}
+      {% endcomment %}
+      <br>
+      Visibility: {{ version.visibility }}
+    </small>
+  </div>
+
+  <div id="entitydetails"></div>
+
+  <div id="entityversion"
+       data-version-href="{% url 'experiments:version' experiment.id version.id %}"
+       data-version-json-href="{% url 'experiments:version_json' experiment.id version.id %}">
+    <div class="closebtn">
+      <small>
+        <a href="{% url 'experiments:versions' experiment.id %}">list all versions</a>
+      </small>
+    </div>
+    <h2 id="entityversionname">
+      <small>Version:</small> {{ version.name }}
+    </h2>
+    <div class="suppl">
+      <small>
+        Created <time id="entityversiontime">{{ version.created_at }}</time>
+        by <em id="entityversionauthor">{{ version.author.full_name }}</em>.
+        Visibility: {{ version.visibility }}
+        <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
+        <span id="exptStatus"></span>
+
+        {% if perms.create_experiment %}
+          <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        {% endif %}
+
+        <br/>Corresponding model:
+        <a href="{% url 'entities:model_version' experiment.model.pk experiment.model_version %}">{{ experiment.model.name }} @ {{ experiment.nice_model_version }}</a>
+          &amp; protocol:
+          <a href="{% url 'entities:protocol_version' experiment.protocol.pk experiment.protocol_version %}">{{ experiment.protocol.name }} @ {{ experiment.nice_protocol_version }}</a>
+        </c:if>
+
+      </small>
+    </div>
+
+    <div id="running-experiment-note" style="display:none;">
+      <p>
+        This experiment has not yet finished running, and so no result files are available.
+        You can refresh the page to see if it has completed.
+      </p>
+    </div>
+
+    <div id="experiment-files-switcher">
+      <button style="float:left;" id="experiment-files-switcher-files" title="View files associated with this ${entity.type}">Files</button>
+      <button style="margin-left:5px; float:left;" id="experiment-files-switcher-exp" title="View &amp; compare experiments using this ${entity.type}">Compare ${otherType}s</button>
+      <br/>
+    </div>
+
+
+    <div id="entityversiondetails">
+      <div id="entityversionfiledetails">
+          <div class="closebtn"><small>
+              <a id="exportPlot" style="display: none;">export plot data |</a>
+          <a id="zoomFile">zoom |</a>
+              <a id="entityversionfileclose">&otimes; close</a>
+          </small></div>
+          <h3 id="entityversionfilename"></h3>
+          <div class="suppl"><small>Created <time id="entityversionfiletime"></time> by
+              <em id="entityversionfileauthor"></em>.</small></div>
+          <div id="entityversionfiledisplay"></div>
+      </div>
+
+        <div id="entityversionfiles">
+          <h3>Files attached to this version</h3>
+          <p id="parse_status"></p>
+          <table id="entityversionfilestable">
+          </table>
+          <a id='downloadArchive' title="Download a 'combine' format archive of all the files">
+            <img src="{% static 'img/document-save-5.png' %}" alt="Download"
+                title="Download a 'combine' format archive of all the files"/>
+                Download archive of all files
+          </a>
+          <div id="entityversionfilesreadme"></div>
+      </div>
+    </div>
+  </div>
+
+{% endwith %}
+{% endblock %}

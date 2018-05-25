@@ -51,8 +51,9 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    'accounts.apps.AccountsConfig',
-    'entities.apps.EntitiesConfig',
+    'accounts',
+    'entities',
+    'experiments',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -66,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -85,6 +87,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'social_django.context_processors.backends',
                 'social_django.context_processors.login_redirect',
+                'core.context_processors.common',
             ],
         },
     },
@@ -146,7 +149,7 @@ LOGOUT_REDIRECT_URL = '/'
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en-gb'
 
 TIME_ZONE = 'UTC'
 
@@ -195,9 +198,21 @@ SOCIAL_AUTH_PIPELINE = (
 
 # Root URL
 # This is for emails which may be generated with no request object
-# available. Sites framework unforutnately doesn't quite cut it as it doesn't
+# available. Sites framework unfortunately doesn't quite cut it as it doesn't
 # give us the scheme.
 # Trailing slashes should be removed
 BASE_URL = os.environ.get('WEBLAB_BASE_URL', 'http://127.0.0.1:8000')
 
-REPO_BASE = BASE_DIR / 'repositories'
+REPO_BASE = BASE_DIR / 'data/repositories'
+EXPERIMENT_BASE = BASE_DIR / 'data/experiments'
+
+# URL of Chaste backend
+CHASTE_URL = os.environ.get('CHASTE_URL', 'http://localhost:5000/chaste')
+
+# Password for Chaste backend
+CHASTE_PASSWORD = os.environ.get('CHASTE_PASSWORD', 'YOUR_BACKEND_PASSWORD')
+
+# Callback base URL
+# This allows us to provide the Chaste backend with URLs that it can access
+# (it may not be able to do so via the user-accessible URL)
+CALLBACK_BASE_URL = os.environ.get('CALLBACK_BASE_URL', 'http://localhost:8000')

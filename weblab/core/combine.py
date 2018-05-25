@@ -1,12 +1,15 @@
 import mimetypes
-from pathlib import Path
 import xml.etree.ElementTree as ET
+import zipfile
+from io import BytesIO
+from pathlib import Path
 
 
 COMBINE_NS = 'http://identifiers.org/combine.specifications/'
 MANIFEST_NS = '%somex-manifest' % COMBINE_NS
 MIME_NS = 'http://purl.org/NET/mediatypes/'
 
+MANIFEST_FILENAME = 'manifest.xml'
 
 # Spec says to prefer identifiers.org URI over media types.
 # (http://co.mbine.org/specifications/omex.version-1.pdf)
@@ -104,6 +107,17 @@ class ManifestWriter:
         return self.xml_doc.write(path, encoding='UTF-8', xml_declaration=True)
 
 
+class ArchiveFile:
+    """
+    A file within a COMBINE archive
+    """
+    def __init__(self, name, fmt, is_master=False, size=None):
+        self.name = name
+        self.fmt = fmt
+        self.is_master = is_master
+        self.size = size
+
+
 class ManifestReader:
     """
     Reader for COMBINE manifest file
@@ -131,3 +145,77 @@ class ManifestReader:
             for child in self._root
             if child.attrib['master'] == 'true'
         ), None)
+
+    @property
+    def files(self):
+        """
+        List of files in manifest
+
+        :return: iterable of ArchiveFile objects, without size information
+        """
+        return [
+            ArchiveFile(
+                name=child.attrib['location'].lstrip('/'),
+                fmt=child.attrib['format'],
+                is_master=child.attrib.get('master') == 'true',
+            )
+            for child in self._root
+        ]
+
+
+class ArchiveReader:
+    """
+    Read in a COMBINE archive
+    """
+    def __init__(self, archive):
+        """
+        Create an archive reader
+
+        @param archive - filename or file-like object of archive
+        """
+        self._zip_archive = zipfile.ZipFile(archive)
+
+    @property
+    def files(self):
+        """
+        List of files in the archive
+
+        :return: iterable of ArchiveFile objects, augmented with size information
+        """
+        with self._zip_archive as archive:
+            reader = ManifestReader()
+            reader.read(archive.open(MANIFEST_FILENAME))
+            files = reader.files
+            for f in files:
+                f.size = archive.getinfo(f.name).file_size
+            return files
+
+    def open_file(self, name):
+        with self._zip_archive as archive:
+            return archive.open(name)
+
+
+class ArchiveWriter:
+    """
+    Write a COMBINE archive
+    """
+    def __init__(self):
+        self._memfile = BytesIO()
+        self._zip_archive = zipfile.ZipFile(self._memfile, 'w', zipfile.ZIP_DEFLATED)
+
+    def write(self, filenames):
+        """
+        Write files to a combine archive
+
+        Assumes manifest already exists in the file collection
+
+        @param filenames Iterable of (full_path, filename) pairs
+            where full_path is the full path to the original file
+            and filename is the filename/path to use in the zipfile
+        @return BytesIO object to which archive data has been written
+        """
+        for full_path, filename in filenames:
+            self._zip_archive.write(full_path, filename)
+        self._zip_archive.close()
+        self._memfile.seek(0)
+        return self._memfile

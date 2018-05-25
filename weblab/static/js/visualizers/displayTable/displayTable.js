@@ -1,3 +1,5 @@
+var common = require('../../expt_common.js');
+
 
 function contentTabularizer (file, div)
 {
@@ -11,12 +13,12 @@ contentTabularizer.prototype.getContentsCallback = function (succ)
 {
 	//console.log ("insert content");
 	//console.log (this.div);
-	removeChildren (this.div);
+	$(this.div).empty();
 	if (!succ)
 		this.div.appendChild (document.createTextNode ("failed to load the contents"));
 	else
 	{
-		var data = getCSV (this.file);
+		var data = common.getCSV (this.file);
 		
 		var table = document.createElement("table");
 		table.setAttribute("class", "displayContentsTable");
@@ -82,9 +84,7 @@ tabularizeContent.prototype.setUp = function (file, div)
 	return new contentTabularizer (file, div);
 };
 
-function initTabularizeContent ()
-{
-	visualizers["displayTable"] = new tabularizeContent ();
+module.exports = {
+  'name': 'displayTable',
+  'get_visualizer': function() { return new tabularizeContent(); }
 }
-
-document.addEventListener("DOMContentLoaded", initTabularizeContent, false);

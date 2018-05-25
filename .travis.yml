@@ -1,7 +1,6 @@
 language: python
 cache: pip
 python:
-  - "3.4"
   - "3.5"
   - "3.6"
 services:
@@ -16,4 +15,6 @@ before_script:
 install:
   pip install -r requirements/test.txt
 script:
-  pytest weblab
+  pytest --cov=weblab --cov-config=weblab/.coveragerc weblab
+after_success:
+  - codecov

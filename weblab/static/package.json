@@ -6,8 +6,10 @@
   "dependencies": {
     "blueimp-file-upload": "^9.19.1",
     "gulp-util": "^3.0.8",
+    "jquery-migrate": "^3.0.1",
     "jquery-ui-browserify": "^1.11.0-pre-seelio",
     "lodash.assign": "^4.2.0",
+    "showdown": "^1.8.6",
     "xdate": "^0.8.2"
   },
   "devDependencies": {

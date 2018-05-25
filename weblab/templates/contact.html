@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+  <h1>Contact</h1>
+  <p>
+    Please direct queries about this website to <a href="mailto:j.p.cooper@ucl.ac.uk?subject=Cardiac%20Web%20Lab&cc=Gary.Mirams@nottingham.ac.uk">Jonathan Cooper</a>.
+  </p>
+  <p>
+    The Web Lab concept was invented by <a href="https://www.nottingham.ac.uk/mathematics/people/gary.mirams">Gary Mirams</a> and <a href="http://iris.ucl.ac.uk/iris/browse/profile?upi=JCOOP83">Jonathan Cooper</a>.
+  </p>
+
+  <p>
+   <img alt="Team - Gary Mirams" style="float:left;margin:5px 10px 5px 0;" src="{% static 'img/team/gary.jpg' %}" width="150">
+   <a href="https://www.nottingham.ac.uk/mathematics/people/gary.mirams">Gary Mirams</a> is a mathematical modeller who started working on cardiac electrophysiology in 2009; and has been trying to work out how best to select, re-use and refine/develop cardiac models since then. He has written a few <a href="http://mirams.wordpress.com/">blog entries</a> about the motivation for this website.
+  </p>
+
+  <p style="clear:left;">
+    <img alt="Team - Jonathan Cooper" style="float:left;margin:5px 10px 5px 0;" src="{% static 'img/team/jonathan.jpg' %}" width="150"/>
+    <a href="http://iris.ucl.ac.uk/iris/browse/profile?upi=JCOOP83">Jonathan Cooper</a> is interested in using software engineering and computer science techniques to improve the lives of research scientists. Much of his work has revolved around the development and use of "domain specific languages" for describing and working with models of biological systems.
+  </p>
+
+  <p style="clear:left;">
+    <img alt="Team - Michael Clerx" style="float:left;margin:5px 10px 5px 0;" src="{% static 'img/team/michael.jpg' %}" width="150"/>
+    <a href="https://www.cs.ox.ac.uk/people/michael.clerx/">Michael Clerx</a> is interested in the mechanisms underlying cardiac (cellular) electrophysiology and how the interaction of dynamic processes at different scales (gene, ion channel, cell, tissue) gives rise to organised behaviour at the level of the heart. Now that the degree of variability in cardiac physiology is becoming ever clearer, he wants to know how to measure it, what methods are needed to analyse such variable data, and how to incorporate it into models and simulations.
+  </p>
+
+{% endblock content %}

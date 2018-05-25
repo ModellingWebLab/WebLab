@@ -1,5 +1,6 @@
 import os.path
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -59,6 +60,19 @@ class TestRepository:
         repo.tag('v1')
 
         assert repo.tag_dict[commit][0].name == 'v1'
+
+    def test_name_for_commit(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        commit = repo.commit('commit_message', author)
+
+        assert repo.get_name_for_commit(commit.hexsha) == commit.hexsha
+        assert repo.get_name_for_commit('latest') == 'latest'
+
+        repo.tag('v1')
+
+        assert repo.get_name_for_commit(commit.hexsha) == 'v1'
+        assert repo.get_name_for_commit('v1') == 'v1'
+        assert repo.get_name_for_commit('latest') == 'v1'
 
     def test_has_changes(self, repo, repo_file, author):
         assert not repo.has_changes
@@ -122,3 +136,17 @@ class TestRepository:
         repo.generate_manifest()
 
         assert repo.master_filename() is None
+
+    def test_files(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        repo.commit('commit 1', author)
+        repo.generate_manifest()
+
+        assert list(repo.filenames()) == ['file.cellml']
+
+    def test_archive(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        repo.commit('commit 1', author)
+        repo.generate_manifest()
+
+        assert zipfile.ZipFile(repo.archive()).namelist() == ['file.cellml']

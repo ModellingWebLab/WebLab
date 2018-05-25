@@ -1,3 +1,5 @@
+var utils = require('../../lib/utils.js');
+
 highlightTypes = 
 	{
 		"xml":
@@ -59,7 +61,7 @@ function contentDumper (file, div)
 
 contentDumper.prototype.getContentsCallback = function (succ)
 {
-	removeChildren (this.div);
+	$(this.div).empty();
 	if (!succ)
 		this.div.appendChild (document.createTextNode ("failed to load the contents"));
 	else
@@ -104,12 +106,12 @@ contentDumper.prototype.show = function ()
 
 function displayContent ()
 {
-	this.name = "displayContent";
-	this.icon = "displayContent.png";
-	this.description = "display raw contents of this file";
-	
-	addScript (contextPath + "/res/js/visualizers/displayContent/highlight.js/highlight.pack.js");
-	addLink (contextPath + "/res/js/visualizers/displayContent/highlight.js/styles/tomorrow.css");
+  this.name = "displayContent";
+  this.icon = "displayContent.png";
+  this.description = "display raw contents of this file";
+
+  utils.addScript (staticPath + "js/visualizers/displayContent/highlight.js/highlight.pack.js");
+  utils.addLink (staticPath + "js/visualizers/displayContent/highlight.js/styles/tomorrow.css");
 };
 
 displayContent.prototype.canRead = function (file)
@@ -137,9 +139,7 @@ displayContent.prototype.setUp = function (file, div)
 	return new contentDumper (file, div);
 };
 
-function initDisplayContent ()
-{
-	visualizers["displayContent"] = new displayContent ();
+module.exports = {
+  'name': 'displayContent',
+  'get_visualizer': function() { return new displayContent(); }
 }
-
-document.addEventListener("DOMContentLoaded", initDisplayContent, false);
