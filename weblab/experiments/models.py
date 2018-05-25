@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 
 from core.combine import ArchiveReader
-from core.models import UserCreatedModelMixin, VisibilityModelMixin
+from core.models import UserCreatedModelMixin
 from core.visibility import get_joint_visibility
 from entities.models import ModelEntity, ProtocolEntity
 
@@ -105,9 +105,15 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
     def __str__(self):
         return '%s at %s: (%s)' % (self.experiment, self.created_at, self.status)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['created_at'])
+        ]
+
     @property
     def name(self):
-        return str(self.experiment.versions.filter(pk__lte=self.pk).count())
+        return str(self.experiment.versions.filter(
+            created_at__lte=self.created_at).count())
 
     @property
     def visibility(self):
