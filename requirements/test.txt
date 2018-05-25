@@ -11,7 +11,7 @@ coverage==4.4.1           # via codecov, pytest-cov
 defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2
 django-braces==1.11.0
-django==1.11.4
+django==1.11.13
 gitdb2==2.0.3             # via gitpython
 gitpython==2.1.7
 idna==2.6                 # via requests
