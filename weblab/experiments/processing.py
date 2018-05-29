@@ -86,7 +86,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
 
     res = response.content.decode().strip()
     logger.debug('Response from chaste backend: %s' % res)
-    signature = str(version.signature)
+    signature = version.signature
 
     if not res.startswith(signature):
         logger.error('Chaste backend answered with something unexpected: %s' % res)

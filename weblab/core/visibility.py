@@ -61,6 +61,10 @@ class VisibilityMixin(AccessMixin):
     If an object is not visible to an anonymous visitor, redirect to login page
     """
 
+    def is_visible_to_anonymous(self, obj):
+        # Anonymous user can only see public objects
+        return obj and obj.visibility == Visibility.PUBLIC
+
     def dispatch(self, request, *args, **kwargs):
         # We don't necessarily want 'object not found' to give a 404 response
         # (if the user is anonymous it makes more sense to login-redirect them)
@@ -76,9 +80,7 @@ class VisibilityMixin(AccessMixin):
                 obj.visibility == Visibility.PRIVATE
             ):
                 raise Http404
-        else:
-            # Anonymous user can only see public objects
-            if not obj or (obj.visibility != Visibility.PUBLIC):
-                return self.handle_no_permission()
+        elif not self.is_visible_to_anonymous(obj):
+            return self.handle_no_permission()
 
         return super().dispatch(request, *args, **kwargs)

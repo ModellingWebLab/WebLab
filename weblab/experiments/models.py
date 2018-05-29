@@ -130,7 +130,7 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
     @property
     def signature(self):
         running = self.running.first()
-        return running.id if running else ''
+        return str(running.id) if running else ''
 
     @property
     def is_running(self):
