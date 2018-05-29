@@ -63,11 +63,13 @@ def protocol_with_version():
 
 @pytest.fixture
 def queued_experiment(model_with_version, protocol_with_version):
-    return recipes.experiment_version.make(
+    version = recipes.experiment_version.make(
         status='QUEUED',
         experiment__model=model_with_version,
         experiment__protocol=protocol_with_version,
     )
+    recipes.running_experiment.make(experiment_version=version)
+    return version
 
 
 @pytest.fixture

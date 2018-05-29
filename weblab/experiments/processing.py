@@ -8,7 +8,7 @@ from django.core.urlresolvers import reverse
 from django.db import transaction
 
 from .emails import send_experiment_finished_email
-from .models import Experiment, ExperimentVersion
+from .models import Experiment, ExperimentVersion, RunningExperiment
 
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,8 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         author=user,
     )
 
+    RunningExperiment.objects.create(experiment_version=version)
+
     model_url = reverse(
         'entities:entity_archive',
         args=['model', model.pk, model_version]
@@ -84,12 +86,13 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
 
     res = response.content.decode().strip()
     logger.debug('Response from chaste backend: %s' % res)
+    signature = str(version.signature)
 
-    if not res.startswith(version.signature):
+    if not res.startswith(signature):
         logger.error('Chaste backend answered with something unexpected: %s' % res)
         raise ProcessingException(res)
 
-    status = res[len(version.signature):].strip()
+    status = res[len(signature):].strip()
 
     if status.startswith('succ'):
         version.task_id = status[4:].strip()
@@ -111,8 +114,9 @@ def process_callback(data, files):
         return {'error': 'missing signature'}
 
     try:
-        exp = ExperimentVersion.objects.get(id=signature)
-    except ExperimentVersion.DoesNotExist:
+        run = RunningExperiment.objects.get(id=signature)
+        exp = run.experiment_version
+    except RunningExperiment.DoesNotExist:
         return {'error': 'invalid signature'}
 
     task_id = data.get('taskid')
@@ -135,6 +139,8 @@ def process_callback(data, files):
     exp.save()
 
     if exp.is_finished:
+        run.delete()
+
         send_experiment_finished_email(exp)
 
         if not files.get('experiment'):

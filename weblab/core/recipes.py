@@ -20,7 +20,7 @@ experiment = Recipe(
     model=foreign_key(model),
     protocol=foreign_key(protocol)
 )
-experiment_version = Recipe(
-    'ExperimentVersion',
-    experiment=foreign_key(experiment),
-)
+
+running_experiment = Recipe('RunningExperiment')
+
+experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experiment))

@@ -1,3 +1,4 @@
+import uuid
 from pathlib import Path
 
 from django.conf import settings
@@ -129,7 +130,8 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
 
     @property
     def signature(self):
-        return str(self.id)
+        running = self.running.first()
+        return running.id if running else ''
 
     @property
     def is_running(self):
@@ -160,3 +162,12 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
 
     def open_file(self, name):
         return ArchiveReader(str(self.archive_path)).open_file(name)
+
+
+class RunningExperiment(models.Model):
+    """
+    A current run of an ExperimentVersion
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    experiment_version = models.ForeignKey(ExperimentVersion, related_name='running')

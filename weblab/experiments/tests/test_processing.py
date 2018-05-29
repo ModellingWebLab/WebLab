@@ -1,3 +1,4 @@
+import uuid
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -65,6 +66,20 @@ class TestSubmitExperiment:
 
         assert version.experiment == experiment
 
+    def test_creates_running_experiment_record(self, mock_post,
+                                               user, model_with_version, protocol_with_version):
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
+
+        recipes.experiment.make(model=model, model_version=model_version,
+                                protocol=protocol, protocol_version=protocol_version)
+
+        version = submit_experiment(model, model_version, protocol, protocol_version, user)
+
+        assert version.running.count() == 1
+
     def test_submits_to_webservice(self, mock_post,
                                    user, model_with_version, protocol_with_version):
         model = model_with_version
@@ -84,7 +99,7 @@ class TestSubmitExperiment:
         assert mock_post.call_args[0][1] == {
             'model': settings.CALLBACK_BASE_URL + model_url,
             'protocol': settings.CALLBACK_BASE_URL + protocol_url,
-            'signature': version.signature,
+            'signature': version.running.first().id,
             'callBack': settings.CALLBACK_BASE_URL + '/experiments/callback',
             'user': 'Test User',
             'isAdmin': False,
@@ -150,7 +165,7 @@ class TestProcessCallback:
 
     def test_returns_error_on_invalid_signature(self):
         result = process_callback({
-            'signature': 1,
+            'signature': uuid.uuid4(),
             'returntype': 'success',
         }, {})
         assert result['error'] == 'invalid signature'
@@ -226,6 +241,26 @@ class TestProcessCallback:
         queued_experiment.refresh_from_db()
         assert queued_experiment.status == stored_status
         assert queued_experiment.return_text == 'finished'
+
+    @pytest.mark.parametrize('returned_status', [
+        'success',
+        'partial',
+        'failed',
+    ])
+    def test_deletes_running_record_when_finished(self, returned_status,
+                                                  archive_upload, queued_experiment):
+        assert queued_experiment.running.count() == 1
+
+        result = process_callback({
+            'signature': queued_experiment.signature,
+            'returntype': returned_status,
+        }, {
+            'experiment': archive_upload,
+        })
+
+        assert result == {'experiment': 'ok'}
+
+        assert queued_experiment.running.count() == 0
 
     def test_records_task_id(self, queued_experiment):
         process_callback({

@@ -62,8 +62,8 @@ class TestExperimentVersion:
         assert str(version.archive_path) == '%s/2/results.omex' % fake_experiment_path
 
     def test_signature(self):
-        version = recipes.experiment_version.make(id=2)
-        assert version.signature == '2'
+        running = recipes.running_experiment.make()
+        assert running.experiment_version.signature == running.id
 
     @pytest.mark.parametrize('status, is_running', [
         ('QUEUED', False),
