@@ -55,7 +55,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         author=user,
     )
 
-    RunningExperiment.objects.create(experiment_version=version)
+    run = RunningExperiment.objects.create(experiment_version=version)
 
     model_url = reverse(
         'entities:entity_archive',
@@ -95,7 +95,8 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     status = res[len(signature):].strip()
 
     if status.startswith('succ'):
-        version.task_id = status[4:].strip()
+        run.task_id = status[4:].strip()
+        run.save()
     elif status == 'inapplicable':
         version.status = ExperimentVersion.STATUS_INAPPLICABLE
     else:
@@ -121,7 +122,8 @@ def process_callback(data, files):
 
     task_id = data.get('taskid')
     if task_id:
-        exp.task_id = task_id
+        run.task_id = task_id
+        run.save()
 
     if 'returntype' not in data:
         return {'error': 'missing returntype'}

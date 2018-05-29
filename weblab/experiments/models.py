@@ -101,7 +101,6 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
         default=STATUS_QUEUED,
     )
     return_text = models.TextField(blank=True)
-    task_id = models.CharField(max_length=50, blank=True)
 
     def __str__(self):
         return '%s at %s: (%s)' % (self.experiment, self.created_at, self.status)
@@ -171,3 +170,5 @@ class RunningExperiment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     experiment_version = models.ForeignKey(ExperimentVersion, related_name='running')
+
+    task_id = models.CharField(max_length=50)

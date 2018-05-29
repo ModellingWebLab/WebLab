@@ -107,7 +107,7 @@ class TestSubmitExperiment:
         }
 
         assert version.status == ExperimentVersion.STATUS_QUEUED
-        assert version.task_id == 'celery-task-id'
+        assert version.running.first().task_id == 'celery-task-id'
 
     def test_raises_exception_on_webservice_error(self, mock_post,
                                                   user, model_with_version, protocol_with_version):
@@ -270,7 +270,7 @@ class TestProcessCallback:
         }, {})
 
         queued_experiment.refresh_from_db()
-        assert queued_experiment.task_id == 'task-id-1'
+        assert queued_experiment.running.first().task_id == 'task-id-1'
 
     def test_stores_archive(self, queued_experiment, archive_upload):
         result = process_callback({
