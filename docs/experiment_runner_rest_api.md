@@ -14,6 +14,12 @@ The message may include a Python traceback in rare cases, so some formatting is 
 
 We could easily change all responses to be consistently JSON formatted data, or anything else sensible.
 
+## Callback authentication
+
+The web service needs to be able to GET private entities.
+To support this, the `signature` passed to it by the Django app can also be used as an authentication token in GET requests.
+When making GET requests, the web service will supply the HTTP header `Authorization: Token <signature>`, where `<signature>` is replaced by the supplied signature.
+
 ## Get protocol interface (and check syntax)
 
 Fields:
