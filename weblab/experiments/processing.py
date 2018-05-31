@@ -5,7 +5,6 @@ from urllib.parse import urljoin
 import requests
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.db import transaction
 
 from .emails import send_experiment_finished_email
 from .models import Experiment, ExperimentVersion, RunningExperiment
@@ -53,10 +52,8 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         experiment=experiment,
         author=user,
     )
-    version.save()
 
     run = RunningExperiment.objects.create(experiment_version=version)
-    run.save()
     signature = version.signature
 
     model_url = reverse(
