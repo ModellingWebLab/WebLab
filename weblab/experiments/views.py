@@ -170,6 +170,19 @@ class ExperimentVersionListView(VisibilityMixin, DetailView):
     template_name = 'experiments/experiment_versions.html'
 
 
+class ExperimentComparisonView(TemplateView):
+    template_name = 'experiments/experimentversion_compare.html'
+
+    def get_context_data(self, **kwargs):
+        versions = ExperimentVersion.objects.filter(
+            pk__in=map(int, self.kwargs['version_pks'][1:].split('/'))
+        )
+        kwargs.update({
+            'experiment_versions': versions,
+        })
+        return super().get_context_data(**kwargs)
+
+
 @method_decorator(staff_member_required, name='dispatch')
 class ExperimentSimulateCallbackView(FormMixin, DetailView):
     """

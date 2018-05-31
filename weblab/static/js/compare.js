@@ -554,10 +554,13 @@ function getInfos (jsonObject)
 function parseUrl (event)
 {
 	var entityIds = null;
-	var t = document.location.href.split ("/");
+  var parts = document.location.pathname.split("/")
+	//var t = document.location.href.split ("/");
 	//console.log (t);
-	for (var i = 0; i < t.length; i++)
+
+	for (var i = 0; i < parts.length; i++)
 	{
+    /*
 		if ("/" + t[i] == contextPath && t[i+2] == "m")
 		{
 			basicurl = t.slice (0, i + 3).join ("/") + "/";
@@ -570,12 +573,12 @@ function parseUrl (event)
 			entityType = "protocol";
 			entityIds = t.slice (i + 3);
 		}
-		if ("/" + t[i] == contextPath && t[i+2] == "e")
-		{
-			basicurl = t.slice (0, i + 3).join ("/") + "/";
-			entityType = "experiment";
-			entityIds = t.slice (i + 3);
-		}
+    */
+    if (parts[i] == 'experiments') {
+      basicurl = parts.slice(0, i+1).join('/') + '/';
+      entityType = 'experiment';
+      entityIds = parts.slice(i+2);
+    }
 	}
 	
 	if (!entityIds)
@@ -661,4 +664,10 @@ function initCompare ()
 }
 
 
-document.addEventListener("DOMContentLoaded", initCompare, false);
+$(document).ready(function() {
+    if ($("#entitiesToCompare").length > 0) {
+      initCompare();
+    }
+});
+
+//document.addEventListener("DOMContentLoaded", initCompare, false);
