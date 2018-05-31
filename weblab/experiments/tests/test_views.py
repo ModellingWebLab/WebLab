@@ -250,6 +250,35 @@ class TestExperimentComparisonView:
 
 
 @pytest.mark.django_db
+class TestExperimentComparisonJsonView:
+    def test_compare_experiments(self, client, experiment_version, helpers):
+        exp = experiment_version.experiment
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol)
+
+        version2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=protocol,
+            experiment__protocol_version=protocol_commit.hexsha,
+        )
+
+        response = client.get(
+            ('/experiments/compare/%d/%d/info' % (experiment_version.id, version2.id))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert versions[0]['versionId'] == experiment_version.id
+        assert versions[1]['versionId'] == version2.id
+        assert versions[0]['modelName'] == exp.model.name
+        assert versions[0]['protoName'] == exp.protocol.name
+        assert versions[0]['name'] == exp.name
+
+
+@pytest.mark.django_db
 class TestExperimentVersionJsonView:
     def test_experiment_json(self, client):
         version = recipes.experiment_version.make(

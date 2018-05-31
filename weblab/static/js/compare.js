@@ -1,3 +1,7 @@
+var notifications = require('./lib/notifications.js');
+var utils = require('./lib/utils.js');
+var expt_common = require('./expt_common.js');
+
 var entities = {}, // Contains information about each experiment being compared
 	// `files` contains information about each unique (by name) file within the compared experiments,
 	// including references to the experiments in which a file of that name appears and that particular instance of the file.
@@ -181,7 +185,7 @@ function highlightPlots (entity, showDefault)
 			plotFiles.push (plotDescription[i][2]);
 		}
 	}
-	sortTable (plotFiles);
+	expt_common.sortTable (filesTable, plotFiles);
 	// Show the default visualisation if this is the last experiment to be analysed
 	if (defaultViz && metadataParsed == metadataToParse)
 	{
@@ -212,7 +216,7 @@ function parseOutputContents (entity, file, showDefault)
 		{
 			if (succ)
 			{
-				parseCsvRaw(file);
+				utils.parseCsvRaw(file);
 				entity.outputContents = file.csv;
 				metadataParsed += 1;
 				if (entity.plotDescription)
@@ -235,7 +239,7 @@ function parsePlotDescription (entity, file, showDefault)
 		{
 			if (succ)
 			{
-			    parseCsvRaw(file);
+			    utils.parseCsvRaw(file);
 			    entity.plotDescription = file.csv;
 			    metadataParsed += 1;
 				if (entity.outputContents)
@@ -284,7 +288,7 @@ function parseEntities (entityObj)
 				var file = entity.files[j],
 					sig = file.name.hashCode();
 				file.signature = sig;
-				file.url = contextPath + "/download/" + entityType.charAt(0) + "/" + convertForURL (entity.name) + "/" + entity.id + "/" + file.id + "/" + convertForURL (file.name);
+				file.url = file.url;//contextPath + "/download/" + entityType.charAt(0) + "/" + convertForURL (entity.name) + "/" + entity.id + "/" + file.id + "/" + convertForURL (file.name);
 				if (!files[sig])
 				{
 					files[sig] = {};
@@ -343,7 +347,7 @@ function parseEntities (entityObj)
 	
 	// Create a drop-down box that allows display of/navigate to experiments being compared
 	var entitiesToCompare = document.getElementById("entitiesToCompare");
-	removeChildren (entitiesToCompare);
+	$(entitiesToCompare).empty();
 	var form = document.createElement("form");
 	entitiesToCompare.appendChild(form);
 	var select_box = document.createElement("select");
@@ -358,7 +362,7 @@ function parseEntities (entityObj)
 	for (var entity in entities)
 	{
 		var option = document.createElement("option");
-		option.value = contextPath + "/"+entityType+"/" + convertForURL (entities[entity].name) + "/" + entities[entity].entityId + "/" + convertForURL (entities[entity].created) + "/" + entities[entity].id;
+    option.value = entities[entity].url;
 		option.innerHTML = entities[entity].name + (entityType == "experiment" ? "" : " &mdash; " + entities[entity].version);
 		select_box.appendChild(option);
 	}
@@ -420,8 +424,7 @@ function buildSite ()
 		{
 			size += ents.entities[i].entityFileLink.size;
 		}
-		//console.log (size + " --> " + humanReadableBytes (size / ents.length));
-		td.appendChild(document.createTextNode(humanReadableBytes (size / ents.entities.length)));
+		td.appendChild(document.createTextNode(utils.humanReadableBytes (size / ents.entities.length)));
 		tr.appendChild(td);
 		
 		/*td = document.createElement("td");
@@ -510,8 +513,19 @@ function handleReq ()
 	}
 }
 
-function getInfos (jsonObject)
+function getInfos(url)
 {
+
+  $.getJSON(url, function(data) {
+    notifications.display(data);
+    gotInfos = true;
+
+    if (data.getEntityInfos) {
+      parseEntities(data.getEntityInfos.entities);
+    }
+  })
+  /*
+
 	var xmlhttp = null;
     // !IE
     if (window.XMLHttpRequest)
@@ -549,6 +563,7 @@ function getInfos (jsonObject)
         }
     };
     xmlhttp.send(JSON.stringify(jsonObject));
+    */
 }
 
 function parseUrl (event)
@@ -620,10 +635,7 @@ function parseUrl (event)
 	{
 		tableParsed = true;
 		if (entityType == "experiment")
-			getInfos ({
-				task: "getEntityInfos",
-				ids: entityIds
-			});
+			getInfos ($("#entitiesToCompare").data('comparison-href'));
 		else
 			getInfos ({
 				task: "getEntityInfos",

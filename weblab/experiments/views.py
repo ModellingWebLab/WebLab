@@ -183,6 +183,62 @@ class ExperimentComparisonView(TemplateView):
         return super().get_context_data(**kwargs)
 
 
+class ExperimentComparisonJsonView(View):
+    def _file_json(self, version, archive_file):
+        return {
+            'id': archive_file.name,
+            'author': version.author.full_name,
+            'created': version.created_at,
+            'name': archive_file.name,
+            'filetype': archive_file.fmt,
+            'masterFile': archive_file.is_master,
+            'size': archive_file.size,
+            'url': reverse(
+                'experiments:file_download',
+                args=[version.experiment.id, version.id, urllib.parse.quote(archive_file.name)]
+            )
+        }
+
+    def _version_json(self, version):
+        files = [
+            self._file_json(version, f)
+            for f in version.files
+        ]
+        return {
+            'id': version.id,
+            'author': version.author.full_name,
+            'status': version.status,
+            'parsedOk': False,
+            'visibility': version.visibility,
+            'created': version.created_at,
+            'name': version.experiment.name,
+            'experimentId': version.experiment.id,
+            'versionId': version.id,
+            'files': files,
+            'numFiles': len(files),
+            'url': reverse(
+                'experiments:version', args=[version.experiment.id, version.id]
+            ),
+            'download_url': reverse(
+                'experiments:archive', args=[version.experiment.id, version.id]
+            ),
+            'modelName': version.experiment.model.name,
+            'protoName': version.experiment.protocol.name,
+        }
+
+    def get(self, request, *args, **kwargs):
+        versions = ExperimentVersion.objects.filter(
+            pk__in=map(int, self.kwargs['version_pks'][1:].split('/'))
+        )
+        return JsonResponse({
+            'getEntityInfos': {
+                'entities': [
+                    self._version_json(version) for version in versions
+                ]
+            }
+        })
+
+
 @method_decorator(staff_member_required, name='dispatch')
 class ExperimentSimulateCallbackView(FormMixin, DetailView):
     """

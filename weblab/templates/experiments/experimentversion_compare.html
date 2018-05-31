@@ -1,10 +1,9 @@
-
 {% extends "base.html" %}
+{% load experiments %}
 
 {% block content %}
-hi
  <h1 id="heading">Comparison</h1>
-    <div id="entitiesToCompare">
+ <div id="entitiesToCompare" data-comparison-href="{{ experiment_versions|url_comparison }}">
     loading...
     </div>
     <div id="filedetails">
