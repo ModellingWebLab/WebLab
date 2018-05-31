@@ -38,7 +38,6 @@ class ProcessingException(Exception):
     pass
 
 
-@transaction.atomic
 def submit_experiment(model, model_version, protocol, protocol_version, user):
     experiment, _ = Experiment.objects.get_or_create(
         model=model,
@@ -54,8 +53,10 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         experiment=experiment,
         author=user,
     )
+    version.save()
 
     run = RunningExperiment.objects.create(experiment_version=version)
+    run.save()
     signature = version.signature
 
     model_url = reverse(
@@ -79,17 +80,22 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     try:
         response = requests.post(settings.CHASTE_URL, body)
     except requests.exceptions.ConnectionError:
+        run.delete()
         version.status = ExperimentVersion.STATUS_FAILED
         version.return_text = 'Unable to connect to experiment runner service'
-        logger.exception(version.return_text)
         version.save()
+        logger.exception(version.return_text)
         return version
 
     res = response.content.decode().strip()
     logger.debug('Response from chaste backend: %s' % res)
 
     if not res.startswith(signature):
-        logger.error('Chaste backend answered with something unexpected: %s' % res)
+        run.delete()
+        version.status = ExperimentVersion.STATUS_FAILED
+        version.return_text = 'Chaste backend answered with something unexpected: %s' % res
+        version.save()
+        logger.error(version.return_text)
         raise ProcessingException(res)
 
     status = res[len(signature):].strip()
@@ -98,9 +104,11 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         run.task_id = status[4:].strip()
         run.save()
     elif status == 'inapplicable':
+        run.delete()
         version.status = ExperimentVersion.STATUS_INAPPLICABLE
     else:
-        logger.error('Chaste backend answered with error: %s' % res)
+        run.delete()
+        logger.error('Chaste backend answered with error: %s' % status)
         version.status = ExperimentVersion.STATUS_FAILED
         version.return_text = status
 
@@ -140,9 +148,10 @@ def process_callback(data, files):
 
     exp.save()
 
-    if exp.is_finished:
+    if exp.is_finished or exp.status == ExperimentVersion.STATUS_INAPPLICABLE:
         run.delete()
 
+    if exp.is_finished:
         send_experiment_finished_email(exp)
 
         if not files.get('experiment'):

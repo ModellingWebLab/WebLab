@@ -8,7 +8,7 @@ from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core import recipes
-from experiments.models import ExperimentVersion
+from experiments.models import ExperimentVersion, RunningExperiment
 from experiments.processing import (
     ProcessingException,
     process_callback,
@@ -79,6 +79,7 @@ class TestSubmitExperiment:
         version = submit_experiment(model, model_version, protocol, protocol_version, user)
 
         assert version.running.count() == 1
+        assert RunningExperiment.objects.count() == 1
 
     def test_submits_to_webservice(self, mock_post,
                                    user, model_with_version, protocol_with_version):
@@ -120,6 +121,18 @@ class TestSubmitExperiment:
         with pytest.raises(ProcessingException):
             submit_experiment(model, model_version, protocol, protocol_version, user)
 
+        # There should be no running experiment
+        assert RunningExperiment.objects.count() == 0
+
+        # It should still record a failed experiment version however
+        assert ExperimentVersion.objects.count() == 1
+        version = ExperimentVersion.objects.first()
+        assert version.running.count() == 0
+        assert version.experiment.model == model
+        assert version.experiment.protocol == protocol
+        assert version.status == ExperimentVersion.STATUS_FAILED
+        assert version.return_text.startswith('Chaste backend answered with something unexpected:')
+
     def test_records_submission_error(self, mock_post,
                                       user, model_with_version, protocol_with_version):
         model = model_with_version
@@ -133,6 +146,7 @@ class TestSubmitExperiment:
 
         assert version.status == ExperimentVersion.STATUS_FAILED
         assert version.return_text == 'an error occurred'
+        assert RunningExperiment.objects.count() == 0
 
     def test_records_inapplicable_result(self, mock_post,
                                          user, model_with_version, protocol_with_version):
@@ -146,6 +160,7 @@ class TestSubmitExperiment:
         version = submit_experiment(model, model_version, protocol, protocol_version, user)
 
         assert version.status == ExperimentVersion.STATUS_INAPPLICABLE
+        assert RunningExperiment.objects.count() == 0
 
 
 @pytest.mark.django_db
@@ -181,6 +196,7 @@ class TestProcessCallback:
         queued_experiment.refresh_from_db()
         assert queued_experiment.status == 'RUNNING'
         assert queued_experiment.return_text == 'running'
+        assert queued_experiment.running.count() == 1
 
     def test_records_inapplicable_status(self, queued_experiment):
         result = process_callback({
@@ -194,6 +210,7 @@ class TestProcessCallback:
         queued_experiment.refresh_from_db()
         assert queued_experiment.status == 'INAPPLICABLE'
         assert queued_experiment.return_text == 'experiment cannot be run'
+        assert queued_experiment.running.count() == 0
 
     def test_records_failed_status(self, queued_experiment, archive_upload):
         result = process_callback({
