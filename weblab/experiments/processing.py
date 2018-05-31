@@ -5,10 +5,9 @@ from urllib.parse import urljoin
 import requests
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.db import transaction
 
 from .emails import send_experiment_finished_email
-from .models import Experiment, ExperimentVersion
+from .models import Experiment, ExperimentVersion, RunningExperiment
 
 
 logger = logging.getLogger(__name__)
@@ -38,7 +37,6 @@ class ProcessingException(Exception):
     pass
 
 
-@transaction.atomic
 def submit_experiment(model, model_version, protocol, protocol_version, user):
     experiment, _ = Experiment.objects.get_or_create(
         model=model,
@@ -55,6 +53,9 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         author=user,
     )
 
+    run = RunningExperiment.objects.create(experiment_version=version)
+    signature = version.signature
+
     model_url = reverse(
         'entities:entity_archive',
         args=['model', model.pk, model_version]
@@ -66,7 +67,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     body = {
         'model': urljoin(settings.CALLBACK_BASE_URL, model_url),
         'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
-        'signature': version.signature,
+        'signature': signature,
         'callBack': urljoin(settings.CALLBACK_BASE_URL, reverse('experiments:callback')),
         'user': user.full_name,
         'password': settings.CHASTE_PASSWORD,
@@ -76,27 +77,35 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     try:
         response = requests.post(settings.CHASTE_URL, body)
     except requests.exceptions.ConnectionError:
+        run.delete()
         version.status = ExperimentVersion.STATUS_FAILED
         version.return_text = 'Unable to connect to experiment runner service'
-        logger.exception(version.return_text)
         version.save()
+        logger.exception(version.return_text)
         return version
 
     res = response.content.decode().strip()
     logger.debug('Response from chaste backend: %s' % res)
 
-    if not res.startswith(version.signature):
-        logger.error('Chaste backend answered with something unexpected: %s' % res)
+    if not res.startswith(signature):
+        run.delete()
+        version.status = ExperimentVersion.STATUS_FAILED
+        version.return_text = 'Chaste backend answered with something unexpected: %s' % res
+        version.save()
+        logger.error(version.return_text)
         raise ProcessingException(res)
 
-    status = res[len(version.signature):].strip()
+    status = res[len(signature):].strip()
 
     if status.startswith('succ'):
-        version.task_id = status[4:].strip()
+        run.task_id = status[4:].strip()
+        run.save()
     elif status == 'inapplicable':
+        run.delete()
         version.status = ExperimentVersion.STATUS_INAPPLICABLE
     else:
-        logger.error('Chaste backend answered with error: %s' % res)
+        run.delete()
+        logger.error('Chaste backend answered with error: %s' % status)
         version.status = ExperimentVersion.STATUS_FAILED
         version.return_text = status
 
@@ -111,13 +120,15 @@ def process_callback(data, files):
         return {'error': 'missing signature'}
 
     try:
-        exp = ExperimentVersion.objects.get(id=signature)
-    except ExperimentVersion.DoesNotExist:
+        run = RunningExperiment.objects.get(id=signature)
+        exp = run.experiment_version
+    except RunningExperiment.DoesNotExist:
         return {'error': 'invalid signature'}
 
     task_id = data.get('taskid')
     if task_id:
-        exp.task_id = task_id
+        run.task_id = task_id
+        run.save()
 
     if 'returntype' not in data:
         return {'error': 'missing returntype'}
@@ -133,6 +144,9 @@ def process_callback(data, files):
         exp.return_text = 'running'
 
     exp.save()
+
+    if exp.is_finished or exp.status == ExperimentVersion.STATUS_INAPPLICABLE:
+        run.delete()
 
     if exp.is_finished:
         send_experiment_finished_email(exp)

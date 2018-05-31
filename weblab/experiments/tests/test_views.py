@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import uuid
 import zipfile
 from io import BytesIO
 from pathlib import Path
@@ -181,7 +182,7 @@ class TestExperimentCallbackView:
 
     def test_returns_form_errors(self, client):
         response = client.post('/experiments/callback', {
-            'signature': 1,
+            'signature': uuid.uuid4(),
             'returntype': 'success',
         })
 
@@ -193,7 +194,7 @@ class TestExperimentCallbackView:
     def test_doesnt_cause_csrf_errors(self, client):
         csrf_client = Client(enforce_csrf_checks=True)
         response = csrf_client.post('/experiments/callback', {
-            'signature': 1,
+            'signature': uuid.uuid4(),
             'returntype': 'success',
         })
 

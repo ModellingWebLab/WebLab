@@ -508,6 +508,34 @@ class TestEntityArchiveView:
         response = client.get('/entities/models/%d/versions/latest/archive' % model.pk)
         assert response.status_code == 404
 
+    def test_anonymous_model_download_for_running_experiment(self, client, queued_experiment):
+        model = queued_experiment.experiment.model
+        model.visibility = 'private'
+        model.save()
+
+        response = client.get(
+            '/entities/models/%d/versions/latest/archive' % model.pk,
+            HTTP_AUTHORIZATION='Token {}'.format(queued_experiment.signature)
+        )
+
+        assert response.status_code == 200
+        archive = zipfile.ZipFile(BytesIO(response.content))
+        assert archive.filelist[0].filename == 'file1.txt'
+
+    def test_anonymous_protocol_download_for_running_experiment(self, client, queued_experiment):
+        protocol = queued_experiment.experiment.protocol
+        protocol.visibility = 'private'
+        protocol.save()
+
+        response = client.get(
+            '/entities/protocols/%d/versions/latest/archive' % protocol.pk,
+            HTTP_AUTHORIZATION='Token {}'.format(queued_experiment.signature)
+        )
+
+        assert response.status_code == 200
+        archive = zipfile.ZipFile(BytesIO(response.content))
+        assert archive.filelist[0].filename == 'file1.txt'
+
 
 @pytest.mark.django_db
 class TestFileUpload:

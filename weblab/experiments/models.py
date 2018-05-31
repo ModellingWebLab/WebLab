@@ -1,3 +1,4 @@
+import uuid
 from pathlib import Path
 
 from django.conf import settings
@@ -100,7 +101,6 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
         default=STATUS_QUEUED,
     )
     return_text = models.TextField(blank=True)
-    task_id = models.CharField(max_length=50, blank=True)
 
     def __str__(self):
         return '%s at %s: (%s)' % (self.experiment, self.created_at, self.status)
@@ -129,7 +129,7 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
 
     @property
     def signature(self):
-        return str(self.id)
+        return str(self.running.first().id)
 
     @property
     def is_running(self):
@@ -160,3 +160,14 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
 
     def open_file(self, name):
         return ArchiveReader(str(self.archive_path)).open_file(name)
+
+
+class RunningExperiment(models.Model):
+    """
+    A current run of an ExperimentVersion
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    experiment_version = models.ForeignKey(ExperimentVersion, related_name='running')
+
+    task_id = models.CharField(max_length=50)

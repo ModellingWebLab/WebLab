@@ -374,6 +374,27 @@ class EntityArchiveView(VisibilityMixin, SingleObjectMixin, View):
     """
     model = Entity
 
+    def is_visible_to_anonymous(self, obj):
+        """
+        Allow anonymous access to entity download under certain conditions
+
+        If an Authorization token is provided and it matches a RunningExperiment
+        linked to this entity, access is allowed.
+        """
+        auth_header = self.request.META.get('HTTP_AUTHORIZATION')
+        if auth_header and auth_header.startswith('Token'):
+            token = auth_header[5:].strip()
+
+            entity_field = 'experiment_version__experiment__%s' % self.kwargs['entity_type']
+            from experiments.models import RunningExperiment
+            if RunningExperiment.objects.filter(
+                id=token,
+                **{entity_field: obj.id}
+            ).exists():
+                return True
+
+        return super().is_visible_to_anonymous(obj)
+
     def get(self, request, *args, **kwargs):
         entity = self.get_object()
         ref = self.kwargs['sha']
