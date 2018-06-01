@@ -507,7 +507,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
     var thisFileSig = thisFile.sig;
     var thisDiv = this.div;
 
-    removeChildren (thisDiv);
+    $(thisDiv).empty();
     if (!this.ok)
         thisDiv.appendChild (document.createTextNode ("failed to load the contents"));
     else
@@ -532,7 +532,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
                 var f = thisFile.entities[i].entityFileLink;
                 if (f.keyId && !f.keyFile.contents)
                 {
-                    getFileContent(f.keyFile, this);
+                    utils.getFileContent(f.keyFile, this);
                 }
             }
             if (this.expectedKeyContents > 0)
@@ -594,6 +594,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
 
                 var key = entityId + "-" + fileSig + "-" + i;
                 var label = entityName;
+                var plotLabelStripText = $.data(document.body, 'plotLabelStripText');
                 if (plotLabelStripText)
                     label = label.replace(plotLabelStripText, "");
                 if (keyVals.length == csvData.length)

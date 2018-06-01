@@ -2,6 +2,13 @@ var notifications = require('./lib/notifications.js');
 var utils = require('./lib/utils.js');
 var expt_common = require('./expt_common.js');
 
+var plugins = [
+  require('./visualizers/displayPlotFlot/displayPlotFlot.js'),
+  require('./visualizers/displayPlotHC/displayPlotHC.js'),
+  require('./visualizers/displayUnixDiff/displayUnixDiff.js'),
+  require('./visualizers/displayBivesDiff/displayBivesDiff.js'),
+];
+
 var entities = {}, // Contains information about each experiment being compared
 	// `files` contains information about each unique (by name) file within the compared experiments,
 	// including references to the experiments in which a file of that name appears and that particular instance of the file.
@@ -20,42 +27,9 @@ var entities = {}, // Contains information about each experiment being compared
 	metadataToParse = 0, metadataParsed = 0, defaultViz = null, defaultVizCount = 0,
 	// State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol
 	firstModelName = "", firstModelVersion = "", firstProtoName = "", firstProtoVersion = "",
-	singleModel = true, singleProto = true,
-	// Used for stripping out redundant (repeated) text in plot line labels
-	plotLabelStripText = null;
+	singleModel = true, singleProto = true;
 
 
-function getFileContent (file, succ)
-{
-	var xmlhttp = null;
-    // !IE
-    if (window.XMLHttpRequest)
-    {
-        xmlhttp = new XMLHttpRequest();
-    }
-    // IE -- microsoft, we really hate you. every single day.
-    else if (window.ActiveXObject)
-    {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    
-    xmlhttp.open("GET", file.url, true);
-
-    xmlhttp.onreadystatechange = function()
-    {
-        if(xmlhttp.readyState != 4)
-        	return;
-    	
-        if(xmlhttp.status == 200)
-        {
-        	file.contents = xmlhttp.responseText;
-        	succ.getContentsCallback (true);
-        }
-        else
-        	succ.getContentsCallback (false);
-    };
-    xmlhttp.send(null);
-}
 
 function nextPage (url, replace)
 {
@@ -79,7 +53,7 @@ function registerFileDisplayer (elem)
 
 /**
  * Add a `getContents` method to the file object f (a member of the global `files` collection) which will call
- * `getFileContent` for the version of the file in each experiment being compared (but only on the first time
+ * `utils.getFileContent` for the version of the file in each experiment being compared (but only on the first time
  * it is called).
  * @param f  the file
  */
@@ -95,7 +69,7 @@ function setupDownloadFileContents (f)
 		for (var i = 0; i < f.entities.length; i++)
 		{
 			//console.log ("getting " + f.entities[i].entityFileLink.sig + " --> " + f.entities[i].entityFileLink.url);
-			getFileContent (f.entities[i].entityFileLink, callBack);
+			utils.getFileContent (f.entities[i].entityFileLink, callBack);
 		}
 	};
 }
@@ -224,7 +198,7 @@ function parseOutputContents (entity, file, showDefault)
 			}
 		}
 	};
-	getFileContent (file, goForIt);
+	utils.getFileContent (file, goForIt);
 	
 	return null;
 }
@@ -247,7 +221,7 @@ function parsePlotDescription (entity, file, showDefault)
 			}
 		}
 	};
-	getFileContent (file, goForIt);
+	utils.getFileContent (file, goForIt);
 	
 	return null;
 }
@@ -288,7 +262,8 @@ function parseEntities (entityObj)
 				var file = entity.files[j],
 					sig = file.name.hashCode();
 				file.signature = sig;
-				file.url = file.url;//contextPath + "/download/" + entityType.charAt(0) + "/" + convertForURL (entity.name) + "/" + entity.id + "/" + file.id + "/" + convertForURL (file.name);
+				file.url = file.url;
+        file.type = file.filetype;
 				if (!files[sig])
 				{
 					files[sig] = {};
@@ -298,6 +273,7 @@ function parseEntities (entityObj)
 					files[sig].div = {};
 					files[sig].viz = {};
 					files[sig].hasContents = false;
+          files[sig].id = file.name;
 					setupDownloadFileContents (files[sig]);
 				}
 				if (file.name.toLowerCase () == "outputs-default-plots.csv")
@@ -331,15 +307,18 @@ function parseEntities (entityObj)
 	
 	if (entityType == "experiment")
 	{
+	  // Allow plugins to strip out redundant (repeated) text in plot line labels
 		if (singleModel && !singleProto)
 		{
 		    doc.heading.innerHTML = firstModelName + " experiments: comparison of protocols";
 		    plotLabelStripText = firstModelName + " &amp; ";
+        $.data(document.body, 'plotLabelStripText', plotLabelStripText);
 		}
 		else if (singleProto && !singleModel)
 		{
 		    doc.heading.innerHTML = firstProtoName + " experiments: comparison of models";
 		    plotLabelStripText = " &amp; " + firstProtoName;
+        $.data(document.body, 'plotLabelStripText', plotLabelStripText);
 		}
 	}
 	
@@ -438,9 +417,9 @@ function buildSite ()
 				continue;
 			var a = document.createElement("a");
 			a.setAttribute("id", "filerow-" + file + "-viz-" + viz.getName ());
-			a.href = basicurl + "show/" + file + "/" + vi;
+			a.href = basicurl + 'show/' + encodeURIComponent(files[file].name) + "/" + vi;
 			var img = document.createElement("img");
-			img.src = contextPath + "/res/js/visualizers/" + vi + "/" + viz.getIcon ();
+			img.src = staticPath + "js/visualizers/" + vi + "/" + viz.getIcon ();
 			img.alt = viz.getDescription ();
 			img.title = img.alt;
 			a.appendChild(img);
@@ -462,7 +441,7 @@ function displayFile (id, pluginName)
     var f = files[id];
     if (!f)
     {
-        addNotification ("no such file", "error");
+        notifications.add("no such file", "error");
         return;
     }
 	for (var ent_idx=0; ent_idx<f.entities.length; ent_idx++)
@@ -490,13 +469,13 @@ function displayFile (id, pluginName)
 //	    console.log("Reusing vis");
 //	    console.log(f);
 //	}
-    removeChildren (doc.fileDisplay);
+    $(doc.fileDisplay).empty();
 	doc.fileDisplay.appendChild (f.div[pluginName]);
     f.viz[pluginName].show ();
 
     // Show parent div of the file display, and scroll there
 	doc.fileDetails.style.display = "block";
-	var pos = getPos (doc.heading);
+	var pos = utils.getPos (doc.heading);
 	window.scrollTo(pos.xPos, pos.yPos);
 }
 
@@ -504,7 +483,7 @@ function handleReq ()
 {
 	if (fileName && pluginName && gotInfos)
 	{
-		displayFile (fileName, pluginName);
+		displayFile (fileName.hashCode(), pluginName);
 		doc.displayClose.href = basicurl;
 	}
 	else
@@ -590,7 +569,7 @@ function parseUrl (event)
 		}
     */
     if (parts[i] == 'experiments') {
-      basicurl = parts.slice(0, i+1).join('/') + '/';
+      basicurl = parts.slice(0, i+2).join('/') + '/';
       entityType = 'experiment';
       entityIds = parts.slice(i+2);
     }
@@ -599,7 +578,7 @@ function parseUrl (event)
 	if (!entityIds)
 	{
 		var entitiesToCompare = document.getElementById("entitiesToCompare");
-		removeChildren (entitiesToCompare);
+		$(entitiesToCompare).empty();
 		entitiesToCompare.appendChild(document.createTextNode("ERROR building site"));
 		return;
 	}
@@ -673,6 +652,10 @@ function initCompare ()
 	
 	window.onpopstate = parseUrl;
 	parseUrl ();
+
+  $(plugins).each(function(i, plugin) {
+    visualizers[plugin.name] = plugin.get_visualizer()
+  });
 }
 
 

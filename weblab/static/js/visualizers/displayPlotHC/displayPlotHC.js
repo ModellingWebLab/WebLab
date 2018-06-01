@@ -1,4 +1,5 @@
 var common = require('../../expt_common.js');
+var utils = require('../../lib/utils.js');
 
 /**
  * Actually create a plot using the HighCharts library.
@@ -59,7 +60,7 @@ function doHcPlot(id, datasets, thisFile)
     $("#"+id).highcharts(options);
     
     // Save data for export if user requests it
-    allowPlotExport(thisFile.name, datasets, {'x': thisFile.xAxes || '', 'y': thisFile.yAxes || ''});
+    common.allowPlotExport(thisFile.name, datasets, {'x': thisFile.xAxes || '', 'y': thisFile.yAxes || ''});
 }
 
 
@@ -196,7 +197,7 @@ HCPlotterComparer.prototype.showContents = function ()
                 var f = thisFile.entities[i].entityFileLink;
                 if (f.keyId && !f.keyFile.contents)
                 {
-                    getFileContent(f.keyFile, this);
+                    utils.getFileContent(f.keyFile, this);
                 }
             }
             if (this.expectedKeyContents > 0)
@@ -237,7 +238,7 @@ HCPlotterComparer.prototype.showContents = function ()
             var entityName = eachCSVData.entity.plotName ? eachCSVData.entity.plotName : eachCSVData.entity.name;
         	var csvData = eachCSVData.data;
         	var csvFile = eachCSVData.file;
-            var keyVals = getKeyValues(csvFile, csvData.length);
+            var keyVals = common.getKeyValues(csvFile, csvData.length);
         	for (var i = 1; i < csvData.length; i++)
         	{
         		var curData = [];
@@ -245,6 +246,7 @@ HCPlotterComparer.prototype.showContents = function ()
 	                curData.push ([csvData[i][k].x, csvData[i][k].y]);
 
                 var label = entityName;
+                var plotLabelStripText = $.data(document.body, 'plotLabelStripText');
                 if (plotLabelStripText)
                     label = label.replace(plotLabelStripText, "");
                 if (keyVals.length == csvData.length)
