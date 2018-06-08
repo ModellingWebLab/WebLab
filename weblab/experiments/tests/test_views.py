@@ -326,7 +326,7 @@ class TestExperimentVersionJsonView:
 
         assert response.status_code == 200
         data = json.loads(response.content.decode())
-        file1 = data['version']['files'][1]
+        file1 = data['version']['files'][0]
         assert file1['author'] == 'test user'
         assert file1['name'] == 'stdout.txt'
         assert file1['filetype'] == 'http://purl.org/NET/mediatypes/text/plain'

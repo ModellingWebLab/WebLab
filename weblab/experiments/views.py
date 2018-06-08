@@ -203,6 +203,7 @@ class ExperimentComparisonJsonView(View):
         files = [
             self._file_json(version, f)
             for f in version.files
+            if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
         return {
             'id': version.id,
@@ -308,6 +309,7 @@ class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
         files = [
             self._file_json(f)
             for f in version.files
+            if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
 
         return JsonResponse({
