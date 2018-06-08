@@ -277,6 +277,43 @@ class TestExperimentComparisonJsonView:
         assert versions[0]['protoName'] == exp.protocol.name
         assert versions[0]['name'] == exp.name
 
+    def test_file_json(self, client, archive_file_path, helpers):
+        version = recipes.experiment_version.make(
+            author__full_name='test user',
+            experiment__model_version='latest',
+            experiment__protocol_version='latest')
+        version.abs_path.mkdir()
+        shutil.copyfile(archive_file_path, str(version.archive_path))
+        exp = version.experiment
+
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol)
+        version2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=protocol,
+            experiment__protocol_version=protocol_commit.hexsha,
+        )
+        version2.abs_path.mkdir()
+        shutil.copyfile(archive_file_path, str(version2.archive_path))
+
+        response = client.get(
+            ('/experiments/compare/%d/%d/info' % (version.pk, version2.pk))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        file1 = data['getEntityInfos']['entities'][0]['files'][0]
+        assert file1['author'] == 'test user'
+        assert file1['name'] == 'stdout.txt'
+        assert file1['filetype'] == 'http://purl.org/NET/mediatypes/text/plain'
+        assert not file1['masterFile']
+        assert file1['size'] == 27
+        assert file1['url'] == (
+            '/experiments/%d/versions/%d/download/stdout.txt' % (exp.pk, version.pk)
+        )
+
 
 @pytest.mark.django_db
 class TestExperimentVersionJsonView:
