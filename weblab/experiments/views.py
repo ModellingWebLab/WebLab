@@ -260,7 +260,7 @@ class ExperimentSimulateCallbackView(FormMixin, DetailView):
             return self.form_invalid(form)
 
     def get_success_url(self):
-        return reverse('experiments:simulate_callback',
+        return reverse('experiments:version',
                        args=[self.object.experiment.pk, self.object.pk])
 
     def form_valid(self, form):
@@ -270,11 +270,13 @@ class ExperimentSimulateCallbackView(FormMixin, DetailView):
         )
 
         result = process_callback(data, {'experiment': form.files.get('upload')})
-        print(result)
 
         if 'error' in result:
             messages.error(self.request, result['error'])
             logger.error(result['error'])
+
+        else:
+            messages.info(self.request, 'Experiment status updated')
 
         return super().form_valid(form)
 
