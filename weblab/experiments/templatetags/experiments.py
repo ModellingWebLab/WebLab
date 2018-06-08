@@ -7,5 +7,8 @@ register = template.Library()
 
 @register.filter
 def url_comparison(experiment_versions):
+    """
+    Build URL for experiment comparison
+    """
     version_ids = '/' + '/'.join(str(ver.id) for ver in experiment_versions)
     return reverse('experiments:compare_json', args=[version_ids])

@@ -171,6 +171,9 @@ class ExperimentVersionListView(VisibilityMixin, DetailView):
 
 
 class ExperimentComparisonView(TemplateView):
+    """
+    Compare multiple experiment versions
+    """
     template_name = 'experiments/experimentversion_compare.html'
 
     def get_context_data(self, **kwargs):
@@ -184,7 +187,16 @@ class ExperimentComparisonView(TemplateView):
 
 
 class ExperimentComparisonJsonView(View):
+    """
+    Serve up JSON view of multiple experiment versions for comparison
+    """
     def _file_json(self, version, archive_file):
+        """
+        JSON for a single file in the experiment archive
+
+        :param version: ExperimentVersion object
+        :param archive_file: ArchiveFile object
+        """
         return {
             'id': archive_file.name,
             'author': version.author.full_name,
@@ -200,6 +212,11 @@ class ExperimentComparisonJsonView(View):
         }
 
     def _version_json(self, version):
+        """
+        JSON for a single experiment version
+
+        :param version: ExperimentVersion object
+        """
         files = [
             self._file_json(version, f)
             for f in version.files
