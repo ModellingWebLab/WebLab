@@ -5,6 +5,9 @@ Django-based front-end for the modelling Web Lab
 
 ## Setup
 
+The easiest way to get a complete working Web Lab setup is to use the developer version of our Ansible deployment.
+See https://github.com/ModellingWebLab/deployment for details.
+
 ### Install system requirements
 
 * Python 3.5+
