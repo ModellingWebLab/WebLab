@@ -311,13 +311,13 @@ function parseEntities (entityObj)
 		if (singleModel && !singleProto)
 		{
 		    doc.heading.innerHTML = firstModelName + " experiments: comparison of protocols";
-		    plotLabelStripText = firstModelName + " &amp; ";
+		    plotLabelStripText = firstModelName + " / ";
         $.data(document.body, 'plotLabelStripText', plotLabelStripText);
 		}
 		else if (singleProto && !singleModel)
 		{
 		    doc.heading.innerHTML = firstProtoName + " experiments: comparison of models";
-		    plotLabelStripText = " &amp; " + firstProtoName;
+		    plotLabelStripText = " / " + firstProtoName;
         $.data(document.body, 'plotLabelStripText', plotLabelStripText);
 		}
 	}
