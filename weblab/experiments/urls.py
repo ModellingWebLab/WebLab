@@ -71,7 +71,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^compare(?P<version_pks>(/\d+){2,})/info$',
+        r'^compare(?P<version_pks>(/\d+)+)/info$',
         views.ExperimentComparisonJsonView.as_view(),
         name='compare_json',
     ),

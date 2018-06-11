@@ -177,9 +177,10 @@ class ExperimentComparisonView(TemplateView):
     template_name = 'experiments/experimentversion_compare.html'
 
     def get_context_data(self, **kwargs):
-        versions = ExperimentVersion.objects.filter(
-            pk__in=map(int, self.kwargs['version_pks'][1:].split('/'))
-        )
+        versions = ExperimentVersion.objects.visible_to(self.request.user).filter(
+            pk__in=map(int, self.kwargs['version_pks'][1:].split('/')),
+        ).order_by('created_at')
+
         kwargs.update({
             'experiment_versions': versions,
         })
@@ -245,9 +246,10 @@ class ExperimentComparisonJsonView(View):
         }
 
     def get(self, request, *args, **kwargs):
-        versions = ExperimentVersion.objects.filter(
-            pk__in=map(int, self.kwargs['version_pks'][1:].split('/'))
-        )
+        versions = ExperimentVersion.objects.visible_to(self.request.user).filter(
+            pk__in=map(int, self.kwargs['version_pks'][1:].split('/')),
+        ).order_by('created_at')
+
         return JsonResponse({
             'getEntityInfos': {
                 'entities': [

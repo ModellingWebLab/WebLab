@@ -249,6 +249,27 @@ class TestExperimentComparisonView:
             experiment_version, version2
         }
 
+    def test_only_compare_visible_experiments(self, client, experiment_version, helpers):
+        ver1 = experiment_version
+        exp = ver1.experiment
+
+        proto = recipes.protocol.make(visibility='private')
+        proto_commit = helpers.add_version(proto)
+        ver2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=proto,
+            experiment__protocol_version=proto_commit.hexsha,
+        )
+
+        response = client.get(
+            ('/experiments/compare/%d/%d' % (ver1.id, ver2.id))
+        )
+
+        assert response.status_code == 200
+        assert set(response.context['experiment_versions']) == {ver1}
+
 
 @pytest.mark.django_db
 class TestExperimentComparisonJsonView:
@@ -277,6 +298,30 @@ class TestExperimentComparisonJsonView:
         assert versions[0]['modelName'] == exp.model.name
         assert versions[0]['protoName'] == exp.protocol.name
         assert versions[0]['name'] == exp.name
+
+    def test_only_compare_visible_experiments(self, client, experiment_version, helpers):
+        ver1 = experiment_version
+        exp = ver1.experiment
+
+        proto = recipes.protocol.make(visibility='private')
+        proto_commit = helpers.add_version(proto)
+        ver2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=proto,
+            experiment__protocol_version=proto_commit.hexsha,
+        )
+
+        response = client.get(
+            ('/experiments/compare/%d/%d/info' % (ver1.id, ver2.id))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert len(versions) == 1
+        assert versions[0]['versionId'] == ver1.id
 
     def test_file_json(self, client, archive_file_path, helpers):
         version = recipes.experiment_version.make(
