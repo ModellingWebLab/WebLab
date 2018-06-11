@@ -494,7 +494,6 @@ function handleReq ()
 
 function getInfos(url)
 {
-
   $.getJSON(url, function(data) {
     notifications.display(data);
     gotInfos = true;
@@ -503,46 +502,6 @@ function getInfos(url)
       parseEntities(data.getEntityInfos.entities);
     }
   })
-  /*
-
-	var xmlhttp = null;
-    // !IE
-    if (window.XMLHttpRequest)
-    {
-        xmlhttp = new XMLHttpRequest();
-    }
-    // IE -- microsoft, we really hate you. every single day.
-    else if (window.ActiveXObject)
-    {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    
-    xmlhttp.open("POST", document.location.href, true);
-    xmlhttp.setRequestHeader("Content-type", "application/json");
-
-    xmlhttp.onreadystatechange = function()
-    {
-        if(xmlhttp.readyState != 4)
-        	return;
-        
-        gotInfos = true;
-        
-        //console.log (xmlhttp.responseText);
-    	var json = JSON.parse(xmlhttp.responseText);
-    	//console.log (json);
-    	displayNotifications (json);
-    	
-        if(xmlhttp.status == 200)
-        {
-        	
-        	if (json.getEntityInfos)
-        	{
-        		parseEntities (json.getEntityInfos.entities);
-        	}
-        }
-    };
-    xmlhttp.send(JSON.stringify(jsonObject));
-    */
 }
 
 function parseUrl (event)
