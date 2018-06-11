@@ -177,9 +177,9 @@ class ExperimentComparisonView(TemplateView):
     template_name = 'experiments/experimentversion_compare.html'
 
     def get_context_data(self, **kwargs):
-        versions = ExperimentVersion.objects.visible_to(self.request.user).filter(
-            pk__in=map(int, self.kwargs['version_pks'][1:].split('/')),
-        ).order_by('created_at')
+        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/')}
+        versions = ExperimentVersion.objects.visible_to(
+            self.request.user).filter(pk__in=pks).order_by('created_at')
 
         kwargs.update({
             'experiment_versions': versions,
@@ -246,17 +246,27 @@ class ExperimentComparisonJsonView(View):
         }
 
     def get(self, request, *args, **kwargs):
-        versions = ExperimentVersion.objects.visible_to(self.request.user).filter(
-            pk__in=map(int, self.kwargs['version_pks'][1:].split('/')),
-        ).order_by('created_at')
+        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/')}
+        versions = ExperimentVersion.objects.visible_to(
+            self.request.user).filter(pk__in=pks).order_by('created_at')
 
-        return JsonResponse({
+        response = {
             'getEntityInfos': {
                 'entities': [
                     self._version_json(version) for version in versions
                 ]
             }
-        })
+        }
+
+        if len(versions) <= len(pks):
+            response['notifications'] = {
+                'errors': [
+                    'Some requested experiment results could not be found '
+                    '(or you don\'t have permission to see them)'
+                ]
+            }
+
+        return JsonResponse(response)
 
 
 @method_decorator(staff_member_required, name='dispatch')

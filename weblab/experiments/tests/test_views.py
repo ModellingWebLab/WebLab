@@ -323,6 +323,8 @@ class TestExperimentComparisonJsonView:
         assert len(versions) == 1
         assert versions[0]['versionId'] == ver1.id
 
+        assert len(data['notifications']['errors']) == 1
+
     def test_file_json(self, client, archive_file_path, helpers):
         version = recipes.experiment_version.make(
             author__full_name='test user',
