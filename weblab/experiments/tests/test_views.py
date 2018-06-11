@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 import pytest
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.messages import get_messages
 from django.test import Client
 from django.utils.dateparse import parse_datetime
 
@@ -468,3 +469,57 @@ class TestEnforcesExperimentVersionVisibility:
         response = client.get(exp_url)
         assert response.status_code == 302
         assert '/login' in response.url
+
+
+@pytest.mark.django_db
+class TestExperimentSimulateCallbackView:
+    @patch('experiments.views.process_callback')
+    def test_processes_callback_if_form_valid(
+        self, mock_process,
+        client, logged_in_admin, queued_experiment, archive_file
+    ):
+        mock_process.return_value = {}
+
+        version = queued_experiment
+        response = client.post(
+            '/experiments/%d/versions/%d/callback' % (version.experiment.id, version.id),
+            {
+                'returntype': 'success',
+                'returnmsg': 'experiment was successful',
+                'upload': archive_file
+            }
+        )
+
+        assert response.status_code == 302
+        assert response.url == '/experiments/%d/versions/%d' % (version.experiment.id, version.id)
+        assert mock_process.call_count == 1
+        assert mock_process.call_args[0][0]['returntype'] == 'success'
+        assert mock_process.call_args[0][0]['returnmsg'] == 'experiment was successful'
+        assert archive_file.name.endswith(mock_process.call_args[0][1]['experiment'].name)
+
+        messages = list(get_messages(response.wsgi_request))
+        assert messages[0].level_tag == 'info'
+
+    @patch('experiments.views.process_callback')
+    def test_exposes_processing_error(
+        self, mock_process,
+        client, logged_in_admin, queued_experiment, archive_file
+    ):
+        mock_process.return_value = {'error': 'processing error'}
+        version = queued_experiment
+        response = client.post(
+            '/experiments/%d/versions/%d/callback' % (version.experiment.id, version.id),
+            {
+                'returntype': 'success',
+                'returnmsg': 'experiment was successful',
+                'upload': archive_file
+            }
+        )
+
+        assert response.status_code == 302
+        assert response.url == '/experiments/%d/versions/%d' % (version.experiment.id, version.id)
+        assert mock_process.call_count == 1
+
+        messages = list(get_messages(response.wsgi_request))
+        assert messages[0].level_tag == 'error'
+        assert str(messages[0]) == 'processing error'

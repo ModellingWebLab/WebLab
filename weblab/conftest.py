@@ -84,6 +84,16 @@ def experiment_version(model_with_version, protocol_with_version):
 
 
 @pytest.fixture
+def admin_user():
+    return User.objects.create_superuser(
+        email='admin@example.com',
+        full_name='Admin User',
+        institution='UCL',
+        password='password',
+    )
+
+
+@pytest.fixture
 def user():
     return User.objects.create_user(
         email='test@example.com',
@@ -107,3 +117,9 @@ def other_user():
 def logged_in_user(client, user):
     client.login(username=user.email, password='password')
     return user
+
+
+@pytest.fixture
+def logged_in_admin(client, admin_user):
+    client.login(username=admin_user.email, password='password')
+    return admin_user
