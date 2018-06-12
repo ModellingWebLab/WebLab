@@ -258,7 +258,7 @@ class ExperimentComparisonJsonView(View):
             }
         }
 
-        if len(versions) <= len(pks):
+        if len(versions) < len(pks):
             response['notifications'] = {
                 'errors': [
                     'Some requested experiment results could not be found '
