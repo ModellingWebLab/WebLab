@@ -35,6 +35,20 @@
       </small>
     </div>
 
+    <div id="entity-view-buttons" class="link-list">
+      <!-- <nav><ul><li><a href="">parent menu item</a><ul><li><a href="">child item</a> ... -->
+      <a class="button selected" href="{{ entity|url_version:version }}" title="View files associated with this {{ entity.entity_type }}">Files</a>
+      <div class="button hover-menu" title="Compare... (hover to see options)">Compare&hellip;<ul>
+        <li><a href="{{ entity|url_version:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type|pluralize }}</a></li>
+        <li><a href="{{ entity|url_version:version }}" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>
+        <li><a href="{{ entity|url_version:version }}" title="Show differences between versions of this {{ type }}">Other versions</a></li>
+      </ul></div>
+      {% if type == 'model' %}
+        <a class="button" href="" title="Fit the parameters of this model to data">Fit</a>
+        <a class="button" href="" title="Show results of parameter fitting experiments run on this model">Fittings</a>
+      {% endif %}
+    </div>
+
     <div id="entityversiondetails">
 
       <div id="entityversionfiles">

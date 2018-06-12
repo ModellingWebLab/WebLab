@@ -125,6 +125,53 @@ button,
 }
 
 
+/* A general horizontal list of links, typically also using class button */
+.link-list {
+    button, .button {
+        vertical-align: top;
+        margin-right: 5px; /* Put some space between items */
+    }
+}
+
+
+/* Used for drop-down menus on hover over a parent */
+.hover-menu {
+    //width: 100px;
+
+    /* The drop-down menu */
+    ul {
+        display: none; /* Hidden by default */
+        height: auto;
+        //width: 100px;
+        padding: 0;  /* Aligns drop-down box underneath the parent */
+        margin: 0;  /* Aligns drop-down box underneath the parent */
+        background-color: lighten($button-bg, 10%);
+        list-style: none;
+        z-index: 10;
+        position: relative;
+
+        li, li a {
+            text-align: left;
+            color: white;
+            padding: 0;
+            margin: 0;
+        }
+        li a::before {
+            content: '\00BB\00A0';
+        }
+    }
+
+    /* Display when the menu item is hovered over */
+    &:hover ul {
+        display: block;
+    }
+    &:hover {
+        height: auto;
+        position: absolute;
+    }
+}
+
+
 #body {
 	clear: both;
 	/*background-color: #ccc;*/
