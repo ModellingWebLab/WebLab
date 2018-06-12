@@ -262,7 +262,6 @@ function parseEntities (entityObj)
 				var file = entity.files[j],
 					sig = file.name.hashCode();
 				file.signature = sig;
-				file.url = file.url;
         file.type = file.filetype;
 				if (!files[sig])
 				{
