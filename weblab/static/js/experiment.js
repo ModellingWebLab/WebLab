@@ -229,7 +229,7 @@ function parseOutputContents (file, version, showDefault) {
       }
     }
   };
-  getFileContent (file, goForIt);
+  utils.getFileContent (file, goForIt);
 
   return null;
 }
@@ -251,7 +251,7 @@ function parsePlotDescription (file, version, showDefault) {
       }
     }
   };
-  getFileContent (file, goForIt);
+  utils.getFileContent (file, goForIt);
 
   return null;
 }
@@ -270,7 +270,7 @@ function parseReadme (file, version) {
       }
     }
   };
-  getFileContent (file, goForIt);
+  utils.getFileContent (file, goForIt);
 
   return null;
 }
@@ -618,15 +618,6 @@ function addNewVersion(id, url) {
   });
 }
 
-function getFileContent (file, succ) {
-  // TODO: loading indicator.. so the user knows that we are doing something
-  $.get(file.url, function(data) {
-      file.contents = data;
-      succ.getContentsCallback (true);
-  }).fail(function() {
-    succ.getContentsCallback(false);
-  });
-}
 
 function updateFile (rf, v) {
   var f = files[rf.id];
@@ -652,9 +643,9 @@ function updateFile (rf, v) {
   {
     if (!f.contents) {
       //console.log ("missing file contents. calling for: " + f.id);
-      getFileContent (f, callBack);
+      utils.getFileContent (f, callBack);
     } else {
-      getFileContent (f, callBack);
+      utils.getFileContent (f, callBack);
     }
   };
 }

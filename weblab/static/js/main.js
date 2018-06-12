@@ -7,6 +7,7 @@ require('./entitynew.js');
 require('./db.js');
 var experiment = require('./experiment.js');
 var notifications = require('./lib/notifications.js');
+require('./compare.js');
 
 
 function removeListeners (element)

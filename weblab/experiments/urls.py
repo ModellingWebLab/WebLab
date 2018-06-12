@@ -63,4 +63,16 @@ urlpatterns = [
         views.ExperimentVersionArchiveView.as_view(),
         name='archive',
     ),
+
+    url(
+        r'^compare(?P<version_pks>(/\d+){2,})(?:/show/(?P<filename>[\w.]+)/(?P<viz>\w+))?$',
+        views.ExperimentComparisonView.as_view(),
+        name='compare',
+    ),
+
+    url(
+        r'^compare(?P<version_pks>(/\d+)+)/info$',
+        views.ExperimentComparisonJsonView.as_view(),
+        name='compare_json',
+    ),
 ]

@@ -151,6 +151,16 @@ function getPos(ele) {
   return {xPos:x, yPos:y};
 }
 
+function getFileContent (file, succ) {
+  // TODO: loading indicator.. so the user knows that we are doing something
+  $.get(file.url, function(data) {
+      file.contents = data;
+      succ.getContentsCallback (true);
+  }).fail(function() {
+    succ.getContentsCallback(false);
+  });
+}
+
 module.exports = {
   humanReadableBytes: humanReadableBytes,
   removeChildren: removeChildren,
@@ -163,5 +173,6 @@ module.exports = {
   addLink: addLink,
   parseCsvRaw: parseCsvRaw,
   keys: keys,
-  getPos: getPos
+  getPos: getPos,
+  getFileContent: getFileContent,
 }

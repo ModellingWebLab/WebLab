@@ -9,6 +9,8 @@ from core.models import UserCreatedModelMixin
 from core.visibility import get_joint_visibility
 from entities.models import ModelEntity, ProtocolEntity
 
+from .managers import ExperimentVersionManager
+
 
 class Experiment(UserCreatedModelMixin, models.Model):
     """A specific version of a protocol run on a specific version of a model
@@ -101,6 +103,8 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
         default=STATUS_QUEUED,
     )
     return_text = models.TextField(blank=True)
+
+    objects = ExperimentVersionManager()
 
     def __str__(self):
         return '%s at %s: (%s)' % (self.experiment, self.created_at, self.status)

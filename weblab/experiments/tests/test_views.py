@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 import pytest
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.messages import get_messages
 from django.test import Client
 from django.utils.dateparse import parse_datetime
 
@@ -225,6 +226,144 @@ class TestExperimentVersionView:
 
 
 @pytest.mark.django_db
+class TestExperimentComparisonView:
+    def test_compare_experiments(self, client, experiment_version, helpers):
+        exp = experiment_version.experiment
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol)
+
+        version2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=protocol,
+            experiment__protocol_version=protocol_commit.hexsha,
+        )
+
+        response = client.get(
+            ('/experiments/compare/%d/%d' % (experiment_version.id, version2.id))
+        )
+
+        assert response.status_code == 200
+        assert set(response.context['experiment_versions']) == {
+            experiment_version, version2
+        }
+
+    def test_only_compare_visible_experiments(self, client, experiment_version, helpers):
+        ver1 = experiment_version
+        exp = ver1.experiment
+
+        proto = recipes.protocol.make(visibility='private')
+        proto_commit = helpers.add_version(proto)
+        ver2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=proto,
+            experiment__protocol_version=proto_commit.hexsha,
+        )
+
+        response = client.get(
+            ('/experiments/compare/%d/%d' % (ver1.id, ver2.id))
+        )
+
+        assert response.status_code == 200
+        assert set(response.context['experiment_versions']) == {ver1}
+
+        assert len(response.context['ERROR_MESSAGES']) == 1
+
+
+@pytest.mark.django_db
+class TestExperimentComparisonJsonView:
+    def test_compare_experiments(self, client, experiment_version, helpers):
+        exp = experiment_version.experiment
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol)
+
+        version2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=protocol,
+            experiment__protocol_version=protocol_commit.hexsha,
+        )
+
+        response = client.get(
+            ('/experiments/compare/%d/%d/info' % (experiment_version.id, version2.id))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert versions[0]['versionId'] == experiment_version.id
+        assert versions[1]['versionId'] == version2.id
+        assert versions[0]['modelName'] == exp.model.name
+        assert versions[0]['protoName'] == exp.protocol.name
+        assert versions[0]['name'] == exp.name
+
+    def test_only_compare_visible_experiments(self, client, experiment_version, helpers):
+        ver1 = experiment_version
+        exp = ver1.experiment
+
+        proto = recipes.protocol.make(visibility='private')
+        proto_commit = helpers.add_version(proto)
+        ver2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=proto,
+            experiment__protocol_version=proto_commit.hexsha,
+        )
+
+        response = client.get(
+            ('/experiments/compare/%d/%d/info' % (ver1.id, ver2.id))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert len(versions) == 1
+        assert versions[0]['versionId'] == ver1.id
+
+    def test_file_json(self, client, archive_file_path, helpers):
+        version = recipes.experiment_version.make(
+            author__full_name='test user',
+            experiment__model_version='latest',
+            experiment__protocol_version='latest')
+        version.abs_path.mkdir()
+        shutil.copyfile(archive_file_path, str(version.archive_path))
+        exp = version.experiment
+
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol)
+        version2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=protocol,
+            experiment__protocol_version=protocol_commit.hexsha,
+        )
+        version2.abs_path.mkdir()
+        shutil.copyfile(archive_file_path, str(version2.archive_path))
+
+        response = client.get(
+            ('/experiments/compare/%d/%d/info' % (version.pk, version2.pk))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        file1 = data['getEntityInfos']['entities'][0]['files'][0]
+        assert file1['author'] == 'test user'
+        assert file1['name'] == 'stdout.txt'
+        assert file1['filetype'] == 'http://purl.org/NET/mediatypes/text/plain'
+        assert not file1['masterFile']
+        assert file1['size'] == 27
+        assert file1['url'] == (
+            '/experiments/%d/versions/%d/download/stdout.txt' % (exp.pk, version.pk)
+        )
+
+
+@pytest.mark.django_db
 class TestExperimentVersionJsonView:
     def test_experiment_json(self, client):
         version = recipes.experiment_version.make(
@@ -272,7 +411,7 @@ class TestExperimentVersionJsonView:
 
         assert response.status_code == 200
         data = json.loads(response.content.decode())
-        file1 = data['version']['files'][1]
+        file1 = data['version']['files'][0]
         assert file1['author'] == 'test user'
         assert file1['name'] == 'stdout.txt'
         assert file1['filetype'] == 'http://purl.org/NET/mediatypes/text/plain'
@@ -377,3 +516,57 @@ class TestEnforcesExperimentVersionVisibility:
         response = client.get(exp_url)
         assert response.status_code == 302
         assert '/login' in response.url
+
+
+@pytest.mark.django_db
+class TestExperimentSimulateCallbackView:
+    @patch('experiments.views.process_callback')
+    def test_processes_callback_if_form_valid(
+        self, mock_process,
+        client, logged_in_admin, queued_experiment, archive_file
+    ):
+        mock_process.return_value = {}
+
+        version = queued_experiment
+        response = client.post(
+            '/experiments/%d/versions/%d/callback' % (version.experiment.id, version.id),
+            {
+                'returntype': 'success',
+                'returnmsg': 'experiment was successful',
+                'upload': archive_file
+            }
+        )
+
+        assert response.status_code == 302
+        assert response.url == '/experiments/%d/versions/%d' % (version.experiment.id, version.id)
+        assert mock_process.call_count == 1
+        assert mock_process.call_args[0][0]['returntype'] == 'success'
+        assert mock_process.call_args[0][0]['returnmsg'] == 'experiment was successful'
+        assert archive_file.name.endswith(mock_process.call_args[0][1]['experiment'].name)
+
+        messages = list(get_messages(response.wsgi_request))
+        assert messages[0].level_tag == 'info'
+
+    @patch('experiments.views.process_callback')
+    def test_exposes_processing_error(
+        self, mock_process,
+        client, logged_in_admin, queued_experiment, archive_file
+    ):
+        mock_process.return_value = {'error': 'processing error'}
+        version = queued_experiment
+        response = client.post(
+            '/experiments/%d/versions/%d/callback' % (version.experiment.id, version.id),
+            {
+                'returntype': 'success',
+                'returnmsg': 'experiment was successful',
+                'upload': archive_file
+            }
+        )
+
+        assert response.status_code == 302
+        assert response.url == '/experiments/%d/versions/%d' % (version.experiment.id, version.id)
+        assert mock_process.call_count == 1
+
+        messages = list(get_messages(response.wsgi_request))
+        assert messages[0].level_tag == 'error'
+        assert str(messages[0]) == 'processing error'

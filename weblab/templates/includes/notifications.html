@@ -1,26 +1,22 @@
 
 <div id="notifications">
 
-  <div id="error" class="invisible">
+  <div id="error" {% if not ERROR_MESSAGES %}class="invisible"{% endif %}>
     <h3>The following errors occurred:</h3>
     <ul id='errorlist'>
-      {% comment %}
-      <c:forEach items="${notes.errors}" var="err" >
-        <li>${err}</li>
-      </c:forEach>
-      {% endcomment %}
+      {% for message in ERROR_MESSAGES %}
+        <li>{{ message }}</li>
+      {% endfor %}
     </ul>
     <a class="pointer" id="dismisserrors">dismiss</a>
   </div>
 
-  <div id="info" class="invisible">
+  <div id="info" {% if not INFO_MESSAGES %}class="invisible"{% endif %}>
     <h3>Note:</h3>
     <ul id='infolist'>
-      {% comment %}
-      <c:forEach items="${notes.infos}" var="info" >
-        <li>${info}</li>
-      </c:forEach>
-      {% endcomment %}
+      {% for message in INFO_MESSAGES %}
+        <li>{{ message }}</li>
+      {% endfor %}
     </ul>
     <a class="pointer" id="dismissnotes">dismiss</a>
   </div>

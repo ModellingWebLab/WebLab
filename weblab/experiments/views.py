@@ -170,6 +170,104 @@ class ExperimentVersionListView(VisibilityMixin, DetailView):
     template_name = 'experiments/experiment_versions.html'
 
 
+class ExperimentComparisonView(TemplateView):
+    """
+    Compare multiple experiment versions
+    """
+    template_name = 'experiments/experimentversion_compare.html'
+
+    def get_context_data(self, **kwargs):
+        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/')}
+        versions = ExperimentVersion.objects.visible_to(
+            self.request.user).filter(pk__in=pks).order_by('created_at')
+
+        if len(versions) < len(pks):
+            messages.error(
+                self.request,
+                'Some requested experiment results could not be found '
+                '(or you don\'t have permission to see them)'
+            )
+
+        kwargs.update({
+            'experiment_versions': versions,
+        })
+        return super().get_context_data(**kwargs)
+
+
+class ExperimentComparisonJsonView(View):
+    """
+    Serve up JSON view of multiple experiment versions for comparison
+    """
+    def _file_json(self, version, archive_file):
+        """
+        JSON for a single file in the experiment archive
+
+        :param version: ExperimentVersion object
+        :param archive_file: ArchiveFile object
+        """
+        return {
+            'id': archive_file.name,
+            'author': version.author.full_name,
+            'created': version.created_at,
+            'name': archive_file.name,
+            'filetype': archive_file.fmt,
+            'masterFile': archive_file.is_master,
+            'size': archive_file.size,
+            'url': reverse(
+                'experiments:file_download',
+                args=[version.experiment.id, version.id, urllib.parse.quote(archive_file.name)]
+            )
+        }
+
+    def _version_json(self, version):
+        """
+        JSON for a single experiment version
+
+        :param version: ExperimentVersion object
+        """
+        files = [
+            self._file_json(version, f)
+            for f in version.files
+            if f.name not in ['manifest.xml', 'metadata.rdf']
+        ]
+        return {
+            'id': version.id,
+            'author': version.author.full_name,
+            'status': version.status,
+            'parsedOk': False,
+            'visibility': version.visibility,
+            'created': version.created_at,
+            'name': version.experiment.name,
+            'experimentId': version.experiment.id,
+            'versionId': version.id,
+            'files': files,
+            'numFiles': len(files),
+            'url': reverse(
+                'experiments:version', args=[version.experiment.id, version.id]
+            ),
+            'download_url': reverse(
+                'experiments:archive', args=[version.experiment.id, version.id]
+            ),
+            'modelName': version.experiment.model.name,
+            'protoName': version.experiment.protocol.name,
+        }
+
+    def get(self, request, *args, **kwargs):
+        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/')}
+        versions = ExperimentVersion.objects.visible_to(
+            self.request.user).filter(pk__in=pks).order_by('created_at')
+
+        response = {
+            'getEntityInfos': {
+                'entities': [
+                    self._version_json(version) for version in versions
+                ]
+            }
+        }
+
+        return JsonResponse(response)
+
+
 @method_decorator(staff_member_required, name='dispatch')
 class ExperimentSimulateCallbackView(FormMixin, DetailView):
     """
@@ -191,7 +289,7 @@ class ExperimentSimulateCallbackView(FormMixin, DetailView):
             return self.form_invalid(form)
 
     def get_success_url(self):
-        return reverse('experiments:simulate_callback',
+        return reverse('experiments:version',
                        args=[self.object.experiment.pk, self.object.pk])
 
     def form_valid(self, form):
@@ -201,11 +299,13 @@ class ExperimentSimulateCallbackView(FormMixin, DetailView):
         )
 
         result = process_callback(data, {'experiment': form.files.get('upload')})
-        print(result)
 
         if 'error' in result:
             messages.error(self.request, result['error'])
             logger.error(result['error'])
+
+        else:
+            messages.info(self.request, 'Experiment status updated')
 
         return super().form_valid(form)
 
@@ -237,6 +337,7 @@ class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
         files = [
             self._file_json(f)
             for f in version.files
+            if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
 
         return JsonResponse({
