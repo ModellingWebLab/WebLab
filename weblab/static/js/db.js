@@ -372,11 +372,12 @@ function toggleSelected($td, expId)
  */
 function computeComparisonLink()
 {
+  var $comparisonLink = $("#comparisonLink");
 	if (experimentsToCompare.length > 0)
 	{
-		var newHref = contextPath + "/compare/e/";
+    var newHref = $comparisonLink.data('comparison-href');
 		for (var i = 0; i < experimentsToCompare.length; i++)
-			newHref += experimentsToCompare[i] + "/";
+			newHref += '/' + experimentsToCompare[i];
 		$("#comparisonLink").show().data("href", newHref);
 	}
 	else

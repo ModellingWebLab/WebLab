@@ -57,6 +57,19 @@ class TestExperimentMatrix:
         assert str(exp.protocol.pk) in data['getMatrix']['protocols']
         assert str(exp.pk) in data['getMatrix']['experiments']
 
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_experiment_json(self, client, experiment_version):
+        exp = experiment_version.experiment
+
+        response = client.get('/experiments/matrix')
+        data = json.loads(response.content.decode())
+
+        exp_data = data['getMatrix']['experiments'][str(exp.pk)]
+        assert exp_data['id'] == experiment_version.id
+        assert exp_data['entity_id'] == exp.id
+        assert exp_data['latestResult'] == experiment_version.status
+        assert '/experiments/%d/versions/%d' % (exp.id, experiment_version.id) in exp_data['url']
+
     def test_anonymous_can_see_public_data(self, client, experiment_version):
         response = client.get('/experiments/matrix')
         data = json.loads(response.content.decode())

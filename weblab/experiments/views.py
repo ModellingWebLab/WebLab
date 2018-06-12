@@ -34,6 +34,11 @@ class ExperimentsView(TemplateView):
     """
     template_name = 'experiments/experiments.html'
 
+    def get_context_data(self, **kwargs):
+        url = reverse('experiments:compare', args=['/1/1'])
+        kwargs.update(comparison_base_url=url[:-4])
+        return super().get_context_data(**kwargs)
+
 
 class ExperimentMatrixJsonView(View):
     """
@@ -58,21 +63,17 @@ class ExperimentMatrixJsonView(View):
         }
 
     @classmethod
-    def experiment_json(cls, experiment):
-        try:
-            version = experiment.latest_version
-        except ExperimentVersion.DoesNotExist:
-            version = None
-
+    def experiment_version_json(cls, version):
         return {
-            'entity_id': experiment.id,
-            'latestResult': experiment.latest_result,
-            'protocol': cls.entity_json(experiment.protocol),
-            'model': cls.entity_json(experiment.model),
+            'id': version.id,
+            'entity_id': version.experiment.id,
+            'latestResult': version.status,
+            'protocol': cls.entity_json(version.experiment.protocol),
+            'model': cls.entity_json(version.experiment.model),
             'url': reverse(
                 'experiments:version',
-                args=[experiment.id, version.id]
-            ) if version else '',
+                args=[version.experiment.id, version.id]
+            ),
         }
 
     def get(self, request, *args, **kwargs):
@@ -93,9 +94,13 @@ class ExperimentMatrixJsonView(View):
         # Only give info on experiments involving the correct entity versions
         experiments = {}
         for exp in Experiment.objects.filter(model__in=q_models, protocol__in=q_protocols):
-            if (exp.model_version == models[exp.model.pk]['version'] and
-                    exp.protocol_version == protocols[exp.protocol.pk]['version']):
-                experiments[exp.pk] = self.experiment_json(exp)
+            if ((exp.model_version == models[exp.model.pk]['version'] and
+                 exp.protocol_version == protocols[exp.protocol.pk]['version'])):
+
+                try:
+                    experiments[exp.pk] = self.experiment_version_json(exp.latest_version)
+                except ExperimentVersion.DoesNotExist:
+                    pass
 
         return JsonResponse({
             'getMatrix': {
