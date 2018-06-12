@@ -270,6 +270,8 @@ class TestExperimentComparisonView:
         assert response.status_code == 200
         assert set(response.context['experiment_versions']) == {ver1}
 
+        assert len(response.context['ERROR_MESSAGES']) == 1
+
 
 @pytest.mark.django_db
 class TestExperimentComparisonJsonView:
@@ -322,8 +324,6 @@ class TestExperimentComparisonJsonView:
         versions = data['getEntityInfos']['entities']
         assert len(versions) == 1
         assert versions[0]['versionId'] == ver1.id
-
-        assert len(data['notifications']['errors']) == 1
 
     def test_file_json(self, client, archive_file_path, helpers):
         version = recipes.experiment_version.make(

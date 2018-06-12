@@ -181,6 +181,13 @@ class ExperimentComparisonView(TemplateView):
         versions = ExperimentVersion.objects.visible_to(
             self.request.user).filter(pk__in=pks).order_by('created_at')
 
+        if len(versions) < len(pks):
+            messages.error(
+                self.request,
+                'Some requested experiment results could not be found '
+                '(or you don\'t have permission to see them)'
+            )
+
         kwargs.update({
             'experiment_versions': versions,
         })
@@ -257,14 +264,6 @@ class ExperimentComparisonJsonView(View):
                 ]
             }
         }
-
-        if len(versions) < len(pks):
-            response['notifications'] = {
-                'errors': [
-                    'Some requested experiment results could not be found '
-                    '(or you don\'t have permission to see them)'
-                ]
-            }
 
         return JsonResponse(response)
 
