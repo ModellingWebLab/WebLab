@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load entities %}
 
+{% block title %}{{ type|capfirst }} versions - {% endblock title %}
+
 {% block content %}
   {% include "./includes/entity_header.html" %}
 

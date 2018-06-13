@@ -3,6 +3,8 @@
 {% load entities %}
 {% load staticfiles %}
 
+{% block title %}{{ type|capfirst }} details - {% endblock title %}
+
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
