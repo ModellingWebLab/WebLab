@@ -28,24 +28,6 @@ from .processing import process_callback, submit_experiment
 logger = logging.getLogger(__name__)
 
 
-def get_ids(url_fragment):
-    """
-    Get a list of ids from a url fragment of the form /1/2/3
-    """
-    url_fragment = url_fragment or ''
-
-    def _get_id(pk):
-        try:
-            return int(pk)
-        except ValueError:
-            return None
-
-    return list(filter(
-        None,
-        map(_get_id, url_fragment.strip('/').split('/'))
-    ))
-
-
 class ExperimentsView(TemplateView):
     """
     Show the default experiment matrix view for this user (or the public)
@@ -212,7 +194,7 @@ class ExperimentComparisonView(TemplateView):
     template_name = 'experiments/experimentversion_compare.html'
 
     def get_context_data(self, **kwargs):
-        pks = set(get_ids(self.kwargs.get('version_pks')))
+        pks = set(map(int, self.kwargs['version_pks'].strip('/').split('/')))
         versions = ExperimentVersion.objects.visible_to(
             self.request.user).filter(pk__in=pks).order_by('created_at')
 

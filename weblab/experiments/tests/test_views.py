@@ -118,11 +118,13 @@ class TestExperimentMatrix:
             experiment__protocol_version=other_protocol_version,
         )
 
+        # Throw in a non-existent protocol so we can make sure it gets ignored
+        non_existent_pk = 0
         response = client.get(
             '/experiments/matrix',
             {
-                'modelIds[]': [experiment_version.experiment.model.pk],
-                'protoIds[]': [experiment_version.experiment.protocol.pk],
+                'modelIds[]': [experiment_version.experiment.model.pk, non_existent_pk],
+                'protoIds[]': [experiment_version.experiment.protocol.pk, non_existent_pk],
             }
         )
 
@@ -132,6 +134,22 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['models']) == 1
         assert len(data['getMatrix']['protocols']) == 1
         assert len(data['getMatrix']['experiments']) == 1
+
+    def test_experiment_without_version_is_ignored(
+        self, client, model_with_version, protocol_with_version
+    ):
+        recipes.experiment.make(
+            model=model_with_version,
+            model_version=model_with_version.repo.latest_commit.hexsha,
+            protocol=protocol_with_version,
+            protocol_version=protocol_with_version.repo.latest_commit.hexsha,
+        )
+
+        response = client.get('/experiments/matrix')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert len(data['getMatrix']['protocols']) == 1
+        assert len(data['getMatrix']['experiments']) == 0
 
     def test_old_version_is_hidden(self, client, model_with_version, experiment_version, helpers):
         # Add a new model version without corresponding experiment
