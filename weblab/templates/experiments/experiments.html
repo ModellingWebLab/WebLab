@@ -36,7 +36,7 @@
         <button id="comparisonMatrix" title="Show matrix featuring only selected models and/or protocols">Show sub-matrix</button>
     </span>
     </p>
-    <div id="matrixdiv" data-href="{% url 'experiments:matrix' %}"></div>
+    <div id="matrixdiv" data-base-json-href="{% url 'experiments:matrix' %}" data-base-href="{% url 'experiments:list' %}"></div>
     <br/>
     Key:
     <table class="matrixTable small">

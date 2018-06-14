@@ -28,6 +28,24 @@ from .processing import process_callback, submit_experiment
 logger = logging.getLogger(__name__)
 
 
+def get_ids(url_fragment):
+    """
+    Get a list of ids from a url fragment of the form /1/2/3
+    """
+    url_fragment = url_fragment or ''
+
+    def _get_id(pk):
+        try:
+            return int(pk)
+        except ValueError:
+            return None
+
+    return list(filter(
+        None,
+        map(_get_id, url_fragment.strip('/').split('/'))
+    ))
+
+
 class ExperimentsView(TemplateView):
     """
     Show the default experiment matrix view for this user (or the public)
@@ -35,6 +53,9 @@ class ExperimentsView(TemplateView):
     template_name = 'experiments/experiments.html'
 
     def get_context_data(self, **kwargs):
+        # Use dummy IDs to set up a comparison URL, then chop them off to
+        # get the base. This will be used by javascript to generate comparisons
+        # between experiment versions.
         url = reverse('experiments:compare', args=['/1/1'])
         kwargs.update(comparison_base_url=url[:-4])
         return super().get_context_data(**kwargs)
@@ -50,7 +71,7 @@ class ExperimentMatrixJsonView(View):
         version = commit.hexsha if commit else ''
         return {
             'id': entity.id,
-            'entity_id': entity.id,
+            'entityId': entity.id,
             'author': str(entity.author.full_name),
             'visibility': entity.visibility,
             'created': entity.created_at,
@@ -80,6 +101,15 @@ class ExperimentMatrixJsonView(View):
         q_visibility = visibility_query(request.user)
         q_models = ModelEntity.objects.filter(q_visibility)
         q_protocols = ProtocolEntity.objects.filter(q_visibility)
+
+        model_pks = list(map(int, request.GET.getlist('modelIds[]')))
+        protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
+
+        if model_pks:
+            q_models = q_models.filter(pk__in=model_pks)
+
+        if protocol_pks:
+            q_protocols = q_protocols.filter(pk__in=protocol_pks)
 
         models = {
             model.pk: self.entity_json(model)
@@ -182,7 +212,7 @@ class ExperimentComparisonView(TemplateView):
     template_name = 'experiments/experimentversion_compare.html'
 
     def get_context_data(self, **kwargs):
-        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/')}
+        pks = set(get_ids(self.kwargs.get('version_pks')))
         versions = ExperimentVersion.objects.visible_to(
             self.request.user).filter(pk__in=pks).order_by('created_at')
 

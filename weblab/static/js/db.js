@@ -413,9 +413,9 @@ function addMatrixClickListener($td, link, expId, result)
 }
 
 
-function getMatrix(div) {
-  // For now just display all experiments.
-  $.getJSON($(div).data('href'), function(data) {
+function getMatrix(params, div) {
+  var baseUrl = $(div).data('base-json-href');
+  $.getJSON(baseUrl, params, function(data) {
     drawMatrix(data.getMatrix);
   });
 }
@@ -428,12 +428,11 @@ function getMatrix(div) {
  * The URL can also be {contextPath}/db/public to show only what anonymous users can view.
  * Returns a JSON object to be passed to getMatrix();
  */
-/*
 function parseLocation ()
 {
-	var base = staticPath + "/db/",
+  var base = $('#matrixdiv').data('base-href'),
 		rest = "",
-		ret = { task: "getMatrix" };
+		ret = {}
 	if (document.location.pathname.substr(0, base.length) == base)
 		rest = document.location.pathname.substr(base.length);
 	$('.showButton').removeClass("selected");
@@ -497,7 +496,6 @@ function parseLocation ()
 		$('#showModeratedExpts').addClass("selected");
 	return ret;
 }
-*/
 
 function prepareMatrix ()
 {
@@ -508,8 +506,7 @@ function prepareMatrix ()
 	div.appendChild(loadingImg);
 	div.appendChild(document.createTextNode("Preparing experiment matrix; please be patient."));
 
-  getMatrix(div);
-	//getMatrix(parseLocation(), div);
+	getMatrix(parseLocation(), div);
 	
 	$("#comparisonModeButton").text(comparisonMode ? "Disable" : "Enable")
 	                          .click(function () {
@@ -530,7 +527,10 @@ function prepareMatrix ()
 	    document.location = $(this).data("href");
 	});
 	$("#comparisonMatrix").click(function () {
-		var url = contextPath + "/db";
+    var url = $(div).data('base-href');
+    if (url.substr(-1) === '/') {
+      url = url.slice(0, -1);
+    }
 		if (linesToCompare.row.length > 0)
 		{
 			url += "/models";

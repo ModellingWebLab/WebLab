@@ -44,6 +44,24 @@ def archive_file(archive_file_path):
 
 
 @pytest.mark.django_db
+class TestExperimentsView:
+    @pytest.mark.parametrize("url", [
+        '/experiments/',
+        '/experiments/models/1/2',
+        '/experiments/models/1/2/protocols/3/4',
+        '/experiments/protocols/1/2',
+    ])
+    def test_urls(self, client, url):
+        """
+        This is a dumb page that doesn't actually load any data, so we just
+        check that the URLs are working.
+        """
+        response = client.get(url)
+
+        assert response.status_code == 200
+
+
+@pytest.mark.django_db
 class TestExperimentMatrix:
     @pytest.mark.usefixtures('logged_in_user')
     def test_matrix(self, client, experiment_version):
@@ -87,6 +105,33 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['models']) == 0
         assert len(data['getMatrix']['protocols']) == 1
         assert len(data['getMatrix']['experiments']) == 0
+
+    def test_submatrix(self, client, helpers, experiment_version):
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_version(other_model)
+        other_protocol = recipes.protocol.make()
+        other_protocol_version = helpers.add_version(other_protocol)
+        recipes.experiment_version.make(
+            experiment__model=other_model,
+            experiment__model_version=other_model_version,
+            experiment__protocol=other_protocol,
+            experiment__protocol_version=other_protocol_version,
+        )
+
+        response = client.get(
+            '/experiments/matrix',
+            {
+                'modelIds[]': [experiment_version.experiment.model.pk],
+                'protoIds[]': [experiment_version.experiment.protocol.pk],
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert len(data['getMatrix']['models']) == 1
+        assert len(data['getMatrix']['protocols']) == 1
+        assert len(data['getMatrix']['experiments']) == 1
 
     def test_old_version_is_hidden(self, client, model_with_version, experiment_version, helpers):
         # Add a new model version without corresponding experiment

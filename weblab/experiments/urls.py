@@ -5,7 +5,7 @@ from . import views
 
 urlpatterns = [
     url(
-        r'^$',
+        r'^(?:models(?P<model_pks>(/\d+)+))?/?(?:protocols(?P<protocol_pks>(/\d+)+))?$',
         views.ExperimentsView.as_view(),
         name='list',
     ),
