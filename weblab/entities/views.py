@@ -1,5 +1,6 @@
 import os.path
 import shutil
+from itertools import groupby
 
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
@@ -25,6 +26,7 @@ from django.views.generic.list import ListView
 from git import GitCommandError
 
 from core.visibility import VisibilityMixin
+from experiments.models import Experiment
 
 from .forms import (
     EntityTagVersionForm,
@@ -70,15 +72,22 @@ class VersionMixin:
     of an `Entity` object
     """
 
+    def get_commit(self):
+        if not hasattr(self, '_commit'):
+            self._commit = self.get_object().repo.get_commit(self.kwargs['sha'])
+            if not self._commit:
+                raise Http404
+
+        return self._commit
+
     def get_context_data(self, **kwargs):
         entity = self.get_object()
         tags = entity.repo.tag_dict
-        version = self.kwargs['sha']
-        commit = entity.repo.get_commit(version)
+        commit = self.get_commit()
         kwargs.update(**{
             'version': commit,
             'tags': tags.get(commit, []),
-            'master_filename': entity.repo.master_filename(version),
+            'master_filename': entity.repo.master_filename(commit),
         })
         return super().get_context_data(**kwargs)
 
@@ -151,6 +160,51 @@ class ProtocolEntityVersionView(
     """
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
+
+
+class ModelEntityVersionCompareView(
+    VisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
+):
+    context_object_name = 'entity'
+    template_name = 'entities/entity_version_compare.html'
+
+    def get_context_data(self, **kwargs):
+        model = self.get_object()
+        commit = self.get_commit()
+
+        experiments = Experiment.objects.filter(
+            model=model.pk,
+            model_version=commit.hexsha,
+        ).select_related('protocol').order_by('protocol', '-created_at')
+
+        kwargs['comparisons'] = [
+            (proto, list(exp))
+            for (proto, exp) in groupby(experiments, lambda exp: exp.protocol)
+        ]
+
+        return super().get_context_data(**kwargs)
+
+
+class ProtocolEntityVersionCompareView(
+    VisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
+):
+    context_object_name = 'entity'
+    template_name = 'entities/entity_version_compare.html'
+
+    def get_context_data(self, **kwargs):
+        protocol = self.get_object()
+
+        experiments = Experiment.objects.filter(
+            protocol=protocol.pk,
+            protocol_version=self.get_commit().hexsha,
+        ).select_related('model').order_by('model', '-created_at')
+
+        kwargs['comparisons'] = [
+            (model, list(exp))
+            for (model, exp) in groupby(experiments, lambda exp: exp.model)
+        ]
+
+        return super().get_context_data(**kwargs)
 
 
 class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
@@ -368,7 +422,7 @@ class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
     pass
 
 
-class EntityArchiveView(VisibilityMixin, SingleObjectMixin, View):
+class EntityArchiveView(VisibilityMixin, SingleObjectMixin, VersionMixin, View):
     """
     Download a version of an entity as a COMBINE archive
     """
@@ -397,17 +451,13 @@ class EntityArchiveView(VisibilityMixin, SingleObjectMixin, View):
 
     def get(self, request, *args, **kwargs):
         entity = self.get_object()
-        ref = self.kwargs['sha']
-        commit = entity.repo.get_commit(ref)
-
-        if not commit:
-            raise Http404
+        commit = self.get_commit()
 
         zipfile_name = os.path.join(
             get_valid_filename('%s_%s.zip' % (entity.name, commit.hexsha))
         )
 
-        archive = entity.repo.archive(ref)
+        archive = entity.repo.archive(self.kwargs['sha'])
 
         response = HttpResponse(content_type='application/zip')
         response['Content-Disposition'] = 'attachment; filename=%s' % zipfile_name

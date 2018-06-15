@@ -199,6 +199,32 @@ class TestEntityVersionDetail:
 
 
 @pytest.mark.django_db
+class TestModelEntityVersionCompareView:
+    def test_shows_related_experiments(self, client, user, experiment_version):
+        exp = experiment_version.experiment
+        sha = exp.model.repo.latest_commit.hexsha
+        recipes.experiment_version.make()  # another experiment which should not be included
+
+        response = client.get('/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha))
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(exp.protocol, [exp])]
+
+
+@pytest.mark.django_db
+class TestProtocolEntityVersionCompareView:
+    def test_shows_related_experiments(self, client, user, experiment_version):
+        exp = experiment_version.experiment
+        sha = exp.protocol.repo.latest_commit.hexsha
+        recipes.experiment_version.make()  # another experiment which should not be included
+
+        response = client.get('/entities/protocols/%d/versions/%s/compare' % (exp.protocol.pk, sha))
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(exp.model, [exp])]
+
+
+@pytest.mark.django_db
 class TestTagging:
     def test_tag_specific_ref(self, helpers):
         model = recipes.model.make()
@@ -573,10 +599,12 @@ class TestFileUpload:
     (recipes.model, '/entities/models/%d'),
     (recipes.model, '/entities/models/%d/versions/'),
     (recipes.model, '/entities/models/%d/versions/latest'),
+    (recipes.model, '/entities/models/%d/versions/latest/compare'),
     (recipes.model, '/entities/models/%d/versions/latest/archive'),
     (recipes.protocol, '/entities/protocols/%d'),
     (recipes.protocol, '/entities/protocols/%d/versions/'),
     (recipes.protocol, '/entities/protocols/%d/versions/latest'),
+    (recipes.protocol, '/entities/protocols/%d/versions/latest/compare'),
     (recipes.protocol, '/entities/protocols/%d/versions/latest/archive'),
 ])
 class TestEntityVisibility:

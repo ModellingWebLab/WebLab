@@ -2,8 +2,6 @@
 {% load entities %}
 {% load staticfiles %}
 
-{% block title %}{{ type|capfirst }} details - {% endblock title %}
-
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
@@ -17,10 +15,12 @@
         {% endif %}
       </small>
     </div>
+
     <h2 id="entityversionname">
       <small>Version:</small>
       {% include "./includes/version_name.html" with tags=tags version=version only %}
     </h2>
+
     <div class="suppl">
       <small>
         Created <time id="entityversiontime">{{ version.committed_date|as_datetime }}</time>
@@ -37,7 +37,7 @@
     <div id="entity-view-buttons" class="link-list">
       <a class="button selected" href="{{ entity|url_version:version }}" title="View files associated with this {{ entity.entity_type }}">Files</a>
       <div class="button hover-menu" title="Compare... (hover to see options)">Compare&hellip;<ul>
-        <li><a href="{{ entity|url_version_compare:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
+          <li><a href="{{ entity|url_version_compare:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
         <li><a href="" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>
         <li><a href="" title="Show differences between versions of this {{ type }}">Other versions</a></li>
       </ul></div>
@@ -47,13 +47,42 @@
       {% endif %}
     </div>
 
-    <div id="entityversiondetails">
+    <div id="entityexperimentlist">
+      <h3>Experiments using this {{type}}</h3>
+      <p>
+      This {{type}} has been run with the following {{other_type}}s.
+      Click to view the latest results of each single experiment, or select multiple experiments to compare them.
+      </p>
 
-      <div id="entityversionfiles">
-       {% include "./includes/version_files.html" %}
+      <div id="entityexperimentlistpartners">
+        <ul>
+          {% for entity, versions in comparisons %}
+            {% with versions.0 as version %}
+            <li>
+              <input value="{{ version.id }}" type="checkbox">
+              <a href="{% url 'experiments:version' version.id version.latest_version.id %}">
+                {{ entity.name }} @
+                {% if type == 'model' %}
+                  {{ version.model|name_for_commit:version.model_version }}
+                {% else %}
+                  {{ version.protocol|name_for_commit:version.protocol_version }}
+                {% endif %}
+            </li>
+            {% endwith %}
+          {% endfor %}
+        </ul>
       </div>
 
+      <div id="entityexperimentlistpartnersact">
+        [<a id="entityexperimentlistpartnersactall">select all</a>]
+        <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest</a>]</span>
+        [<a id="entityexperimentlistpartnersactnone">select none</a>]
+        <br/>
+        <button id="entityexperimentlist_showallversions">show all versions</button>
+        <button id="entityexperimentlistpartnersactcompare">compare selected experiments</button>
+      </div>
     </div>
+
   </div>
 
 {% endblock %}
