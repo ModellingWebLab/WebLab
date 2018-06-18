@@ -44,6 +44,24 @@ def archive_file(archive_file_path):
 
 
 @pytest.mark.django_db
+class TestExperimentsView:
+    @pytest.mark.parametrize("url", [
+        '/experiments/',
+        '/experiments/models/1/2',
+        '/experiments/models/1/2/protocols/3/4',
+        '/experiments/protocols/1/2',
+    ])
+    def test_urls(self, client, url):
+        """
+        This is a dumb page that doesn't actually load any data, so we just
+        check that the URLs are working.
+        """
+        response = client.get(url)
+
+        assert response.status_code == 200
+
+
+@pytest.mark.django_db
 class TestExperimentMatrix:
     @pytest.mark.usefixtures('logged_in_user')
     def test_matrix(self, client, experiment_version):
@@ -56,6 +74,19 @@ class TestExperimentMatrix:
         assert str(exp.model.pk) in data['getMatrix']['models']
         assert str(exp.protocol.pk) in data['getMatrix']['protocols']
         assert str(exp.pk) in data['getMatrix']['experiments']
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_experiment_json(self, client, experiment_version):
+        exp = experiment_version.experiment
+
+        response = client.get('/experiments/matrix')
+        data = json.loads(response.content.decode())
+
+        exp_data = data['getMatrix']['experiments'][str(exp.pk)]
+        assert exp_data['id'] == experiment_version.id
+        assert exp_data['entity_id'] == exp.id
+        assert exp_data['latestResult'] == experiment_version.status
+        assert '/experiments/%d/versions/%d' % (exp.id, experiment_version.id) in exp_data['url']
 
     def test_anonymous_can_see_public_data(self, client, experiment_version):
         response = client.get('/experiments/matrix')
@@ -72,6 +103,56 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert len(data['getMatrix']['models']) == 0
+        assert len(data['getMatrix']['protocols']) == 1
+        assert len(data['getMatrix']['experiments']) == 0
+
+    def test_submatrix(self, client, helpers, experiment_version):
+        exp = experiment_version.experiment
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_version(other_model)
+        other_protocol = recipes.protocol.make()
+        other_protocol_version = helpers.add_version(other_protocol)
+        recipes.experiment_version.make(
+            experiment__model=other_model,
+            experiment__model_version=other_model_version,
+            experiment__protocol=other_protocol,
+            experiment__protocol_version=other_protocol_version,
+        )
+
+        # Throw in a non-existent protocol so we can make sure it gets ignored
+        non_existent_pk = 0
+        response = client.get(
+            '/experiments/matrix',
+            {
+                'modelIds[]': [exp.model.pk, non_existent_pk],
+                'protoIds[]': [exp.protocol.pk, non_existent_pk],
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert len(data['getMatrix']['models']) == 1
+        assert len(data['getMatrix']['protocols']) == 1
+        assert len(data['getMatrix']['experiments']) == 1
+
+        assert str(exp.model.pk) in data['getMatrix']['models']
+        assert str(exp.protocol.pk) in data['getMatrix']['protocols']
+        assert str(exp.pk) in data['getMatrix']['experiments']
+
+    def test_experiment_without_version_is_ignored(
+        self, client, model_with_version, protocol_with_version
+    ):
+        recipes.experiment.make(
+            model=model_with_version,
+            model_version=model_with_version.repo.latest_commit.hexsha,
+            protocol=protocol_with_version,
+            protocol_version=protocol_with_version.repo.latest_commit.hexsha,
+        )
+
+        response = client.get('/experiments/matrix')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
         assert len(data['getMatrix']['protocols']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 

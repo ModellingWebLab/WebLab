@@ -34,6 +34,14 @@ class ExperimentsView(TemplateView):
     """
     template_name = 'experiments/experiments.html'
 
+    def get_context_data(self, **kwargs):
+        # Use dummy IDs to set up a comparison URL, then chop them off to
+        # get the base. This will be used by javascript to generate comparisons
+        # between experiment versions.
+        url = reverse('experiments:compare', args=['/1/1'])
+        kwargs.update(comparison_base_url=url[:-4])
+        return super().get_context_data(**kwargs)
+
 
 class ExperimentMatrixJsonView(View):
     """
@@ -45,7 +53,7 @@ class ExperimentMatrixJsonView(View):
         version = commit.hexsha if commit else ''
         return {
             'id': entity.id,
-            'entity_id': entity.id,
+            'entityId': entity.id,
             'author': str(entity.author.full_name),
             'visibility': entity.visibility,
             'created': entity.created_at,
@@ -58,27 +66,32 @@ class ExperimentMatrixJsonView(View):
         }
 
     @classmethod
-    def experiment_json(cls, experiment):
-        try:
-            version = experiment.latest_version
-        except ExperimentVersion.DoesNotExist:
-            version = None
-
+    def experiment_version_json(cls, version):
         return {
-            'entity_id': experiment.id,
-            'latestResult': experiment.latest_result,
-            'protocol': cls.entity_json(experiment.protocol),
-            'model': cls.entity_json(experiment.model),
+            'id': version.id,
+            'entity_id': version.experiment.id,
+            'latestResult': version.status,
+            'protocol': cls.entity_json(version.experiment.protocol),
+            'model': cls.entity_json(version.experiment.model),
             'url': reverse(
                 'experiments:version',
-                args=[experiment.id, version.id]
-            ) if version else '',
+                args=[version.experiment.id, version.id]
+            ),
         }
 
     def get(self, request, *args, **kwargs):
         q_visibility = visibility_query(request.user)
         q_models = ModelEntity.objects.filter(q_visibility)
         q_protocols = ProtocolEntity.objects.filter(q_visibility)
+
+        model_pks = list(map(int, request.GET.getlist('modelIds[]')))
+        protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
+
+        if model_pks:
+            q_models = q_models.filter(pk__in=model_pks)
+
+        if protocol_pks:
+            q_protocols = q_protocols.filter(pk__in=protocol_pks)
 
         models = {
             model.pk: self.entity_json(model)
@@ -95,7 +108,11 @@ class ExperimentMatrixJsonView(View):
         for exp in Experiment.objects.filter(model__in=q_models, protocol__in=q_protocols):
             if (exp.model_version == models[exp.model.pk]['version'] and
                     exp.protocol_version == protocols[exp.protocol.pk]['version']):
-                experiments[exp.pk] = self.experiment_json(exp)
+
+                try:
+                    experiments[exp.pk] = self.experiment_version_json(exp.latest_version)
+                except ExperimentVersion.DoesNotExist:
+                    pass
 
         return JsonResponse({
             'getMatrix': {
@@ -177,7 +194,7 @@ class ExperimentComparisonView(TemplateView):
     template_name = 'experiments/experimentversion_compare.html'
 
     def get_context_data(self, **kwargs):
-        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/')}
+        pks = set(map(int, self.kwargs['version_pks'].strip('/').split('/')))
         versions = ExperimentVersion.objects.visible_to(
             self.request.user).filter(pk__in=pks).order_by('created_at')
 
