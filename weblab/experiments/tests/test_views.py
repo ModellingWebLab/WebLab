@@ -107,6 +107,7 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['experiments']) == 0
 
     def test_submatrix(self, client, helpers, experiment_version):
+        exp = experiment_version.experiment
         other_model = recipes.model.make()
         other_model_version = helpers.add_version(other_model)
         other_protocol = recipes.protocol.make()
@@ -123,8 +124,8 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
-                'modelIds[]': [experiment_version.experiment.model.pk, non_existent_pk],
-                'protoIds[]': [experiment_version.experiment.protocol.pk, non_existent_pk],
+                'modelIds[]': [exp.model.pk, non_existent_pk],
+                'protoIds[]': [exp.protocol.pk, non_existent_pk],
             }
         )
 
@@ -134,6 +135,10 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['models']) == 1
         assert len(data['getMatrix']['protocols']) == 1
         assert len(data['getMatrix']['experiments']) == 1
+
+        assert str(exp.model.pk) in data['getMatrix']['models']
+        assert str(exp.protocol.pk) in data['getMatrix']['protocols']
+        assert str(exp.pk) in data['getMatrix']['experiments']
 
     def test_experiment_without_version_is_ignored(
         self, client, model_with_version, protocol_with_version
