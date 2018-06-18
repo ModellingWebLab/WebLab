@@ -63,11 +63,10 @@
               <li>
                 <input name='experimentVersionIds', value="{{ experiment.latest_version.id }}" type="checkbox">
                 <a href="{% url 'experiments:version' experiment.id experiment.latest_version.id %}">
-                  {{ entity.name }} @
                   {% if type == 'model' %}
-                    {{ experiment.model|name_for_commit:experiment.model_version }}
+                    {{ experiment|name_of_protocol }}
                   {% else %}
-                    {{ experiment.protocol|name_for_commit:experiment.protocol_version }}
+                    {{ experiment|name_of_model }}
                   {% endif %}
                 </a>
               </li>
