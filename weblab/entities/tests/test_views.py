@@ -210,6 +210,22 @@ class TestModelEntityVersionCompareView:
         assert response.status_code == 200
         assert response.context['comparisons'] == [(exp.protocol, [exp])]
 
+    def test_redirect_to_experiment_comparison(self, client, user, model_with_version):
+        ver1, ver2, ver3 = recipes.experiment_version.make(
+            experiment__model=model_with_version,
+            experiment__model_version=model_with_version.repo.latest_commit.hexsha,
+            _quantity=3)
+
+        response = client.post(
+            '/entities/models/%d/versions/latest/compare' % ver1.experiment.model.pk,
+            {
+                'experimentVersionIds': [ver1.pk, ver2.pk]
+            }
+        )
+
+        assert response.status_code == 302
+        assert response.url == '/experiments/compare/%d/%d' % (ver1.pk, ver2.pk)
+
 
 @pytest.mark.django_db
 class TestProtocolEntityVersionCompareView:
@@ -222,6 +238,22 @@ class TestProtocolEntityVersionCompareView:
 
         assert response.status_code == 200
         assert response.context['comparisons'] == [(exp.model, [exp])]
+
+    def test_redirect_to_experiment_comparison(self, client, user, model_with_version):
+        ver1, ver2, ver3 = recipes.experiment_version.make(
+            experiment__model=model_with_version,
+            experiment__model_version=model_with_version.repo.latest_commit.hexsha,
+            _quantity=3)
+
+        response = client.post(
+            '/entities/models/%d/versions/latest/compare' % ver1.experiment.model.pk,
+            {
+                'experimentVersionIds': [ver1.pk, ver2.pk]
+            }
+        )
+
+        assert response.status_code == 302
+        assert response.url == '/experiments/compare/%d/%d' % (ver1.pk, ver2.pk)
 
 
 @pytest.mark.django_db

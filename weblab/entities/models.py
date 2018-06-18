@@ -65,6 +65,7 @@ class EntityManager(models.Manager):
 
 class ModelEntity(Entity):
     entity_type = Entity.ENTITY_TYPE_MODEL
+    other_type = Entity.ENTITY_TYPE_PROTOCOL
 
     objects = EntityManager()
 
@@ -75,6 +76,7 @@ class ModelEntity(Entity):
 
 class ProtocolEntity(Entity):
     entity_type = Entity.ENTITY_TYPE_PROTOCOL
+    other_type = Entity.ENTITY_TYPE_MODEL
 
     objects = EntityManager()
 

@@ -54,33 +54,37 @@
       Click to view the latest results of each single experiment, or select multiple experiments to compare them.
       </p>
 
-      <div id="entityexperimentlistpartners">
-        <ul>
-          {% for entity, versions in comparisons %}
-            {% with versions.0 as version %}
-            <li>
-              <input value="{{ version.id }}" type="checkbox">
-              <a href="{% url 'experiments:version' version.id version.latest_version.id %}">
-                {{ entity.name }} @
-                {% if type == 'model' %}
-                  {{ version.model|name_for_commit:version.model_version }}
-                {% else %}
-                  {{ version.protocol|name_for_commit:version.protocol_version }}
-                {% endif %}
-            </li>
-            {% endwith %}
-          {% endfor %}
-        </ul>
-      </div>
+      <form action="" method="POST">
+        {% csrf_token %}
+        <div id="entityexperimentlistpartners">
+          <ul>
+            {% for entity, experiments in comparisons %}
+              {% with experiments.0 as experiment %}
+              <li>
+                <input name='experimentVersionIds', value="{{ experiment.latest_version.id }}" type="checkbox">
+                <a href="{% url 'experiments:version' experiment.id experiment.latest_version.id %}">
+                  {{ entity.name }} @
+                  {% if type == 'model' %}
+                    {{ experiment.model|name_for_commit:experiment.model_version }}
+                  {% else %}
+                    {{ experiment.protocol|name_for_commit:experiment.protocol_version }}
+                  {% endif %}
+                </a>
+              </li>
+              {% endwith %}
+            {% endfor %}
+          </ul>
+        </div>
 
-      <div id="entityexperimentlistpartnersact">
-        [<a id="entityexperimentlistpartnersactall">select all</a>]
-        <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest</a>]</span>
-        [<a id="entityexperimentlistpartnersactnone">select none</a>]
-        <br/>
-        <button id="entityexperimentlist_showallversions">show all versions</button>
-        <button id="entityexperimentlistpartnersactcompare">compare selected experiments</button>
-      </div>
+        <div id="entityexperimentlistpartnersact">
+          [<a id="entityexperimentlistpartnersactall">select all</a>]
+          <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest</a>]</span>
+          [<a id="entityexperimentlistpartnersactnone">select none</a>]
+          <br/>
+          <button id="entityexperimentlist_showallversions">show all versions</button>
+          <button id="entityexperimentlistpartnersactcompare">compare selected experiments</button>
+        </div>
+      </form>
     </div>
 
   </div>

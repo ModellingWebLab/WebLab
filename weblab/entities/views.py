@@ -162,49 +162,41 @@ class ProtocolEntityVersionView(
     template_name = 'entities/entity_version.html'
 
 
-class ModelEntityVersionCompareView(
-    VisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
+class EntityVersionCompareView(
+    VisibilityMixin, VersionMixin, DetailView
 ):
     context_object_name = 'entity'
     template_name = 'entities/entity_version_compare.html'
 
+    def post(self, request, *args, **kwargs):
+        version_ids = '/' + '/'.join(request.POST.getlist('experimentVersionIds'))
+        return HttpResponseRedirect(reverse('experiments:compare', args=[version_ids]))
+
     def get_context_data(self, **kwargs):
-        model = self.get_object()
+        entity = self.get_object()
         commit = self.get_commit()
 
-        experiments = Experiment.objects.filter(
-            model=model.pk,
-            model_version=commit.hexsha,
-        ).select_related('protocol').order_by('protocol', '-created_at')
+        entity_type = entity.entity_type
+        other_type = entity.other_type
+        experiments = Experiment.objects.filter(**{
+            entity_type: entity.pk,
+            ('%s_version' % entity_type): commit.hexsha,
+        }).select_related(other_type).order_by(other_type, '-created_at')
 
         kwargs['comparisons'] = [
-            (proto, list(exp))
-            for (proto, exp) in groupby(experiments, lambda exp: exp.protocol)
+            (obj, list(exp))
+            for (obj, exp) in groupby(experiments, lambda exp: getattr(exp, other_type))
         ]
 
         return super().get_context_data(**kwargs)
 
 
-class ProtocolEntityVersionCompareView(
-    VisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
-):
-    context_object_name = 'entity'
-    template_name = 'entities/entity_version_compare.html'
+class ModelEntityVersionCompareView(ModelEntityTypeMixin, EntityVersionCompareView):
+    pass
 
-    def get_context_data(self, **kwargs):
-        protocol = self.get_object()
 
-        experiments = Experiment.objects.filter(
-            protocol=protocol.pk,
-            protocol_version=self.get_commit().hexsha,
-        ).select_related('model').order_by('model', '-created_at')
-
-        kwargs['comparisons'] = [
-            (model, list(exp))
-            for (model, exp) in groupby(experiments, lambda exp: exp.model)
-        ]
-
-        return super().get_context_data(**kwargs)
+class ProtocolEntityVersionCompareView(ProtocolEntityTypeMixin, EntityVersionCompareView):
+    pass
 
 
 class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
