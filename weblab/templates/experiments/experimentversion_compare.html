@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load experiments %}
 
+{% block title %}Experiment comparison - {% endblock title %}
+
 {% block content %}
  <h1 id="heading">Comparison</h1>
  <div id="entitiesToCompare" data-comparison-href="{{ experiment_versions|url_comparison_json }}">
