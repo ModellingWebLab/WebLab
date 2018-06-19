@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% load entities %}
 {% load staticfiles %}
+{% load entities %}
+{% load experiments %}
 
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
-  <div id="entityversion">
+  <div id="entityversion" data-entity-type="{{ entity.type }}">
     <div class="closebtn">
       <small>
         <a href="{{ entity|url_versions }}">list all versions</a>
@@ -54,36 +55,48 @@
       Click to view the latest results of each single experiment, or select multiple experiments to compare them.
       </p>
 
-      <form action="" method="POST">
-        {% csrf_token %}
-        <div id="entityexperimentlistpartners">
-          <ul>
-            {% for entity, experiments in comparisons %}
-              {% with experiments.0 as experiment %}
-              <li>
-                <input name='experimentVersionIds', value="{{ experiment.latest_version.id }}" type="checkbox">
-                <a href="{% url 'experiments:version' experiment.id experiment.latest_version.id %}">
-                  {% if type == 'model' %}
-                    {{ experiment|name_of_protocol }}
-                  {% else %}
-                    {{ experiment|name_of_model }}
-                  {% endif %}
-                </a>
-              </li>
-              {% endwith %}
-            {% endfor %}
-          </ul>
-        </div>
+      <div id="entityexperimentlistpartners">
+        <ul>
+          {% for entity, experiments in comparisons %}
+            {% with experiments.0 as experiment %}
+            <li>
+              <input name='experimentVersionIds', value="{{ experiment.latest_version.id }}" type="checkbox">
+              <a href="{% url 'experiments:version' experiment.id experiment.latest_version.id %}">
+                {% if type == 'model' %}
+                  {{ experiment|name_of_protocol }}
+                {% else %}
+                  {{ experiment|name_of_model }}
+                {% endif %}
+              </a>
+              {% if experiments|length > 1 %}
+              <ul style="display:none">
+                {% for exp in experiments|slice:"1:" %}
+                <li>
+                  <a href="{% url 'experiments:version' exp.id exp.latest_version.id %}">
+                    {% if type == 'model' %}
+                      {{ exp|name_of_protocol }}
+                    {% else %}
+                      {{ exp|name_of_model }}
+                    {% endif %}
+                  </a>
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+            </li>
+            {% endwith %}
+          {% endfor %}
+        </ul>
+      </div>
 
-        <div id="entityexperimentlistpartnersact">
-          [<a id="entityexperimentlistpartnersactall">select all</a>]
-          <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest</a>]</span>
-          [<a id="entityexperimentlistpartnersactnone">select none</a>]
-          <br/>
-          <button id="entityexperimentlist_showallversions">show all versions</button>
-          <button id="entityexperimentlistpartnersactcompare">compare selected experiments</button>
-        </div>
-      </form>
+      <div id="entityexperimentlistpartnersact">
+        [<a id="entityexperimentlistpartnersactall">select all</a>]
+        <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest</a>]</span>
+        [<a id="entityexperimentlistpartnersactnone">select none</a>]
+        <br/>
+        <button id="entityexperimentlist_showallversions">show all versions</button>
+        <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_comparison_base %}">compare selected experiments</button>
+      </div>
     </div>
 
   </div>

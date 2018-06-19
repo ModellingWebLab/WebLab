@@ -34,14 +34,6 @@ class ExperimentsView(TemplateView):
     """
     template_name = 'experiments/experiments.html'
 
-    def get_context_data(self, **kwargs):
-        # Use dummy IDs to set up a comparison URL, then chop them off to
-        # get the base. This will be used by javascript to generate comparisons
-        # between experiment versions.
-        url = reverse('experiments:compare', args=['/1/1'])
-        kwargs.update(comparison_base_url=url[:-4])
-        return super().get_context_data(**kwargs)
-
 
 class ExperimentMatrixJsonView(View):
     """

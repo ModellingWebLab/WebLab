@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load experiments %}
 
 {% block title %}Experiments - {% endblock title %}
 
@@ -34,7 +35,7 @@
     Click on a column or row heading to select the entire column or row.<br/>
     Comparison mode: <button id="comparisonModeButton"></button>
     <span id="comparisonModeActions">
-        <button id="comparisonLink" data-comparison-href="{{ comparison_base_url }}">Compare selected experiments</button>
+        <button id="comparisonLink" data-comparison-href="{% url_comparison_base %}">Compare selected experiments</button>
         <button id="comparisonMatrix" title="Show matrix featuring only selected models and/or protocols">Show sub-matrix</button>
     </span>
     </p>

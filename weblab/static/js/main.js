@@ -4,6 +4,7 @@ $.migrateMute = true;
 require('jquery-ui-browserify');
 var utils = require('./lib/utils.js')
 require('./entitynew.js');
+require('./entity.js');
 require('./db.js');
 var experiment = require('./experiment.js');
 var notifications = require('./lib/notifications.js');

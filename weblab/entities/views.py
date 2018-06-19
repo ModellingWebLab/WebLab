@@ -168,10 +168,6 @@ class EntityVersionCompareView(
     context_object_name = 'entity'
     template_name = 'entities/entity_version_compare.html'
 
-    def post(self, request, *args, **kwargs):
-        version_ids = '/' + '/'.join(request.POST.getlist('experimentVersionIds'))
-        return HttpResponseRedirect(reverse('experiments:compare', args=[version_ids]))
-
     def get_context_data(self, **kwargs):
         entity = self.get_object()
         commit = self.get_commit()
