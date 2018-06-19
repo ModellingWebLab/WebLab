@@ -239,6 +239,7 @@ class ExperimentComparisonJsonView(View):
             for f in version.files
             if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
+        exp = version.experiment
         return {
             'id': version.id,
             'author': version.author.full_name,
@@ -252,13 +253,15 @@ class ExperimentComparisonJsonView(View):
             'files': files,
             'numFiles': len(files),
             'url': reverse(
-                'experiments:version', args=[version.experiment.id, version.id]
+                'experiments:version', args=[exp.id, version.id]
             ),
             'download_url': reverse(
-                'experiments:archive', args=[version.experiment.id, version.id]
+                'experiments:archive', args=[exp.id, version.id]
             ),
-            'modelName': version.experiment.model.name,
-            'protoName': version.experiment.protocol.name,
+            'modelName': exp.model.name,
+            'protoName': exp.protocol.name,
+            'modelVersion': exp.model.repo.get_name_for_commit(exp.model_version),
+            'protoVersion': exp.protocol.repo.get_name_for_commit(exp.protocol_version),
         }
 
     def get(self, request, *args, **kwargs):

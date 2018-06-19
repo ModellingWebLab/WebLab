@@ -72,6 +72,7 @@
               <ul style="display:none">
                 {% for exp in experiments|slice:"1:" %}
                 <li>
+                  <input name='experimentVersionIds', value="{{ exp.latest_version.id }}" type="checkbox">
                   <a href="{% url 'experiments:version' exp.id exp.latest_version.id %}">
                     {% if type == 'model' %}
                       {{ exp|name_of_protocol }}

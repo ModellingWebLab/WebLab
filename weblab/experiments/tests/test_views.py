@@ -360,6 +360,7 @@ class TestExperimentComparisonJsonView:
         exp = experiment_version.experiment
         protocol = recipes.protocol.make()
         protocol_commit = helpers.add_version(protocol)
+        exp.protocol.repo.tag('v1')
 
         version2 = recipes.experiment_version.make(
             status='SUCCESS',
@@ -379,7 +380,9 @@ class TestExperimentComparisonJsonView:
         assert versions[0]['versionId'] == experiment_version.id
         assert versions[1]['versionId'] == version2.id
         assert versions[0]['modelName'] == exp.model.name
+        assert versions[0]['modelVersion'] == exp.model_version
         assert versions[0]['protoName'] == exp.protocol.name
+        assert versions[0]['protoVersion'] == 'v1'
         assert versions[0]['name'] == exp.name
 
     def test_only_compare_visible_experiments(self, client, experiment_version, helpers):
