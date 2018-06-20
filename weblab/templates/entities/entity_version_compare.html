@@ -3,6 +3,8 @@
 {% load entities %}
 {% load experiments %}
 
+{% block title %}{{ type|capfirst }}: compare {{ other_type }}s - {% endblock title %}
+
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
