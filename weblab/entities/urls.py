@@ -40,6 +40,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^models/import$',
+        views.ModelEntityImportView.as_view(),
+        name='model_import',
+    ),
+
+    url(
         r'^%s/(?P<pk>\d+)/delete$' % _ENTITY_TYPE,
         views.EntityDeleteView.as_view(),
         name='delete',

@@ -8,7 +8,8 @@ from tempfile import TemporaryDirectory
 
 from django.utils.functional import cached_property
 from django.utils.timezone import utc
-from git import Actor, Blob, GitCommandError, Repo
+from git import Actor, Blob, Git, GitCommandError, Repo
+from git.exc import GitCommandError
 
 from core.combine import (
     MANIFEST_FILENAME,
@@ -34,6 +35,17 @@ class Repository:
         Create an empty repository
         """
         Repo.init(self._root)
+
+    @classmethod
+    def is_valid_remote(cls, remote):
+        try:
+            Git().ls_remote(remote)
+            return True
+        except GitCommandError:
+            return False
+
+    def clone_from(self, remote):
+        Repo.clone_from(remote, self._root)
 
     def delete(self):
         """

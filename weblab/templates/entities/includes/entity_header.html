@@ -22,6 +22,8 @@
       </a>
     {% endif %}
     <br>
-
+    {% if entity.git_remote_url %}
+      Remote source: {{ entity.git_remote_url|urlize }}
+    {% endif %}
   </small>
 </div>

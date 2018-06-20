@@ -155,8 +155,17 @@ class EntityCreateView(
             return ProtocolEntityForm
 
     def get_success_url(self):
-        return reverse('entities:newversion',
-                       args=[self.kwargs['entity_type'], self.object.pk])
+        if self.object.repo.latest_commit:
+            return reverse('entities:version',
+                           args=[self.kwargs['entity_type', self.object.pk, 'latest'])
+        else:
+            return reverse('entities:newversion',
+                        args=[self.kwargs['entity_type'], self.object.pk])
+
+
+class ModelEntityImportView(ModelEntityCreateView):
+    def get_success_url(self):
+        return reverse('entities:model_version', args=[self.object.pk, 'latest'])
 
 
 class EntityListView(LoginRequiredMixin, EntityTypeMixin, ListView):

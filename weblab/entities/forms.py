@@ -7,6 +7,7 @@ from accounts.models import User
 from core import visibility
 
 from .models import EntityFile, ModelEntity, ProtocolEntity
+from .repository import Repository
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -18,6 +19,16 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
                 'You already have a %s named "%s"' % (self.entity_type, name))
 
         return name
+
+    def clean_git_remote_url(self):
+        """
+        Ensure the git remote works
+        """
+        remote = self.cleaned_data.get('git_remote_url')
+        if remote:
+            if not Repository.is_valid_remote(remote):
+                raise ValidationError('invalid remote')
+        return remote
 
     def save(self, **kwargs):
         entity = super().save(commit=False)
@@ -35,7 +46,7 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
 class ModelEntityForm(EntityForm):
     class Meta:
         model = ModelEntity
-        fields = ['name']
+        fields = ['name', 'git_remote_url']
 
 
 class ProtocolEntityForm(EntityForm):

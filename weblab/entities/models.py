@@ -37,6 +37,11 @@ class Entity(UserCreatedModelMixin, models.Model):
 
     name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
 
+    git_remote_url = models.URLField(
+        blank=True,
+        help_text='Git remote to clone from',
+    )
+
     class Meta:
         ordering = ['name']
         unique_together = ('entity_type', 'name', 'author')
