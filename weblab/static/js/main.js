@@ -12,6 +12,7 @@ require('./compare.js');
 require('./entity_version_list.js');
 require('./run_experiment.js');
 require('django-formset');
+require('./pmr.js');
 
 
 function removeListeners (element)

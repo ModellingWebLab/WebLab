@@ -739,3 +739,11 @@ li.entityviz-PRIVATE
   vertical-align: middle;
   line-height: 24px;
 }
+
+#pmr-browse {
+  #pmr-categories,
+  #pmr-models {
+    overflow-y: scroll;
+    max-height: 20em;
+  }
+}

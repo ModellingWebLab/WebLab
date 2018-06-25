@@ -224,3 +224,7 @@ CALLBACK_BASE_URL = os.environ.get('CALLBACK_BASE_URL', 'http://localhost:8000')
 
 # URL for Bives comparison
 BIVES_URL = "https://bives.bio.informatik.uni-rostock.de/"
+PMR = {
+    'ROOT_URL': 'https://models.physiomeproject.org/',
+    'MIME_TYPE': 'application/vnd.physiome.pmr2.json.1',
+}

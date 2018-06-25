@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div id="pmr-browse">
+  <ul id="pmr-categories" data-categories-href="{% url 'pmr:categories' %}">
+  </ul>
+  <div id="pmr-models">
+    <h2></h2>
+    <ul>
+    </ul>
+  </div>
+
+  <div id="pmr-model">
+    <h3></h3>
+    <a id="git-url"></a>
+  </div>
+</div>
+
+{% endblock content %}
