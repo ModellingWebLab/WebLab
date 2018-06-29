@@ -51,8 +51,10 @@ class TestExperimentsView:
         '/experiments/models/1/2/protocols/3/4',
         '/experiments/protocols/1/2',
         '/experiments/models/1/versions/abc/def',
+        '/experiments/models/1/versions/*',
         '/experiments/models/1/versions/abc/def/protocols/3/4',
         '/experiments/protocols/3/versions/abc/def',
+        '/experiments/protocols/3/versions/*',
         '/experiments/models/1/2/protocols/3/versions/abc/def',
     ])
     def test_urls(self, client, url):
@@ -157,14 +159,7 @@ class TestExperimentMatrix:
         exp = experiment_version.experiment
         v1 = exp.model_version
         v2 = helpers.add_version(exp.model).hexsha
-        helpers.add_version(exp.model)  # v3, not used
-
-        exp2 = recipes.experiment_version.make(
-            experiment__model=exp.model,
-            experiment__model_version=v2,
-            experiment__protocol=exp.protocol,
-            experiment__protocol_version=exp.protocol_version,
-        ).experiment
+        helpers.add_version(exp.model).hexsha  # v3, not used
 
         response = client.get(
             '/experiments/matrix',
@@ -179,6 +174,34 @@ class TestExperimentMatrix:
         assert 'getMatrix' in data
 
         assert set(data['getMatrix']['models'].keys()) == {v1, v2}
+        assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk)}
+
+    def test_submatrix_with_all_model_versions(self, client, helpers, experiment_version):
+        exp = experiment_version.experiment
+        v1 = exp.model_version
+        v2 = helpers.add_version(exp.model).hexsha
+        v3 = helpers.add_version(exp.model).hexsha
+
+        exp2 = recipes.experiment_version.make(
+            experiment__model=exp.model,
+            experiment__model_version=v2,
+            experiment__protocol=exp.protocol,
+            experiment__protocol_version=exp.protocol_version,
+        ).experiment
+
+        response = client.get(
+            '/experiments/matrix',
+            {
+                'modelIds[]': [exp.model.pk],
+                'modelVersions[]': '*',
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        assert set(data['getMatrix']['models'].keys()) == {v1, v2, v3}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_submatrix_with_protocol_versions(self, client, helpers, experiment_version):
@@ -207,6 +230,34 @@ class TestExperimentMatrix:
         assert 'getMatrix' in data
 
         assert set(data['getMatrix']['protocols'].keys()) == {v1, v2}
+        assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
+
+    def test_submatrix_with_all_protocol_versions(self, client, helpers, experiment_version):
+        exp = experiment_version.experiment
+        v1 = exp.protocol_version
+        v2 = helpers.add_version(exp.protocol).hexsha
+        v3 = helpers.add_version(exp.protocol).hexsha
+
+        exp2 = recipes.experiment_version.make(
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=exp.protocol,
+            experiment__protocol_version=v2,
+        ).experiment
+
+        response = client.get(
+            '/experiments/matrix',
+            {
+                'protoIds[]': [exp.protocol.pk],
+                'protoVersions[]': '*',
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        assert set(data['getMatrix']['protocols'].keys()) == {v1, v2, v3}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_experiment_without_version_is_ignored(

@@ -24,3 +24,19 @@ def url_comparison_base():
     # between experiment versions.
     url = reverse('experiments:compare', args=['/1/1'])
     return url[:-4]
+
+
+@register.filter
+def url_version_comparison_matrix(entity):
+    """
+    Build URL for submatrix view
+    """
+    kwargs = {}
+    if entity.entity_type == 'model':
+        kwargs['model_pks'] = '/%d' % entity.pk
+        kwargs['model_versions'] = '/*'
+    elif entity.entity_type == 'protocol':
+        kwargs['protocol_pks'] = '/%d' % entity.pk
+        kwargs['protocol_versions'] = '/*'
+
+    return reverse('experiments:list', kwargs=kwargs)

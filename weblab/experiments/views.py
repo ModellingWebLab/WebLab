@@ -96,6 +96,9 @@ class ExperimentMatrixJsonView(View):
 
         if model_versions:
             model = q_models.first()
+            if model_versions[0] == '*':
+                model_versions = [commit.hexsha for commit in model.repo.commits]
+
             model_versions = [self.entity_json(model, version) for version in model_versions]
         else:
             model_versions = [self.entity_json(model) for model in q_models]
@@ -107,6 +110,9 @@ class ExperimentMatrixJsonView(View):
 
         if protocol_versions:
             protocol = q_protocols.first()
+            if protocol_versions[0] == '*':
+                protocol_versions = [commit.hexsha for commit in protocol.repo.commits]
+
             protocol_versions = [self.entity_json(protocol, version)
                                  for version in protocol_versions]
         else:
