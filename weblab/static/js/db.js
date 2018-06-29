@@ -431,70 +431,113 @@ function getMatrix(params, div) {
 function parseLocation ()
 {
   var base = $('#matrixdiv').data('base-href'),
-		rest = "",
-		ret = {}
-	if (document.location.pathname.substr(0, base.length) == base)
-		rest = document.location.pathname.substr(base.length);
-	$('.showButton').removeClass("selected");
-	$('.showMyButton').hide();
-	if (rest.length > 0)
-	{
-		var items = rest.split("/"),
-			modelIndex = items.indexOf("models"),
-			protoIndex = items.indexOf("protocols");
-		if (protoIndex != -1)
-		{
-			if (modelIndex != -1)
-				ret.modelIds = items.slice(modelIndex + 1, protoIndex);
-			ret.protoIds = items.slice(protoIndex + 1);
-		}
-		else if (modelIndex != -1)
-			ret.modelIds = items.slice(modelIndex + 1);
-		if (modelIndex != -1)
-			baseUrls.row = "/models/" + ret.modelIds.join("/");
-		if (protoIndex != -1)
-			baseUrls.col = "/protocols/" + ret.protoIds.join("/");
-		if (modelIndex == -1 && protoIndex == -1)
-		{
-			if (items[0] == "public")
-			{
-				$('#showPublicExpts').addClass("selected");
-				ret.publicOnly = "1";
-			}
-			else if (items[0].substr(0,4) == "mine")
-			{
-				$('#showMyExpts').addClass("selected");
-				$('.showMyButton').show();
-				ret.mineOnly = "1";
-				if (items[0].indexOf("-m") != -1)
-				{
-					ret.includeModeratedModels = "0";
-					console.log('Show model');
-					$('#showMyExptsModels').text("Show moderated models");
-				}
-				else
-					$('#showMyExptsModels').text("Hide moderated models");
-				if (items[0].indexOf("-p") != -1)
-				{
-					ret.includeModeratedProtocols = "0";
-					console.log('Show proto');
-					$('#showMyExptsProtocols').text("Show moderated protocols");
-				}
-				else
-					$('#showMyExptsProtocols').text("Hide moderated protocols");
-			}
-			else if (items[0] == "all")
-			{
-				$('#showAllExpts').addClass("selected");
-				ret.showAll = "1";
-			}
-			else
-				$('#showModeratedExpts').addClass("selected");
-		}
-	}
-	else
-		$('#showModeratedExpts').addClass("selected");
-	return ret;
+  rest = "",
+  ret = {};
+
+  if (document.location.pathname.substr(0, base.length) == base)
+  {
+    rest = document.location.pathname.substr(base.length);
+  }
+
+  $('.showButton').removeClass("selected");
+  $('.showMyButton').hide();
+  if (rest.length > 0)
+  {
+    var items = rest.split("/"),
+    modelIndex = items.indexOf("models"),
+    protoIndex = items.indexOf("protocols");
+    if (protoIndex != -1)
+    {
+      if (modelIndex != -1)
+      {
+        // /models/1/2/protocols/3/4
+        ret.modelIds = parts = items.slice(modelIndex + 1, protoIndex);
+        versionIndex = parts.indexOf('versions')
+        if (versionIndex != -1)
+        {
+          ret.modelIds = parts.slice(0, versionIndex);
+          ret.modelVersions = parts.slice(versionIndex + 1);
+        }
+      }
+      // /protocols/3/4
+      parts = ret.protoIds = items.slice(protoIndex + 1);
+      versionIndex = parts.indexOf('versions')
+      if (versionIndex != -1)
+      {
+        ret.protoIds = parts.slice(0, versionIndex);
+        ret.protoVersions = parts.slice(versionIndex + 1);
+      }
+    }
+    else if (modelIndex != -1)
+    {
+      // /models/1/2
+      ret.modelIds = parts = items.slice(modelIndex + 1);
+      versionIndex = parts.indexOf('versions')
+      if (versionIndex != -1)
+      {
+        ret.modelIds = parts.slice(0, versionIndex);
+        ret.modelVersions = parts.slice(versionIndex + 1);
+      }
+    }
+
+    if (modelIndex != -1)
+    {
+      baseUrls.row = "/models/" + ret.modelIds.join("/");
+    }
+    if (protoIndex != -1)
+    {
+      baseUrls.col = "/protocols/" + ret.protoIds.join("/");
+    }
+
+    if (modelIndex == -1 && protoIndex == -1)
+    {
+      if (items[0] == "public")
+      {
+        $('#showPublicExpts').addClass("selected");
+        ret.publicOnly = "1";
+      }
+      else if (items[0].substr(0,4) == "mine")
+      {
+        $('#showMyExpts').addClass("selected");
+        $('.showMyButton').show();
+        ret.mineOnly = "1";
+        if (items[0].indexOf("-m") != -1)
+        {
+          ret.includeModeratedModels = "0";
+          console.log('Show model');
+          $('#showMyExptsModels').text("Show moderated models");
+        }
+        else
+        {
+          $('#showMyExptsModels').text("Hide moderated models");
+        }
+        if (items[0].indexOf("-p") != -1)
+        {
+          ret.includeModeratedProtocols = "0";
+          console.log('Show proto');
+          $('#showMyExptsProtocols').text("Show moderated protocols");
+        }
+        else
+        {
+          $('#showMyExptsProtocols').text("Hide moderated protocols");
+        }
+      }
+      else if (items[0] == "all")
+      {
+        $('#showAllExpts').addClass("selected");
+        ret.showAll = "1";
+      }
+      else
+      {
+        $('#showModeratedExpts').addClass("selected");
+      }
+    }
+  }
+  else
+  {
+    $('#showModeratedExpts').addClass("selected");
+  }
+  return ret;
 }
 
 function prepareMatrix ()

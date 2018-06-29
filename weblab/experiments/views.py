@@ -40,22 +40,28 @@ class ExperimentMatrixJsonView(View):
     Serve up JSON for experiment matrix
     """
     @classmethod
-    def entity_json(cls, entity):
-        commit = entity.repo.latest_commit
-        version = commit.hexsha if commit else ''
-        return {
-            'id': entity.id,
+    def entity_json(cls, entity, version=None):
+        if version is None:
+            commit = entity.repo.latest_commit
+            version = commit.hexsha if commit else ''
+            name = entity.name
+        else:
+            name = '%s @ %s' % (entity.name, entity.repo.get_name_for_commit(version))
+
+        _json = {
+            'id': version,
             'entityId': entity.id,
             'author': str(entity.author.full_name),
             'visibility': entity.visibility,
             'created': entity.created_at,
-            'name': entity.name,
+            'name': name,
             'url': reverse(
                 'entities:%s_version' % entity.entity_type,
-                args=[entity.id, version or 'latest']
+                args=[entity.id, version]
             ),
-            'version': version
         }
+
+        return _json
 
     @classmethod
     def experiment_version_json(cls, version):
@@ -63,8 +69,12 @@ class ExperimentMatrixJsonView(View):
             'id': version.id,
             'entity_id': version.experiment.id,
             'latestResult': version.status,
-            'protocol': cls.entity_json(version.experiment.protocol),
-            'model': cls.entity_json(version.experiment.model),
+            'protocol': cls.entity_json(
+                version.experiment.protocol, version.experiment.protocol_version
+            ),
+            'model': cls.entity_json(
+                version.experiment.model, version.experiment.model_version
+            ),
             'url': reverse(
                 'experiments:version',
                 args=[version.experiment.id, version.id]
@@ -78,29 +88,36 @@ class ExperimentMatrixJsonView(View):
 
         model_pks = list(map(int, request.GET.getlist('modelIds[]')))
         protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
+        model_versions = request.GET.getlist('modelVersions[]')
+        protocol_versions = request.GET.getlist('protoVersions[]')
 
         if model_pks:
             q_models = q_models.filter(pk__in=model_pks)
 
+        if model_versions:
+            model = q_models.first()
+            model_versions = [self.entity_json(model, version) for version in model_versions]
+        else:
+            model_versions = [self.entity_json(model) for model in q_models]
+
+        model_versions = {model['id']: model for model in model_versions}
+
         if protocol_pks:
             q_protocols = q_protocols.filter(pk__in=protocol_pks)
 
-        models = {
-            model.pk: self.entity_json(model)
-            for model in q_models
-        }
+        if protocol_versions:
+            protocol = q_protocols.first()
+            protocol_versions = [self.entity_json(protocol, version)
+                                 for version in protocol_versions]
+        else:
+            protocol_versions = [self.entity_json(protocol) for protocol in q_protocols]
 
-        protocols = {
-            protocol.pk: self.entity_json(protocol)
-            for protocol in q_protocols
-        }
+        protocol_versions = {protocol['id']: protocol for protocol in protocol_versions}
 
         # Only give info on experiments involving the correct entity versions
         experiments = {}
         for exp in Experiment.objects.filter(model__in=q_models, protocol__in=q_protocols):
-            if (exp.model_version == models[exp.model.pk]['version'] and
-                    exp.protocol_version == protocols[exp.protocol.pk]['version']):
-
+            if (exp.model_version in model_versions and exp.protocol_version in protocol_versions):
                 try:
                     experiments[exp.pk] = self.experiment_version_json(exp.latest_version)
                 except ExperimentVersion.DoesNotExist:
@@ -108,8 +125,8 @@ class ExperimentMatrixJsonView(View):
 
         return JsonResponse({
             'getMatrix': {
-                'models': models,
-                'protocols': protocols,
+                'models': model_versions,
+                'protocols': protocol_versions,
                 'experiments': experiments,
             }
         })
