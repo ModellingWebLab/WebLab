@@ -27,7 +27,8 @@ var entities = {}, // Contains information about each experiment being compared
 	metadataToParse = 0, metadataParsed = 0, defaultViz = null, defaultVizCount = 0,
 	// State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol
 	firstModelName = "", firstModelVersion = "", firstProtoName = "", firstProtoVersion = "",
-	singleModel = true, singleProto = true;
+	singleModel = true, singleProto = true,
+  compareModelVersions = false, compareProtocolVersions = false;
 
 
 
@@ -236,7 +237,8 @@ function parseEntities (entityObj)
 	firstModelVersion = entityObj[0].modelVersion;
 	firstProtoName = entityObj[0].protoName;
 	firstProtoVersion = entityObj[0].protoVersion;
-	needsVersionInfo = {};
+  var versionsOfModels = {};
+  var versionsOfProtocols = {};
 
     // Sort entityObj list by .name
     entityObj.sort(function(a,b) {return (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) ? 1 : ((b.name.toLocaleLowerCase() > a.name.toLocaleLowerCase()) ? -1 : 0);});
@@ -245,14 +247,25 @@ function parseEntities (entityObj)
 	{
 		var entity = entityObj[i];
 
-		if (singleModel && (entity.modelName != firstModelName || entity.modelVersion != firstModelVersion))
-			singleModel = false;
-		if (singleProto && (entity.protoName != firstProtoName || entity.protoVersion != firstProtoVersion))
-			singleProto = false;
-		if (needsVersionInfo[entity.modelName + "/" + entity.protoName] === false)
-			needsVersionInfo[entity.modelName + "/" + entity.protoName] = true;
-		else if (needsVersionInfo[entity.modelName + "/" + entity.protoName] === undefined)
-			needsVersionInfo[entity.modelName + "/" + entity.protoName] = false;
+    if (singleModel && (entity.modelName != firstModelName || entity.modelVersion != firstModelVersion)) {
+      singleModel = false;
+    }
+
+    if (versionsOfModels[entity.modelName] === undefined) {
+      versionsOfModels[entity.modelName] = entity.modelVersion;
+    } else if (versionsOfModels[entity.modelName] != entity.modelVersion) {
+      compareModelVersions = true;
+    }
+
+    if (singleProto && (entity.protoName != firstProtoName || entity.modelVersion != firstModelVersion)) {
+      singleProto = false;
+    }
+
+    if (versionsOfProtocols[entity.modelName] === undefined) {
+      versionsOfProtocols[entity.protoName] = entity.protoVersion;
+    } else if (versionsOfProtocols[entity.protoName] != entity.protoVersion) {
+      compareProtocolVersions = true;
+    }
 
 		// Fill in the entities and files entries for this entity
 		entities[entity.id] = entity;
@@ -284,21 +297,24 @@ function parseEntities (entityObj)
 			}
 	}
 	
-	// Add version info to plot labels where needed
-	//console.log(needsVersionInfo);
-	for (var i = 0; i < entityObj.length; i++)
-	{
-		var entity = entityObj[i];
-		if (needsVersionInfo[entity.modelName + "/" + entity.protoName])
-		{
-			if (singleModel)
-				entity.plotName = entity.protoName + "@" + entity.protoVersion;
-			else if (singleProto)
-				entity.plotName = entity.modelName + "@" + entity.modelVersion;
-			else
-				entity.plotName = entity.modelName + "@" + entity.modelVersion + " &amp; " + entity.protoName + "@" + entity.protoVersion;
-		}
-	}
+  // Add version info to plot labels where needed
+  for (var i = 0; i < entityObj.length; i++)
+  {
+    var entity = entityObj[i];
+    if (singleModel) {
+      // there's only one model with one version here, so just describe the protocol
+      entity.plotName = entity.protoName + (compareProtocolVersions ? "@" + entity.protoVersion : '');
+    }
+    else if (singleProto) {
+      // there's only one protocol with one version here, so just describe the model
+      entity.plotName = entity.modelName + (compareModelVersions ? "@" + entity.modelVersion : '');
+    }
+    else {
+      // multiple protocols and models, so qualify both
+      entity.plotName = entity.modelName + (compareModelVersions ? "@" + entity.modelVersion : '') +
+            " &amp; " + entity.protoName + (compareProtocolVersions ? "@" + entity.protoVersion : '');
+    }
+  }
 	
 	
 	// Alter heading to reflect type of comparison
