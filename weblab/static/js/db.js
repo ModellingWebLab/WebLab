@@ -178,7 +178,7 @@ function drawMatrix (matrix)
 				a.appendChild(document.createTextNode(model.name));
 				td.appendChild(a);
 				$td.addClass("matrixTableRow")
-					.data({row: row, modelId: model.entityId})
+					.data({row: row, modelId: model.entityId, modelVersion: model.id})
 					.click(function (ev) {
 						if (comparisonMode) {
 							ev.preventDefault();
@@ -549,7 +549,8 @@ function prepareMatrix ()
 	div.appendChild(loadingImg);
 	div.appendChild(document.createTextNode("Preparing experiment matrix; please be patient."));
 
-	getMatrix(parseLocation(), div);
+  var components = parseLocation();
+	getMatrix(components, div);
 	
 	$("#comparisonModeButton").text(comparisonMode ? "Disable" : "Enable")
 	                          .click(function () {
@@ -569,29 +570,44 @@ function prepareMatrix ()
 	$("#comparisonLink").click(function () {
 	    document.location = $(this).data("href");
 	});
-	$("#comparisonMatrix").click(function () {
+  $("#comparisonMatrix").click(function () {
     var url = $(div).data('base-href');
     if (url.substr(-1) === '/') {
       url = url.slice(0, -1);
     }
-		if (linesToCompare.row.length > 0)
-		{
-			url += "/models";
-			for (var i=0; i<linesToCompare.row.length; i++)
-				url += "/" + $("#matrix-entry-" + linesToCompare.row[i] + "--1").data("modelId");
-		}
-		else
-			url += baseUrls.row;
-		if (linesToCompare.col.length > 0)
-		{
-			url += "/protocols";
-			for (var i=0; i<linesToCompare.col.length; i++)
-				url += "/" + $("#matrix-entry--1-" + linesToCompare.col[i]).data("protoId");
-		}
-		else
-			url += baseUrls.col;
-		document.location.href = url; // TODO: use history API instead?
-	});
+
+    if (linesToCompare.row.length > 0) {
+      var rows = linesToCompare.row.map(i => $("#matrix-entry-" + i + "--1"));
+      var modelIds = rows.map($row => $row.data('modelId'));
+      var modelVersions = rows.map($row => $row.data('modelVersion'));
+      if (components.modelVersions) {
+        url += '/models/' + modelIds[0] + '/versions/' + modelVersions.join('/');
+      } else {
+        url += '/models/' + modelIds.join('/');
+      }
+    }
+    else
+    {
+      url += baseUrls.row;
+    }
+
+    if (linesToCompare.col.length > 0)
+    {
+      var cols = linesToCompare.col.map(i => $("#matrix-entry--1-" + i));
+      var protoIds = cols.map($col => $col.data('protoId'));
+      var protoVersions = cols.map($col => $col.data('protoVersion'));
+      if (components.protoVersions) {
+        url += '/protocols/' + protoIds[0] + '/versions/' + protoVersions.join('/');
+      } else {
+        url += '/protocols/' + protoIds.join('/');
+      }
+    }
+    else
+    {
+      url += baseUrls.col;
+    }
+    document.location.href = url; // TODO: use history API instead?
+  });
 	$("#comparisonLink").hide();
 	$("#comparisonMatrix").hide();
 	
