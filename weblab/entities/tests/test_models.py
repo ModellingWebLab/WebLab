@@ -32,3 +32,24 @@ def test_deletion():
     assert model.is_deletable_by(user)
     assert model.is_deletable_by(superuser)
     assert not model.is_deletable_by(other_user)
+
+
+@pytest.mark.django_db
+class TestEntity:
+    def test_str(self):
+        model = recipes.model.make(name='test model')
+        assert str(model) == 'test model'
+
+    def test_repo_abs_path(self, fake_repo_path):
+        model = recipes.model.make()
+        path = '%s/%d/models/%d' % (fake_repo_path, model.author.pk, model.pk)
+
+        assert model.repo._root == path
+        assert str(model.repo_abs_path) == path
+
+    def test_nice_version(self, model_with_version):
+        commit = model_with_version.repo.latest_commit.hexsha
+        assert model_with_version.nice_version(commit) == '%s...' % commit[:8]
+
+        model_with_version.repo.tag('v1')
+        assert model_with_version.nice_version(commit) == 'v1'

@@ -46,7 +46,7 @@ class ExperimentMatrixJsonView(View):
             version = commit.hexsha if commit else ''
             name = entity.name
         else:
-            name = '%s @ %s' % (entity.name, entity.repo.get_name_for_commit(version))
+            name = '%s @ %s' % (entity.name, entity.nice_version(version))
 
         friendly_version = entity.repo.get_name_for_commit(version) if version else ''
 
