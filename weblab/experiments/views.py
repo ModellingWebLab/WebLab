@@ -48,6 +48,8 @@ class ExperimentMatrixJsonView(View):
         else:
             name = '%s @ %s' % (entity.name, entity.repo.get_name_for_commit(version))
 
+        friendly_version = entity.repo.get_name_for_commit(version) if version else ''
+
         _json = {
             'id': version,
             'entityId': entity.id,
@@ -57,7 +59,7 @@ class ExperimentMatrixJsonView(View):
             'name': name,
             'url': reverse(
                 'entities:%s_version' % entity.entity_type,
-                args=[entity.id, version]
+                args=[entity.id, friendly_version]
             ),
         }
 
@@ -251,7 +253,7 @@ class ExperimentComparisonJsonView(View):
             )
         }
 
-    def _version_json(self, version):
+    def _version_json(self, version, model_version, protocol_version):
         """
         JSON for a single experiment version
 
@@ -270,7 +272,7 @@ class ExperimentComparisonJsonView(View):
             'parsedOk': False,
             'visibility': version.visibility,
             'created': version.created_at,
-            'name': version.experiment.name,
+            'name': version.experiment.get_name(model_version, protocol_version),
             'experimentId': version.experiment.id,
             'versionId': version.id,
             'files': files,
@@ -292,10 +294,17 @@ class ExperimentComparisonJsonView(View):
         versions = ExperimentVersion.objects.visible_to(
             self.request.user).filter(pk__in=pks).order_by('created_at')
 
+        models = set(versions.values_list('experiment__model', 'experiment__model_version'))
+        protocols = set(versions.values_list(
+            'experiment__protocol', 'experiment__protocol_version'))
+        compare_model_versions = len(models) > len(dict(models))
+        compare_protocol_versions = len(protocols) > len(dict(protocols))
+
         response = {
             'getEntityInfos': {
                 'entities': [
-                    self._version_json(version) for version in versions
+                    self._version_json(version, compare_model_versions,  compare_protocol_versions)
+                    for version in versions
                 ]
             }
         }

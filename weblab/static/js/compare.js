@@ -321,21 +321,31 @@ function parseEntities (entityObj)
 	doc.heading.innerHTML = "Comparison of " + entityType.charAt(0).toUpperCase() + entityType.slice(1) + "s";
 	
 	if (entityType == "experiment")
-	{
-	  // Allow plugins to strip out redundant (repeated) text in plot line labels
-		if (singleModel && !singleProto)
-		{
-		    doc.heading.innerHTML = firstModelName + " experiments: comparison of protocols";
-		    plotLabelStripText = firstModelName + " / ";
-        $.data(document.body, 'plotLabelStripText', plotLabelStripText);
-		}
-		else if (singleProto && !singleModel)
-		{
-		    doc.heading.innerHTML = firstProtoName + " experiments: comparison of models";
-		    plotLabelStripText = " / " + firstProtoName;
-        $.data(document.body, 'plotLabelStripText', plotLabelStripText);
-		}
-	}
+  {
+    // Allow plugins to strip out redundant (repeated) text in plot line labels
+    if (singleModel && !singleProto)
+    {
+      doc.heading.innerHTML = firstModelName + " experiments: comparison of protocols";
+      plotLabelStripText = firstModelName + " / ";
+    }
+    else if (singleProto && !singleModel)
+    {
+      doc.heading.innerHTML = firstProtoName + " experiments: comparison of models";
+      plotLabelStripText = " / " + firstProtoName;
+    }
+    else if (compareModelVersions)
+    {
+      doc.heading.innerHTML = firstModelName + " experiments: comparison of protocols";
+      plotLabelStripText = firstModelName;
+    }
+    else if (compareProtocolVersions)
+    {
+      doc.heading.innerHTML = firstProtoName + " experiments: comparison of models";
+      plotLabelStripText = firstProtoName;
+    }
+
+    $.data(document.body, 'plotLabelStripText', plotLabelStripText);
+  }
 	
 	doc.outputFileHeadline.innerHTML = "Output files from all compared " + entityType + "s";
 	

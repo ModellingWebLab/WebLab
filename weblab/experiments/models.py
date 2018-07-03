@@ -46,6 +46,14 @@ class Experiment(UserCreatedModelMixin, models.Model):
     def name(self):
         return '%s / %s' % (self.model.name, self.protocol.name)
 
+    def get_name(self, model_version, proto_version):
+        return '{0} / {1}'.format(
+            ('{0}@{1}' if model_version else '{0}').format(
+                self.model.name, self.nice_model_version),
+            ('{0}@{1}' if proto_version else '{0}').format(
+                self.protocol.name, self.nice_protocol_version),
+        )
+
     @property
     def visibility(self):
         return get_joint_visibility(self.model.visibility, self.protocol.visibility)
