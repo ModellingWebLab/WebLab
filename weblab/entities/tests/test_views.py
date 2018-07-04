@@ -205,10 +205,20 @@ class TestModelEntityVersionCompareView:
         sha = exp.model.repo.latest_commit.hexsha
         recipes.experiment_version.make()  # another experiment which should not be included
 
-        response = client.get('/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha))
+        response = client.get(
+            '/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha)
+        )
 
         assert response.status_code == 200
         assert response.context['comparisons'] == [(exp.protocol, [exp])]
+
+    def test_returns_404_if_commit_not_found(self, user, client):
+        model = recipes.model.make()
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/compare' % (model.pk, 'nocommit')
+        )
+        assert response.status_code == 404
 
 
 @pytest.mark.django_db
@@ -218,10 +228,20 @@ class TestProtocolEntityVersionCompareView:
         sha = exp.protocol.repo.latest_commit.hexsha
         recipes.experiment_version.make()  # another experiment which should not be included
 
-        response = client.get('/entities/protocols/%d/versions/%s/compare' % (exp.protocol.pk, sha))
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/compare' % (exp.protocol.pk, sha)
+        )
 
         assert response.status_code == 200
         assert response.context['comparisons'] == [(exp.model, [exp])]
+
+    def test_returns_404_if_commit_not_found(self, user, client):
+        protocol = recipes.protocol.make()
+
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, 'nocommit')
+        )
+        assert response.status_code == 404
 
 
 @pytest.mark.django_db

@@ -61,13 +61,6 @@ def url_tag_version(entity, version):
     return reverse(url_name, args=[entity.id, version.hexsha])
 
 
-def version_label(entity, commit):
-    last_tag = str(entity.repo.tag_dict.get(commit, ['/'])[-1])
-    if '/' in last_tag or last_tag in ['new', 'latest']:
-        last_tag = commit.hexsha
-    return last_tag
-
-
 @register.filter
 def name_of_model(experiment):
     model = experiment.model
@@ -82,6 +75,19 @@ def name_of_protocol(experiment):
     return '%s @ %s' % (protocol.name, protocol_version)
 
 
+def _url_friendly_label(entity, commit):
+    """
+    Get URL-friendly version label for a commit
+
+    :param entity: Entity the commit belongs to
+    :param commit: `git.Commit` object
+    """
+    last_tag = str(entity.repo.tag_dict.get(commit, ['/'])[-1])
+    if '/' in last_tag or last_tag in ['new', 'latest']:
+        last_tag = commit.hexsha
+    return last_tag
+
+
 @register.filter
 def url_version(entity, commit):
     """Generate the view URL for a specific version of this entity.
@@ -91,21 +97,18 @@ def url_version(entity, commit):
     names (new, latest), we fall back to the SHA1.
     """
     url_name = 'entities:{}_version'.format(entity.entity_type)
-    last_tag = version_label(entity, commit)
+    last_tag = _url_friendly_label(entity, commit)
     args = [entity.id, last_tag]
     return reverse(url_name, args=args)
 
 
 @register.filter
 def url_version_compare(entity, commit):
-    """Generate the view URL for a specific version of this entity.
-
-    We try to use the last tag name in the URL, but if there isn't
-    a tag, or the tag contains a /, or the tag is one of our reserved
-    names (new, latest), we fall back to the SHA1.
+    """Generate the view URL for comparing a specific version of this entity
+    to entities of the other type.
     """
     url_name = 'entities:{}_version_compare'.format(entity.entity_type)
-    last_tag = version_label(entity, commit)
+    last_tag = _url_friendly_label(entity, commit)
     args = [entity.id, last_tag]
     return reverse(url_name, args=args)
 

@@ -628,16 +628,17 @@ class TestExperimentVersionJsonView:
 
 @pytest.mark.django_db
 class TestExperimentArchiveView:
-    def test_download_archive(self, client, archive_file_path):
-        version = recipes.experiment_version.make(
-            experiment__model__name='my model',
-            experiment__protocol__name='my protocol',
-        )
-        version.abs_path.mkdir()
-        shutil.copyfile(archive_file_path, str(version.archive_path))
+    def test_download_archive(self, client, experiment_version, archive_file_path):
+        experiment_version.abs_path.mkdir(exist_ok=True)
+        shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
+        experiment_version.experiment.model.name = 'my_model'
+        experiment_version.experiment.model.save()
+        experiment_version.experiment.protocol.name = 'my_protocol'
+        experiment_version.experiment.protocol.save()
 
         response = client.get(
-            '/experiments/%d/versions/%d/archive' % (version.experiment.pk, version.pk)
+            '/experiments/%d/versions/%d/archive' %
+            (experiment_version.experiment.pk, experiment_version.pk)
         )
         assert response.status_code == 200
         archive = zipfile.ZipFile(BytesIO(response.content))
@@ -659,7 +660,7 @@ class TestExperimentArchiveView:
 class TestExperimentFileDownloadView:
     def test_download_file(self, client, archive_file_path):
         version = recipes.experiment_version.make()
-        version.abs_path.mkdir()
+        version.abs_path.mkdir(exist_ok=True)
         shutil.copyfile(archive_file_path, str(version.archive_path))
 
         response = client.get(

@@ -14,13 +14,20 @@ def archive_file_path():
 
 @pytest.mark.django_db
 class TestExperiment:
-    def test_name(self):
+    def test_name(self, helpers):
+        model = recipes.model.make(name='my model')
+        protocol = recipes.protocol.make(name='my protocol')
         experiment = recipes.experiment.make(
-            model__name='my model',
-            protocol__name='my protocol'
+            model=model,
+            model_version=helpers.add_version(model, tag_name='v1').hexsha,
+            protocol=protocol,
+            protocol_version=helpers.add_version(protocol, tag_name='v2').hexsha,
         )
 
         assert str(experiment) == experiment.name == 'my model / my protocol'
+        assert experiment.get_name() == 'my model / my protocol'
+        assert experiment.get_name(model_version=True) == 'my model@v1 / my protocol'
+        assert experiment.get_name(proto_version=True) == 'my model / my protocol@v2'
 
     def test_latest_version(self):
         v1 = recipes.experiment_version.make(created_at=date(2017, 1, 2))

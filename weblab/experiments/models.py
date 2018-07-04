@@ -44,9 +44,15 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
     @property
     def name(self):
-        return '%s / %s' % (self.model.name, self.protocol.name)
+        return self.get_name()
 
-    def get_name(self, model_version, proto_version):
+    def get_name(self, model_version=False, proto_version=False):
+        """
+        Get experiment name, optionally including model and/or protocol versions
+
+        :param model_version: Whether to include model version
+        :param proto_version: Whether to include protocol version
+        """
         return '{0} / {1}'.format(
             ('{0}@{1}' if model_version else '{0}').format(
                 self.model.name, self.nice_model_version),

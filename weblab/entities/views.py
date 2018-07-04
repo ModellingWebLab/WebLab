@@ -23,7 +23,7 @@ from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
-from git import GitCommandError
+from git import BadName, GitCommandError
 
 from core.visibility import VisibilityMixin
 from experiments.models import Experiment
@@ -74,8 +74,11 @@ class VersionMixin:
 
     def get_commit(self):
         if not hasattr(self, '_commit'):
-            self._commit = self.get_object().repo.get_commit(self.kwargs['sha'])
-            if not self._commit:
+            try:
+                self._commit = self.get_object().repo.get_commit(self.kwargs['sha'])
+                if not self._commit:
+                    raise Http404
+            except BadName:
                 raise Http404
 
         return self._commit
@@ -227,7 +230,6 @@ class EntityTagVersionView(
 
         Called by Django when a form is submitted.
         """
-        import git
         form = self.get_form()
         entity = self.object = self.get_object()
         if form.is_valid():
@@ -235,7 +237,7 @@ class EntityTagVersionView(
             tag = form.cleaned_data['tag']
             try:
                 entity.repo.tag(tag, ref=version)
-            except git.exc.GitCommandError as e:
+            except GitCommandError as e:
                 msg = e.stderr.strip().split(':', 1)[1][2:-1]
                 form.add_error('tag', msg)
                 return self.form_invalid(form)
