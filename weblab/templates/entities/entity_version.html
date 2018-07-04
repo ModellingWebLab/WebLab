@@ -40,7 +40,7 @@
       <div class="button hover-menu" title="Compare... (hover to see options)">Compare&hellip;<ul>
         <li><a href="{{ entity|url_version_compare:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
         <li><a href="{{ entity|url_version_comparison_matrix }}" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>
-        <li><a href="" title="Show differences between versions of this {{ type }}">Other versions</a></li>
+        <!--li><a href="" title="Show differences between versions of this {{ type }}">Other versions</a></li-->
       </ul></div>
       {% if type == 'model' %}
         <a class="button" href="" title="Fit the parameters of this model to data">Fit</a>
