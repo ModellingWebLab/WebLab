@@ -1,4 +1,10 @@
 var showdown = require('showdown');
+var notifications = require('./lib/notifications.js');
+var utils = require('./lib/utils.js')
+var plugins = [
+  require('./visualizers/displayContent/displayContent.js'),
+];
+
 
 var versions = {},
 	files = {},
@@ -12,27 +18,6 @@ var versions = {},
 	filesTable = {};
 
 var visualizers = {};
-
-function getCurVersionId (url)
-{
-	if (url.length < 2)
-		return null;
-	return url[1];
-}
-
-function getCurFileId (url)
-{
-	if (url.length < 4)
-		return null;
-	return url[3];
-}
-
-function getCurPluginName (url)
-{
-	if (url.length < 5)
-		return null;
-	return url[4];
-}
 
 function updateVisibility (jsonObject, actionIndicator)
 {
@@ -60,7 +45,7 @@ function updateVisibility (jsonObject, actionIndicator)
         
     	var json = JSON.parse(xmlhttp.responseText);
     	//console.log (json);
-    	displayNotifications (json);
+    	notifications.display (json);
     	
         if(xmlhttp.status == 200)
         {
@@ -114,7 +99,7 @@ function deleteEntity (jsonObject)
         	return;
         
     	var json = JSON.parse(xmlhttp.responseText);
-    	displayNotifications (json);
+    	notifications.display (json);
     	
         if (xmlhttp.status == 200)
         {
@@ -124,7 +109,7 @@ function deleteEntity (jsonObject)
                 var msg = resp.responseText;
                 if (resp.response)
                 {
-                    addNotification(msg, "info");
+                    notifications.add(msg, "info");
                     if (resp.entityRemains)
                     {
                         // Go back to version table
@@ -297,7 +282,7 @@ function displayVersion (id, showDefault)
 	var v = versions[id];
 	if (!v)
 	{
-		addNotification ("no such version", "error");
+		notifications.add ("no such version", "error");
 		return;
 	}
 	//console.log(v);
@@ -347,17 +332,19 @@ function displayVersion (id, showDefault)
 		});
 	}
 	
+  /*
     if (entityType != "experiment" && ROLE.isAllowedToCreateNewExperiment)
     {
         // Specify links to create new experiments using this model/protocol
         $(".runExpts").each(function (){this.href = contextPath + "/batch/" + entityType + "/" + convertForURL (v.name) + "/" + v.id;});
     }
+    */
     
 	dv.author.innerHTML = v.author;
 	dv.time.setAttribute ("datetime", v.created);
-	dv.time.innerHTML = beautifyTimeStamp (v.created);
+	dv.time.innerHTML = utils.beautifyTimeStamp (v.created);
 	
-	removeChildren (dv.filestable);
+	$(dv.filestable).empty();
 	filesTable = {};
 	filesTable.table = dv.filestable;
 	filesTable.plots = {};
@@ -388,7 +375,7 @@ function displayVersion (id, showDefault)
 	{
 		var file = files[v.files[i]];
 		tr = document.createElement("tr");
-		tr.setAttribute("id", "filerow-" + file.name.hashCode ());
+		tr.setAttribute("id", "filerow-" + file.name.hashCode());
 		if (file.masterFile)
 			tr.setAttribute("class", "masterFile");
 		td = document.createElement("td");
@@ -398,7 +385,7 @@ function displayVersion (id, showDefault)
 		td.appendChild(document.createTextNode (file.type.replace (/^.*identifiers.org\/combine.specifications\//,"")));
 		tr.appendChild(td);
 		
-		var fsize = humanReadableBytes (file.size).split (" ");
+		var fsize = utils.humanReadableBytes (file.size).split (" ");
 		td = document.createElement("td");
 		td.appendChild(document.createTextNode (fsize[0] + " " + fsize[1]));
 //		td.setAttribute("class", "right");
@@ -432,9 +419,9 @@ function displayVersion (id, showDefault)
 				continue;
 			var a = document.createElement("a");
 			a.setAttribute("id", "filerow-" + file.name + "-viz-" + viz.getName ());
-			a.href = basicurl + convertForURL (v.name) + "/" + v.id + "/" + convertForURL (file.name) + "/" + file.id + "/" + vi;
+      a.href = basicurl + "/" + encodeURIComponent(file.name) + "/" + vi;
 			var img = document.createElement("img");
-			img.src = contextPath + "/res/js/visualizers/" + vi + "/" + viz.getIcon ();
+			img.src = staticPath + "js/visualizers/" + vi + "/" + viz.getIcon ();
 			img.alt = viz.getDescription ();
 			img.title = img.alt;
 			a.appendChild(img);
@@ -452,14 +439,14 @@ function displayVersion (id, showDefault)
 		var a = document.createElement("a");
 		a.href = file.url;
 		img = document.createElement("img");
-		img.src = contextPath + "/res/img/document-save-5.png";
+		img.src = staticPath + "img/download.png";
 		img.alt = "download document";
 		img.title = "download document";
 		a.appendChild(img);
 		td.appendChild(a);
 		tr.appendChild(td);
 		dv.filestable.appendChild(tr);
-		dv.archivelink.href = contextPath + "/download/" + entityType.charAt(0) + "/" + convertForURL (v.name) + "/" + v.id + "/a/archive";
+		dv.archivelink.href = v.download_url;
 	}
 	
 	if (!v.hasOwnProperty('outputContents') && !v.hasOwnProperty('plotDescription') && showDefault && v.errorsLink)
@@ -469,57 +456,7 @@ function displayVersion (id, showDefault)
 		window.setTimeout(function(){nextPage(v.errorsLink, true);}, 0);
 	}
 	
-	if (v.experiments.length > 0)
-	{
-		var isProtocol = (entityType == "protocol"),
-			$base_list = $(dv.experimentpartners).children("ul"),
-			$parent_list = $base_list,
-			$li = null;
-		$base_list.contents().remove();
-		allComparisonsUrl = "";
-		for (var i = 0; i < v.experiments.length; i++)
-		{
-			var exp = v.experiments[i],
-				href = contextPath + "/experiment/" + exp.model.id + exp.protocol.id + "/" + exp.id + "/latest",
-				other = (isProtocol ? exp.model : exp.protocol),
-				name = other.name + " @ " + other.version;
-			// Figure out which list to add the next experiment to
-			if ($li)
-			{
-				var lastOther = (isProtocol ? v.experiments[i-1].model : v.experiments[i-1].protocol)
-				if (other.name == lastOther.name)
-				{
-					if ($parent_list == $base_list) // Nest a new sub-list within the last li
-						$parent_list = $("<ul></ul>").appendTo($li);
-				}
-				else
-					$parent_list = $base_list;
-			}
-			// Add a list item with checkbox & link for this experiment
-			$li = $('<li><input type="checkbox" value="' + exp.id + '" /><a href="' + href + '">' + name + '</a></li>');
-			$parent_list.append($li);
-			if ($parent_list == $base_list)
-				allComparisonsUrl += exp.id + "/";
-		}
-		// Show only latest versions by default
-		$base_list.find("ul").hide();
-		$("#entityexperimentlist_span_latest").hide();
-		$("#entityexperimentlist_showallversions").removeClass("selected");
-		
-		dv.switcher.style.display = "block";
-		if (dv.compareAll)
-			dv.compareAll.style.display = "block";
-	}
-	else
-	{
-		dv.switcher.style.display = "none";
-		dv.experimentpartners.style.display = "none";
-		if (dv.compareAll)
-			dv.compareAll.style.display = "none";
-		dv.details.style.display = "block";
-	}
-	
-	removeChildren (dv.readme);
+	$(dv.readme).empty();
 	if (v.readme)
 	{
 		dv.readme.innerHTML = v.readme;
@@ -539,10 +476,10 @@ function displayVersion (id, showDefault)
 	$('#updateInterface').off('click').click(function(){
 		$.post(document.location.href, JSON.stringify({'task': 'updateInterface', 'version': v.id}))
 		 .done(function(json){
-			 displayNotifications(json);
+			 notifications.display(json);
 		 })
 		 .fail(function(){
-			 addNotification("sorry, server-side error occurred", "error");
+			 notifications.add("sorry, server-side error occurred", "error");
 		 });
 	});
 	
@@ -550,8 +487,6 @@ function displayVersion (id, showDefault)
 	doc.entity.version.style.display = "block";
 
 	doc.version.files.style.display = "block";
-	$("#experiment-files-switcher-files").addClass("selected");
-	$("#experiment-files-switcher-exp").removeClass("selected");
 }
 
 function registerFileDisplayer (elem)
@@ -594,6 +529,7 @@ function updateVersion (rv)
 	v.commitMessage = rv.commitMessage;
 	v.readme = null;
 	v.parsedOk = rv.parsedOk;
+  v.download_url = rv.download_url;
 	v.files = [];
 	if (rv.files)
     {
@@ -695,7 +631,8 @@ function updateFile (rf, v)
 	f.name = rf.name;
 	f.masterFile = rf.masterFile;
 	f.size = rf.size;
-	f.url = contextPath + "/download/" + entityType.charAt(0) + "/" + convertForURL (v.name) + "/" + v.id + "/" + f.id + "/" + convertForURL (f.name);
+  f.url = rf.url;
+	//f.url = contextPath + "/download/" + entityType.charAt(0) + "/" + convertForURL (v.name) + "/" + v.id + "/" + f.id + "/" + convertForURL (f.name);
 	f.div = {};
 	f.viz = {};
 	f.contents = null;
@@ -734,40 +671,39 @@ function zoomHandler()
     }
 }
 
-function displayFile (version, id, pluginName)
+function displayFile (id, pluginName)
 {
-    if (version.plotDescription === null || version.outputContents === null)
+  if (id && pluginName) {
+    doc.file.close.href = basicurl;
+
+    var f = files[id];
+    if (!f)
     {
-        // Try again in 0.1s, by which time hopefully they have been parsed
-        console.log("Waiting for metadata to be parsed.");
-        window.setTimeout(function(){displayFile(version, id, pluginName)}, 100);
-        return;
+      notifications.add ("no such file", "error");
+      return;
     }
-	var f = files[id];
-	if (!f)
-	{
-		addNotification ("no such file", "error");
-		return;
-	}
-	var df = doc.file;
-	df.name.innerHTML = "<small>File: </small>" + f.name;
-	df.time.setAttribute ("datetime", f.created);
-	df.time.innerHTML = beautifyTimeStamp (f.created);
-	df.author.innerHTML = f.author;
-	
-	if (!f.div[pluginName])
-	{
-		f.div[pluginName] = document.createElement("div");
-		f.viz[pluginName] = visualizers[pluginName].setUp (f, f.div[pluginName]);
-	}
-    removeChildren (df.display);
-	df.display.appendChild (f.div[pluginName]);
+    var df = doc.file;
+    df.name.innerHTML = "<small>File: </small>" + f.name;
+    df.time.setAttribute ("datetime", f.created);
+    df.time.innerHTML = utils.beautifyTimeStamp (f.created);
+    df.author.innerHTML = f.author;
+
+    if (!f.div[pluginName])
+    {
+      f.div[pluginName] = document.createElement("div");
+      f.viz[pluginName] = visualizers[pluginName].setUp (f, f.div[pluginName]);
+    }
+    $(df.display).empty();
+    df.display.appendChild (f.div[pluginName]);
     f.viz[pluginName].show ();
-	
+
     // Show parent div of the file display, and scroll there
-	doc.version.filedetails.style.display = "block";
-	var pos = getPos (doc.version.filedetails);
-	window.scrollTo(pos.xPos, pos.yPos);
+    doc.version.filedetails.style.display = "block";
+    var pos = utils.getPos (doc.version.filedetails);
+    window.scrollTo(pos.xPos, pos.yPos);
+  } else {
+    doc.version.filedetails.style.display = "none";
+  }
 }
 
 function requestInformation (jsonObject, onSuccess)
@@ -797,7 +733,7 @@ function requestInformation (jsonObject, onSuccess)
         //console.log (xmlhttp.responseText);
     	var json = JSON.parse(xmlhttp.responseText);
     	//console.log (json);
-    	displayNotifications (json);
+    	notifications.display (json);
     	
         if(xmlhttp.status == 200)
         {
@@ -827,58 +763,37 @@ function nextPage (url, replace)
     render ();
 }
 
+
 function render ()
 {
-	var url = parseUrl (document.location);
-  basicurl = $('#entityversion').data('version-href');
-	var curVersionId = getCurVersionId (url);
-	
-	//console.log ("curVersionId " + curVersionId);
-	if (curVersionId)
-	{
-		var curFileId = getCurFileId (url);
-		var pluginName = getCurPluginName (url);
+  var curVersionId, fileName, pluginName;
 
-		//console.log ("curFileId  " + curFileId);
-		//console.log ("pluginName " + pluginName);
-		
-		var v = versions[curVersionId];
-		if (!v)
-		{
-			//console.log ("missing version. calling for: " + curVersionId);
-			// request info about version only
-			requestInformation ({
-		    	task: "getInfo",
-		    	version: curVersionId
-			}, render);
-			return;
-		}
-		else if (v != curVersion)
-		{
-			displayVersion (curVersionId, !(curFileId && pluginName));
-			curVersion = v;
-		}
-		
-		if (curFileId && pluginName)
-		{
-			displayFile (v, curFileId, pluginName);
-			doc.file.close.href = basicurl + convertForURL (v.name) + "/" + v.id + "/";
-		}
-		else
-			doc.version.filedetails.style.display = "none";
-			
-	}
-	else
-	{
-		if (url.length > 0 && url[0] == "latest")
-		{
-			// The 'return false' means we only follow the first matching link
-			$(".entityversionlink").each(function (){nextPage ($(this).attr('href'), true); return false;});
-		}
-		doc.entity.version.style.display = "none";
-		doc.entity.details.style.display = "block";
-		curVersion = null;
-	}
+  var parts = document.location.pathname.split("/")
+  parts.forEach((part, i) => {
+    if (part == 'versions') {
+      basicurl = parts.slice(0, i+2).join('/');
+      curVersionId = parts[i+1];
+      fileName = parts[i+2];
+      pluginName = parts[i+3];
+    }
+  });
+
+  console.log(curVersion, fileName, pluginName);
+
+  if (curVersion) {
+    displayFile(fileName, pluginName);
+  } else {
+    var jsonUrl = $('#entityversion').data('version-json-href');
+    $.getJSON(jsonUrl, function(data) {
+      notifications.display(data);
+      if (data.version) {
+        curVersion = data.version;
+        updateVersion(curVersion);
+        displayVersion(curVersion.id, !(fileName && pluginName));
+        displayFile(fileName, pluginName);
+      }
+    });
+  }
 }
 
 function deleteVersionCallback()
@@ -912,9 +827,6 @@ function initModel ()
 				archivelink : document.getElementById("downloadArchive"),
 				filedetails : document.getElementById("entityversionfiledetails"),
 				experimentlist: document.getElementById("entityexperimentlist"),
-				experimentpartners: document.getElementById("entityexperimentlistpartners"),
-				compareAll: document.getElementById("compare-all-models"),
-				switcher: document.getElementById("experiment-files-switcher"),
 				visibility: document.getElementById("versionVisibility"),
 				visibilityAction : document.getElementById("versionVisibilityAction"),
 				deleteBtn: document.getElementById("deleteVersion"),
@@ -933,49 +845,20 @@ function initModel ()
   entityType = $(doc.version).data('entity-type');
   compareType = entityType == 'model' ? 'protocol' : 'model';
 	
-	//window.onpopstate = render;
-	//render ();
-/*	
-	document.getElementById("experiment-files-switcher-exp").addEventListener("click", function (ev) {
-	    $("#experiment-files-switcher-exp").addClass("selected");
-	    $("#experiment-files-switcher-files").removeClass("selected");
-		doc.version.details.style.display = "none";
-		doc.version.experimentlist.style.display = "block";
-	}, false);
-	
-	document.getElementById("experiment-files-switcher-files").addEventListener("click", function (ev) {
-	    $("#experiment-files-switcher-files").addClass("selected");
-        $("#experiment-files-switcher-exp").removeClass("selected");
-		doc.version.experimentlist.style.display = "none";
-		doc.version.details.style.display = "block";
-	}, false);
-	
-	
-	doc.version.close.href = basicurl;
-	doc.version.close.addEventListener("click", function (ev) {
-		if (ev.which == 1)
-		{
-			ev.preventDefault();
-			curVersion = null;
-			doc.entity.version.style.display = "none";
-			doc.entity.details.style.display = "block";
-			removeChildren(doc.version.visibilityAction);
-			nextPage (doc.version.close.href);
-		}
-    }, true);
+	window.onpopstate = render;
+	render ();
 		
-	doc.file.close.addEventListener("click", function (ev) {
-		if (ev.which == 1)
-		{
-			ev.preventDefault();
-			doc.version.filedetails.style.display = "none";
-			doc.version.files.style.display = "block";
-			removeChildren(doc.version.visibilityAction);
-			nextPage (doc.file.close.href);
-		}
-    }, true);
-        $('#zoomFile').click(zoomHandler);
-  */
+  $(doc.file.close).click(function (ev) {
+    if (ev.which == 1)
+    {
+      ev.preventDefault();
+      doc.version.filedetails.style.display = "none";
+      doc.version.files.style.display = "block";
+      $(doc.version.visibilityAction).empty();
+      nextPage (doc.file.close.href);
+    }
+  });
+  $('#zoomFile').click(zoomHandler);
 
 	var list = document.getElementById("entityversionlist");
 	if (list)
@@ -1049,47 +932,18 @@ function initModel ()
 	
 	
 	// Comparing experiments click events
-	var $exp_list = $(doc.version.experimentpartners).children("ul");
-	$("#entityexperimentlistpartnersactall").click(function () {
-		$exp_list.find("input").filter(":visible").prop('checked', true);
-	});
-	$("#entityexperimentlistpartnersactnone").click(function () {
-		$exp_list.find("input").prop('checked', false);
-	});
-	$("#entityexperimentlistpartnersactlatest").click(function () {
-		$exp_list.children("li").children("input").prop('checked', true);
-	});
 	$("#entityexperimentlist_showallversions").click(function () {
 		$(this).toggleClass("selected");
 		$exp_list.find("ul").toggle();
 		$("#entityexperimentlist_span_latest").toggle();
     return false;
 	});
-	$("#entityexperimentlistpartnersactcompare").click(function () {
-		var compares = [];
-		$exp_list.find("input:checked").filter(":visible").each(function () {
-			compares.push(this.value);
-		});
-		if (compares.length >= 2)
-		    document.location = $(this).data('base-href') + '/' + compares.join('/');
-		else
-		    window.alert("You need to select at least 2 " + compareType + "s to compare.");
-    return false;
-	});
-	$(doc.version.compareAll).click(function () {
-		var url = "";
-		$exp_list.find("input").filter(":visible").each(function () {
-			url += this.value + "/";
-		});
-		if (url == "")
-			url = allComparisonsUrl;
-		if (url)
-			document.location = contextPath + "/compare/e/" + url;
-		else
-			window.alert("No experiments available to compare!");
-	});
 	
   $("#entityexperimentlist_span_latest").hide();
+
+  $(plugins).each(function(i, plugin) {
+    visualizers[plugin.name] = plugin.get_visualizer()
+  });
 }
 
 document.addEventListener("DOMContentLoaded", initModel, false);

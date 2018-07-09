@@ -1,5 +1,7 @@
+import mimetypes
 import os.path
 import shutil
+from datetime import datetime
 from itertools import groupby
 
 from braces.views import UserFormKwargsMixin
@@ -165,9 +167,78 @@ class ProtocolEntityVersionView(
     template_name = 'entities/entity_version.html'
 
 
-class EntityVersionCompareView(
-    VisibilityMixin, VersionMixin, DetailView
-):
+def get_file_type(filename):
+    _, ext = os.path.splitext(filename)
+
+    extensions = {
+        'cellml': 'CellML',
+        'txt': 'TXTPROTOCOL',
+        'xml': 'XMLPROTOCOL',
+        'zip': 'COMBINE archive',
+        'omex': 'COMBINE archive',
+    }
+
+    return extensions.get(ext[1:], 'Unknown')
+
+
+class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, View):
+    def _file_json(self, blob):
+        obj = self.get_object()
+        commit = self.get_commit()
+
+        return {
+            'id': blob.name,
+            'name': blob.name,
+            'filetype': get_file_type(blob.name),
+            'size': blob.size,
+            'created': datetime.fromtimestamp(commit.committed_date),
+            'url': reverse(
+                'entities:%s_file_download' % obj.entity_type,
+                args=[obj.id, commit.hexsha, blob.name]
+            ),
+        }
+
+    def get(self, request, *args, **kwargs):
+        obj = self.get_object()
+        commit = self.get_commit()
+
+        files = [
+            self._file_json(f)
+            for f in commit.tree.blobs
+            if f.name not in ['manifest.xml', 'metadata.rdf']
+        ]
+        return JsonResponse({
+            'version': {
+                'id': commit.hexsha,
+                'author': obj.author.full_name,
+                'entityId': obj.id,
+                'visibility': obj.visibility,
+                'created': datetime.fromtimestamp(commit.committed_date),
+                'name': obj.name,
+                'version': obj.repo.get_name_for_commit(commit.hexsha),
+                'files': files,
+                'numFiles': len(files),
+                'url': reverse(
+                    'entities:%s_version' % obj.entity_type,
+                    args=[obj.id, commit.hexsha]
+                ),
+                'download_url': reverse(
+                    'entities:entity_archive',
+                    args=[obj.entity_type, obj.id, commit.hexsha]
+                ),
+            }
+        })
+
+
+class ModelEntityVersionJsonView(ModelEntityTypeMixin, EntityVersionJsonView):
+    pass
+
+
+class ProtocolEntityVersionJsonView(ProtocolEntityTypeMixin, EntityVersionJsonView):
+    pass
+
+
+class EntityVersionCompareView(VisibilityMixin, VersionMixin, DetailView):
     context_object_name = 'entity'
     template_name = 'entities/entity_version_compare.html'
 
@@ -490,3 +561,33 @@ class FileUploadView(View):
 
         else:
             return HttpResponseBadRequest(form.errors)
+
+
+class EntityFileDownloadView(VisibilityMixin, VersionMixin, SingleObjectMixin, View):
+    """
+    Download an individual file from an experiment
+    """
+    def get(self, request, *args, **kwargs):
+        filename = self.kwargs['filename']
+        entity = self.get_object()
+        version = self.get_commit()
+
+        content_type, _ = mimetypes.guess_type(filename)
+        if content_type is None:
+            content_type = 'application/octet-stream'
+
+        response = HttpResponse(content_type=content_type)
+        response['Content-Disposition'] = 'attachment; filename=%s' % filename
+        blob = entity.repo.get_blob(filename, version.hexsha)
+        if blob:
+            response.write(blob.data_stream.read())
+
+        return response
+
+
+class ModelEntityFileDownloadView(ModelEntityTypeMixin, EntityFileDownloadView):
+    pass
+
+
+class ProtocolEntityFileDownloadView(ProtocolEntityTypeMixin, EntityFileDownloadView):
+    pass

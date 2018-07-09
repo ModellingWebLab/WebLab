@@ -1,12 +1,14 @@
 import io
 import json
 import zipfile
+from datetime import datetime
 from io import BytesIO
 
 import pytest
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils.dateparse import parse_datetime
 
 from accounts.models import User
 from core import recipes
@@ -196,6 +198,53 @@ class TestEntityVersionDetail:
                    commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
                    commit, ['tag1', 'tag2'])
+
+
+@pytest.mark.django_db
+class TestEntityVersionJsonView:
+    def test_version_json(self, client, helpers):
+        model = recipes.model.make(name='mymodel', author__full_name='model author')
+        version = helpers.add_version(model)
+        model.repo.tag('v1')
+
+        response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
+
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        ver = data['version']
+
+        assert ver['name'] == 'mymodel'
+        assert ver['id'] == version.hexsha
+        assert ver['author'] == 'model author'
+        assert ver['entityId'] == model.pk
+        assert ver['visibility'] == model.visibility
+        assert (
+            parse_datetime(ver['created']).replace(microsecond=0) ==
+            datetime.fromtimestamp(version.committed_date)
+        )
+        assert ver['version'] == 'v1'
+        assert len(ver['files']) == ver['numFiles'] == 1
+        assert ver['url'] == '/entities/models/%d/versions/%s' % (model.pk, version.hexsha)
+        assert (ver['download_url'] ==
+                '/entities/models/%d/versions/%s/archive' % (model.pk, version.hexsha))
+
+    def test_file_json(self, client, helpers):
+        model = recipes.model.make()
+        version = helpers.add_version(model)
+        model.repo.tag('v1')
+
+        response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
+
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        file_ = data['version']['files'][0]
+        assert file_['id'] == file_['name'] == 'file1.txt'
+        assert file_['filetype'] == 'TXTPROTOCOL'
+        assert file_['size'] == 15
+        assert (file_['url'] ==
+                '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, version.hexsha))
 
 
 @pytest.mark.django_db
@@ -573,6 +622,24 @@ class TestVersionCreation:
 
 
 @pytest.mark.django_db
+class TestEntityFileDownloadView:
+    def test_download_file(self, client, model_with_version):
+        version = model_with_version.repo.latest_commit
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/download/file1.txt' %
+            (model_with_version.pk, version.hexsha)
+        )
+
+        assert response.status_code == 200
+        assert response.content == b'entity contents'
+        assert response['Content-Disposition'] == (
+            'attachment; filename=file1.txt'
+        )
+        assert response['Content-Type'] == 'text/plain'
+
+
+@pytest.mark.django_db
 class TestEntityArchiveView:
     def test_download_archive(self, client, helpers):
         model = recipes.model.make()
@@ -659,11 +726,15 @@ class TestFileUpload:
     (recipes.model, '/entities/models/%d/versions/latest'),
     (recipes.model, '/entities/models/%d/versions/latest/compare'),
     (recipes.model, '/entities/models/%d/versions/latest/archive'),
+    (recipes.model, '/entities/models/%d/versions/latest/files.json'),
+    (recipes.model, '/entities/models/%d/versions/latest/download/file1.txt'),
     (recipes.protocol, '/entities/protocols/%d'),
     (recipes.protocol, '/entities/protocols/%d/versions/'),
     (recipes.protocol, '/entities/protocols/%d/versions/latest'),
     (recipes.protocol, '/entities/protocols/%d/versions/latest/compare'),
     (recipes.protocol, '/entities/protocols/%d/versions/latest/archive'),
+    (recipes.protocol, '/entities/protocols/%d/versions/latest/files.json'),
+    (recipes.protocol, '/entities/protocols/%d/versions/latest/download/file1.txt'),
 ])
 class TestEntityVisibility:
     def test_private_entity_visible_to_self(self, client, user, helpers, recipe, url):

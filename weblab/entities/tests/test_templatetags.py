@@ -52,6 +52,8 @@ def test_entity_urls(model_with_version, protocol_with_version):
     assert entity_tags.url_newversion(model) == '/entities/models/%d/versions/new' % model.pk
     assert (entity_tags.url_version(model, model_version) ==
             '/entities/models/%d/versions/%s' % (model.pk, model_version.hexsha))
+    assert (entity_tags.url_version_json(model, model_version) ==
+            '/entities/models/%d/versions/%s/files.json' % (model.pk, model_version.hexsha))
     assert (entity_tags.url_version_compare(model, model_version) ==
             '/entities/models/%d/versions/%s/compare' % (model.pk, model_version.hexsha))
     assert (entity_tags.url_tag_version(model, model_version) ==
@@ -65,6 +67,9 @@ def test_entity_urls(model_with_version, protocol_with_version):
             '/entities/protocols/%d/versions/new' % protocol.pk)
     assert (entity_tags.url_version(protocol, protocol_version) ==
             '/entities/protocols/%d/versions/%s' % (protocol.pk, protocol_version.hexsha))
+    assert (entity_tags.url_version_json(protocol, protocol_version) ==
+            '/entities/protocols/%d/versions/%s/files.json' %
+            (protocol.pk, protocol_version.hexsha))
     assert (entity_tags.url_version_compare(protocol, protocol_version) ==
             '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, protocol_version.hexsha))
     assert (entity_tags.url_tag_version(protocol, protocol_version) ==

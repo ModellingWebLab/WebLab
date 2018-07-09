@@ -430,7 +430,7 @@ function displayVersion (versionId, showDefault) {
     var a = document.createElement("a");
     a.href = file.url;
     img = document.createElement("img");
-    img.src = staticPath + "img/document-save-5.png";
+    img.src = staticPath + "img/download.png";
     img.alt = "download document";
     img.title = "download document";
     a.appendChild(img);
