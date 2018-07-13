@@ -120,9 +120,9 @@ class TestExperimentMatrix:
         other_protocol_version = helpers.add_version(other_protocol)
         recipes.experiment_version.make(
             experiment__model=other_model,
-            experiment__model_version=other_model_version,
+            experiment__model_version=other_model_version.hexsha,
             experiment__protocol=other_protocol,
-            experiment__protocol_version=other_protocol_version,
+            experiment__protocol_version=other_protocol_version.hexsha,
         )
 
         # Throw in a non-existent protocol so we can make sure it gets ignored

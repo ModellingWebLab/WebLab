@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from pathlib import Path
 from shutil import rmtree
 
@@ -66,11 +67,11 @@ class Repository:
 
         :return: `git.Commit` object
         """
-        return self._repo.index.commit(
+        return Commit(self, self._repo.index.commit(
             message,
             author=Actor(author.full_name, author.email),
             committer=Actor(author.full_name, author.email),
-        )
+        ))
 
     def tag(self, tag, *, ref='HEAD'):
         """
@@ -112,7 +113,7 @@ class Repository:
         """
         tags = {}
         for tag in self._repo.tags:
-            tags.setdefault(tag.commit, []).append(tag)
+            tags.setdefault(tag.commit.hexsha, []).append(tag)
         return tags
 
     def get_name_for_commit(self, version):
@@ -124,7 +125,7 @@ class Repository:
         """
         commit = self.get_commit(version)
         for tag in self._repo.tags:
-            if tag.commit == commit:
+            if tag.commit == commit._commit:
                 return tag.name
         return version
 
@@ -141,28 +142,27 @@ class Repository:
 
         :return: `git.Commit` object or `None` if no commits
         """
-        return self._repo.head.commit if self._repo.head.is_valid() else None
+        return Commit(self, self._repo.head.commit) if self._repo.head.is_valid() else None
 
     def get_commit(self, version):
         """
         Get commit object relating to version
 
-        :param version: Revision specification (sha, branch name, tag etc.)
-            or 'latest' to get latest revision
+        :param version: Reference to a commit, or `git.Commit`
 
         :return `git.Commit` object
         """
         if version == 'latest':
             return self.latest_commit
         else:
-            return self._repo.commit(version)
+            return Commit(self, self._repo.commit(version))
 
     @property
     def commits(self):
         """
         :return iterable of `git.Commit` objects in the entity repository
         """
-        return self._repo.iter_commits()
+        return (Commit(self, c) for c in self._repo.iter_commits())
 
     @property
     def manifest_path(self):
@@ -198,65 +198,82 @@ class Repository:
         writer.write(self.manifest_path)
         self.add_file(self.manifest_path)
 
-    def master_filename(self, ref=None):
+
+class Commit:
+    def __init__(self, repo, commit):
+        self._repo = repo
+        self._commit = commit
+
+    @property
+    def filenames(self):
+        """
+        Get all filenames in repository
+
+        :return: set of all filenames in this commit
+        """
+        return {blob.name for blob in self.files}
+
+    @property
+    def files(self):
+        """
+        Get all files in repository
+
+        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
+        :return: iterable of all files in this commit
+        """
+        return self._commit.tree.blobs
+
+    def get_blob(self, filename, ref='HEAD'):
+        """
+        Get a file from the commit in blob form
+
+        :param filename: Name of file to retrieve
+        :return: `git.Blob` object or none if file not found
+        """
+        for blob in self.files:
+            if blob.name == filename:
+                return blob
+
+    def write_archive(self):
+        """
+        Create a Combine Archive of all files in the repository
+        """
+        return ArchiveWriter().write(
+            (self._repo.full_path(fn), fn) for fn in self.filenames
+        )
+
+    @property
+    def hexsha(self):
+        return self._commit.hexsha
+
+    @property
+    def author(self):
+        return self._commit.author
+
+    @property
+    def message(self):
+        return self._commit.message
+
+    def __eq__(self, other):
+        return other._commit == self._commit
+
+    def __hash__(self):
+        return hash(self._commit)
+
+    @property
+    def committed_at(self):
+        return datetime.fromtimestamp(self._commit.committed_date)
+
+    @property
+    def master_filename(self):
         """
         Get name of repository master file, as defined by COMBINE manifest
 
         :return: master filename, or None if no master file or no manifest
         """
-
         reader = ManifestReader()
-        if ref:
-            for file_ in self.files(ref):
-                if file_.name == MANIFEST_FILENAME:
-                    reader.read(file_.data_stream)
-        else:
-            try:
-                reader.read(self.manifest_path)
-            except FileNotFoundError:
-                pass
+        for file_ in self.files:
+            if file_.name == MANIFEST_FILENAME:
+                reader.read(file_.data_stream)
 
         return reader.master_filename
-
-    def filenames(self, ref='HEAD'):
-        """
-        Get all filenames in repository
-
-        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
-        :return: set of all filenames in repository
-        """
-        return {
-            blob.name
-            for blob in self.files(ref)
-        }
-
-    def files(self, ref='HEAD'):
-        """
-        Get all files in repository
-
-        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
-        :return: iterable of all files in repository
-        """
-        return self.get_commit(ref).tree.blobs
-
-    def get_blob(self, filename, ref='HEAD'):
-        """
-        Get a file from the repository in blob form
-
-        :param filename: Name of file to retrieve
-        :param ref: A reference to a specific commit, defaults to the latest
-        :return: `git.Blob` object or none if file not found
-        """
-        for blob in self.files(ref):
-            if blob.name == filename:
-                return blob
-
-    def archive(self, ref='HEAD'):
-        """
-        Create a Combine Archive of all files in the repository
-
-        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
-        """
-        return ArchiveWriter().write(
-            (self.full_path(fn), fn) for fn in self.filenames(ref)
-        )

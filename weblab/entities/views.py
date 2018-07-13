@@ -91,8 +91,8 @@ class VersionMixin:
         commit = self.get_commit()
         kwargs.update(**{
             'version': commit,
-            'tags': tags.get(commit, []),
-            'master_filename': entity.repo.master_filename(commit),
+            'tags': tags.get(commit.hexsha, []),
+            'master_filename': commit.master_filename,
         })
         return super().get_context_data(**kwargs)
 
@@ -191,7 +191,7 @@ class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, Vi
             'name': blob.name,
             'filetype': get_file_type(blob.name),
             'size': blob.size,
-            'created': datetime.fromtimestamp(commit.committed_date),
+            'created': commit.committed_at,
             'url': reverse(
                 'entities:%s_file_download' % obj.entity_type,
                 args=[obj.id, commit.hexsha, blob.name]
@@ -204,7 +204,7 @@ class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, Vi
 
         files = [
             self._file_json(f)
-            for f in commit.tree.blobs
+            for f in commit.files
             if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
         return JsonResponse({
@@ -213,7 +213,7 @@ class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, Vi
                 'author': obj.author.full_name,
                 'entityId': obj.id,
                 'visibility': obj.visibility,
-                'created': datetime.fromtimestamp(commit.committed_date),
+                'created': commit.committed_at,
                 'name': obj.name,
                 'version': obj.repo.get_name_for_commit(commit.hexsha),
                 'files': files,
@@ -368,7 +368,7 @@ class EntityNewVersionView(
         if latest:
             kwargs.update(**{
                 'latest_version': latest,
-                'master_filename': entity.repo.master_filename(),
+                'master_filename': latest.master_filename,
             })
 
         kwargs['delete_file'] = self.request.GET.get('deletefile')
@@ -467,7 +467,7 @@ class VersionListView(VisibilityMixin, DetailView):
         tags = entity.repo.tag_dict
         kwargs.update(**{
             'versions': list(
-                (tags.get(commit), commit)
+                (tags.get(commit.hexsha), commit)
                 for commit in entity.repo.commits
             )
         })
@@ -523,7 +523,7 @@ class EntityArchiveView(VisibilityMixin, SingleObjectMixin, VersionMixin, View):
             get_valid_filename('%s_%s.zip' % (entity.name, commit.hexsha))
         )
 
-        archive = entity.repo.archive(self.kwargs['sha'])
+        archive = commit.write_archive()
 
         response = HttpResponse(content_type='application/zip')
         response['Content-Disposition'] = 'attachment; filename=%s' % zipfile_name
@@ -578,7 +578,7 @@ class EntityFileDownloadView(VisibilityMixin, VersionMixin, SingleObjectMixin, V
 
         response = HttpResponse(content_type=content_type)
         response['Content-Disposition'] = 'attachment; filename=%s' % filename
-        blob = entity.repo.get_blob(filename, version.hexsha)
+        blob = version.get_blob(filename)
         if blob:
             response.write(blob.data_stream.read())
         else:

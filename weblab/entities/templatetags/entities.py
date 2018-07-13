@@ -1,22 +1,11 @@
 import math
 import os.path
-from datetime import datetime
 
 from django import template
 from django.core.urlresolvers import reverse
 
 
 register = template.Library()
-
-
-@register.filter
-def as_datetime(timestamp):
-    return datetime.fromtimestamp(timestamp)
-
-
-@register.filter
-def number_of_files(commit):
-    return len(commit.tree.blobs)
 
 
 @register.filter
@@ -82,7 +71,7 @@ def _url_friendly_label(entity, commit):
     :param entity: Entity the commit belongs to
     :param commit: `git.Commit` object
     """
-    last_tag = str(entity.repo.tag_dict.get(commit, ['/'])[-1])
+    last_tag = str(entity.repo.tag_dict.get(commit.hexsha, ['/'])[-1])
     if '/' in last_tag or last_tag in ['new', 'latest']:
         last_tag = commit.hexsha
     return last_tag

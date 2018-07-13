@@ -1,14 +1,7 @@
-from datetime import datetime
-
 import pytest
 
 import entities.templatetags.entities as entity_tags
 from core import recipes
-
-
-def test_as_datetime():
-    dt = entity_tags.as_datetime(1530628582)
-    assert dt == datetime(2018, 7, 3, 14, 36, 22)
 
 
 def test_human_readable_bytes():

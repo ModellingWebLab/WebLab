@@ -222,7 +222,7 @@ class TestEntityVersionJsonView:
         assert ver['visibility'] == model.visibility
         assert (
             parse_datetime(ver['created']).replace(microsecond=0) ==
-            datetime.fromtimestamp(version.committed_date)
+            version.committed_at
         )
         assert ver['version'] == 'v1'
         assert len(ver['files']) == ver['numFiles'] == 1
@@ -341,7 +341,7 @@ class TestTagging:
         model.repo.tag('tag', ref=commit.hexsha)
         tags = model.repo.tag_dict
         assert len(tags) == 1
-        assert tags[commit][0].name == 'tag'
+        assert tags[commit.hexsha][0].name == 'tag'
 
     def test_nasty_tag_chars(self, helpers):
         import git
@@ -352,7 +352,7 @@ class TestTagging:
             model.repo.tag('tag/')
 
         model.repo.tag('my/tag')
-        assert model.repo.tag_dict[model.repo.latest_commit][0].name == 'my/tag'
+        assert model.repo.tag_dict[model.repo.latest_commit.hexsha][0].name == 'my/tag'
 
         with pytest.raises(git.exc.GitCommandError):
             model.repo.tag('tag with spaces')
@@ -382,7 +382,7 @@ class TestTagging:
         assert 'v1' in model.repo._repo.tags
         tags = model.repo.tag_dict
         assert len(tags) == 1
-        assert tags[commit][0].name == 'v1'
+        assert tags[commit.hexsha][0].name == 'v1'
 
     @pytest.mark.skip('not yet implemented')
     def test_tag_view_requires_permissions(self, user, client, helpers):
@@ -457,10 +457,12 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert response.url == '/entities/models/%d' % model.id
         assert 'v1' in model.repo._repo.tags
-        assert model.repo.latest_commit.message == 'first commit'
-        assert 'model.txt' in model.repo.filenames()
-        assert 'manifest.xml' in model.repo.filenames()
-        assert model.repo.master_filename() is None
+
+        latest = model.repo.latest_commit
+        assert latest.message == 'first commit'
+        assert 'model.txt' in latest.filenames
+        assert 'manifest.xml' in latest.filenames
+        assert latest.master_filename is None
 
     def test_add_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
@@ -488,17 +490,19 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert response.url == '/entities/models/%d' % model.id
         assert 'v1' in model.repo._repo.tags
-        assert model.repo.latest_commit.message == 'files'
-        assert 'file1.txt' in model.repo.filenames()
-        assert 'file2.txt' in model.repo.filenames()
-        assert model.repo.master_filename() == 'file1.txt'
+
+        latest = model.repo.latest_commit
+        assert latest.message == 'files'
+        assert 'file1.txt' in latest.filenames
+        assert 'file2.txt' in latest.filenames
+        assert latest.master_filename == 'file1.txt'
 
     def test_delete_file(self, user, client, helpers):
         add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         helpers.add_version(model, 'file1.txt')
         helpers.add_version(model, 'file2.txt')
-        assert len(model.repo.latest_commit.tree.blobs) == 2
+        assert len(model.repo.latest_commit.files) == 2
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -511,9 +515,11 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert response.url == '/entities/models/%d' % model.id
         assert 'delete-file' in model.repo._repo.tags
-        assert model.repo.latest_commit.message == 'delete file1'
-        assert len(model.repo.latest_commit.tree.blobs) == 2
-        assert 'file2.txt' in model.repo.filenames()
+
+        latest = model.repo.latest_commit
+        assert latest.message == 'delete file1'
+        assert len(latest.files) == 2
+        assert 'file2.txt' in latest.filenames
         assert not (model.repo_abs_path / 'file1.txt').exists()
 
     def test_delete_multiple_files(self, user, client, helpers):
@@ -522,7 +528,7 @@ class TestVersionCreation:
         helpers.add_version(model, 'file1.txt')
         helpers.add_version(model, 'file2.txt')
         helpers.add_version(model, 'file3.txt')
-        assert len(model.repo.latest_commit.tree.blobs) == 3
+        assert len(model.repo.latest_commit.files) == 3
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -535,9 +541,11 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert response.url == '/entities/models/%d' % model.id
         assert 'delete-files' in model.repo._repo.tags
-        assert model.repo.latest_commit.message == 'delete files'
-        assert len(model.repo.latest_commit.tree.blobs) == 2
-        assert 'file3.txt' in model.repo.filenames()
+
+        latest = model.repo.latest_commit
+        assert latest.message == 'delete files'
+        assert len(latest.files) == 2
+        assert 'file3.txt' in latest.filenames
         assert not (model.repo_abs_path / 'file1.txt').exists()
         assert not (model.repo_abs_path / 'file2.txt').exists()
 
@@ -585,10 +593,12 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d' % protocol.id
         assert 'v1' in protocol.repo._repo.tags
-        assert protocol.repo.latest_commit.message == 'first commit'
-        assert 'protocol.txt' in protocol.repo.filenames()
-        assert protocol.repo.latest_commit.author.email == user.email
-        assert protocol.repo.latest_commit.author.name == user.full_name
+
+        latest = protocol.repo.latest_commit
+        assert latest.message == 'first commit'
+        assert 'protocol.txt' in latest.filenames
+        assert latest.author.email == user.email
+        assert latest.author.name == user.full_name
 
     def test_create_protocol_version_requires_permissions(self, user, client):
         protocol = recipes.protocol.make(author=user)
