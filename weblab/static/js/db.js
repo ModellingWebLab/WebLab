@@ -159,7 +159,7 @@ function drawMatrix (matrix)
 				d1.appendChild(a);
 				td.appendChild(d2);
 				$td.addClass("matrixTableCol")
-					.data({col: col, protoId: proto.entityId})
+					.data({col: col, protoId: proto.entityId, protoVersion: proto.id})
 					.click(function (ev) {
 						if (comparisonMode) {
 							ev.preventDefault();
