@@ -1088,6 +1088,8 @@ function initModel ()
 		else
 			window.alert("No experiments available to compare!");
 	});
+	
+  $("#entityexperimentlist_span_latest").hide();
 }
 
 document.addEventListener("DOMContentLoaded", initModel, false);
