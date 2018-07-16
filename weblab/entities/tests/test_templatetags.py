@@ -72,7 +72,7 @@ def test_entity_urls(model_with_version, protocol_with_version):
 
 
 @pytest.mark.django_db
-def test_name_of_model(model_with_version, protocol_with_version):
+def test_name_of_entity_linked_to_experiment(model_with_version, protocol_with_version):
     model_with_version.repo.tag('v1')
     protocol_with_version.repo.tag('v2')
 

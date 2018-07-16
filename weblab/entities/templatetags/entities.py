@@ -106,6 +106,8 @@ def url_version(entity, commit):
 def url_version_compare(entity, commit):
     """Generate the view URL for comparing a specific version of this entity
     to entities of the other type.
+
+    e.g. comparing a version of a model to the available set of protocols
     """
     url_name = 'entities:{}_version_compare'.format(entity.entity_type)
     last_tag = _url_friendly_label(entity, commit)

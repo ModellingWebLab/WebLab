@@ -105,7 +105,7 @@ class ExperimentMatrixJsonView(View):
         else:
             model_versions = [self.entity_json(model) for model in q_models]
 
-        model_versions = {model['id']: model for model in model_versions}
+        model_versions = {ver['id']: ver for ver in model_versions}
 
         if protocol_pks:
             q_protocols = q_protocols.filter(pk__in=protocol_pks)
@@ -120,7 +120,7 @@ class ExperimentMatrixJsonView(View):
         else:
             protocol_versions = [self.entity_json(protocol) for protocol in q_protocols]
 
-        protocol_versions = {protocol['id']: protocol for protocol in protocol_versions}
+        protocol_versions = {ver['id']: ver for ver in protocol_versions}
 
         # Only give info on experiments involving the correct entity versions
         experiments = {}
@@ -253,11 +253,13 @@ class ExperimentComparisonJsonView(View):
             )
         }
 
-    def _version_json(self, version, model_version, protocol_version):
+    def _version_json(self, version, model_version_in_name, protocol_version_in_name):
         """
         JSON for a single experiment version
 
         :param version: ExperimentVersion object
+        :param model_version_in_name: Whether to include model version specifier in name field
+        :param protocol_version_in_name: Whether to include protocol version specifier in name field
         """
         files = [
             self._file_json(version, f)
@@ -272,7 +274,7 @@ class ExperimentComparisonJsonView(View):
             'parsedOk': False,
             'visibility': version.visibility,
             'created': version.created_at,
-            'name': version.experiment.get_name(model_version, protocol_version),
+            'name': version.experiment.get_name(model_version_in_name, protocol_version_in_name),
             'experimentId': version.experiment.id,
             'versionId': version.id,
             'files': files,

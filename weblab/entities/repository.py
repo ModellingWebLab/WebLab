@@ -222,7 +222,7 @@ class Repository:
         """
         Get all filenames in repository
 
-        :param ref: A reference to a specific commit, defaults to the latest
+        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
         :return: set of all filenames in repository
         """
         return {
@@ -234,7 +234,7 @@ class Repository:
         """
         Get all files in repository
 
-        :param ref: A reference to a specific commit, defaults to the latest
+        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
         :return: iterable of all files in repository
         """
         return self.get_commit(ref).tree.blobs
@@ -243,7 +243,7 @@ class Repository:
         """
         Create a Combine Archive of all files in the repository
 
-        :param ref: A reference to a specific commit, defaults to the latest
+        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
         """
         return ArchiveWriter().write(
             (self.full_path(fn), fn) for fn in self.filenames(ref)
