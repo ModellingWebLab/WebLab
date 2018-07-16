@@ -322,6 +322,8 @@ function parseEntities (entityObj)
 	
 	if (entityType == "experiment")
   {
+    plotLabelStripText = '';
+
     // Allow plugins to strip out redundant (repeated) text in plot line labels
     if (singleModel && !singleProto)
     {

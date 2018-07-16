@@ -73,7 +73,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^compare(?P<version_pks>(/\d+){2,})(?:/show/(?P<filename>[\w.]+)/(?P<viz>\w+))?$',
+        r'^compare(?P<version_pks>(/\d+){1,})(?:/show/(?P<filename>[\w.]+)/(?P<viz>\w+))?$',
         views.ExperimentComparisonView.as_view(),
         name='compare',
     ),
