@@ -204,6 +204,21 @@ class TestExperimentMatrix:
         assert set(data['getMatrix']['models'].keys()) == {v1, v2, v3}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
+    def test_submatrix_with_too_many_model_ids(self, client, helpers, experiment_version):
+        model = recipes.model.make()
+
+        response = client.get(
+            '/experiments/matrix',
+            {
+                'modelIds[]': [experiment_version.experiment.model.pk, model.pk],
+                'modelVersions[]': '*',
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert len(data['notifications']['errors']) == 1
+
     def test_submatrix_with_protocol_versions(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         v1 = exp.protocol_version
@@ -259,6 +274,21 @@ class TestExperimentMatrix:
 
         assert set(data['getMatrix']['protocols'].keys()) == {v1, v2, v3}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
+
+    def test_submatrix_with_too_many_protocol_ids(self, client, helpers, experiment_version):
+        protocol = recipes.protocol.make()
+
+        response = client.get(
+            '/experiments/matrix',
+            {
+                'protoIds[]': [experiment_version.experiment.protocol.pk, protocol.pk],
+                'protoVersions[]': '*',
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert len(data['notifications']['errors']) == 1
 
     def test_experiment_without_version_is_ignored(
         self, client, model_with_version, protocol_with_version

@@ -416,7 +416,11 @@ function addMatrixClickListener($td, link, expId, result)
 function getMatrix(params, div) {
   var baseUrl = $(div).data('base-json-href');
   $.getJSON(baseUrl, params, function(data) {
-    drawMatrix(data.getMatrix);
+    if (data.getMatrix) {
+      drawMatrix(data.getMatrix);
+    }
+  }).always(function(data) {
+    notifications.display(data);
   });
 }
 

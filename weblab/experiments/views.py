@@ -93,6 +93,20 @@ class ExperimentMatrixJsonView(View):
         model_versions = request.GET.getlist('modelVersions[]')
         protocol_versions = request.GET.getlist('protoVersions[]')
 
+        if model_versions and len(model_pks) > 1:
+            return JsonResponse({
+                'notifications': {
+                    'errors': ['Only one model ID can be used when versions are specified'],
+                }
+            })
+
+        if protocol_versions and len(protocol_pks) > 1:
+            return JsonResponse({
+                'notifications': {
+                    'errors': ['Only one protocol ID can be used when versions are specified'],
+                }
+            })
+
         if model_pks:
             q_models = q_models.filter(pk__in=model_pks)
 
