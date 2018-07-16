@@ -49,6 +49,20 @@ def visibility_query(user):
         return Q(visibility=Visibility.PUBLIC)
 
 
+def visibility_check(user, obj):
+    """
+    Object-based visibility check - can the user view the given object?
+
+    :param: user to test against
+    :param: the object - must have `visibility` and `author` fields
+    :returns: True if the user is allowed to view the object, False otherwise
+    """
+    if user.is_authenticated:
+        return obj.author == user or obj.visibility != Visibility.PRIVATE
+    else:
+        return obj.visibility == Visibility.PUBLIC
+
+
 class VisibilityMixin(AccessMixin):
     """
     View mixin implementing visiblity restrictions

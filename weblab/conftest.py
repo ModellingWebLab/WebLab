@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth.models import AnonymousUser
 
 from accounts.models import User
 from core import recipes
@@ -111,6 +112,11 @@ def other_user():
         institution='UCL',
         password='password',
     )
+
+
+@pytest.fixture
+def anon_user():
+    return AnonymousUser()
 
 
 @pytest.fixture

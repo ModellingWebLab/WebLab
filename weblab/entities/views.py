@@ -25,7 +25,7 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 
-from core.visibility import VisibilityMixin
+from core.visibility import VisibilityMixin, visibility_check
 from experiments.models import Experiment
 
 from .forms import (
@@ -181,6 +181,11 @@ class EntityVersionCompareView(
             entity_type: entity.pk,
             ('%s_version' % entity_type): commit.hexsha,
         }).select_related(other_type).order_by(other_type, '-created_at')
+
+        experiments = [
+            exp for exp in experiments
+            if visibility_check(self.request.user, exp)
+        ]
 
         kwargs['comparisons'] = [
             (obj, list(exp))

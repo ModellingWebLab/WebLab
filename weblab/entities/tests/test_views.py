@@ -200,7 +200,7 @@ class TestEntityVersionDetail:
 
 @pytest.mark.django_db
 class TestModelEntityVersionCompareView:
-    def test_shows_related_experiments(self, client, user, experiment_version):
+    def test_shows_related_experiments(self, client, experiment_version):
         exp = experiment_version.experiment
         sha = exp.model.repo.latest_commit.hexsha
         recipes.experiment_version.make()  # another experiment which should not be included
@@ -212,7 +212,26 @@ class TestModelEntityVersionCompareView:
         assert response.status_code == 200
         assert response.context['comparisons'] == [(exp.protocol, [exp])]
 
-    def test_returns_404_if_commit_not_found(self, user, client):
+    def test_applies_visibility(self, client, helpers, experiment_version):
+        exp = experiment_version.experiment
+        sha = exp.model_version
+        protocol = recipes.protocol.make(visibility='private')
+
+        recipes.experiment_version.make(
+            experiment__protocol=protocol,
+            experiment__protocol_version=helpers.add_version(protocol).hexsha,
+            experiment__model=exp.model,
+            experiment__model_version=sha,
+        ).experiment  # should not be included for visibility reasons
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(exp.protocol, [exp])]
+
+    def test_returns_404_if_commit_not_found(self, client):
         model = recipes.model.make()
 
         response = client.get(
@@ -223,10 +242,10 @@ class TestModelEntityVersionCompareView:
 
 @pytest.mark.django_db
 class TestProtocolEntityVersionCompareView:
-    def test_shows_related_experiments(self, client, user, experiment_version):
+    def test_shows_related_experiments(self, client, experiment_version):
         exp = experiment_version.experiment
         sha = exp.protocol.repo.latest_commit.hexsha
-        recipes.experiment_version.make()  # another experiment which should not be included
+        recipes.experiment_version.make()  # should not be included, as it uses a different protocol
 
         response = client.get(
             '/entities/protocols/%d/versions/%s/compare' % (exp.protocol.pk, sha)
@@ -235,7 +254,26 @@ class TestProtocolEntityVersionCompareView:
         assert response.status_code == 200
         assert response.context['comparisons'] == [(exp.model, [exp])]
 
-    def test_returns_404_if_commit_not_found(self, user, client):
+    def test_applies_visibility(self, client, helpers, experiment_version):
+        exp = experiment_version.experiment
+        sha = exp.protocol_version
+        model = recipes.model.make(visibility='private')
+
+        recipes.experiment_version.make(
+            experiment__protocol=exp.protocol,
+            experiment__protocol_version=sha,
+            experiment__model=model,
+            experiment__model_version=helpers.add_version(model).hexsha,
+        ).experiment  # should not be included for visibility reasons
+
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/compare' % (exp.protocol.pk, sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(exp.model, [exp])]
+
+    def test_returns_404_if_commit_not_found(self, client):
         protocol = recipes.protocol.make()
 
         response = client.get(
