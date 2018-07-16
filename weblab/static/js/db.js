@@ -238,10 +238,10 @@ function setExpListeners($td, entry)
 		$td.click(function () {
 			submitNewExperiment ({
 				task: "newExperiment",
-				model: entry.model.id,
-        model_version: entry.model.version,
-				protocol: entry.protocol.id,
-        protocol_version: entry.protocol.version,
+				model: entry.model.entityId,
+        model_version: entry.model.id,
+				protocol: entry.protocol.entityId,
+        protocol_version: entry.protocol.id,
 			}, $td, entry);
 		});
 	}
