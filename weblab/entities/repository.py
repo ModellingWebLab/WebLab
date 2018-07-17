@@ -277,3 +277,11 @@ class Commit:
                 reader.read(file_.data_stream)
 
         return reader.master_filename
+
+    def add_note(self, note):
+        cmd = self._repo._repo.git
+        cmd.notes('--ref', 'weblab', 'add', '-f', '-m', note, self.hexsha)
+
+    def get_note(self):
+        cmd = self._repo._repo.git
+        return cmd.notes('--ref', 'weblab', 'show', self.hexsha)

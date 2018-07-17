@@ -160,3 +160,10 @@ class TestCommit:
 
         archive = repo.get_commit('latest').write_archive()
         assert zipfile.ZipFile(archive).namelist() == ['file.cellml']
+
+    def test_notes(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        commit = repo.commit('commit 1', author)
+
+        commit.add_note('Visibility: private')
+        assert commit.get_note() == 'Visibility: private'
