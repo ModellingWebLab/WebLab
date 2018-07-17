@@ -165,5 +165,6 @@ class TestCommit:
         repo.add_file(repo_file)
         commit = repo.commit('commit 1', author)
 
+        assert commit.get_note() is None
         commit.add_note('Visibility: private')
         assert commit.get_note() == 'Visibility: private'

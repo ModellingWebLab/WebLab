@@ -6,8 +6,12 @@ from django.db import models
 from django.utils.functional import cached_property
 
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
+from core.visibility import Visibility
 
 from .repository import Repository
+
+
+VISIBILITY_NOTE_PREFIX = 'Visibility: '
 
 
 class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
@@ -63,6 +67,21 @@ class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
         if len(version) > 20:
             version = version[:8] + '...'
         return version
+
+    def set_version_visibility(self, commit, visibility):
+        self.repo.get_commit(commit).add_note(
+            '%s%s' % (VISIBILITY_NOTE_PREFIX, visibility))
+
+    def get_version_visibility(self, commit):
+        commit = self.repo.get_commit(commit)
+
+        def _visibility(commit):
+            note = commit.get_note()
+            if note and note.startswith(VISIBILITY_NOTE_PREFIX):
+                return note[len(VISIBILITY_NOTE_PREFIX):]
+
+        visibilities = map(_visibility, commit.self_and_parents)
+        return next(filter(None, visibilities), Visibility.PRIVATE)
 
 
 class EntityManager(models.Manager):

@@ -4,7 +4,7 @@ from pathlib import Path
 from shutil import rmtree
 
 from django.utils.functional import cached_property
-from git import Actor, Repo
+from git import Actor, GitCommandError, Repo
 
 from core.combine import (
     MANIFEST_FILENAME,
@@ -148,7 +148,7 @@ class Repository:
         """
         Get commit object relating to version
 
-        :param version: Reference to a commit, or `git.Commit`
+        :param version: Reference to a commit
 
         :return `git.Commit` object
         """
@@ -284,4 +284,19 @@ class Commit:
 
     def get_note(self):
         cmd = self._repo._repo.git
-        return cmd.notes('--ref', 'weblab', 'show', self.hexsha)
+        try:
+            return cmd.notes('--ref', 'weblab', 'show', self.hexsha)
+        except GitCommandError:
+            return None
+
+    @property
+    def parents(self):
+        return (
+            Commit(self._repo, parent)
+            for parent in self._commit.iter_parents()
+        )
+
+    @property
+    def self_and_parents(self):
+        yield self
+        yield from self.parents

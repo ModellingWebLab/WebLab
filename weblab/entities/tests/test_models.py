@@ -53,3 +53,28 @@ class TestEntity:
 
         model_with_version.repo.tag('v1')
         assert model_with_version.nice_version(commit) == 'v1'
+
+    def test_version_visibility(self, model_with_version):
+        commit = model_with_version.repo.latest_commit.hexsha
+        assert model_with_version.get_version_visibility(commit) == 'private'
+
+        model_with_version.set_version_visibility(commit, 'restricted')
+        assert model_with_version.get_version_visibility(commit) == 'restricted'
+
+    def test_version_visibility_defaults_to_private(self, model_with_version):
+        commit = model_with_version.repo.latest_commit
+
+        commit.add_note('invalid note format')
+        assert model_with_version.get_version_visibility(commit.hexsha) == 'private'
+
+    def test_use_older_visibility_if_none_for_latest(self, model_with_version, helpers):
+        v1 = model_with_version.repo.latest_commit
+        v2 = helpers.add_version(model_with_version)
+        v3 = helpers.add_version(model_with_version)
+
+        model_with_version.set_version_visibility(v1.hexsha, 'restricted')
+        model_with_version.set_version_visibility(v3.hexsha, 'public')
+
+        assert model_with_version.get_version_visibility(v1.hexsha) == 'restricted'
+        assert model_with_version.get_version_visibility(v2.hexsha) == 'restricted'
+        assert model_with_version.get_version_visibility(v3.hexsha) == 'public'
