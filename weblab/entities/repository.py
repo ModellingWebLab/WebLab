@@ -200,6 +200,8 @@ class Repository:
 
 
 class Commit:
+    NOTE_REF = 'weblab'
+
     def __init__(self, repo, commit):
         self._repo = repo
         self._commit = commit
@@ -207,7 +209,7 @@ class Commit:
     @property
     def filenames(self):
         """
-        Get all filenames in repository
+        All filenames in this commit
 
         :return: set of all filenames in this commit
         """
@@ -216,9 +218,6 @@ class Commit:
     @property
     def files(self):
         """
-        Get all files in repository
-
-        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
         :return: iterable of all files in this commit
         """
         return self._commit.tree.blobs
@@ -236,7 +235,9 @@ class Commit:
 
     def write_archive(self):
         """
-        Create a Combine Archive of all files in the repository
+        Create a Combine Archive of all files in this commit
+
+        :return: file handle to archive
         """
         return ArchiveWriter().write(
             (self._repo.full_path(fn), fn) for fn in self.filenames
@@ -244,30 +245,47 @@ class Commit:
 
     @property
     def hexsha(self):
+        """
+        SHA of the commit
+
+        :return: hex string of the commit's SHA
+        """
         return self._commit.hexsha
 
     @property
     def author(self):
+        """
+        Author of the commit
+
+        :return: String containing author name
+        """
         return self._commit.author
 
     @property
     def message(self):
+        """
+        Commit message
+
+        :return: String containing commit message
+        """
         return self._commit.message
 
     def __eq__(self, other):
         return other._commit == self._commit
 
-    def __hash__(self):
-        return hash(self._commit)
-
     @property
     def committed_at(self):
+        """
+        Datetime representation of commit timestamp
+
+        :return: `datetime` object
+        """
         return datetime.fromtimestamp(self._commit.committed_date)
 
     @property
     def master_filename(self):
         """
-        Get name of repository master file, as defined by COMBINE manifest
+        Get name of master file on this commit, as defined by COMBINE manifest
 
         :return: master filename, or None if no master file or no manifest
         """
@@ -279,13 +297,23 @@ class Commit:
         return reader.master_filename
 
     def add_note(self, note):
+        """
+        Add a git note to this commit
+
+        :param: Textual content of the note
+        """
         cmd = self._repo._repo.git
-        cmd.notes('--ref', 'weblab', 'add', '-f', '-m', note, self.hexsha)
+        cmd.notes('--ref', self.NOTE_REF, 'add', '-f', '-m', note, self.hexsha)
 
     def get_note(self):
+        """
+        Get the git note of this commit
+
+        :return: Textual content of the note, or None if there is no note
+        """
         cmd = self._repo._repo.git
         try:
-            return cmd.notes('--ref', 'weblab', 'show', self.hexsha)
+            return cmd.notes('--ref', self.NOTE_REF, 'show', self.hexsha)
         except GitCommandError:
             return None
 

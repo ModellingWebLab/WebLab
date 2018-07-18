@@ -6,7 +6,6 @@ from django.db import models
 from django.utils.functional import cached_property
 
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
-from core.visibility import Visibility
 
 from .repository import Repository
 
@@ -69,19 +68,44 @@ class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
         return version
 
     def set_version_visibility(self, commit, visibility):
+        """
+        Set the visibility of the given entity version
+
+        :param commit: ref of the relevant commit
+        :param visibility: string representing visibility
+        """
         self.repo.get_commit(commit).add_note(
             '%s%s' % (VISIBILITY_NOTE_PREFIX, visibility))
 
     def get_version_visibility(self, commit):
-        commit = self.repo.get_commit(commit)
+        """
+        Get the visibility of the given entity version
 
-        def _visibility(commit):
-            note = commit.get_note()
+        Will backtrack through previous visibilities, defaulting to entity
+        visibility if none is found, and forward apply these as repository
+        notes for future access.
+
+        :param commit: ref of the relevant commit
+        :return: string representing visibility
+        """
+        # If this commit does not have a visibility, backtrack through history
+        # until we find one.
+        no_visibility = []
+        for commit_ in self.repo.get_commit(commit).self_and_parents:
+            note = commit_.get_note()
             if note and note.startswith(VISIBILITY_NOTE_PREFIX):
-                return note[len(VISIBILITY_NOTE_PREFIX):]
+                vis = note[len(VISIBILITY_NOTE_PREFIX):]
+                break
+            else:
+                no_visibility.append(commit_)
+        else:
+            vis = self.visibility
 
-        visibilities = map(_visibility, commit.self_and_parents)
-        return next(filter(None, visibilities), Visibility.PRIVATE)
+        # Apply visibility to newer versions which were found without one
+        for commit_ in no_visibility:
+            self.set_version_visibility(commit_.hexsha, vis)
+
+        return vis
 
 
 class EntityManager(models.Manager):

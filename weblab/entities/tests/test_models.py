@@ -54,20 +54,20 @@ class TestEntity:
         model_with_version.repo.tag('v1')
         assert model_with_version.nice_version(commit) == 'v1'
 
-    def test_version_visibility(self, model_with_version):
-        commit = model_with_version.repo.latest_commit.hexsha
-        assert model_with_version.get_version_visibility(commit) == 'private'
-
-        model_with_version.set_version_visibility(commit, 'restricted')
-        assert model_with_version.get_version_visibility(commit) == 'restricted'
-
-    def test_version_visibility_defaults_to_private(self, model_with_version):
+    def test_set_and_get_version_visibility(self, model_with_version):
         commit = model_with_version.repo.latest_commit
+        model_with_version.set_version_visibility(commit.hexsha, 'restricted')
 
+        assert model_with_version.get_version_visibility(commit.hexsha) == 'restricted'
+
+    def test_version_visibility_ignores_invalid_format(self, model_with_version):
+        commit = model_with_version.repo.latest_commit
         commit.add_note('invalid note format')
-        assert model_with_version.get_version_visibility(commit.hexsha) == 'private'
 
-    def test_use_older_visibility_if_none_for_latest(self, model_with_version, helpers):
+        # falls back to the model visibility which is 'public' by default
+        assert model_with_version.get_version_visibility(commit.hexsha) == 'public'
+
+    def test_falls_back_to_older_visibilities(self, model_with_version, helpers):
         v1 = model_with_version.repo.latest_commit
         v2 = helpers.add_version(model_with_version)
         v3 = helpers.add_version(model_with_version)
@@ -78,3 +78,22 @@ class TestEntity:
         assert model_with_version.get_version_visibility(v1.hexsha) == 'restricted'
         assert model_with_version.get_version_visibility(v2.hexsha) == 'restricted'
         assert model_with_version.get_version_visibility(v3.hexsha) == 'public'
+
+    def test_falls_back_to_entity_visibility(self, model_with_version):
+        model_with_version.visibility = 'restricted'
+        model_with_version.save()
+
+        commit = model_with_version.repo.latest_commit
+        assert model_with_version.get_version_visibility(commit.hexsha) == 'restricted'
+
+    def test_applies_missing_visibilities(self, model_with_version, helpers):
+        v1 = model_with_version.repo.latest_commit
+        v2 = helpers.add_version(model_with_version)
+        v3 = helpers.add_version(model_with_version)
+
+        model_with_version.set_version_visibility(v1.hexsha, 'restricted')
+
+        assert model_with_version.get_version_visibility(v3.hexsha) == 'restricted'
+
+        assert v2.get_note() == 'Visibility: restricted'
+        assert v3.get_note() == 'Visibility: restricted'
