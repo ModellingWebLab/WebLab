@@ -2,6 +2,8 @@ from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
 
+from core import visibility
+
 from .models import EntityFile, ModelEntity, ProtocolEntity
 
 
@@ -46,6 +48,10 @@ class EntityVersionForm(forms.Form):
     commit_message = forms.CharField(
         label='Description of this version',
         widget=forms.Textarea)
+    visibility = forms.ChoiceField(
+        choices=visibility.CHOICES,
+        help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
+    )
 
 
 class EntityTagVersionForm(forms.Form):

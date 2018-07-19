@@ -413,7 +413,7 @@ class EntityNewVersionView(
 
         if entity.repo.has_changes:
             # Commit and tag the repo
-            entity.repo.commit(request.POST['commit_message'], request.user)
+            commit = entity.repo.commit(request.POST['commit_message'], request.user)
             if request.POST['tag']:
                 try:
                     entity.repo.tag(request.POST['tag'])
@@ -422,6 +422,8 @@ class EntityNewVersionView(
                     for f in entity.repo.untracked_files:
                         os.remove(str(entity.repo_abs_path / f))
                     return self.fail_with_git_errors([e.stderr])
+
+            entity.set_version_visibility(commit.hexsha, request.POST['visibility'])
 
             # Temporary upload files have been safely committed, so can be deleted
             for filename in files_to_delete:

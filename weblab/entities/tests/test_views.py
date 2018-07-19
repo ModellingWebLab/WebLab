@@ -452,6 +452,7 @@ class TestVersionCreation:
                 'filename[]': 'uploads/model.txt',
                 'commit_message': 'first commit',
                 'tag': 'v1',
+                'visibility': 'restricted',
             },
         )
         assert response.status_code == 302
@@ -463,6 +464,7 @@ class TestVersionCreation:
         assert 'model.txt' in latest.filenames
         assert 'manifest.xml' in latest.filenames
         assert latest.master_filename is None
+        assert model.get_version_visibility('latest') == 'restricted'
 
     def test_add_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
@@ -485,6 +487,7 @@ class TestVersionCreation:
                 'mainEntry': ['file1.txt'],
                 'commit_message': 'files',
                 'tag': 'v1',
+                'visibility': 'public',
             },
         )
         assert response.status_code == 302
@@ -510,6 +513,7 @@ class TestVersionCreation:
                 'delete_filename[]': ['file1.txt'],
                 'commit_message': 'delete file1',
                 'tag': 'delete-file',
+                'visibility': 'public',
             },
         )
         assert response.status_code == 302
@@ -536,6 +540,7 @@ class TestVersionCreation:
                 'delete_filename[]': ['file1.txt', 'file2.txt'],
                 'commit_message': 'delete files',
                 'tag': 'delete-files',
+                'visibility': 'public',
             },
         )
         assert response.status_code == 302
@@ -560,6 +565,7 @@ class TestVersionCreation:
                 'delete_filename[]': ['file2.txt'],
                 'commit_message': 'delete file2',
                 'version': 'delete-file',
+                'visibility': 'public',
             },
         )
         assert response.status_code == 200
@@ -588,6 +594,7 @@ class TestVersionCreation:
                 'filename[]': 'uploads/protocol.txt',
                 'commit_message': 'first commit',
                 'tag': 'v1',
+                'visibility': 'public',
             },
         )
         assert response.status_code == 302
@@ -625,6 +632,7 @@ class TestVersionCreation:
                 'filename[]': 'uploads/model.txt',
                 'commit_message': 'first commit',
                 'tag': 'v1',
+                'visibility': 'public',
             },
         )
         assert response.status_code == 200
