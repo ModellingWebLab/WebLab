@@ -64,8 +64,8 @@ class TestEntity:
         commit = model_with_version.repo.latest_commit
         commit.add_note('invalid note format')
 
-        # falls back to the model visibility which is 'public' by default
-        assert model_with_version.get_version_visibility(commit.hexsha) == 'public'
+        # falls back to private visibility
+        assert model_with_version.get_version_visibility(commit.hexsha) == 'private'
 
     def test_falls_back_to_older_visibilities(self, model_with_version, helpers):
         v1 = model_with_version.repo.latest_commit
@@ -79,12 +79,9 @@ class TestEntity:
         assert model_with_version.get_version_visibility(v2.hexsha) == 'restricted'
         assert model_with_version.get_version_visibility(v3.hexsha) == 'public'
 
-    def test_falls_back_to_entity_visibility(self, model_with_version):
-        model_with_version.visibility = 'restricted'
-        model_with_version.save()
-
+    def test_falls_back_to_private(self, model_with_version):
         commit = model_with_version.repo.latest_commit
-        assert model_with_version.get_version_visibility(commit.hexsha) == 'restricted'
+        assert model_with_version.get_version_visibility(commit.hexsha) == 'private'
 
     def test_applies_missing_visibilities(self, model_with_version, helpers):
         v1 = model_with_version.repo.latest_commit

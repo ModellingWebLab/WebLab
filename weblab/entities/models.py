@@ -6,6 +6,7 @@ from django.db import models
 from django.utils.functional import cached_property
 
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
+from core.visibility import Visibility
 
 from .repository import Repository
 
@@ -90,6 +91,7 @@ class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
         """
         # If this commit does not have a visibility, backtrack through history
         # until we find one.
+        vis = Visibility.PRIVATE
         no_visibility = []
         for commit_ in self.repo.get_commit(commit).self_and_parents:
             note = commit_.get_note()
@@ -98,8 +100,6 @@ class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
                 break
             else:
                 no_visibility.append(commit_)
-        else:
-            vis = self.visibility
 
         # Apply visibility to newer versions which were found without one
         for commit_ in no_visibility:
