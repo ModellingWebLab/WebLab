@@ -8,7 +8,7 @@
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
-  <div id="entityversion">
+  <div id="entityversion" data-entity-type="{{ entity.type }}">
     <div class="closebtn">
       <small>
         <a href="{{ entity|url_versions }}">list all versions</a>
@@ -18,10 +18,12 @@
         {% endif %}
       </small>
     </div>
+
     <h2 id="entityversionname">
       <small>Version:</small>
       {% include "./includes/version_name.html" with tags=tags version=version only %}
     </h2>
+
     <div class="suppl">
       <small>
         Created <time id="entityversiontime">{{ version.committed_date|as_datetime }}</time>
@@ -48,6 +50,7 @@
       {% endif %}
     </div>
 
+    {% block content_detail %}
     <div id="entityversiondetails">
 
       <div id="entityversionfiles">
@@ -55,6 +58,7 @@
       </div>
 
     </div>
+    {% endblock %}
   </div>
 
 {% endblock %}

@@ -1,55 +1,11 @@
-{% extends "base.html" %}
-{% load staticfiles %}
+{% extends "entities/entity_version.html" %}
 {% load entities %}
 {% load experiments %}
+{% load staticfiles %}
 
 {% block title %}{{ type|capfirst }}: compare {{ other_type }}s - {% endblock title %}
 
-{% block content %}
-  {% include "./includes/entity_header.html" %}
-
-  <div id="entityversion" data-entity-type="{{ entity.type }}">
-    <div class="closebtn">
-      <small>
-        <a href="{{ entity|url_versions }}">list all versions</a>
-        {% can_create_version entity.entity_type as permission %}
-        {% if permission %}
-          | <a href="{{ entity|url_newversion }}">add new version</a>
-        {% endif %}
-      </small>
-    </div>
-
-    <h2 id="entityversionname">
-      <small>Version:</small>
-      {% include "./includes/version_name.html" with tags=tags version=version only %}
-    </h2>
-
-    <div class="suppl">
-      <small>
-        Created <time id="entityversiontime">{{ version.committed_date|as_datetime }}</time>
-        by <em id="entityversionauthor">{{ version.author }}</em>.
-        Visibility: {{ entity.visibility }}
-          <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />.
-        {% can_create_version entity.entity_type as permission %}
-        {% if permission %}
-          <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
-        {% endif %}
-      </small>
-    </div>
-
-    <div id="entity-view-buttons" class="link-list">
-      <a class="button selected" href="{{ entity|url_version:version }}" title="View files associated with this {{ entity.entity_type }}">Files</a>
-      <div class="button hover-menu" title="Compare... (hover to see options)">Compare&hellip;<ul>
-          <li><a href="{{ entity|url_version_compare:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
-        <li><a href="" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>
-        <!--li><a href="" title="Show differences between versions of this {{ type }}">Other versions</a></li-->
-      </ul></div>
-      {% if type == 'model' %}
-        <a class="button" href="" title="Fit the parameters of this model to data">Fit</a>
-        <a class="button" href="" title="Show results of parameter fitting experiments run on this model">Fittings</a>
-      {% endif %}
-    </div>
-
+{% block content_detail %}
     <div id="entityexperimentlist">
       <h3>Experiments using this {{type}}</h3>
       <p>
@@ -101,7 +57,4 @@
         <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_comparison_base %}">compare selected experiments</button>
       </div>
     </div>
-
-  </div>
-
 {% endblock %}

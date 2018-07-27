@@ -319,7 +319,7 @@ class ExperimentComparisonJsonView(View):
         response = {
             'getEntityInfos': {
                 'entities': [
-                    self._version_json(version, compare_model_versions,  compare_protocol_versions)
+                    self._version_json(version, compare_model_versions, compare_protocol_versions)
                     for version in versions
                 ]
             }
