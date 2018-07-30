@@ -44,10 +44,12 @@
         <li><a href="{{ entity|url_version_comparison_matrix }}" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>
         <!--li><a href="" title="Show differences between versions of this {{ type }}">Other versions</a></li-->
       </ul></div>
+      <!--
       {% if type == 'model' %}
         <a class="button" href="" title="Fit the parameters of this model to data">Fit</a>
-        <a class="button" href="" title="Show results of parameter fitting experiments run on this model">Fittings</a>
       {% endif %}
+      <a class="button" href="" title="Show results of parameter fitting experiments run {% if type == 'model' %}on this model{% else %}using this protocol{% endif %}">Fittings</a>
+      -->
     </div>
 
     {% block content_detail %}
