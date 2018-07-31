@@ -229,6 +229,7 @@ function parsePlotDescription (entity, file, showDefault)
 
 function parseEntities (entityObj)
 {
+  if (entityObj.length == 0) return;
 	//console.log (entityObj);
 
 	// State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol,

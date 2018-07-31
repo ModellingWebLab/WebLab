@@ -306,7 +306,7 @@ class ExperimentComparisonJsonView(View):
         }
 
     def get(self, request, *args, **kwargs):
-        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/')}
+        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/') if pk}
         versions = ExperimentVersion.objects.visible_to(
             self.request.user).filter(pk__in=pks).order_by('created_at')
 

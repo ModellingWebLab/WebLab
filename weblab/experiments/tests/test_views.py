@@ -503,6 +503,16 @@ class TestExperimentComparisonView:
 
         assert len(response.context['ERROR_MESSAGES']) == 1
 
+    def test_no_visible_experiments(self, client, experiment_version):
+        proto = experiment_version.experiment.protocol
+        proto.visibility = 'private'
+        proto.save()
+        assert experiment_version.visibility == 'private'
+
+        response = client.get('/experiments/compare/%d' % (experiment_version.id))
+
+        assert response.status_code == 200
+
 
 @pytest.mark.django_db
 class TestExperimentComparisonJsonView:
@@ -595,6 +605,11 @@ class TestExperimentComparisonJsonView:
         assert file1['url'] == (
             '/experiments/%d/versions/%d/download/stdout.txt' % (exp.pk, version.pk)
         )
+
+    def test_empty_experiment_list(self, client, experiment_version):
+        response = client.get('/experiments/compare/info')
+
+        assert response.status_code == 200
 
 
 @pytest.mark.django_db

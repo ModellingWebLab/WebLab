@@ -10,9 +10,10 @@ def url_comparison_json(experiment_versions):
     """
     Build URL for experiment comparison json
     """
-    if not experiment_versions:
-        return ''
-    version_ids = '/' + '/'.join(str(ver.id) for ver in experiment_versions)
+    if experiment_versions:
+        version_ids = '/' + '/'.join(str(ver.id) for ver in experiment_versions)
+    else:
+        version_ids = ''
     return reverse('experiments:compare_json', args=[version_ids])
 
 
