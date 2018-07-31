@@ -261,7 +261,7 @@ function parseEntities (entityObj)
       singleProto = false;
     }
 
-    if (versionsOfProtocols[entity.modelName] === undefined) {
+    if (versionsOfProtocols[entity.protoName] === undefined) {
       versionsOfProtocols[entity.protoName] = entity.protoVersion;
     } else if (versionsOfProtocols[entity.protoName] != entity.protoVersion) {
       compareProtocolVersions = true;
