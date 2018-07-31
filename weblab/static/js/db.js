@@ -593,6 +593,9 @@ function prepareMatrix ()
     else
     {
       url += baseUrls.row;
+      if (components.modelVersions) {
+        url += '/versions/' + components.modelVersions.join('/');
+      }
     }
 
     if (linesToCompare.col.length > 0)
@@ -609,6 +612,9 @@ function prepareMatrix ()
     else
     {
       url += baseUrls.col;
+      if (components.protoVersions) {
+        url += '/versions/' + components.protoVersions.join('/');
+      }
     }
     document.location.href = url; // TODO: use history API instead?
   });
