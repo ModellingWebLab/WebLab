@@ -222,7 +222,7 @@ class TestModelEntityVersionCompareView:
             experiment__protocol_version=helpers.add_version(protocol).hexsha,
             experiment__model=exp.model,
             experiment__model_version=sha,
-        ).experiment  # should not be included for visibility reasons
+        )  # should not be included for visibility reasons
 
         response = client.get(
             '/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha)
@@ -264,7 +264,7 @@ class TestProtocolEntityVersionCompareView:
             experiment__protocol_version=sha,
             experiment__model=model,
             experiment__model_version=helpers.add_version(model).hexsha,
-        ).experiment  # should not be included for visibility reasons
+        )  # should not be included for visibility reasons
 
         response = client.get(
             '/entities/protocols/%d/versions/%s/compare' % (exp.protocol.pk, sha)
