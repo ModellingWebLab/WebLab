@@ -362,6 +362,8 @@ function displayVersion (versionId, showDefault) {
   tr.appendChild(td);
   dv.filestable.appendChild(tr);
 
+  $(dv.details).toggle(v.files.length > 0);
+
   for (var i = 0; i < v.files.length; i++)
   {
     var file = files[v.files[i]];
