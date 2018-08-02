@@ -512,6 +512,7 @@ class TestExperimentComparisonView:
         response = client.get('/experiments/compare/%d' % (experiment_version.id))
 
         assert response.status_code == 200
+        assert len(response.context['experiment_versions']) == 0
 
 
 @pytest.mark.django_db
@@ -610,6 +611,8 @@ class TestExperimentComparisonJsonView:
         response = client.get('/experiments/compare/info')
 
         assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert len(data['getEntityInfos']['entities']) == 0
 
 
 @pytest.mark.django_db
