@@ -258,7 +258,7 @@ function parseEntities (entityObj)
       compareModelVersions = true;
     }
 
-    if (singleProto && (entity.protoName != firstProtoName || entity.modelVersion != firstModelVersion)) {
+    if (singleProto && (entity.protoName != firstProtoName || entity.protoVersion != firstProtoVersion)) {
       singleProto = false;
     }
 
