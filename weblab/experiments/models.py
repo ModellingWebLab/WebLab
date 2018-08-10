@@ -44,7 +44,21 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
     @property
     def name(self):
-        return '%s / %s' % (self.model.name, self.protocol.name)
+        return self.get_name()
+
+    def get_name(self, model_version=False, proto_version=False):
+        """
+        Get experiment name, optionally including model and/or protocol versions
+
+        :param model_version: Whether to include model version
+        :param proto_version: Whether to include protocol version
+        """
+        return '{0} / {1}'.format(
+            ('{0}@{1}' if model_version else '{0}').format(
+                self.model.name, self.nice_model_version),
+            ('{0}@{1}' if proto_version else '{0}').format(
+                self.protocol.name, self.nice_protocol_version),
+        )
 
     @property
     def visibility(self):
@@ -57,18 +71,12 @@ class Experiment(UserCreatedModelMixin, models.Model):
     @property
     def nice_model_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        version = self.model.repo.get_name_for_commit(self.model_version)
-        if len(version) > 20:
-            version = version[:8] + '...'
-        return version
+        return self.model.nice_version(self.model_version)
 
     @property
     def nice_protocol_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        version = self.protocol.repo.get_name_for_commit(self.protocol_version)
-        if len(version) > 20:
-            version = version[:8] + '...'
-        return version
+        return self.protocol.nice_version(self.protocol_version)
 
     @property
     def latest_result(self):
@@ -116,8 +124,11 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
 
     @property
     def name(self):
-        return str(self.experiment.versions.filter(
-            created_at__lte=self.created_at).count())
+        return str(self.run_number)
+
+    @property
+    def run_number(self):
+        return self.experiment.versions.filter(created_at__lte=self.created_at).count()
 
     @property
     def visibility(self):

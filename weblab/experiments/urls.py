@@ -3,9 +3,17 @@ from django.conf.urls import url
 from . import views
 
 
+_COMMIT = r'(?P<sha>[^^~:/ ]+)'
+
 urlpatterns = [
     url(
-        r'^(?:models(?P<model_pks>(/\d+)+))?/?(?:protocols(?P<protocol_pks>(/\d+)+))?$',
+        '^'
+        '(?:models(?P<model_pks>(/\d+)+)'
+        '(?:/versions(?P<model_versions>(/%s)+))?)?'
+        '/?'
+        '(?:protocols(?P<protocol_pks>(/\d+)+)'
+        '(?:/versions(?P<protocol_versions>(/%s)+))?)?'
+        '$' % (_COMMIT, _COMMIT.replace('sha', 'sha1')),
         views.ExperimentsView.as_view(),
         name='list',
     ),
@@ -65,13 +73,13 @@ urlpatterns = [
     ),
 
     url(
-        r'^compare(?P<version_pks>(/\d+){2,})(?:/show/(?P<filename>[\w.]+)/(?P<viz>\w+))?$',
+        r'^compare(?P<version_pks>(/\d+){1,})(?:/show/(?P<filename>[\w.]+)/(?P<viz>\w+))?$',
         views.ExperimentComparisonView.as_view(),
         name='compare',
     ),
 
     url(
-        r'^compare(?P<version_pks>(/\d+)+)/info$',
+        r'^compare(?P<version_pks>(/\d+)*)/info$',
         views.ExperimentComparisonJsonView.as_view(),
         name='compare_json',
     ),

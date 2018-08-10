@@ -1,4 +1,4 @@
-@import url("fonts.css");
+@import "fonts.css";
 @import "colors";
 @import "displayContent/displayContent";
 @import "displayPlotD3/displayPlotD3";
@@ -71,76 +71,36 @@ button,
   border: 0;
 }
 
-nav {
-	/*      float:right;*/
-	/*background-color: #aaa;*/
-	/*position: absolute;
-    bottom: 0;
-right:0;
-}
-nav ul
-{
-	/*list-style-type: none;*/
-	
-}
-/*nav ul li
-{
-display: inline;
-padding: 10px;
-}
-.navbar li a:before {
-	content: "\00BB";
-}
-*/
-.navbar li ul li a:before {
-	content: '\00BB\00A0';
-}
-
 
 .navbar {
 	height: 60px;
 	padding: 0;
 	margin: 0;
-	position: absolute;
-	/* Ensures that the menu doesn’t affect other elements */
-	/*border-right: 1px solid #54879d; */
+	position: absolute;	/* Ensures that the menu doesn’t affect other elements */
 	bottom: 0;
 	right: 0;
-}
 
-.navbar li {
+    li {
 	height: auto;
-	/*width: 100px; Each menu item is 80px wide */
-	float: left; /* This lines up the menu items horizontally */
+	float: left;        /* This lines up the menu items horizontally */
 	text-align: center; /* All text is placed in the center of the box */
-	list-style: none;
-	/* Removes the default styling (bullets) for the list */
-	/*font: normal bold 12px/1.2em Arial, Verdana, Helvetica;  */
+	list-style: none;   /* Removes the default styling (bullets) for the list */
 	padding: 10px;
-	/*
-			margin: 0;*/
-	/*background-color: #366b82;*/
 	margin-right: 20px;
+
+        ul li a::before {
+            content: '\00BB\00A0';
+        }
+    }
+
+    a, a:hover, a:active {
+        padding: 18px 0;  /* Adds a padding on the top and bottom so the text appears centered vertically */
+        text-decoration: none; /* Removes the default hyperlink styling. */
+        display: block;
+        border: none;
+    }
 }
 
-.navbar a, .navbar a:hover, .navbar a:active {
-	padding: 18px 0;
-	/* Adds a padding on the top and bottom so the text appears centered vertically */
-	/*border-left: 1px solid #54879d; /* Creates a border in a slightly lighter shade of blue than the background. 
-	 Combined with the right border, this creates a nice effect. */
-	/*border-right: 1px solid #1f5065; /* Creates a border in a slightly darker shade of blue than the background. 
-	 Combined with the left border, this creates a nice effect. */
-	text-decoration: none; /* Removes the default hyperlink styling. */
-	/*color: white; /* Text color is white */
-	display: block;
-	border: none;
-}
-
-.navbar li:hover,.navbar a:hover {
-	/*background-color: #263e6a; color:white;
-	/*border: 1px solid #263e6a;*/
-	
-}
 
 #usernavbar {
   min-width: 100px;
@@ -149,7 +109,7 @@ padding: 10px;
     display: none; /* Hides the drop-down menu */
     height: auto;
     width: 100px;
-    margin: 0; /* Aligns drop-down box underneath the menu item */
+    margin: 0;  /* Aligns drop-down box underneath the menu item */
     padding: 0; /* Aligns drop-down box underneath the menu item */
     background-color: #ffffff;
 
@@ -160,9 +120,55 @@ padding: 10px;
   }
 
   &:hover ul {
-    display: block;
-    /* Displays the drop-down box when the menu item is hovered over */
+    display: block;  /* Displays the drop-down box when the menu item is hovered over */
   }
+}
+
+
+/* A general horizontal list of links, typically also using class button */
+.link-list {
+    button, .button {
+        vertical-align: top;
+        margin-right: 5px; /* Put some space between items */
+    }
+}
+
+
+/* Used for drop-down menus on hover over a parent */
+.hover-menu {
+    //width: 100px;
+
+    /* The drop-down menu */
+    ul {
+        display: none; /* Hidden by default */
+        height: auto;
+        //width: 100px;
+        padding: 0;  /* Aligns drop-down box underneath the parent */
+        margin: 0;  /* Aligns drop-down box underneath the parent */
+        background-color: lighten($button-bg, 10%);
+        list-style: none;
+        z-index: 10;
+        position: relative;
+
+        li, li a {
+            text-align: left;
+            color: white;
+            padding: 0;
+            margin: 0;
+        }
+        li a::before {
+            content: '\00BB\00A0';
+        }
+    }
+
+    /* Display when the menu item is hovered over */
+    &:hover ul {
+        display: block;
+    }
+    &:hover {
+        height: auto;
+        position: absolute;
+    }
 }
 
 
@@ -416,12 +422,15 @@ tr:nth-child(1)
 #experiment-files-switcher,
 #entityexperimentlist
 {
-    display: none;
     border-width:3px; 
     border-style:solid;
     border-color:white;
     min-height: 40px; 
     width: 100%;
+}
+
+#experiment-files-switcher {
+  display: none;
 }
 
 

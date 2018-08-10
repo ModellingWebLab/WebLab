@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% load static %}
 {% load entities %}
+{% load experiments %}
 {% load staticfiles %}
 
 {% block title %}{{ type|capfirst }} details - {% endblock title %}
@@ -8,7 +8,7 @@
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
-  <div id="entityversion">
+  <div id="entityversion" data-entity-type="{{ entity.type }}">
     <div class="closebtn">
       <small>
         <a href="{{ entity|url_versions }}">list all versions</a>
@@ -18,10 +18,12 @@
         {% endif %}
       </small>
     </div>
+
     <h2 id="entityversionname">
       <small>Version:</small>
       {% include "./includes/version_name.html" with tags=tags version=version only %}
     </h2>
+
     <div class="suppl">
       <small>
         Created <time id="entityversiontime">{{ version.committed_date|as_datetime }}</time>
@@ -35,6 +37,22 @@
       </small>
     </div>
 
+    <div id="entity-view-buttons" class="link-list">
+      <a class="button selected" href="{{ entity|url_version:version }}" title="View files associated with this {{ entity.entity_type }}">Files</a>
+      <div class="button hover-menu" title="Compare... (hover to see options)">Compare&hellip;<ul>
+        <li><a href="{{ entity|url_version_compare:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
+        <li><a href="{{ entity|url_version_comparison_matrix }}" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>
+        <!--li><a href="" title="Show differences between versions of this {{ type }}">Other versions</a></li-->
+      </ul></div>
+      <!--
+      {% if type == 'model' %}
+        <a class="button" href="" title="Fit the parameters of this model to data">Fit</a>
+      {% endif %}
+      <a class="button" href="" title="Show results of parameter fitting experiments run {% if type == 'model' %}on this model{% else %}using this protocol{% endif %}">Fittings</a>
+      -->
+    </div>
+
+    {% block content_detail %}
     <div id="entityversiondetails">
 
       <div id="entityversionfiles">
@@ -42,6 +60,7 @@
       </div>
 
     </div>
+    {% endblock %}
   </div>
 
 {% endblock %}

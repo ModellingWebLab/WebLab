@@ -199,6 +199,90 @@ class TestEntityVersionDetail:
 
 
 @pytest.mark.django_db
+class TestModelEntityVersionCompareView:
+    def test_shows_related_experiments(self, client, experiment_version):
+        exp = experiment_version.experiment
+        sha = exp.model.repo.latest_commit.hexsha
+        recipes.experiment_version.make()  # another experiment which should not be included
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(exp.protocol, [exp])]
+
+    def test_applies_visibility(self, client, helpers, experiment_version):
+        exp = experiment_version.experiment
+        sha = exp.model_version
+        protocol = recipes.protocol.make(visibility='private')
+
+        recipes.experiment_version.make(
+            experiment__protocol=protocol,
+            experiment__protocol_version=helpers.add_version(protocol).hexsha,
+            experiment__model=exp.model,
+            experiment__model_version=sha,
+        )  # should not be included for visibility reasons
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(exp.protocol, [exp])]
+
+    def test_returns_404_if_commit_not_found(self, client):
+        model = recipes.model.make()
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/compare' % (model.pk, 'nocommit')
+        )
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestProtocolEntityVersionCompareView:
+    def test_shows_related_experiments(self, client, experiment_version):
+        exp = experiment_version.experiment
+        sha = exp.protocol.repo.latest_commit.hexsha
+        recipes.experiment_version.make()  # should not be included, as it uses a different protocol
+
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/compare' % (exp.protocol.pk, sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(exp.model, [exp])]
+
+    def test_applies_visibility(self, client, helpers, experiment_version):
+        exp = experiment_version.experiment
+        sha = exp.protocol_version
+        model = recipes.model.make(visibility='private')
+
+        recipes.experiment_version.make(
+            experiment__protocol=exp.protocol,
+            experiment__protocol_version=sha,
+            experiment__model=model,
+            experiment__model_version=helpers.add_version(model).hexsha,
+        )  # should not be included for visibility reasons
+
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/compare' % (exp.protocol.pk, sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(exp.model, [exp])]
+
+    def test_returns_404_if_commit_not_found(self, client):
+        protocol = recipes.protocol.make()
+
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, 'nocommit')
+        )
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
 class TestTagging:
     def test_tag_specific_ref(self, helpers):
         model = recipes.model.make()
@@ -573,10 +657,12 @@ class TestFileUpload:
     (recipes.model, '/entities/models/%d'),
     (recipes.model, '/entities/models/%d/versions/'),
     (recipes.model, '/entities/models/%d/versions/latest'),
+    (recipes.model, '/entities/models/%d/versions/latest/compare'),
     (recipes.model, '/entities/models/%d/versions/latest/archive'),
     (recipes.protocol, '/entities/protocols/%d'),
     (recipes.protocol, '/entities/protocols/%d/versions/'),
     (recipes.protocol, '/entities/protocols/%d/versions/latest'),
+    (recipes.protocol, '/entities/protocols/%d/versions/latest/compare'),
     (recipes.protocol, '/entities/protocols/%d/versions/latest/archive'),
 ])
 class TestEntityVisibility:

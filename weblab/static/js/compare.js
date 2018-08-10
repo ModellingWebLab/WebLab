@@ -27,7 +27,9 @@ var entities = {}, // Contains information about each experiment being compared
 	metadataToParse = 0, metadataParsed = 0, defaultViz = null, defaultVizCount = 0,
 	// State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol
 	firstModelName = "", firstModelVersion = "", firstProtoName = "", firstProtoVersion = "",
-	singleModel = true, singleProto = true;
+	singleModel = true, singleProto = true,
+  modelsWithMultipleVersions = [], protocolsWithMultipleVersions = [];
+  compareModelVersions = false, compareProtocolVersions = false;
 
 
 
@@ -228,6 +230,7 @@ function parsePlotDescription (entity, file, showDefault)
 
 function parseEntities (entityObj)
 {
+  if (entityObj.length == 0) return;
 	//console.log (entityObj);
 
 	// State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol,
@@ -236,7 +239,10 @@ function parseEntities (entityObj)
 	firstModelVersion = entityObj[0].modelVersion;
 	firstProtoName = entityObj[0].protoName;
 	firstProtoVersion = entityObj[0].protoVersion;
-	needsVersionInfo = {};
+  var versionsOfModels = {};
+  var versionsOfProtocols = {};
+  modelsWithMultipleVersions = [];
+  protocolsWithMultipleVersions = [];
 
     // Sort entityObj list by .name
     entityObj.sort(function(a,b) {return (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) ? 1 : ((b.name.toLocaleLowerCase() > a.name.toLocaleLowerCase()) ? -1 : 0);});
@@ -245,14 +251,27 @@ function parseEntities (entityObj)
 	{
 		var entity = entityObj[i];
 
-		if (singleModel && (entity.modelName != firstModelName || entity.modelVersion != firstModelVersion))
-			singleModel = false;
-		if (singleProto && (entity.protoName != firstProtoName || entity.protoVersion != firstProtoVersion))
-			singleProto = false;
-		if (needsVersionInfo[entity.modelName + "/" + entity.protoName] === false)
-			needsVersionInfo[entity.modelName + "/" + entity.protoName] = true;
-		else if (needsVersionInfo[entity.modelName + "/" + entity.protoName] === undefined)
-			needsVersionInfo[entity.modelName + "/" + entity.protoName] = false;
+    if (singleModel && (entity.modelName != firstModelName)) {
+      singleModel = false;
+    }
+
+    if (versionsOfModels[entity.modelName] === undefined) {
+      versionsOfModels[entity.modelName] = entity.modelVersion;
+    } else if (versionsOfModels[entity.modelName] != entity.modelVersion) {
+      modelsWithMultipleVersions.push(entity.modelName);
+      compareModelVersions = true;
+    }
+
+    if (singleProto && (entity.protoName != firstProtoName)) {
+      singleProto = false;
+    }
+
+    if (versionsOfProtocols[entity.protoName] === undefined) {
+      versionsOfProtocols[entity.protoName] = entity.protoVersion;
+    } else if (versionsOfProtocols[entity.protoName] != entity.protoVersion) {
+      protocolsWithMultipleVersions.push(entity.protoName);
+      compareProtocolVersions = true;
+    }
 
 		// Fill in the entities and files entries for this entity
 		entities[entity.id] = entity;
@@ -283,44 +302,113 @@ function parseEntities (entityObj)
 				files[sig].entities.push ({entityLink: entity, entityFileLink: file});
 			}
 	}
+
+  console.log(singleModel ? 'single model' : 'multiple models',
+              compareModelVersions ? ('- compare versions of ' + modelsWithMultipleVersions.join(',')) : '');
+  console.log(singleProto ? 'single protocol' : 'multiple protocols',
+              compareProtocolVersions ? ('- compare versions of ' + protocolsWithMultipleVersions.join(',')) : '');
+
 	
-	// Add version info to plot labels where needed
-	//console.log(needsVersionInfo);
-	for (var i = 0; i < entityObj.length; i++)
-	{
-		var entity = entityObj[i];
-		if (needsVersionInfo[entity.modelName + "/" + entity.protoName])
-		{
-			if (singleModel)
-				entity.plotName = entity.protoName + "@" + entity.protoVersion;
-			else if (singleProto)
-				entity.plotName = entity.modelName + "@" + entity.modelVersion;
-			else
-				entity.plotName = entity.modelName + "@" + entity.modelVersion + " &amp; " + entity.protoName + "@" + entity.protoVersion;
-		}
-	}
+  // Add version info to plot labels where needed
+  for (var i = 0; i < entityObj.length; i++)
+  {
+    var entity = entityObj[i];
+    var modelDescription = entity.modelName + (modelsWithMultipleVersions.includes(entity.modelName) ? ('@' + entity.modelVersion) : '');
+    var protoDescription = entity.protoName + (protocolsWithMultipleVersions.includes(entity.protoName) ? ('@' + entity.protoVersion) : '');
+    if (singleModel && singleProto) {
+      if (compareModelVersions && compareProtocolVersions) {
+        // 5. Single model with multiple versions, single protocol with multiple versions
+        entity.plotName = '@' + entity.modelVersion + ' & @' + entity.protoVersion;
+      } else if (compareProtocolVersions) {
+        // 2. Single model version, single protocol with multiple versions
+        entity.plotName = '@' + entity.protoVersion;
+      } else if (compareModelVersions) {
+        // 4. Single model with multiple versions, single protocol version
+        entity.plotName = '@' + entity.modelVersion;
+      } else {
+        // 1. Single model version, single protocol version
+        entity.plotName = 'Run ' + entity.runNumber;
+      }
+    } else if (singleModel) {
+      if (compareModelVersions) {
+        // 6. Single model with multiple versions, multiple protocols (maybe multiple versions of individual protocols)
+        entity.plotName = '@' + entity.modelVersion + ' & ' + protoDescription;
+      } else {
+        // 3. Single model version, multiple protocols (maybe multiple versions of individual protocols)
+        entity.plotName = protoDescription;
+      }
+    } else if (singleProto) {
+      if (compareProtocolVersions) {
+        // 8. Single protocol with multiple versions, multiple models (maybe multiple versions of individual models)
+        entity.plotName = modelDescription + ' & @' + entity.protoVersion;
+      } else {
+        // 7. Single protocol version, multiple models (maybe multiple versions of individual models)
+        entity.plotName = modelDescription;
+      }
+    } else {
+      // 9. Multiple models / protocols (maybe multiple versions of each)
+      entity.plotName = modelDescription + ' & ' + protoDescription;
+    }
+  }
 	
 	
 	// Alter heading to reflect type of comparison
-	doc.heading.innerHTML = "Comparison of " + entityType.charAt(0).toUpperCase() + entityType.slice(1) + "s";
+  var pageTitle = "Comparison of " + entityType.charAt(0).toUpperCase() + entityType.slice(1) + "s";
 	
 	if (entityType == "experiment")
-	{
-	  // Allow plugins to strip out redundant (repeated) text in plot line labels
-		if (singleModel && !singleProto)
-		{
-		    doc.heading.innerHTML = firstModelName + " experiments: comparison of protocols";
-		    plotLabelStripText = firstModelName + " / ";
-        $.data(document.body, 'plotLabelStripText', plotLabelStripText);
-		}
-		else if (singleProto && !singleModel)
-		{
-		    doc.heading.innerHTML = firstProtoName + " experiments: comparison of models";
-		    plotLabelStripText = " / " + firstProtoName;
-        $.data(document.body, 'plotLabelStripText', plotLabelStripText);
-		}
-	}
-	
+  {
+
+    if (singleModel && singleProto) {
+      pageTitle = firstModelName + " & " + firstProtoName;
+      if (compareModelVersions && compareProtocolVersions) {
+        // 5. Single model with multiple versions, single protocol with multiple versions
+        pageTitle += " experiments: comparison of versions";
+        // label = '@<model version> & @<protocol version>'
+      } else if (compareProtocolVersions) {
+        // 2. Single model version, single protocol with multiple versions
+        pageTitle += " experiments: comparison of protocol versions";
+        // label = '@<protocol version>'
+      } else if (compareModelVersions) {
+        // 4. Single model with multiple versions, single protocol version
+        pageTitle += " experiments: comparison of model versions";
+        // label = '@<model version>'
+      } else {
+        // 1. Single model version, single protocol version
+        pageTitle += ": comparison of repeat experiments";
+        // label = Run <n>
+      }
+    } else if (singleModel) {
+      pageTitle = firstModelName + " experiments : ";
+      if (compareModelVersions) {
+        // 6. Single model with multiple versions, multiple protocols (maybe multiple versions of individual protocols)
+        pageTitle += "comparison of model versions and protocols";
+        // label = '@<model version> & <protocol name>@<protocol version>' (protocol version omitted if not needed)
+      } else {
+        // 3. Single model version, multiple protocols (maybe multiple versions of individual protocols)
+        pageTitle += "comparison of protocols";
+        // label = '<protocol name>@<protocol version>' (protocol version omitted if not needed)
+      }
+    } else if (singleProto) {
+      pageTitle = firstProtoName + " experiments : ";
+      if (compareProtocolVersions) {
+        // 8. Single protocol with multiple versions, multiple models (maybe multiple versions of individual models)
+        pageTitle += "comparison of models and protocol versions";
+        // label = '@<protocol version> & <model name>@<model version>' (model version omitted if not needed)
+      } else {
+        // 7. Single protocol version, multiple models (maybe multiple versions of individual models)
+        pageTitle += "comparison of models";
+        // label = '<model name>@<model version>' (model version omitted if not needed)
+      }
+    // } else {
+      // 9. Multiple models / protocols (maybe multiple versions of each) - page title is default
+    }
+
+    doc.heading.innerHTML = pageTitle;
+
+    // This was used in an earlier version and is still expected to exist by plugins
+    $.data(document.body, 'plotLabelStripText', '');
+  }
+
 	doc.outputFileHeadline.innerHTML = "Output files from all compared " + entityType + "s";
 	
 	// Create a drop-down box that allows display of/navigate to experiments being compared
@@ -449,7 +537,7 @@ function displayFile (id, pluginName)
 	    if (entity.outputContents === null || entity.plotDescription === null)
 	    {
 	        // Try again in 0.1s, by which time hopefully they have been parsed
-	        console.log("Waiting for metadata to be parsed.");
+	        //console.log("Waiting for metadata to be parsed.");
 	        window.setTimeout(function(){displayFile(id, pluginName)}, 100);
 	        return;
 	    }

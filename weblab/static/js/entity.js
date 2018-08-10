@@ -1,3 +1,5 @@
+var showdown = require('showdown');
+
 var versions = {},
 	files = {},
 	doc,
@@ -6,39 +8,10 @@ var versions = {},
 	compareType, allComparisonsUrl,
 	entityId,
 	curVersion = null,
-	converter = new Showdown.converter(),
+	converter = new showdown.Converter(),
 	filesTable = {};
 
 var visualizers = {};
-
-function parseUrl (location)
-{
-	var contextLen = contextPath.length;
-	if (location.pathname.substr(0, contextLen) != contextPath)
-		return null;
-	var t = location.pathname.substr(contextLen+1).split("/");
-	if (t.length < 3)
-		return null;
-	if (t[0] == "model")
-	{
-		entityType = "model";
-		compareType = "protocol";
-	}
-	else if (t[0] == "protocol")
-	{
-		entityType = "protocol";
-		compareType = "model";
-	}
-	else if (t[0] == "experiment")
-	{
-		entityType = "experiment";
-	}
-	else
-		return null;
-	basicurl = location.href.substr(0, location.href.length-location.pathname.length+contextLen) + "/" + t.slice(0,3).join("/") + "/";
-	entityId = t[2];
-	return t.slice(3);
-}
 
 function getCurVersionId (url)
 {
@@ -857,6 +830,7 @@ function nextPage (url, replace)
 function render ()
 {
 	var url = parseUrl (document.location);
+  basicurl = $('#entityversion').data('version-href');
 	var curVersionId = getCurVersionId (url);
 	
 	//console.log ("curVersionId " + curVersionId);
@@ -920,7 +894,6 @@ function deleteVersionCallback()
 
 function initModel ()
 {
-	
 	doc = {
 			entity : {
 				details : document.getElementById("entitydetails"),
@@ -956,10 +929,13 @@ function initModel ()
 				display : document.getElementById("entityversionfiledisplay")
 			}
 	};
+
+  entityType = $(doc.version).data('entity-type');
+  compareType = entityType == 'model' ? 'protocol' : 'model';
 	
-	window.onpopstate = render;
-	render ();
-	
+	//window.onpopstate = render;
+	//render ();
+/*	
 	document.getElementById("experiment-files-switcher-exp").addEventListener("click", function (ev) {
 	    $("#experiment-files-switcher-exp").addClass("selected");
 	    $("#experiment-files-switcher-files").removeClass("selected");
@@ -999,6 +975,7 @@ function initModel ()
 		}
     }, true);
         $('#zoomFile').click(zoomHandler);
+  */
 
 	var list = document.getElementById("entityversionlist");
 	if (list)
@@ -1086,16 +1063,18 @@ function initModel ()
 		$(this).toggleClass("selected");
 		$exp_list.find("ul").toggle();
 		$("#entityexperimentlist_span_latest").toggle();
+    return false;
 	});
 	$("#entityexperimentlistpartnersactcompare").click(function () {
-		var url = "";
+		var compares = [];
 		$exp_list.find("input:checked").filter(":visible").each(function () {
-			url += this.value + "/";
+			compares.push(this.value);
 		});
-		if (url)
-		    document.location = contextPath + "/compare/e/" + url;
+		if (compares.length >= 2)
+		    document.location = $(this).data('base-href') + '/' + compares.join('/');
 		else
-		    window.alert("You need to select some " + compareType + "s to compare.");
+		    window.alert("You need to select at least 2 " + compareType + "s to compare.");
+    return false;
 	});
 	$(doc.version.compareAll).click(function () {
 		var url = "";
@@ -1109,6 +1088,8 @@ function initModel ()
 		else
 			window.alert("No experiments available to compare!");
 	});
+	
+  $("#entityexperimentlist_span_latest").hide();
 }
 
 document.addEventListener("DOMContentLoaded", initModel, false);

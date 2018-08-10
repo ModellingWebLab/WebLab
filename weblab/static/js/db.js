@@ -159,7 +159,7 @@ function drawMatrix (matrix)
 				d1.appendChild(a);
 				td.appendChild(d2);
 				$td.addClass("matrixTableCol")
-					.data({col: col, protoId: proto.entityId})
+					.data({col: col, protoId: proto.entityId, protoVersion: proto.id})
 					.click(function (ev) {
 						if (comparisonMode) {
 							ev.preventDefault();
@@ -178,7 +178,7 @@ function drawMatrix (matrix)
 				a.appendChild(document.createTextNode(model.name));
 				td.appendChild(a);
 				$td.addClass("matrixTableRow")
-					.data({row: row, modelId: model.entityId})
+					.data({row: row, modelId: model.entityId, modelVersion: model.id})
 					.click(function (ev) {
 						if (comparisonMode) {
 							ev.preventDefault();
@@ -238,10 +238,10 @@ function setExpListeners($td, entry)
 		$td.click(function () {
 			submitNewExperiment ({
 				task: "newExperiment",
-				model: entry.model.id,
-        model_version: entry.model.version,
-				protocol: entry.protocol.id,
-        protocol_version: entry.protocol.version,
+				model: entry.model.entityId,
+        model_version: entry.model.id,
+				protocol: entry.protocol.entityId,
+        protocol_version: entry.protocol.id,
 			}, $td, entry);
 		});
 	}
@@ -416,7 +416,11 @@ function addMatrixClickListener($td, link, expId, result)
 function getMatrix(params, div) {
   var baseUrl = $(div).data('base-json-href');
   $.getJSON(baseUrl, params, function(data) {
-    drawMatrix(data.getMatrix);
+    if (data.getMatrix) {
+      drawMatrix(data.getMatrix);
+    }
+  }).always(function(data) {
+    notifications.display(data);
   });
 }
 
@@ -431,70 +435,113 @@ function getMatrix(params, div) {
 function parseLocation ()
 {
   var base = $('#matrixdiv').data('base-href'),
-		rest = "",
-		ret = {}
-	if (document.location.pathname.substr(0, base.length) == base)
-		rest = document.location.pathname.substr(base.length);
-	$('.showButton').removeClass("selected");
-	$('.showMyButton').hide();
-	if (rest.length > 0)
-	{
-		var items = rest.split("/"),
-			modelIndex = items.indexOf("models"),
-			protoIndex = items.indexOf("protocols");
-		if (protoIndex != -1)
-		{
-			if (modelIndex != -1)
-				ret.modelIds = items.slice(modelIndex + 1, protoIndex);
-			ret.protoIds = items.slice(protoIndex + 1);
-		}
-		else if (modelIndex != -1)
-			ret.modelIds = items.slice(modelIndex + 1);
-		if (modelIndex != -1)
-			baseUrls.row = "/models/" + ret.modelIds.join("/");
-		if (protoIndex != -1)
-			baseUrls.col = "/protocols/" + ret.protoIds.join("/");
-		if (modelIndex == -1 && protoIndex == -1)
-		{
-			if (items[0] == "public")
-			{
-				$('#showPublicExpts').addClass("selected");
-				ret.publicOnly = "1";
-			}
-			else if (items[0].substr(0,4) == "mine")
-			{
-				$('#showMyExpts').addClass("selected");
-				$('.showMyButton').show();
-				ret.mineOnly = "1";
-				if (items[0].indexOf("-m") != -1)
-				{
-					ret.includeModeratedModels = "0";
-					console.log('Show model');
-					$('#showMyExptsModels').text("Show moderated models");
-				}
-				else
-					$('#showMyExptsModels').text("Hide moderated models");
-				if (items[0].indexOf("-p") != -1)
-				{
-					ret.includeModeratedProtocols = "0";
-					console.log('Show proto');
-					$('#showMyExptsProtocols').text("Show moderated protocols");
-				}
-				else
-					$('#showMyExptsProtocols').text("Hide moderated protocols");
-			}
-			else if (items[0] == "all")
-			{
-				$('#showAllExpts').addClass("selected");
-				ret.showAll = "1";
-			}
-			else
-				$('#showModeratedExpts').addClass("selected");
-		}
-	}
-	else
-		$('#showModeratedExpts').addClass("selected");
-	return ret;
+  rest = "",
+  ret = {};
+
+  if (document.location.pathname.substr(0, base.length) == base)
+  {
+    rest = document.location.pathname.substr(base.length);
+  }
+
+  $('.showButton').removeClass("selected");
+  $('.showMyButton').hide();
+  if (rest.length > 0)
+  {
+    var items = rest.split("/"),
+    modelIndex = items.indexOf("models"),
+    protoIndex = items.indexOf("protocols");
+    if (protoIndex != -1)
+    {
+      if (modelIndex != -1)
+      {
+        // /models/1/2/protocols/3/4
+        ret.modelIds = parts = items.slice(modelIndex + 1, protoIndex);
+        versionIndex = parts.indexOf('versions')
+        if (versionIndex != -1)
+        {
+          ret.modelIds = parts.slice(0, versionIndex);
+          ret.modelVersions = parts.slice(versionIndex + 1);
+        }
+      }
+      // /protocols/3/4
+      parts = ret.protoIds = items.slice(protoIndex + 1);
+      versionIndex = parts.indexOf('versions')
+      if (versionIndex != -1)
+      {
+        ret.protoIds = parts.slice(0, versionIndex);
+        ret.protoVersions = parts.slice(versionIndex + 1);
+      }
+    }
+    else if (modelIndex != -1)
+    {
+      // /models/1/2
+      ret.modelIds = parts = items.slice(modelIndex + 1);
+      versionIndex = parts.indexOf('versions')
+      if (versionIndex != -1)
+      {
+        ret.modelIds = parts.slice(0, versionIndex);
+        ret.modelVersions = parts.slice(versionIndex + 1);
+      }
+    }
+
+    if (modelIndex != -1)
+    {
+      baseUrls.row = "/models/" + ret.modelIds.join("/");
+    }
+    if (protoIndex != -1)
+    {
+      baseUrls.col = "/protocols/" + ret.protoIds.join("/");
+    }
+
+    if (modelIndex == -1 && protoIndex == -1)
+    {
+      if (items[0] == "public")
+      {
+        $('#showPublicExpts').addClass("selected");
+        ret.publicOnly = "1";
+      }
+      else if (items[0].substr(0,4) == "mine")
+      {
+        $('#showMyExpts').addClass("selected");
+        $('.showMyButton').show();
+        ret.mineOnly = "1";
+        if (items[0].indexOf("-m") != -1)
+        {
+          ret.includeModeratedModels = "0";
+          console.log('Show model');
+          $('#showMyExptsModels').text("Show moderated models");
+        }
+        else
+        {
+          $('#showMyExptsModels').text("Hide moderated models");
+        }
+        if (items[0].indexOf("-p") != -1)
+        {
+          ret.includeModeratedProtocols = "0";
+          console.log('Show proto');
+          $('#showMyExptsProtocols').text("Show moderated protocols");
+        }
+        else
+        {
+          $('#showMyExptsProtocols').text("Hide moderated protocols");
+        }
+      }
+      else if (items[0] == "all")
+      {
+        $('#showAllExpts').addClass("selected");
+        ret.showAll = "1";
+      }
+      else
+      {
+        $('#showModeratedExpts').addClass("selected");
+      }
+    }
+  }
+  else
+  {
+    $('#showModeratedExpts').addClass("selected");
+  }
+  return ret;
 }
 
 function prepareMatrix ()
@@ -506,7 +553,8 @@ function prepareMatrix ()
 	div.appendChild(loadingImg);
 	div.appendChild(document.createTextNode("Preparing experiment matrix; please be patient."));
 
-	getMatrix(parseLocation(), div);
+  var components = parseLocation();
+	getMatrix(components, div);
 	
 	$("#comparisonModeButton").text(comparisonMode ? "Disable" : "Enable")
 	                          .click(function () {
@@ -526,29 +574,50 @@ function prepareMatrix ()
 	$("#comparisonLink").click(function () {
 	    document.location = $(this).data("href");
 	});
-	$("#comparisonMatrix").click(function () {
+  $("#comparisonMatrix").click(function () {
     var url = $(div).data('base-href');
     if (url.substr(-1) === '/') {
       url = url.slice(0, -1);
     }
-		if (linesToCompare.row.length > 0)
-		{
-			url += "/models";
-			for (var i=0; i<linesToCompare.row.length; i++)
-				url += "/" + $("#matrix-entry-" + linesToCompare.row[i] + "--1").data("modelId");
-		}
-		else
-			url += baseUrls.row;
-		if (linesToCompare.col.length > 0)
-		{
-			url += "/protocols";
-			for (var i=0; i<linesToCompare.col.length; i++)
-				url += "/" + $("#matrix-entry--1-" + linesToCompare.col[i]).data("protoId");
-		}
-		else
-			url += baseUrls.col;
-		document.location.href = url; // TODO: use history API instead?
-	});
+
+    if (linesToCompare.row.length > 0) {
+      var rows = linesToCompare.row.map(i => $("#matrix-entry-" + i + "--1"));
+      var modelIds = rows.map($row => $row.data('modelId'));
+      var modelVersions = rows.map($row => $row.data('modelVersion'));
+      if (components.modelVersions) {
+        url += '/models/' + modelIds[0] + '/versions/' + modelVersions.join('/');
+      } else {
+        url += '/models/' + modelIds.join('/');
+      }
+    }
+    else
+    {
+      url += baseUrls.row;
+      if (components.modelVersions) {
+        url += '/versions/' + components.modelVersions.join('/');
+      }
+    }
+
+    if (linesToCompare.col.length > 0)
+    {
+      var cols = linesToCompare.col.map(i => $("#matrix-entry--1-" + i));
+      var protoIds = cols.map($col => $col.data('protoId'));
+      var protoVersions = cols.map($col => $col.data('protoVersion'));
+      if (components.protoVersions) {
+        url += '/protocols/' + protoIds[0] + '/versions/' + protoVersions.join('/');
+      } else {
+        url += '/protocols/' + protoIds.join('/');
+      }
+    }
+    else
+    {
+      url += baseUrls.col;
+      if (components.protoVersions) {
+        url += '/versions/' + components.protoVersions.join('/');
+      }
+    }
+    document.location.href = url; // TODO: use history API instead?
+  });
 	$("#comparisonLink").hide();
 	$("#comparisonMatrix").hide();
 	

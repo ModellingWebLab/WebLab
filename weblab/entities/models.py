@@ -53,6 +53,12 @@ class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
             settings.REPO_BASE, str(self.author.id), '%ss' % self.entity_type, str(self.id)
         )
 
+    def nice_version(self, commit):
+        version = self.repo.get_name_for_commit(commit)
+        if len(version) > 20:
+            version = version[:8] + '...'
+        return version
+
 
 class EntityManager(models.Manager):
     def get_queryset(self):
@@ -65,6 +71,7 @@ class EntityManager(models.Manager):
 
 class ModelEntity(Entity):
     entity_type = Entity.ENTITY_TYPE_MODEL
+    other_type = Entity.ENTITY_TYPE_PROTOCOL
 
     objects = EntityManager()
 
@@ -75,6 +82,7 @@ class ModelEntity(Entity):
 
 class ProtocolEntity(Entity):
     entity_type = Entity.ENTITY_TYPE_PROTOCOL
+    other_type = Entity.ENTITY_TYPE_MODEL
 
     objects = EntityManager()
 

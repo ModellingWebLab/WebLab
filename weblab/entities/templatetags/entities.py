@@ -62,6 +62,33 @@ def url_tag_version(entity, version):
 
 
 @register.filter
+def name_of_model(experiment):
+    model = experiment.model
+    model_version = model.repo.get_name_for_commit(experiment.model_version)
+    return '%s @ %s' % (model.name, model_version)
+
+
+@register.filter
+def name_of_protocol(experiment):
+    protocol = experiment.protocol
+    protocol_version = protocol.repo.get_name_for_commit(experiment.protocol_version)
+    return '%s @ %s' % (protocol.name, protocol_version)
+
+
+def _url_friendly_label(entity, commit):
+    """
+    Get URL-friendly version label for a commit
+
+    :param entity: Entity the commit belongs to
+    :param commit: `git.Commit` object
+    """
+    last_tag = str(entity.repo.tag_dict.get(commit, ['/'])[-1])
+    if '/' in last_tag or last_tag in ['new', 'latest']:
+        last_tag = commit.hexsha
+    return last_tag
+
+
+@register.filter
 def url_version(entity, commit):
     """Generate the view URL for a specific version of this entity.
 
@@ -70,9 +97,20 @@ def url_version(entity, commit):
     names (new, latest), we fall back to the SHA1.
     """
     url_name = 'entities:{}_version'.format(entity.entity_type)
-    last_tag = str(entity.repo.tag_dict.get(commit, ['/'])[-1])
-    if '/' in last_tag or last_tag in ['new', 'latest']:
-        last_tag = commit.hexsha
+    last_tag = _url_friendly_label(entity, commit)
+    args = [entity.id, last_tag]
+    return reverse(url_name, args=args)
+
+
+@register.filter
+def url_version_compare(entity, commit):
+    """Generate the view URL for comparing a specific version of this entity
+    to entities of the other type.
+
+    e.g. comparing a version of a model to the available set of protocols
+    """
+    url_name = 'entities:{}_version_compare'.format(entity.entity_type)
+    last_tag = _url_friendly_label(entity, commit)
     args = [entity.id, last_tag]
     return reverse(url_name, args=args)
 

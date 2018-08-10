@@ -51,6 +51,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^models/(?P<pk>\d+)/versions/%s/compare$' % _COMMIT,
+        views.ModelEntityVersionCompareView.as_view(),
+        name='model_version_compare',
+    ),
+
+    url(
         r'^tag/(?P<pk>\d+)/%s$' % _COMMIT,
         views.EntityTagVersionView.as_view(),
         name='tag_version',
@@ -98,6 +104,12 @@ urlpatterns = [
         r'^protocols/(?P<pk>\d+)/versions/%s$' % _COMMIT,
         views.ProtocolEntityVersionView.as_view(),
         name='protocol_version',
+    ),
+
+    url(
+        r'^protocols/(?P<pk>\d+)/versions/%s/compare$' % _COMMIT,
+        views.ProtocolEntityVersionCompareView.as_view(),
+        name='protocol_version_compare',
     ),
 
     url(

@@ -34,36 +34,36 @@ class ExperimentsView(TemplateView):
     """
     template_name = 'experiments/experiments.html'
 
-    def get_context_data(self, **kwargs):
-        # Use dummy IDs to set up a comparison URL, then chop them off to
-        # get the base. This will be used by javascript to generate comparisons
-        # between experiment versions.
-        url = reverse('experiments:compare', args=['/1/1'])
-        kwargs.update(comparison_base_url=url[:-4])
-        return super().get_context_data(**kwargs)
-
 
 class ExperimentMatrixJsonView(View):
     """
     Serve up JSON for experiment matrix
     """
     @classmethod
-    def entity_json(cls, entity):
-        commit = entity.repo.latest_commit
-        version = commit.hexsha if commit else ''
-        return {
-            'id': entity.id,
+    def entity_json(cls, entity, version=None):
+        if version is None:
+            commit = entity.repo.latest_commit
+            version = commit.hexsha if commit else ''
+            name = entity.name
+        else:
+            name = '%s @ %s' % (entity.name, entity.nice_version(version))
+
+        friendly_version = entity.repo.get_name_for_commit(version) if version else ''
+
+        _json = {
+            'id': version,
             'entityId': entity.id,
             'author': str(entity.author.full_name),
             'visibility': entity.visibility,
             'created': entity.created_at,
-            'name': entity.name,
+            'name': name,
             'url': reverse(
                 'entities:%s_version' % entity.entity_type,
-                args=[entity.id, version or 'latest']
+                args=[entity.id, friendly_version]
             ),
-            'version': version
         }
+
+        return _json
 
     @classmethod
     def experiment_version_json(cls, version):
@@ -71,8 +71,12 @@ class ExperimentMatrixJsonView(View):
             'id': version.id,
             'entity_id': version.experiment.id,
             'latestResult': version.status,
-            'protocol': cls.entity_json(version.experiment.protocol),
-            'model': cls.entity_json(version.experiment.model),
+            'protocol': cls.entity_json(
+                version.experiment.protocol, version.experiment.protocol_version
+            ),
+            'model': cls.entity_json(
+                version.experiment.model, version.experiment.model_version
+            ),
             'url': reverse(
                 'experiments:version',
                 args=[version.experiment.id, version.id]
@@ -86,29 +90,56 @@ class ExperimentMatrixJsonView(View):
 
         model_pks = list(map(int, request.GET.getlist('modelIds[]')))
         protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
+        model_versions = request.GET.getlist('modelVersions[]')
+        protocol_versions = request.GET.getlist('protoVersions[]')
+
+        if model_versions and len(model_pks) > 1:
+            return JsonResponse({
+                'notifications': {
+                    'errors': ['Only one model ID can be used when versions are specified'],
+                }
+            })
+
+        if protocol_versions and len(protocol_pks) > 1:
+            return JsonResponse({
+                'notifications': {
+                    'errors': ['Only one protocol ID can be used when versions are specified'],
+                }
+            })
 
         if model_pks:
             q_models = q_models.filter(pk__in=model_pks)
 
+        if model_versions:
+            model = q_models.first()
+            if model_versions[0] == '*':
+                model_versions = [commit.hexsha for commit in model.repo.commits]
+
+            model_versions = [self.entity_json(model, version) for version in model_versions]
+        else:
+            model_versions = [self.entity_json(model) for model in q_models]
+
+        model_versions = {ver['id']: ver for ver in model_versions}
+
         if protocol_pks:
             q_protocols = q_protocols.filter(pk__in=protocol_pks)
 
-        models = {
-            model.pk: self.entity_json(model)
-            for model in q_models
-        }
+        if protocol_versions:
+            protocol = q_protocols.first()
+            if protocol_versions[0] == '*':
+                protocol_versions = [commit.hexsha for commit in protocol.repo.commits]
 
-        protocols = {
-            protocol.pk: self.entity_json(protocol)
-            for protocol in q_protocols
-        }
+            protocol_versions = [self.entity_json(protocol, version)
+                                 for version in protocol_versions]
+        else:
+            protocol_versions = [self.entity_json(protocol) for protocol in q_protocols]
+
+        protocol_versions = {ver['id']: ver for ver in protocol_versions}
 
         # Only give info on experiments involving the correct entity versions
         experiments = {}
         for exp in Experiment.objects.filter(model__in=q_models, protocol__in=q_protocols):
-            if (exp.model_version == models[exp.model.pk]['version'] and
-                    exp.protocol_version == protocols[exp.protocol.pk]['version']):
-
+            if (exp.model_version in model_versions and exp.protocol_version in protocol_versions):
                 try:
                     experiments[exp.pk] = self.experiment_version_json(exp.latest_version)
                 except ExperimentVersion.DoesNotExist:
@@ -116,8 +147,8 @@ class ExperimentMatrixJsonView(View):
 
         return JsonResponse({
             'getMatrix': {
-                'models': models,
-                'protocols': protocols,
+                'models': model_versions,
+                'protocols': protocol_versions,
                 'experiments': experiments,
             }
         })
@@ -236,17 +267,20 @@ class ExperimentComparisonJsonView(View):
             )
         }
 
-    def _version_json(self, version):
+    def _version_json(self, version, model_version_in_name, protocol_version_in_name):
         """
         JSON for a single experiment version
 
         :param version: ExperimentVersion object
+        :param model_version_in_name: Whether to include model version specifier in name field
+        :param protocol_version_in_name: Whether to include protocol version specifier in name field
         """
         files = [
             self._file_json(version, f)
             for f in version.files
             if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
+        exp = version.experiment
         return {
             'id': version.id,
             'author': version.author.full_name,
@@ -254,30 +288,40 @@ class ExperimentComparisonJsonView(View):
             'parsedOk': False,
             'visibility': version.visibility,
             'created': version.created_at,
-            'name': version.experiment.name,
+            'name': version.experiment.get_name(model_version_in_name, protocol_version_in_name),
             'experimentId': version.experiment.id,
             'versionId': version.id,
             'files': files,
             'numFiles': len(files),
             'url': reverse(
-                'experiments:version', args=[version.experiment.id, version.id]
+                'experiments:version', args=[exp.id, version.id]
             ),
             'download_url': reverse(
-                'experiments:archive', args=[version.experiment.id, version.id]
+                'experiments:archive', args=[exp.id, version.id]
             ),
-            'modelName': version.experiment.model.name,
-            'protoName': version.experiment.protocol.name,
+            'modelName': exp.model.name,
+            'protoName': exp.protocol.name,
+            'modelVersion': exp.model.repo.get_name_for_commit(exp.model_version),
+            'protoVersion': exp.protocol.repo.get_name_for_commit(exp.protocol_version),
+            'runNumber': version.run_number,
         }
 
     def get(self, request, *args, **kwargs):
-        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/')}
+        pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/') if pk}
         versions = ExperimentVersion.objects.visible_to(
             self.request.user).filter(pk__in=pks).order_by('created_at')
+
+        models = set(versions.values_list('experiment__model', 'experiment__model_version'))
+        protocols = set(versions.values_list(
+            'experiment__protocol', 'experiment__protocol_version'))
+        compare_model_versions = len(models) > len(dict(models))
+        compare_protocol_versions = len(protocols) > len(dict(protocols))
 
         response = {
             'getEntityInfos': {
                 'entities': [
-                    self._version_json(version) for version in versions
+                    self._version_json(version, compare_model_versions, compare_protocol_versions)
+                    for version in versions
                 ]
             }
         }

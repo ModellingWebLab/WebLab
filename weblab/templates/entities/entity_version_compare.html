@@ -1,0 +1,60 @@
+{% extends "entities/entity_version.html" %}
+{% load entities %}
+{% load experiments %}
+{% load staticfiles %}
+
+{% block title %}{{ type|capfirst }}: compare {{ other_type }}s - {% endblock title %}
+
+{% block content_detail %}
+    <div id="entityexperimentlist">
+      <h3>Experiments using this {{type}}</h3>
+      <p>
+      This {{type}} has been run with the following {{other_type}}s.
+      Click to view the latest results of each single experiment, or select multiple experiments to compare them.
+      </p>
+
+      <div id="entityexperimentlistpartners">
+        <ul>
+          {% for entity, experiments in comparisons %}
+            {% with experiments.0 as experiment %}
+            <li>
+              <input name='experimentVersionIds', value="{{ experiment.latest_version.id }}" type="checkbox">
+              <a href="{% url 'experiments:version' experiment.id experiment.latest_version.id %}">
+                {% if type == 'model' %}
+                  {{ experiment|name_of_protocol }}
+                {% else %}
+                  {{ experiment|name_of_model }}
+                {% endif %}
+              </a>
+              {% if experiments|length > 1 %}
+              <ul style="display:none">
+                {% for exp in experiments|slice:"1:" %}
+                <li>
+                  <input name='experimentVersionIds', value="{{ exp.latest_version.id }}" type="checkbox">
+                  <a href="{% url 'experiments:version' exp.id exp.latest_version.id %}">
+                    {% if type == 'model' %}
+                      {{ exp|name_of_protocol }}
+                    {% else %}
+                      {{ exp|name_of_model }}
+                    {% endif %}
+                  </a>
+                </li>
+                {% endfor %}
+              </ul>
+              {% endif %}
+            </li>
+            {% endwith %}
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div id="entityexperimentlistpartnersact">
+        [<a id="entityexperimentlistpartnersactall">select all</a>]
+        <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest</a>]</span>
+        [<a id="entityexperimentlistpartnersactnone">select none</a>]
+        <br/>
+        <button id="entityexperimentlist_showallversions">show all versions</button>
+        <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_comparison_base %}">compare selected experiments</button>
+      </div>
+    </div>
+{% endblock %}
