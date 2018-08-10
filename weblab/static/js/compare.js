@@ -340,7 +340,7 @@ function parseEntities (entityObj)
     } else if (singleProto) {
       if (compareProtocolVersions) {
         // 8. Single protocol with multiple versions, multiple models (maybe multiple versions of individual models)
-        entity.plotName = '@' + entity.protoVersion + ' & ' + modelDescription;
+        entity.plotName = modelDescription + ' & @' + entity.protoVersion;
       } else {
         // 7. Single protocol version, multiple models (maybe multiple versions of individual models)
         entity.plotName = modelDescription;
