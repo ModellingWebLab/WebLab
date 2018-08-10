@@ -330,7 +330,6 @@ function parseEntities (entityObj)
         entity.plotName = 'Run ' + entity.runNumber;
       }
     } else if (singleModel) {
-      pageTitle = firstModelName + " experiments : ";
       if (compareModelVersions) {
         // 6. Single model with multiple versions, multiple protocols (maybe multiple versions of individual protocols)
         entity.plotName = '@' + entity.modelVersion + ' & ' + protoDescription;
@@ -339,7 +338,6 @@ function parseEntities (entityObj)
         entity.plotName = protoDescription;
       }
     } else if (singleProto) {
-      pageTitle = firstProtoName + " experiments : ";
       if (compareProtocolVersions) {
         // 8. Single protocol with multiple versions, multiple models (maybe multiple versions of individual models)
         entity.plotName = '@' + entity.protoVersion + ' & ' + modelDescription;
@@ -359,7 +357,6 @@ function parseEntities (entityObj)
 	
 	if (entityType == "experiment")
   {
-    plotLabelStripText = '';
 
     if (singleModel && singleProto) {
       pageTitle = firstModelName + " & " + firstProtoName;
@@ -408,7 +405,8 @@ function parseEntities (entityObj)
 
     doc.heading.innerHTML = pageTitle;
 
-    $.data(document.body, 'plotLabelStripText', plotLabelStripText);
+    // This was used in an earlier version and is still expected to exist by plugins
+    $.data(document.body, 'plotLabelStripText', '');
   }
 
 	doc.outputFileHeadline.innerHTML = "Output files from all compared " + entityType + "s";
