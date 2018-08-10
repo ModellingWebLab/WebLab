@@ -349,7 +349,7 @@ function parseEntities (entityObj)
       }
     } else {
       // 9. Multiple models / protocols (maybe multiple versions of each)
-      entity.plotName = modelDescription + '&' + protoDescription;
+      entity.plotName = modelDescription + ' & ' + protoDescription;
     }
   }
 	
