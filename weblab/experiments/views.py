@@ -303,6 +303,7 @@ class ExperimentComparisonJsonView(View):
             'protoName': exp.protocol.name,
             'modelVersion': exp.model.repo.get_name_for_commit(exp.model_version),
             'protoVersion': exp.protocol.repo.get_name_for_commit(exp.protocol_version),
+            'runNumber': version.run_number,
         }
 
     def get(self, request, *args, **kwargs):

@@ -124,8 +124,11 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
 
     @property
     def name(self):
-        return str(self.experiment.versions.filter(
-            created_at__lte=self.created_at).count())
+        return str(self.run_number)
+
+    @property
+    def run_number(self):
+        return self.experiment.versions.filter(created_at__lte=self.created_at).count()
 
     @property
     def visibility(self):

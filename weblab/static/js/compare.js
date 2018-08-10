@@ -327,7 +327,7 @@ function parseEntities (entityObj)
         entity.plotName = '@' + entity.modelVersion;
       } else {
         // 1. Single model version, single protocol version
-        // TODO: entity.plotName = Run <n>
+        entity.plotName = 'Run ' + entity.runNumber;
       }
     } else if (singleModel) {
       pageTitle = firstModelName + " experiments : ";

@@ -545,6 +545,7 @@ class TestExperimentComparisonJsonView:
         assert versions[0]['protoName'] == exp.protocol.name
         assert versions[0]['protoVersion'] == 'v1'
         assert versions[0]['name'] == exp.name
+        assert versions[0]['runNumber'] == 1
 
     def test_only_compare_visible_experiments(self, client, experiment_version, helpers):
         ver1 = experiment_version
