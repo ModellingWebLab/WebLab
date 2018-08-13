@@ -16,4 +16,4 @@ GitPython==2.1.7
 django-braces==1.11.0
 
 # Server monitoring
-rollbar
+rollbar==0.14.2

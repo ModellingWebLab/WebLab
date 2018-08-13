@@ -20,7 +20,7 @@ python3-openid==3.1.0     # via social-auth-core
 pytz==2017.2              # via django
 requests-oauthlib==0.8.0  # via social-auth-core
 requests==2.18.4          # via requests-oauthlib, rollbar, social-auth-core
-rollbar==0.13.18
+rollbar==0.14.2
 six==1.10.0               # via rollbar, social-auth-app-django, social-auth-core
 smmap2==2.0.3             # via gitdb2
 social-auth-app-django==1.2.0
