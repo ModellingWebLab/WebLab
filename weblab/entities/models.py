@@ -38,8 +38,13 @@ class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
     def __str__(self):
         return self.name
 
-    @cached_property
+    @property
     def repo(self):
+        """This entity's git repository wrapper.
+
+        Note that we do not cache this property as this can lead to too many open files.
+        See also https://gitpython.readthedocs.io/en/stable/intro.html#leakage-of-system-resources
+        """
         return Repository(self.repo_abs_path)
 
     @property
