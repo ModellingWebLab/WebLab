@@ -581,6 +581,8 @@ class EntityFileDownloadView(VisibilityMixin, VersionMixin, SingleObjectMixin, V
         blob = entity.repo.get_blob(filename, version.hexsha)
         if blob:
             response.write(blob.data_stream.read())
+        else:
+            raise Http404
 
         return response
 

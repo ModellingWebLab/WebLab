@@ -3,6 +3,7 @@ import json
 import zipfile
 from datetime import datetime
 from io import BytesIO
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import Permission
@@ -637,6 +638,27 @@ class TestEntityFileDownloadView:
             'attachment; filename=file1.txt'
         )
         assert response['Content-Type'] == 'text/plain'
+
+    @patch('mimetypes.guess_type', return_value=(None, None))
+    def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, client, model_with_version):
+        version = model_with_version.repo.latest_commit
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/download/file1.txt' %
+            (model_with_version.pk, version.hexsha)
+        )
+
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'application/octet-stream'
+
+    def test_returns_404_for_nonexistent_file(self, client, model_with_version):
+        version = model_with_version.repo.latest_commit
+        response = client.get(
+            '/entities/models/%d/versions/%s/download/nonexistent.txt' %
+            (model_with_version.pk, version.hexsha)
+        )
+
+        assert response.status_code == 404
 
 
 @pytest.mark.django_db
