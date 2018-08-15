@@ -5,7 +5,6 @@ var expt_common = require('./expt_common.js');
 var plugins = [
   //require('./visualizers/displayBivesDiff/displayBivesDiff.js'),
   require('./visualizers/displayContent/displayContent.js'),
-  require('./visualizers/displayPlotD3/displayPlotD3.js'),
   require('./visualizers/displayPlotFlot/displayPlotFlot.js'),
   require('./visualizers/displayPlotHC/displayPlotHC.js'),
   require('./visualizers/displayTable/displayTable.js'),
