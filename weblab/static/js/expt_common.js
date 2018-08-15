@@ -1,4 +1,5 @@
-var utils = require('./lib/utils.js')
+var utils = require('./lib/utils.js');
+var FileSaver = require('file-saver');
 
 /*
  * Routines related to displaying the results of experiments, common to both
@@ -284,6 +285,11 @@ function getKeyValues(file, numTraces)
  */
 function allowPlotExport(filename, datasets, axisLabels)
 {
+    try {
+        var isFileSaverSupported = !!new Blob;
+    } catch (e) {
+        return; // No saveAs() available
+    }
 	$("#exportPlot").off().click(function () {
 		// Determine the greatest number of points in a dataset, and hence the number of rows in the CSV
 		var numRows = Math.max.apply(null, $.map(datasets, function (dataset, index) { return dataset.data.length; })),
@@ -304,7 +310,7 @@ function allowPlotExport(filename, datasets, axisLabels)
 		rows[numRows+1] = "# x axis: " + axisLabels.x + "; y axis: " + axisLabels.y + "\n";
 		// Construct file in memory and trigger save dialog
 		var blob = new Blob(rows, {type: "text/csv;charset=utf-8", endings: "native"});
-		saveAs(blob, filename);
+		FileSaver.saveAs(blob, filename);
 	}).show();
 }
 
