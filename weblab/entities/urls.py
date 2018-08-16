@@ -4,7 +4,8 @@ from . import views
 
 
 _COMMIT = r'(?P<sha>[^^~:/ ]+)'
-_FILEVIEW = r'(?:/(?P<filename>[\w.]+)/(?P<viz>\w+))?'
+_FILENAME = r'(?P<filename>[\w\-.]+)'
+_FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 
 urlpatterns = [
     url(
@@ -46,7 +47,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/versions/%s%s$' % (_COMMIT, _FILEVIEW),
+        r'^models/(?P<pk>\d+)/versions/%s(?:/%s)?$' % (_COMMIT, _FILEVIEW),
         views.ModelEntityVersionView.as_view(),
         name='model_version',
     ),
@@ -64,7 +65,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/versions/%s/download/(?P<filename>[\w\-.]+)$' % _COMMIT,
+        r'^models/(?P<pk>\d+)/versions/%s/download/%s$' % (_COMMIT, _FILENAME),
         views.ModelEntityFileDownloadView.as_view(),
         name='model_file_download',
     ),
@@ -114,7 +115,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^protocols/(?P<pk>\d+)/versions/%s%s$' % (_COMMIT, _FILEVIEW),
+        r'^protocols/(?P<pk>\d+)/versions/%s(?:/%s)?$' % (_COMMIT, _FILEVIEW),
         views.ProtocolEntityVersionView.as_view(),
         name='protocol_version',
     ),
@@ -132,7 +133,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^protocols/(?P<pk>\d+)/versions/%s/download/(?P<filename>[\w\-.]+)$' % _COMMIT,
+        r'^protocols/(?P<pk>\d+)/versions/%s/download/%s$' % (_COMMIT, _FILENAME),
         views.ProtocolEntityFileDownloadView.as_view(),
         name='protocol_file_download',
     ),
