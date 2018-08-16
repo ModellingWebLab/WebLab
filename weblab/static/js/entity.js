@@ -632,7 +632,6 @@ function updateFile (rf, v)
 	f.masterFile = rf.masterFile;
 	f.size = rf.size;
   f.url = rf.url;
-	//f.url = contextPath + "/download/" + entityType.charAt(0) + "/" + convertForURL (v.name) + "/" + v.id + "/" + f.id + "/" + convertForURL (f.name);
 	f.div = {};
 	f.viz = {};
 	f.contents = null;

@@ -565,7 +565,7 @@ class FileUploadView(View):
 
 class EntityFileDownloadView(VisibilityMixin, VersionMixin, SingleObjectMixin, View):
     """
-    Download an individual file from an experiment
+    Download an individual file from an entity version
     """
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
