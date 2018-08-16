@@ -4,6 +4,8 @@ from . import views
 
 
 _COMMIT = r'(?P<sha>[^^~:/ ]+)'
+_FILENAME = r'(?P<filename>[\w\-.]+)'
+_FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 
 urlpatterns = [
     url(
@@ -43,7 +45,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)(?:/(?P<filename>[\w.]+)/(?P<viz>\w+))?$',
+        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)(?:/%s)?$' % _FILEVIEW,
         views.ExperimentVersionView.as_view(),
         name='version',
     ),
@@ -61,7 +63,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/download/(?P<filename>[\w\-.]+)$',
+        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/download/%s$' % _FILENAME,
         views.ExperimentFileDownloadView.as_view(),
         name='file_download',
     ),
@@ -73,7 +75,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^compare(?P<version_pks>(/\d+){1,})(?:/show/(?P<filename>[\w.]+)/(?P<viz>\w+))?$',
+        r'^compare(?P<version_pks>(/\d+){1,})(?:/show/%s)?$' % _FILEVIEW,
         views.ExperimentComparisonView.as_view(),
         name='compare',
     ),

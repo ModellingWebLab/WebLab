@@ -103,6 +103,17 @@ def url_version(entity, commit):
 
 
 @register.filter
+def url_version_json(entity, commit):
+    """
+    Generate the json URL for a specific version of this entity.
+    """
+    url_name = 'entities:{}_version_json'.format(entity.entity_type)
+    last_tag = _url_friendly_label(entity, commit)
+    args = [entity.id, last_tag]
+    return reverse(url_name, args=args)
+
+
+@register.filter
 def url_version_compare(entity, commit):
     """Generate the view URL for comparing a specific version of this entity
     to entities of the other type.

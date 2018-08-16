@@ -143,6 +143,8 @@ class TestRepository:
         repo.generate_manifest()
 
         assert list(repo.filenames()) == ['file.cellml']
+        assert repo.get_blob('file.cellml').data_stream.read().decode() == 'file contents'
+        assert repo.get_blob('nonexistent.cellml') is None
 
     def test_archive(self, repo, repo_file, author):
         repo.add_file(repo_file)

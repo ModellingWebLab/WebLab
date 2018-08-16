@@ -239,6 +239,18 @@ class Repository:
         """
         return self.get_commit(ref).tree.blobs
 
+    def get_blob(self, filename, ref='HEAD'):
+        """
+        Get a file from the repository in blob form
+
+        :param filename: Name of file to retrieve
+        :param ref: A reference to a specific commit, defaults to the latest
+        :return: `git.Blob` object or none if file not found
+        """
+        for blob in self.files(ref):
+            if blob.name == filename:
+                return blob
+
     def archive(self, ref='HEAD'):
         """
         Create a Combine Archive of all files in the repository

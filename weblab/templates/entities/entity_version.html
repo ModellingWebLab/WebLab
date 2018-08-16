@@ -8,7 +8,11 @@
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
-  <div id="entityversion" data-entity-type="{{ entity.type }}">
+  <div id="entitydetails">
+  </div>
+
+  <div id="entityversion" data-entity-type="{{ entity.type }}"
+       data-version-json-href="{{ entity|url_version_json:version }}">
     <div class="closebtn">
       <small>
         <a href="{{ entity|url_versions }}">list all versions</a>
@@ -55,8 +59,26 @@
     {% block content_detail %}
     <div id="entityversiondetails">
 
+      <div id="entityversionfiledetails">
+          <div class="closebtn"><small>
+              <a id="exportPlot" style="display: none;">export plot data |</a>
+          <a id="zoomFile">zoom |</a>
+              <a id="entityversionfileclose">&otimes; close</a>
+          </small></div>
+          <h3 id="entityversionfilename"></h3>
+          <div class="suppl"><small>Created <time id="entityversionfiletime"></time> by
+              <em id="entityversionfileauthor"></em>.</small></div>
+          <div id="entityversionfiledisplay"></div>
+      </div>
       <div id="entityversionfiles">
-       {% include "./includes/version_files.html" %}
+        <h3>Associated files</h3>
+        <table id="entityversionfilestable">
+        </table>
+        <a id='downloadArchive' title="Download a 'combine' format archive of all the files">
+          <img src="{% static 'img/download.png' %}" title="Download a 'combine' format archive of all the files"/>
+            Download archive of all files
+        </a>
+        <div id="entityversionfilesreadme"></div>
       </div>
 
     </div>
