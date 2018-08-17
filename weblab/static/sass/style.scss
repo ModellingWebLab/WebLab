@@ -7,6 +7,8 @@
 @import "displayTable/displayTable";
 @import "editMetadata/editMetadata";
 
+$page-width: 850px;
+
 body {
 	font-family: 'Open Sans', sans-serif;
 	font-size: 16px;
@@ -17,7 +19,7 @@ code,input {
 }
 
 #page {
-	width: 850px;
+	width: $page-width;
 	margin: auto;
 }
 
@@ -227,6 +229,11 @@ form {
     list-style-type: none;
     padding-left: 0;
   }
+}
+
+#notifications {
+    position: absolute;
+    width: $page-width;
 }
 
 #error {
