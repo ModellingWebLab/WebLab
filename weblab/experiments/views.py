@@ -138,7 +138,13 @@ class ExperimentMatrixJsonView(View):
 
         # Only give info on experiments involving the correct entity versions
         experiments = {}
-        for exp in Experiment.objects.filter(model__in=q_models, protocol__in=q_protocols):
+        q_experiments = Experiment.objects.filter(
+            model__in=q_models,
+            protocol__in=q_protocols,
+        ).select_related(
+            'protocol', 'model', 'protocol__author', 'model__author'
+        )
+        for exp in q_experiments:
             if (exp.model_version in model_versions and exp.protocol_version in protocol_versions):
                 try:
                     experiments[exp.pk] = self.experiment_version_json(exp.latest_version)
