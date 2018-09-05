@@ -574,8 +574,15 @@ class FileUploadView(View):
             return HttpResponseBadRequest(form.errors)
 
 
-class ChangeVisibilityView(VersionMixin, DetailView):
+class ChangeVisibilityView(UserPassesTestMixin, VersionMixin, DetailView):
     model = Entity
+
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have the correct permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_visibility_editable_by(self.request.user)
 
     def post(self, request, *args, **kwargs):
         """

@@ -215,9 +215,10 @@ class TestEntityVersionView:
 
 @pytest.mark.django_db
 class TestEntityVersionChangeVisibilityView:
-    def test_change_visibility(self, client, model_with_version):
-        model = model_with_version
-        commit = model.repo.latest_commit
+    def test_change_visibility(self, client, user, helpers):
+        helpers.login(client, user)
+        model = recipes.model.make(author=user)
+        commit = helpers.add_version(model)
 
         response = client.post(
             '/entities/models/%d/versions/%s/visibility' % (model.pk, commit.hexsha),
@@ -227,6 +228,20 @@ class TestEntityVersionChangeVisibilityView:
 
         assert response.status_code == 200
         assert model.get_version_visibility(commit.hexsha) == 'restricted'
+
+    def test_non_owner_cannot_change_visibility(self, client, user, other_user, helpers):
+        helpers.login(client, user)
+        model = recipes.model.make(author=other_user)
+        commit = helpers.add_version(model)
+
+        response = client.post(
+            '/entities/models/%d/versions/%s/visibility' % (model.pk, commit.hexsha),
+            data={
+                'visibility': 'restricted',
+            })
+
+        assert response.status_code == 403
+        assert model.get_version_visibility(commit.hexsha) != 'restricted'
 
 
 @pytest.mark.django_db

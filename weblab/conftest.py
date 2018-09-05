@@ -21,6 +21,10 @@ class Helpers:
             entity.repo.tag(tag_name)
         return commit
 
+    @staticmethod
+    def login(client, user):
+        client.login(username=user.email, password='password')
+
 
 @pytest.fixture
 def helpers():
