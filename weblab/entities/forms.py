@@ -54,6 +54,13 @@ class EntityVersionForm(forms.Form):
     )
 
 
+class EntityChangeVisibilityForm(forms.Form):
+    visibility = forms.ChoiceField(
+        choices=visibility.CHOICES,
+        help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
+    )
+
+
 class EntityTagVersionForm(forms.Form):
     tag = forms.CharField(
         label='New tag',

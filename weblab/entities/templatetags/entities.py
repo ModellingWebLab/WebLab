@@ -116,6 +116,13 @@ def url_version_compare(entity, commit):
 
 
 @register.filter
+def url_change_version_visibility(entity, commit):
+    last_tag = _url_friendly_label(entity, commit)
+    args = [entity.entity_type, entity.id, last_tag]
+    return reverse('entities:change_visibility', args=args)
+
+
+@register.filter
 def url_entity(entity):
     url_name = 'entities:{}'.format(entity.entity_type)
     return reverse(url_name, args=[entity.id])

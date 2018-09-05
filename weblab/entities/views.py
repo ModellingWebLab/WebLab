@@ -1,7 +1,6 @@
 import mimetypes
 import os.path
 import shutil
-from datetime import datetime
 from itertools import groupby
 
 from braces.views import UserFormKwargsMixin
@@ -31,6 +30,7 @@ from core.visibility import VisibilityMixin, visibility_check
 from experiments.models import Experiment
 
 from .forms import (
+    EntityChangeVisibilityForm,
     EntityTagVersionForm,
     EntityVersionForm,
     FileUploadForm,
@@ -91,6 +91,7 @@ class VersionMixin:
         commit = self.get_commit()
         kwargs.update(**{
             'version': commit,
+            'visibility': entity.get_version_visibility(commit.hexsha),
             'tags': tags.get(commit.hexsha, []),
             'master_filename': commit.master_filename,
         })
@@ -147,24 +148,28 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class ModelEntityVersionView(
-    VisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
-):
+class EntityVersionView(VisibilityMixin, VersionMixin, DetailView):
     """
-    View a version of a model
+    View a version of an entity
     """
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
 
+    def get_context_data(self, **kwargs):
+        entity = self.get_object()
+        visibility = entity.get_version_visibility(self.get_commit().hexsha)
+        kwargs['form'] = EntityChangeVisibilityForm(initial={
+            'visibility': visibility,
+        })
+        return super().get_context_data(**kwargs)
 
-class ProtocolEntityVersionView(
-    VisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
-):
-    """
-    View a version of a protocol
-    """
-    context_object_name = 'entity'
-    template_name = 'entities/entity_version.html'
+
+class ModelEntityVersionView(ModelEntityTypeMixin, EntityVersionView):
+    pass
+
+
+class ProtocolEntityVersionView(ProtocolEntityTypeMixin, EntityVersionView):
+    pass
 
 
 def get_file_type(filename):
@@ -212,7 +217,7 @@ class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, Vi
                 'id': commit.hexsha,
                 'author': obj.author.full_name,
                 'entityId': obj.id,
-                'visibility': obj.visibility,
+                'visibility': obj.get_version_visibility(commit.hexsha),
                 'created': commit.committed_at,
                 'name': obj.name,
                 'version': obj.repo.get_name_for_commit(commit.hexsha),
@@ -224,6 +229,10 @@ class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, Vi
                 ),
                 'download_url': reverse(
                     'entities:entity_archive',
+                    args=[obj.entity_type, obj.id, commit.hexsha]
+                ),
+                'change_url': reverse(
+                    'entities:change_visibility',
                     args=[obj.entity_type, obj.id, commit.hexsha]
                 ),
             }
@@ -565,13 +574,42 @@ class FileUploadView(View):
             return HttpResponseBadRequest(form.errors)
 
 
+class ChangeVisibilityView(VersionMixin, DetailView):
+    model = Entity
+
+    def post(self, request, *args, **kwargs):
+        """
+        Check the form and possibly set the visibility
+
+        Called by Django when a form is submitted.
+        """
+        form = EntityChangeVisibilityForm(self.request.POST)
+        if form.is_valid():
+            obj = self.get_object()
+            sha = self.kwargs['sha']
+            obj.set_version_visibility(sha, self.request.POST['visibility'])
+            response = {
+                'updateVisibility': {
+                    'response': True,
+                    'responseText': 'successfully updated',
+                }
+            }
+        else:
+            response = {
+                'notifications': {
+                    'errors': ['updating visibility failed']
+                }
+            }
+
+        return JsonResponse(response)
+
+
 class EntityFileDownloadView(VisibilityMixin, VersionMixin, SingleObjectMixin, View):
     """
     Download an individual file from an entity version
     """
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
-        entity = self.get_object()
         version = self.get_commit()
 
         content_type, _ = mimetypes.guess_type(filename)

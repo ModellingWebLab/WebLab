@@ -1,7 +1,6 @@
 import io
 import json
 import zipfile
-from datetime import datetime
 from io import BytesIO
 from unittest.mock import patch
 
@@ -150,7 +149,7 @@ class TestEntityDetail:
 
 
 @pytest.mark.django_db
-class TestEntityVersionDetail:
+class TestEntityVersionView:
     def check(self, client, url, version, tags):
         response = client.get(url)
         assert response.status_code == 200
@@ -185,7 +184,7 @@ class TestEntityVersionDetail:
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
                    commit, ['my_tag'])
 
-    def test_version_with_two_tags(self, client, user, helpers):
+    def test_version_with_two_tags(self, client, helpers):
         model = recipes.model.make()
         helpers.add_version(model)
         commit = model.repo.latest_commit
@@ -200,12 +199,42 @@ class TestEntityVersionDetail:
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
                    commit, ['tag1', 'tag2'])
 
+    def test_shows_correct_visibility(self, client, model_with_version):
+        model = model_with_version
+        commit = model.repo.latest_commit
+        model.set_version_visibility(commit.hexsha, 'restricted')
+
+        response = client.get(
+            '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
+        )
+
+        assert response.status_code == 200
+        assert response.context['visibility'] == 'restricted'
+        assert response.context['form'].initial.get('visibility') == 'restricted'
+
+
+@pytest.mark.django_db
+class TestEntityVersionChangeVisibilityView:
+    def test_change_visibility(self, client, model_with_version):
+        model = model_with_version
+        commit = model.repo.latest_commit
+
+        response = client.post(
+            '/entities/models/%d/versions/%s/visibility' % (model.pk, commit.hexsha),
+            data={
+                'visibility': 'restricted',
+            })
+
+        assert response.status_code == 200
+        assert model.get_version_visibility(commit.hexsha) == 'restricted'
+
 
 @pytest.mark.django_db
 class TestEntityVersionJsonView:
     def test_version_json(self, client, helpers):
         model = recipes.model.make(name='mymodel', author__full_name='model author')
         version = helpers.add_version(model)
+        model.set_version_visibility(version.hexsha, 'restricted')
         model.repo.tag('v1')
 
         response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
@@ -219,7 +248,7 @@ class TestEntityVersionJsonView:
         assert ver['id'] == version.hexsha
         assert ver['author'] == 'model author'
         assert ver['entityId'] == model.pk
-        assert ver['visibility'] == model.visibility
+        assert ver['visibility'] == 'restricted'
         assert (
             parse_datetime(ver['created']).replace(microsecond=0) ==
             version.committed_at
