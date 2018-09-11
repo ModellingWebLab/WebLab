@@ -5,11 +5,11 @@ user = Recipe('accounts.User', institution='UCL')
 
 model = Recipe(
     'ModelEntity',
-    visibility='public', entity_type='model', name=seq('mymodel')
+    entity_type='model', name=seq('mymodel')
 )
 protocol = Recipe(
     'ProtocolEntity',
-    visibility='public', entity_type='protocol', name=seq('myprotocol')
+    entity_type='protocol', name=seq('myprotocol')
 )
 
 model_file = Recipe('EntityFile', entity=foreign_key(model))

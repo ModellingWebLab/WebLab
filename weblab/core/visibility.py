@@ -49,6 +49,26 @@ def visibility_query(user):
         return Q(visibility=Visibility.PUBLIC)
 
 
+def visible_entity_ids(user):
+    from entities.models import Entity
+    public_entity_ids = {
+        entity.id
+        for entity in Entity.objects.all()
+        if entity.get_version_visibility('latest') == Visibility.PUBLIC
+    }
+
+    if user.is_authenticated:
+        non_public_entity_ids = {
+            entity.id
+            for entity in Entity.objects.all()
+            if entity.get_version_visibility('latest') == Visibility.RESTRICTED
+            or entity.author == user
+        }
+        return public_entity_ids | non_public_entity_ids
+    else:
+        return public_entity_ids
+
+
 def visibility_check(user, obj):
     """
     Object-based visibility check - can the user view the given object?

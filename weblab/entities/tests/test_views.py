@@ -56,7 +56,6 @@ class TestEntityCreation:
         entity = ModelEntity.objects.first()
         assert response.url == '/entities/models/%d/versions/new' % entity.id
         assert entity.name == 'mymodel'
-        assert entity.visibility == 'private'
         assert entity.author == user
 
         assert entity.repo_abs_path.exists()
@@ -82,7 +81,6 @@ class TestEntityCreation:
         entity = ProtocolEntity.objects.first()
         assert response.url == '/entities/protocols/%d/versions/new' % entity.id
         assert entity.name == 'myprotocol'
-        assert entity.visibility == 'public'
         assert entity.author == user
 
         assert entity.repo_abs_path.exists()
@@ -142,7 +140,7 @@ class TestEntityDeletion:
 class TestEntityDetail:
     def test_redirects_to_latest_version(self, client, user, helpers):
         model = recipes.model.make()
-        helpers.add_version(model)
+        helpers.add_version(model, visibility='public')
         response = client.get('/entities/models/%d' % model.pk)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
@@ -160,7 +158,7 @@ class TestEntityVersionView:
 
     def test_view_entity_version(self, client, user, helpers):
         model = recipes.model.make()
-        helpers.add_version(model)
+        helpers.add_version(model, visibility='public')
         commit = model.repo.latest_commit
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
                    commit, [])
@@ -169,7 +167,7 @@ class TestEntityVersionView:
 
         # Now add a second version with tag
         assert len(list(model.repo.commits)) == 1
-        helpers.add_version(model)
+        helpers.add_version(model, visibility='public')
         model.repo.tag('my_tag')
 
         # Commits are yielded newest first
@@ -186,7 +184,7 @@ class TestEntityVersionView:
 
     def test_version_with_two_tags(self, client, helpers):
         model = recipes.model.make()
-        helpers.add_version(model)
+        helpers.add_version(model, visibility='public')
         commit = model.repo.latest_commit
         model.repo.tag('tag1')
         model.repo.tag('tag2')
@@ -199,7 +197,7 @@ class TestEntityVersionView:
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
                    commit, ['tag1', 'tag2'])
 
-    def test_shows_correct_visibility(self, client, model_with_version):
+    def test_shows_correct_visibility(self, client, logged_in_user, model_with_version):
         model = model_with_version
         commit = model.repo.latest_commit
         model.set_version_visibility(commit.hexsha, 'restricted')
@@ -246,7 +244,7 @@ class TestEntityVersionChangeVisibilityView:
 
 @pytest.mark.django_db
 class TestEntityVersionJsonView:
-    def test_version_json(self, client, helpers):
+    def test_version_json(self, client, logged_in_user, helpers):
         model = recipes.model.make(name='mymodel', author__full_name='model author')
         version = helpers.add_version(model)
         model.set_version_visibility(version.hexsha, 'restricted')
@@ -276,7 +274,7 @@ class TestEntityVersionJsonView:
 
     def test_file_json(self, client, helpers):
         model = recipes.model.make()
-        version = helpers.add_version(model)
+        version = helpers.add_version(model, visibility='public')
         model.repo.tag('v1')
 
         response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
@@ -298,6 +296,8 @@ class TestModelEntityVersionCompareView:
         exp = experiment_version.experiment
         sha = exp.model.repo.latest_commit.hexsha
         recipes.experiment_version.make()  # another experiment which should not be included
+        exp.model.set_version_visibility('latest', 'public')
+        exp.protocol.set_version_visibility('latest', 'public')
 
         response = client.get(
             '/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha)
@@ -309,11 +309,13 @@ class TestModelEntityVersionCompareView:
     def test_applies_visibility(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         sha = exp.model_version
-        protocol = recipes.protocol.make(visibility='private')
+        protocol = recipes.protocol.make()
+        exp.model.set_version_visibility('latest', 'public')
+        exp.protocol.set_version_visibility('latest', 'public')
 
         recipes.experiment_version.make(
             experiment__protocol=protocol,
-            experiment__protocol_version=helpers.add_version(protocol).hexsha,
+            experiment__protocol_version=helpers.add_version(protocol, visibility='private').hexsha,
             experiment__model=exp.model,
             experiment__model_version=sha,
         )  # should not be included for visibility reasons
@@ -325,7 +327,7 @@ class TestModelEntityVersionCompareView:
         assert response.status_code == 200
         assert response.context['comparisons'] == [(exp.protocol, [exp])]
 
-    def test_returns_404_if_commit_not_found(self, client):
+    def test_returns_404_if_commit_not_found(self, client, logged_in_user):
         model = recipes.model.make()
 
         response = client.get(
@@ -336,10 +338,16 @@ class TestModelEntityVersionCompareView:
 
 @pytest.mark.django_db
 class TestProtocolEntityVersionCompareView:
-    def test_shows_related_experiments(self, client, experiment_version):
+    def test_shows_related_experiments(self, client, logged_in_user, experiment_version):
         exp = experiment_version.experiment
+        exp.protocol.set_version_visibility('latest', 'public')
+        exp.author = logged_in_user
+        exp.save()
+
         sha = exp.protocol.repo.latest_commit.hexsha
-        recipes.experiment_version.make()  # should not be included, as it uses a different protocol
+        recipes.experiment_version.make(
+            experiment__author=logged_in_user
+        ).experiment  # should not be included, as it uses a different protocol
 
         response = client.get(
             '/entities/protocols/%d/versions/%s/compare' % (exp.protocol.pk, sha)
@@ -351,13 +359,15 @@ class TestProtocolEntityVersionCompareView:
     def test_applies_visibility(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         sha = exp.protocol_version
-        model = recipes.model.make(visibility='private')
+        model = recipes.model.make()
+        exp.protocol.set_version_visibility('latest', 'public')
+        exp.model.set_version_visibility('latest', 'public')
 
         recipes.experiment_version.make(
             experiment__protocol=exp.protocol,
             experiment__protocol_version=sha,
             experiment__model=model,
-            experiment__model_version=helpers.add_version(model).hexsha,
+            experiment__model_version=helpers.add_version(model, visibility='private').hexsha,
         )  # should not be included for visibility reasons
 
         response = client.get(
@@ -367,8 +377,8 @@ class TestProtocolEntityVersionCompareView:
         assert response.status_code == 200
         assert response.context['comparisons'] == [(exp.model, [exp])]
 
-    def test_returns_404_if_commit_not_found(self, client):
-        protocol = recipes.protocol.make()
+    def test_returns_404_if_commit_not_found(self, client, logged_in_user):
+        protocol = recipes.protocol.make(author=logged_in_user)
 
         response = client.get(
             '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, 'nocommit')
@@ -444,7 +454,7 @@ class TestTagging:
 class TestEntityVersionList:
     def test_view_entity_version_list(self, client, user, helpers):
         model = recipes.model.make()
-        helpers.add_version(model)
+        helpers.add_version(model, visibility='public')
 
         response = client.get('/entities/models/%d/versions/' % model.pk)
         assert response.status_code == 200
@@ -727,7 +737,7 @@ class TestEntityFileDownloadView:
 class TestEntityArchiveView:
     def test_download_archive(self, client, helpers):
         model = recipes.model.make()
-        commit = helpers.add_version(model, filename='file1.txt')
+        commit = helpers.add_version(model, filename='file1.txt', visibility='public')
 
         response = client.get('/entities/models/%d/versions/latest/archive' % model.pk)
         assert response.status_code == 200
@@ -745,8 +755,7 @@ class TestEntityArchiveView:
 
     def test_anonymous_model_download_for_running_experiment(self, client, queued_experiment):
         model = queued_experiment.experiment.model
-        model.visibility = 'private'
-        model.save()
+        queued_experiment.experiment.model.set_version_visibility('latest', 'private')
 
         response = client.get(
             '/entities/models/%d/versions/latest/archive' % model.pk,
@@ -759,8 +768,7 @@ class TestEntityArchiveView:
 
     def test_anonymous_protocol_download_for_running_experiment(self, client, queued_experiment):
         protocol = queued_experiment.experiment.protocol
-        protocol.visibility = 'private'
-        protocol.save()
+        queued_experiment.experiment.protocol.set_version_visibility('latest', 'private')
 
         response = client.get(
             '/entities/protocols/%d/versions/latest/archive' % protocol.pk,
@@ -822,8 +830,8 @@ class TestFileUpload:
 ])
 class TestEntityVisibility:
     def test_private_entity_visible_to_self(self, client, user, helpers, recipe, url):
-        entity = recipe.make(visibility='private', author=user)
-        helpers.add_version(entity)
+        entity = recipe.make(author=user)
+        helpers.add_version(entity, visibility='private')
         assert client.get(url % entity.pk, follow=True).status_code == 200
 
     def test_private_entity_invisible_to_other_user(
@@ -831,14 +839,14 @@ class TestEntityVisibility:
         client, user, other_user, helpers,
         recipe, url
     ):
-        entity = recipe.make(visibility='private', author=other_user)
-        helpers.add_version(entity)
+        entity = recipe.make(author=other_user)
+        helpers.add_version(entity, visibility='private')
         response = client.get(url % entity.pk)
         assert response.status_code == 404
 
     def test_private_entity_requires_login_for_anonymous(self, client, helpers, recipe, url):
-        entity = recipe.make(visibility='private')
-        helpers.add_version(entity)
+        entity = recipe.make()
+        helpers.add_version(entity, visibility='private')
         response = client.get(url % entity.pk)
         assert response.status_code == 302
         assert '/login' in response.url
@@ -847,20 +855,20 @@ class TestEntityVisibility:
         self, client, user, other_user, helpers,
         recipe, url
     ):
-        entity = recipe.make(visibility='restricted', author=other_user)
-        helpers.add_version(entity)
+        entity = recipe.make(author=other_user)
+        helpers.add_version(entity, visibility='restricted')
         assert client.get(url % entity.pk, follow=True).status_code == 200
 
     def test_restricted_entity_requires_login_for_anonymous(self, client, helpers, recipe, url):
-        entity = recipe.make(visibility='restricted')
-        helpers.add_version(entity)
+        entity = recipe.make()
+        helpers.add_version(entity, visibility='restricted')
         response = client.get(url % entity.pk)
         assert response.status_code == 302
         assert '/login' in response.url
 
     def test_public_entity_visible_to_anonymous(self, client, helpers, recipe, url):
-        entity = recipe.make(visibility='public')
-        helpers.add_version(entity)
+        entity = recipe.make()
+        helpers.add_version(entity, visibility='public')
         assert client.get(url % entity.pk, follow=True).status_code == 200
 
     def test_nonexistent_entity_redirects_anonymous_to_login(self, client, helpers, recipe, url):

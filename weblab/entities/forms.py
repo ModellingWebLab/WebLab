@@ -32,13 +32,13 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
 class ModelEntityForm(EntityForm):
     class Meta:
         model = ModelEntity
-        fields = ['name', 'visibility']
+        fields = ['name']
 
 
 class ProtocolEntityForm(EntityForm):
     class Meta:
         model = ProtocolEntity
-        fields = ['name', 'visibility']
+        fields = ['name']
 
 
 class EntityVersionForm(forms.Form):
@@ -48,10 +48,6 @@ class EntityVersionForm(forms.Form):
     commit_message = forms.CharField(
         label='Description of this version',
         widget=forms.Textarea)
-    visibility = forms.ChoiceField(
-        choices=visibility.CHOICES,
-        help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
-    )
 
 
 class EntityChangeVisibilityForm(forms.Form):

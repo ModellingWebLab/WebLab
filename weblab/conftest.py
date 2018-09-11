@@ -10,7 +10,7 @@ class Helpers:
     Helper functions for tests - this can be passed into tests via a fixture
     """
     @staticmethod
-    def add_version(entity, filename='file1.txt', tag_name=None):
+    def add_version(entity, filename='file1.txt', tag_name=None, visibility=None):
         """Add a single commit/version to an entity"""
         entity.repo.create()
         in_repo_path = str(entity.repo_abs_path / filename)
@@ -19,6 +19,8 @@ class Helpers:
         commit = entity.repo.commit('file', User(full_name='author', email='author@example.com'))
         if tag_name:
             entity.repo.tag(tag_name)
+        if visibility:
+            entity.set_version_visibility(commit.hexsha, visibility)
         return commit
 
     @staticmethod
@@ -55,14 +57,14 @@ def fake_repo_path(settings, tmpdir):
 @pytest.fixture
 def model_with_version():
     model = recipes.model.make()
-    Helpers.add_version(model)
+    Helpers.add_version(model, visibility='public')
     return model
 
 
 @pytest.fixture
 def protocol_with_version():
     protocol = recipes.protocol.make()
-    Helpers.add_version(protocol)
+    Helpers.add_version(protocol, visibility='public')
     return protocol
 
 

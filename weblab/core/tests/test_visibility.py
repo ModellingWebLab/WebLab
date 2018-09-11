@@ -11,13 +11,17 @@ def test_get_joint_visibility():
 
 
 @pytest.mark.django_db
-def test_visibility_check(user, other_user, anon_user):
-    my_public = recipes.model.make(author=user, visibility='public')
-    my_restricted = recipes.model.make(author=user, visibility='restricted')
-    my_private = recipes.model.make(author=user, visibility='private')
-    other_public = recipes.model.make(author=other_user, visibility='public')
-    other_restricted = recipes.model.make(author=other_user, visibility='restricted')
-    other_private = recipes.model.make(author=other_user, visibility='private')
+def test_visibility_check(helpers, user, other_user, anon_user):
+    my_public, my_restricted, my_private = recipes.model.make(author=user, _quantity=3)
+    helpers.add_version(my_public, visibility='public')
+    helpers.add_version(my_restricted, visibility='restricted')
+    helpers.add_version(my_private, visibility='private')
+
+    other_public, other_restricted, other_private = \
+        recipes.model.make(author=other_user, _quantity=3)
+    helpers.add_version(other_public, visibility='public')
+    helpers.add_version(other_restricted, visibility='restricted')
+    helpers.add_version(other_private, visibility='private')
 
     assert visibility_check(user, my_public)
     assert visibility_check(user, my_restricted)

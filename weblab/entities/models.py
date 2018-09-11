@@ -3,9 +3,8 @@ from pathlib import Path
 from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
-from django.utils.functional import cached_property
 
-from core.models import UserCreatedModelMixin, VisibilityModelMixin
+from core.models import UserCreatedModelMixin
 from core.visibility import Visibility
 
 from .repository import Repository
@@ -14,7 +13,7 @@ from .repository import Repository
 VISIBILITY_NOTE_PREFIX = 'Visibility: '
 
 
-class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
+class Entity(UserCreatedModelMixin, models.Model):
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
     ENTITY_TYPE_CHOICES = (
@@ -89,11 +88,16 @@ class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
         :param commit: ref of the relevant commit
         :return: string representing visibility
         """
+        vis = Visibility.PRIVATE
+
+        commit = self.repo.get_commit(commit)
+        if not commit:
+            return vis
+
         # If this commit does not have a visibility, backtrack through history
         # until we find one.
-        vis = Visibility.PRIVATE
         no_visibility = []
-        for commit_ in self.repo.get_commit(commit).self_and_parents:
+        for commit_ in commit.self_and_parents:
             note = commit_.get_note()
             if note and note.startswith(VISIBILITY_NOTE_PREFIX):
                 vis = note[len(VISIBILITY_NOTE_PREFIX):]
@@ -106,6 +110,14 @@ class Entity(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
             self.set_version_visibility(commit_.hexsha, vis)
 
         return vis
+
+    @property
+    def visibility(self):
+        commit = self.repo.latest_commit
+        if commit:
+            return self.get_version_visibility(commit.hexsha)
+        else:
+            return Visibility.PRIVATE
 
 
 class EntityManager(models.Manager):
