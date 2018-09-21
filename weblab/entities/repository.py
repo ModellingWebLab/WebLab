@@ -162,7 +162,10 @@ class Repository:
         """
         :return iterable of `git.Commit` objects in the entity repository
         """
-        return (Commit(self, c) for c in self._repo.iter_commits())
+        if self._repo.head.is_valid():
+            return (Commit(self, c) for c in self._repo.iter_commits())
+        else:
+            return iter(())
 
     @property
     def manifest_path(self):

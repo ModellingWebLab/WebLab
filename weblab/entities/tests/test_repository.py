@@ -46,10 +46,13 @@ class TestRepository:
         assert not repo_file.exists()
 
     def test_commit(self, repo, repo_file, author):
-        repo.add_file(repo_file)
+        assert list(repo.commits) == []
+        assert repo.latest_commit is None
 
+        repo.add_file(repo_file)
         repo.commit('commit_message', author)
 
+        assert len(list(repo.commits)) == 1
         assert repo.latest_commit.files[0].name == repo_file.name
         assert repo.latest_commit.author.email == author.email
 
