@@ -25,6 +25,7 @@ def populate_entity_cache(entity):
         version = CachedEntityVersion.objects.create(
             entity=cached,
             sha=commit.hexsha,
+            timestamp=commit.committed_at,
             visibility=entity.get_version_visibility(commit.hexsha),
         )
         cached.versions.add(version)

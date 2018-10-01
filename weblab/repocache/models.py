@@ -21,8 +21,7 @@ class CachedEntityVersion(VisibilityModelMixin):
     """
     entity = models.ForeignKey(CachedEntity, related_name='versions')
     sha = models.CharField(max_length=40)
-
-    # Visibility is the only value we need to store for now
+    timestamp = models.DateTimeField()
 
     class Meta:
         unique_together = ['entity', 'sha']

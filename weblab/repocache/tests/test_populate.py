@@ -13,10 +13,15 @@ def test_populate(model_with_version):
     cached = model_with_version.cachedentity
 
     assert cached is not None
-    sha = model_with_version.repo.latest_commit.hexsha
-    assert list(cached.versions.values_list('sha', flat=True)) == [sha]
-    assert list(cached.tags.values_list('tag', flat=True)) == ['v1']
-    assert cached.latest_version.sha == sha
+    latest = model_with_version.repo.latest_commit
+
+    version = cached.versions.get()
+    assert version.sha == latest.hexsha
+    assert version.timestamp == latest.committed_at
+
+    assert cached.tags.get().tag == 'v1'
+
+    assert cached.latest_version.sha == latest.hexsha
 
 
 @pytest.mark.django_db

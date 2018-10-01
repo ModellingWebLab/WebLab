@@ -4,6 +4,7 @@ from pathlib import Path
 from shutil import rmtree
 
 from django.utils.functional import cached_property
+from django.utils.timezone import utc
 from git import Actor, GitCommandError, Repo
 
 from core.combine import (
@@ -283,7 +284,7 @@ class Commit:
 
         :return: `datetime` object
         """
-        return datetime.fromtimestamp(self._commit.committed_date)
+        return datetime.fromtimestamp(self._commit.committed_date).replace(tzinfo=utc)
 
     @property
     def master_filename(self):
