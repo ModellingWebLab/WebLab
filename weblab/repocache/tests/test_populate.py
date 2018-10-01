@@ -1,14 +1,14 @@
 import pytest
 
 from core import recipes
-from repocache.ingest import index_entity_repo
+from repocache.populate import populate_entity_cache
 
 
 @pytest.mark.django_db
-def test_index_repo(model_with_version):
+def test_populate(model_with_version):
     model_with_version.repo.tag('v1')
 
-    index_entity_repo(model_with_version)
+    populate_entity_cache(model_with_version)
 
     cached = model_with_version.cachedentity
 
@@ -20,7 +20,7 @@ def test_index_repo(model_with_version):
 
 
 @pytest.mark.django_db
-def test_index_repo_removes_old_versions():
+def test_populate_removes_old_versions():
     model = recipes.model.make()
     cached = recipes.cached_entity_version.make(entity__entity=model).entity
     recipes.cached_entity_tag.make(entity=cached)
@@ -28,7 +28,7 @@ def test_index_repo_removes_old_versions():
     assert cached.versions.exists()
     assert cached.tags.exists()
 
-    index_entity_repo(model)
+    populate_entity_cache(model)
 
     assert not cached.versions.exists()
     assert not cached.tags.exists()

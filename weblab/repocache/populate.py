@@ -4,7 +4,7 @@ from .models import CachedEntity, CachedEntityTag, CachedEntityVersion
 
 
 @transaction.atomic
-def index_entity_repo(entity):
+def populate_entity_cache(entity):
     """
     Process the repository of the given entity,
     adding CachedEntity and related models
