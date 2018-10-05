@@ -9,7 +9,7 @@ chardet==3.0.4            # via requests
 defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2
 django-braces==1.11.0
-django==1.11.13
+django==1.11.15
 gitdb2==2.0.3             # via gitpython
 gitpython==2.1.7
 idna==2.6                 # via requests
