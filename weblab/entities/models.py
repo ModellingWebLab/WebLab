@@ -75,8 +75,12 @@ class Entity(UserCreatedModelMixin, models.Model):
         :param commit: ref of the relevant commit
         :param visibility: string representing visibility
         """
-        self.repo.get_commit(commit).add_note(
+        commit = self.repo.get_commit(commit)
+        commit.add_note(
             '%s%s' % (VISIBILITY_NOTE_PREFIX, visibility))
+
+        from repocache.entities import set_cached_version_visibility
+        set_cached_version_visibility(self, commit, visibility)
 
     def get_version_visibility(self, commit):
         """
@@ -91,9 +95,9 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         vis = Visibility.PRIVATE
 
-        from repocache.entities import get_version_visibility
+        from repocache.entities import get_cached_version_visibility
         try:
-            return get_version_visibility(self, commit)
+            return get_cached_version_visibility(self, commit)
         except RepoCacheMiss:
             # continue and fetch visibility directly from repo
             pass

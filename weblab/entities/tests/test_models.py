@@ -3,6 +3,8 @@ from django.db.utils import IntegrityError
 
 from core import recipes
 from entities.models import ModelEntity, ProtocolEntity
+from repocache.models import CachedEntity
+from repocache.populate import populate_entity_cache
 
 
 @pytest.mark.django_db
@@ -63,6 +65,7 @@ class TestEntity:
     def test_version_visibility_ignores_invalid_format(self, model_with_version):
         commit = model_with_version.repo.latest_commit
         commit.add_note('invalid note format')
+        CachedEntity.objects.all().delete()
 
         # falls back to private visibility
         assert model_with_version.get_version_visibility(commit.hexsha) == 'private'
@@ -106,7 +109,7 @@ class TestEntity:
 
         assert model.visibility == 'restricted'
 
-    def test_version_visibility_fetches_from_cache(self):
+    def test_get_version_visibility_fetches_from_cache(self):
         model = recipes.model.make()
         recipes.cached_entity_version.make(
             entity__entity=model,
@@ -115,3 +118,11 @@ class TestEntity:
         )
 
         assert model.get_version_visibility('test-sha') == 'restricted'
+
+    def test_set_version_visibility_updates_cache(self, model_with_version):
+        model = model_with_version
+        populate_entity_cache(model)
+
+        model.set_version_visibility('latest', 'restricted')
+
+        assert model.cachedentity.versions.get().visibility == 'restricted'
