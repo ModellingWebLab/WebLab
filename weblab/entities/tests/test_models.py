@@ -96,7 +96,7 @@ class TestEntity:
         assert v2.get_note() == 'Visibility: restricted'
         assert v3.get_note() == 'Visibility: restricted'
 
-    def test_visibility_gets_latest_visibility_from_cache(self):
+    def test_entity_visibility_gets_latest_visibility_from_cache(self):
         model = recipes.model.make()
         recipes.cached_entity_version.make(
             entity__entity=model,
@@ -105,3 +105,13 @@ class TestEntity:
         )
 
         assert model.visibility == 'restricted'
+
+    def test_version_visibility_fetches_from_cache(self):
+        model = recipes.model.make()
+        recipes.cached_entity_version.make(
+            entity__entity=model,
+            sha='test-sha',
+            visibility='restricted'
+        )
+
+        assert model.get_version_visibility('test-sha') == 'restricted'

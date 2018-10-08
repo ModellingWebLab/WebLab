@@ -91,6 +91,13 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         vis = Visibility.PRIVATE
 
+        from repocache.entities import get_version_visibility
+        try:
+            return get_version_visibility(self, commit)
+        except RepoCacheMiss:
+            # continue and fetch visibility directly from repo
+            pass
+
         commit = self.repo.get_commit(commit)
         if not commit:
             return vis
