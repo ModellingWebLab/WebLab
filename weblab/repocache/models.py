@@ -25,6 +25,7 @@ class CachedEntityVersion(VisibilityModelMixin):
 
     class Meta:
         unique_together = ['entity', 'sha']
+        get_latest_by = 'timestamp'
 
 
 class CachedEntityTag(models.Model):

@@ -1,0 +1,3 @@
+
+class RepoCacheMiss(Exception):
+    pass

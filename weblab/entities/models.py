@@ -6,6 +6,7 @@ from django.db import models
 
 from core.models import UserCreatedModelMixin
 from core.visibility import Visibility
+from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
 
@@ -113,11 +114,16 @@ class Entity(UserCreatedModelMixin, models.Model):
 
     @property
     def visibility(self):
-        commit = self.repo.latest_commit
-        if commit:
-            return self.get_version_visibility(commit.hexsha)
-        else:
-            return Visibility.PRIVATE
+        # Look in the cache
+        from repocache.entities import get_visibility
+        try:
+            return get_visibility(self)
+        except RepoCacheMiss:
+            commit = self.repo.latest_commit
+            if commit:
+                return self.get_version_visibility(commit.hexsha)
+            else:
+                return Visibility.PRIVATE
 
 
 class EntityManager(models.Manager):
