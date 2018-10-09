@@ -54,14 +54,14 @@ def visible_entity_ids(user):
     public_entity_ids = {
         entity.id
         for entity in Entity.objects.all()
-        if entity.get_version_visibility('latest') == Visibility.PUBLIC
+        if entity.visibility == Visibility.PUBLIC
     }
 
     if user.is_authenticated:
         non_public_entity_ids = {
             entity.id
             for entity in Entity.objects.all()
-            if entity.get_version_visibility('latest') == Visibility.RESTRICTED
+            if entity.visibility == Visibility.RESTRICTED
             or entity.author == user
         }
         return public_entity_ids | non_public_entity_ids
