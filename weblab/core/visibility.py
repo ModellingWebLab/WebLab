@@ -50,20 +50,14 @@ def visibility_query(user):
 
 
 def visible_entity_ids(user):
-    from entities.models import Entity
-    public_entity_ids = {
-        entity.id
-        for entity in Entity.objects.all()
-        if entity.visibility == Visibility.PUBLIC
-    }
+    from repocache.entities import get_public_entity_ids, get_restricted_entity_ids
+
+    public_entity_ids = get_public_entity_ids()
 
     if user.is_authenticated:
-        non_public_entity_ids = {
-            entity.id
-            for entity in Entity.objects.all()
-            if entity.visibility == Visibility.RESTRICTED
-            or entity.author == user
-        }
+        user_entity_ids = set(user.entity_set.values_list('id', flat=True))
+        non_public_entity_ids = get_restricted_entity_ids() | user_entity_ids
+
         return public_entity_ids | non_public_entity_ids
     else:
         return public_entity_ids

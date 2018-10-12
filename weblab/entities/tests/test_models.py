@@ -70,31 +70,28 @@ class TestEntity:
         # falls back to private visibility
         assert model_with_version.get_version_visibility(commit.hexsha) == 'private'
 
-    def test_falls_back_to_older_visibilities(self, model_with_version, helpers):
-        v1 = model_with_version.repo.latest_commit
-        v2 = helpers.add_version(model_with_version)
-        v3 = helpers.add_version(model_with_version)
+    def test_falls_back_to_older_visibilities(self, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='restricted')
+        v2 = helpers.add_version(model)
+        v3 = helpers.add_version(model, visibility='public')
 
-        model_with_version.set_version_visibility(v1.hexsha, 'restricted')
-        model_with_version.set_version_visibility(v3.hexsha, 'public')
-
-        assert model_with_version.get_version_visibility(v1.hexsha) == 'restricted'
-        assert model_with_version.get_version_visibility(v2.hexsha) == 'restricted'
-        assert model_with_version.get_version_visibility(v3.hexsha) == 'public'
+        assert model.get_version_visibility(v1.hexsha) == 'restricted'
+        assert model.get_version_visibility(v2.hexsha) == 'restricted'
+        assert model.get_version_visibility(v3.hexsha) == 'public'
 
     def test_falls_back_to_private(self, helpers):
         model = recipes.model.make()
         commit = helpers.add_version(model)
         assert model.get_version_visibility(commit.hexsha) == 'private'
 
-    def test_applies_missing_visibilities(self, model_with_version, helpers):
-        v1 = model_with_version.repo.latest_commit
-        v2 = helpers.add_version(model_with_version)
-        v3 = helpers.add_version(model_with_version)
+    def test_applies_missing_visibilities(self, helpers):
+        model = recipes.model.make()
+        helpers.add_version(model, visibility='restricted')
+        v2 = helpers.add_version(model)
+        v3 = helpers.add_version(model)
 
-        model_with_version.set_version_visibility(v1.hexsha, 'restricted')
-
-        assert model_with_version.get_version_visibility(v3.hexsha) == 'restricted'
+        assert model.get_version_visibility(v3.hexsha) == 'restricted'
 
         assert v2.get_note() == 'Visibility: restricted'
         assert v3.get_note() == 'Visibility: restricted'

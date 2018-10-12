@@ -3,6 +3,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from accounts.models import User
 from core import recipes
+from repocache.populate import populate_entity_cache
 
 
 class Helpers:
@@ -17,6 +18,7 @@ class Helpers:
         open(in_repo_path, 'w').write('entity contents')
         entity.repo.add_file(in_repo_path)
         commit = entity.repo.commit('file', User(full_name='author', email='author@example.com'))
+        populate_entity_cache(entity)
         if tag_name:
             entity.repo.tag(tag_name)
         if visibility:
