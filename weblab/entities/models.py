@@ -5,7 +5,6 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 
 from core.models import UserCreatedModelMixin
-from core.visibility import Visibility
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
@@ -68,6 +67,26 @@ class Entity(UserCreatedModelMixin, models.Model):
             version = version[:8] + '...'
         return version
 
+    def get_visibility_from_repo(self, commit):
+        """
+        Get the visibility of the given entity version from the repository
+
+        :param commit: `repository.Commit` object
+        :return visibility: string representing visibility
+        """
+        note = commit.get_note()
+        if note and note.startswith(VISIBILITY_NOTE_PREFIX):
+            return note[len(VISIBILITY_NOTE_PREFIX):]
+
+    def set_visibility_in_repo(self, commit, visibility):
+        """
+        Set the visibility of the given entity version in the repository
+
+        :param commit:`repository.Commit` object
+        :param visibility: string representing visibility
+        """
+        commit.add_note('%s%s' % (VISIBILITY_NOTE_PREFIX, visibility))
+
     @property
     def repocache(self):
         from repocache.models import CachedEntity
@@ -85,28 +104,10 @@ class Entity(UserCreatedModelMixin, models.Model):
         commit = self.repo.get_commit(commit)
         self.set_visibility_in_repo(commit, visibility)
 
-        self.repocache.get_version(commit.hexsha).set_visibility(visibility)
-
-    def get_visibility_from_repo(self, commit):
-        """
-        Get the visibility of the given entity version from the repository
-
-        :param commit: ref of the relevant commit
-        :return visibility: string representing visibility
-        """
-        note = commit.get_note()
-        if note and note.startswith(VISIBILITY_NOTE_PREFIX):
-            return note[len(VISIBILITY_NOTE_PREFIX):]
-
-    def set_visibility_in_repo(self, commit, visibility):
-        """
-        Set the visibility of the given entity version in the repository
-
-        :param commit:`repository.Commit` object
-        :param visibility: string representing visibility
-        """
-        commit.add_note(
-            '%s%s' % (VISIBILITY_NOTE_PREFIX, visibility))
+        try:
+            self.repocache.get_version(commit.hexsha).set_visibility(visibility)
+        except RepoCacheMiss:
+            pass
 
     def get_version_visibility(self, sha):
         """
@@ -116,12 +117,8 @@ class Entity(UserCreatedModelMixin, models.Model):
 
         :param sha: SHA of the relevant commit
         :return: string representing visibility
-            or 'private' if visibility not available
         """
-        try:
-            return self.repocache.get_version(sha).visibility
-        except RepoCacheMiss:
-            return Visibility.PRIVATE
+        return self.repocache.get_version(sha).visibility
 
     @property
     def visibility(self):

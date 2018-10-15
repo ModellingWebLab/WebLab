@@ -226,6 +226,7 @@ class TestEntityVersionChangeVisibilityView:
 
         assert response.status_code == 200
         assert model.get_version_visibility(commit.hexsha) == 'restricted'
+        assert model.repocache.get_version(commit.hexsha).visibility == 'restricted'
 
     def test_non_owner_cannot_change_visibility(self, client, user, other_user, helpers):
         helpers.login(client, user)

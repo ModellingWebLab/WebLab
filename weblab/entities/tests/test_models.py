@@ -3,7 +3,6 @@ from django.db.utils import IntegrityError
 
 from core import recipes
 from entities.models import ModelEntity, ProtocolEntity
-from repocache.models import CachedEntity
 from repocache.populate import populate_entity_cache
 
 
@@ -61,14 +60,6 @@ class TestEntity:
         model_with_version.set_version_visibility(commit.hexsha, 'restricted')
 
         assert model_with_version.get_version_visibility(commit.hexsha) == 'restricted'
-
-    def test_version_visibility_ignores_invalid_format(self, model_with_version):
-        commit = model_with_version.repo.latest_commit
-        commit.add_note('invalid note format')
-        CachedEntity.objects.all().delete()
-
-        # falls back to private visibility
-        assert model_with_version.get_version_visibility(commit.hexsha) == 'private'
 
     def test_entity_visibility_gets_latest_visibility_from_cache(self):
         model = recipes.model.make()
