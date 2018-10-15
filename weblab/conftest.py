@@ -18,12 +18,12 @@ class Helpers:
         open(in_repo_path, 'w').write('entity contents')
         entity.repo.add_file(in_repo_path)
         commit = entity.repo.commit('file', User(full_name='author', email='author@example.com'))
-        if cache:
-            populate_entity_cache(entity)
         if tag_name:
             entity.repo.tag(tag_name)
         if visibility:
-            entity.set_version_visibility(commit.hexsha, visibility)
+            entity.set_visibility_in_repo(commit, visibility)
+        if cache:
+            populate_entity_cache(entity)
         return commit
 
     @staticmethod

@@ -1,7 +1,6 @@
 import pytest
 
 from core import recipes
-from repocache.entities import get_cached_version_visibility
 from repocache.populate import populate_entity_cache
 
 
@@ -44,9 +43,9 @@ class TestPopulate:
 
         populate_entity_cache(model)
 
-        assert get_cached_version_visibility(model, v1.hexsha) == 'restricted'
-        assert get_cached_version_visibility(model, v2.hexsha) == 'restricted'
-        assert get_cached_version_visibility(model, v3.hexsha) == 'public'
+        assert model.repocache.get_version(v1.hexsha).visibility == 'restricted'
+        assert model.repocache.get_version(v2.hexsha).visibility == 'restricted'
+        assert model.repocache.get_version(v3.hexsha).visibility == 'public'
 
     def test_falls_back_to_private(self, helpers):
         model = recipes.model.make()
@@ -54,7 +53,7 @@ class TestPopulate:
 
         populate_entity_cache(model)
 
-        assert get_cached_version_visibility(model, commit.hexsha) == 'private'
+        assert model.repocache.get_version(commit.hexsha).visibility == 'private'
 
     def test_applies_missing_visibilities(self, helpers):
         model = recipes.model.make()

@@ -425,6 +425,7 @@ class TestTagging:
         model = recipes.model.make(author=user)
         helpers.add_version(model)
         commit = model.repo.latest_commit
+
         response = client.post(
             '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
             data={

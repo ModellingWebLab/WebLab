@@ -85,8 +85,7 @@ class Entity(UserCreatedModelMixin, models.Model):
         commit = self.repo.get_commit(commit)
         self.set_visibility_in_repo(commit, visibility)
 
-        from repocache.entities import set_cached_version_visibility
-        set_cached_version_visibility(self, commit, visibility)
+        self.repocache.get_version(commit.hexsha).set_visibility(visibility)
 
     def get_visibility_from_repo(self, commit):
         """
@@ -103,25 +102,24 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         Set the visibility of the given entity version in the repository
 
-        :param commit: ref of the relevant commit
+        :param commit:`repository.Commit` object
         :param visibility: string representing visibility
         """
         commit.add_note(
             '%s%s' % (VISIBILITY_NOTE_PREFIX, visibility))
 
-    def get_version_visibility(self, commit):
+    def get_version_visibility(self, sha):
         """
         Get the visibility of the given entity version
 
         This is fetched from the repocache
 
-        :param commit: ref of the relevant commit
+        :param sha: SHA of the relevant commit
         :return: string representing visibility
             or 'private' if visibility not available
         """
-        from repocache.entities import get_cached_version_visibility
         try:
-            return get_cached_version_visibility(self, commit)
+            return self.repocache.get_version(sha).visibility
         except RepoCacheMiss:
             return Visibility.PRIVATE
 
@@ -135,11 +133,7 @@ class Entity(UserCreatedModelMixin, models.Model):
         :return: string representing visibility,
             or 'private' if visibility not available
         """
-        from repocache.entities import get_visibility
-        try:
-            return get_visibility(self)
-        except RepoCacheMiss:
-            return Visibility.PRIVATE
+        return self.repocache.visibility
 
 
 class EntityManager(models.Manager):
