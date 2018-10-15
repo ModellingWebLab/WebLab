@@ -28,6 +28,7 @@ from git import BadName, GitCommandError
 
 from core.visibility import VisibilityMixin, visibility_check
 from experiments.models import Experiment
+from repocache.entities import add_version_to_cache
 
 from .forms import (
     EntityChangeVisibilityForm,
@@ -432,7 +433,9 @@ class EntityNewVersionView(
                         os.remove(str(entity.repo_abs_path / f))
                     return self.fail_with_git_errors([e.stderr])
 
-            entity.set_version_visibility(commit.hexsha, request.POST['visibility'])
+            visibility = request.POST['visibility']
+            add_version_to_cache(entity, commit.hexsha, visibility)
+            entity.set_version_visibility(commit.hexsha, visibility)
 
             # Temporary upload files have been safely committed, so can be deleted
             for filename in files_to_delete:

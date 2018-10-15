@@ -79,3 +79,13 @@ def get_restricted_entity_ids():
             .annotate(Max('timestamp'))
             .order_by('-timestamp'))
     }
+
+
+def add_version_to_cache(entity, sha, visibility):
+    commit = entity.repo.get_commit(sha)
+    CachedEntityVersion.objects.create(
+        entity=entity.repocache,
+        sha=commit.hexsha,
+        timestamp=commit.committed_at,
+        visibility=visibility,
+    )

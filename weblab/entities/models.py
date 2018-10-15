@@ -68,73 +68,78 @@ class Entity(UserCreatedModelMixin, models.Model):
             version = version[:8] + '...'
         return version
 
+    @property
+    def repocache(self):
+        from repocache.models import CachedEntity
+        return CachedEntity.objects.get_or_create(entity=self)[0]
+
     def set_version_visibility(self, commit, visibility):
         """
         Set the visibility of the given entity version
+
+        Updates both the repository and the cache
 
         :param commit: ref of the relevant commit
         :param visibility: string representing visibility
         """
         commit = self.repo.get_commit(commit)
-        commit.add_note(
-            '%s%s' % (VISIBILITY_NOTE_PREFIX, visibility))
+        self.set_visibility_in_repo(commit, visibility)
 
         from repocache.entities import set_cached_version_visibility
         set_cached_version_visibility(self, commit, visibility)
+
+    def get_visibility_from_repo(self, commit):
+        """
+        Get the visibility of the given entity version from the repository
+
+        :param commit: ref of the relevant commit
+        :return visibility: string representing visibility
+        """
+        note = commit.get_note()
+        if note and note.startswith(VISIBILITY_NOTE_PREFIX):
+            return note[len(VISIBILITY_NOTE_PREFIX):]
+
+    def set_visibility_in_repo(self, commit, visibility):
+        """
+        Set the visibility of the given entity version in the repository
+
+        :param commit: ref of the relevant commit
+        :param visibility: string representing visibility
+        """
+        commit.add_note(
+            '%s%s' % (VISIBILITY_NOTE_PREFIX, visibility))
 
     def get_version_visibility(self, commit):
         """
         Get the visibility of the given entity version
 
-        Will backtrack through previous visibilities, defaulting to entity
-        visibility if none is found, and forward apply these as repository
-        notes for future access.
+        This is fetched from the repocache
 
         :param commit: ref of the relevant commit
         :return: string representing visibility
+            or 'private' if visibility not available
         """
-        vis = Visibility.PRIVATE
-
         from repocache.entities import get_cached_version_visibility
         try:
             return get_cached_version_visibility(self, commit)
         except RepoCacheMiss:
-            # continue and fetch visibility directly from repo
-            pass
-
-        commit = self.repo.get_commit(commit)
-        if not commit:
-            return vis
-
-        # If this commit does not have a visibility, backtrack through history
-        # until we find one.
-        no_visibility = []
-        for commit_ in commit.self_and_parents:
-            note = commit_.get_note()
-            if note and note.startswith(VISIBILITY_NOTE_PREFIX):
-                vis = note[len(VISIBILITY_NOTE_PREFIX):]
-                break
-            else:
-                no_visibility.append(commit_)
-
-        # Apply visibility to newer versions which were found without one
-        for commit_ in no_visibility:
-            self.set_version_visibility(commit_.hexsha, vis)
-
-        return vis
+            return Visibility.PRIVATE
 
     @property
     def visibility(self):
-        # Look in the cache
+        """
+        Get the visibility of an entity
+
+        This is fetched from the repocache
+
+        :return: string representing visibility,
+            or 'private' if visibility not available
+        """
         from repocache.entities import get_visibility
         try:
             return get_visibility(self)
         except RepoCacheMiss:
-            commit = self.repo.latest_commit
-            if commit:
-                return self.get_version_visibility(commit.hexsha)
-            else:
-                return Visibility.PRIVATE
+            return Visibility.PRIVATE
 
 
 class EntityManager(models.Manager):

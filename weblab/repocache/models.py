@@ -12,7 +12,6 @@ class CachedEntity(models.Model):
     and should not be changed without first changing the repo.
     """
     entity = models.OneToOneField(Entity)
-    latest_version = models.OneToOneField('CachedEntityVersion', null=True)
 
 
 class CachedEntityVersion(VisibilityModelMixin):

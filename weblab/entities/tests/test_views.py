@@ -518,7 +518,7 @@ class TestVersionCreation:
         assert 'model.txt' in latest.filenames
         assert 'manifest.xml' in latest.filenames
         assert latest.master_filename is None
-        assert model.get_version_visibility('latest') == 'restricted'
+        assert model.visibility == 'restricted'
 
     def test_add_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
@@ -755,7 +755,8 @@ class TestEntityArchiveView:
 
     def test_anonymous_model_download_for_running_experiment(self, client, queued_experiment):
         model = queued_experiment.experiment.model
-        queued_experiment.experiment.model.set_version_visibility('latest', 'private')
+        sha = model.repo.latest_commit.hexsha
+        queued_experiment.experiment.model.set_version_visibility(sha, 'private')
 
         response = client.get(
             '/entities/models/%d/versions/latest/archive' % model.pk,

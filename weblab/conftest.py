@@ -11,14 +11,15 @@ class Helpers:
     Helper functions for tests - this can be passed into tests via a fixture
     """
     @staticmethod
-    def add_version(entity, filename='file1.txt', tag_name=None, visibility=None):
+    def add_version(entity, filename='file1.txt', tag_name=None, visibility=None, cache=True):
         """Add a single commit/version to an entity"""
         entity.repo.create()
         in_repo_path = str(entity.repo_abs_path / filename)
         open(in_repo_path, 'w').write('entity contents')
         entity.repo.add_file(in_repo_path)
         commit = entity.repo.commit('file', User(full_name='author', email='author@example.com'))
-        populate_entity_cache(entity)
+        if cache:
+            populate_entity_cache(entity)
         if tag_name:
             entity.repo.tag(tag_name)
         if visibility:

@@ -70,32 +70,6 @@ class TestEntity:
         # falls back to private visibility
         assert model_with_version.get_version_visibility(commit.hexsha) == 'private'
 
-    def test_falls_back_to_older_visibilities(self, helpers):
-        model = recipes.model.make()
-        v1 = helpers.add_version(model, visibility='restricted')
-        v2 = helpers.add_version(model)
-        v3 = helpers.add_version(model, visibility='public')
-
-        assert model.get_version_visibility(v1.hexsha) == 'restricted'
-        assert model.get_version_visibility(v2.hexsha) == 'restricted'
-        assert model.get_version_visibility(v3.hexsha) == 'public'
-
-    def test_falls_back_to_private(self, helpers):
-        model = recipes.model.make()
-        commit = helpers.add_version(model)
-        assert model.get_version_visibility(commit.hexsha) == 'private'
-
-    def test_applies_missing_visibilities(self, helpers):
-        model = recipes.model.make()
-        helpers.add_version(model, visibility='restricted')
-        v2 = helpers.add_version(model)
-        v3 = helpers.add_version(model)
-
-        assert model.get_version_visibility(v3.hexsha) == 'restricted'
-
-        assert v2.get_note() == 'Visibility: restricted'
-        assert v3.get_note() == 'Visibility: restricted'
-
     def test_entity_visibility_gets_latest_visibility_from_cache(self):
         model = recipes.model.make()
         recipes.cached_entity_version.make(
