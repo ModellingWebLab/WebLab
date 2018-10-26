@@ -2,10 +2,17 @@ import pytest
 from django.db.utils import IntegrityError
 
 from core import recipes
+from repocache.models import CachedEntity
 
 
 @pytest.mark.django_db
 class TestEntityCacheModels:
+    def test_cachedentity_is_deleted_when_entity_is_deleted(self):
+        cached = recipes.cached_entity.make()
+        cached.entity.delete()
+
+        assert not CachedEntity.objects.filter(pk=cached.pk).exists()
+
     def test_related_names_for_versions(self):
         version = recipes.cached_entity_version.make()
         assert list(version.entity.versions.all()) == [version]

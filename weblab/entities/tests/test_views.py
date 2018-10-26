@@ -154,7 +154,7 @@ class TestEntityVersionView:
         assert response.context['version'] == version
         assert len(response.context['tags']) == len(tags)
         for actual, expected in zip(response.context['tags'], tags):
-            assert actual.name == expected
+            assert actual == expected
 
     def test_view_entity_version(self, client, user, helpers):
         model = recipes.model.make()
@@ -167,8 +167,8 @@ class TestEntityVersionView:
 
         # Now add a second version with tag
         assert len(list(model.repo.commits)) == 1
-        helpers.add_version(model, visibility='public')
-        model.repo.tag('my_tag')
+        commit2 = helpers.add_version(model, visibility='public')
+        model.add_tag('my_tag', commit2.hexsha)
 
         # Commits are yielded newest first
         assert len(list(model.repo.commits)) == 2
@@ -186,8 +186,8 @@ class TestEntityVersionView:
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')
         commit = model.repo.latest_commit
-        model.repo.tag('tag1')
-        model.repo.tag('tag2')
+        model.add_tag('tag1', commit.hexsha)
+        model.add_tag('tag2', commit.hexsha)
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
                    commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'),

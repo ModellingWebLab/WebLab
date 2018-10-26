@@ -120,6 +120,22 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         return self.repocache.get_version(sha).visibility
 
+    def add_tag(self, tagname, ref):
+        """
+        Add a tag for the given entity version
+
+        Updates both the repository and the cache
+
+        :param tagname: Name of tag
+        :param ref: ref of the relevant commit
+        """
+        commit = self.repo.get_commit(ref)
+        self.repo.tag(tagname, ref=ref)
+        try:
+            self.repocache.get_version(commit.hexsha).tag(tagname)
+        except RepoCacheMiss:
+            pass
+
     @property
     def visibility(self):
         """
@@ -131,6 +147,17 @@ class Entity(UserCreatedModelMixin, models.Model):
             or 'private' if visibility not available
         """
         return self.repocache.visibility
+
+    def get_tags(self, sha):
+        """
+        Get the tags for the given entity version
+
+        This is fetched from the repocache.
+
+        :param sha: SHA of the relevant commit
+        :return: set of tag names for the commit
+        """
+        return set(self.repocache.get_version(sha).tags.values_list('tag', flat=True))
 
 
 class EntityManager(models.Manager):

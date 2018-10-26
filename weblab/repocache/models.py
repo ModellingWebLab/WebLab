@@ -82,6 +82,18 @@ class CachedEntityVersion(VisibilityModelMixin):
         self.visibility = visibility
         self.save()
 
+    def tag(self, tagname):
+        """
+        Add a tag for this version
+
+        :param tagname: Tag name
+        """
+        return CachedEntityTag.objects.create(
+            entity=self.entity,
+            version=self,
+            tag=tagname,
+        )
+
 
 class CachedEntityTag(models.Model):
     """
@@ -89,7 +101,7 @@ class CachedEntityTag(models.Model):
     """
     entity = models.ForeignKey(CachedEntity, related_name='tags')
     tag = models.CharField(max_length=255)
-    version = models.ForeignKey(CachedEntityVersion)
+    version = models.ForeignKey(CachedEntityVersion, related_name='tags')
 
     class Meta:
         unique_together = ['entity', 'tag']

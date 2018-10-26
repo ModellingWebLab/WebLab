@@ -81,10 +81,24 @@ class TestEntity:
 
         assert model.get_version_visibility('test-sha') == 'restricted'
 
-    def test_set_version_visibility_updates_cache(self, model_with_version):
-        model = model_with_version
+    def test_set_version_visibility_updates_cache(self, helpers):
+        model = recipes.model.make()
+        sha = helpers.add_version(model).hexsha
+
         populate_entity_cache(model)
 
-        model.set_version_visibility('latest', 'restricted')
+        model.set_version_visibility(sha, 'restricted')
 
         assert model.cachedentity.versions.get().visibility == 'restricted'
+
+    def test_add_tag(self, helpers):
+        model = recipes.model.make()
+        sha = helpers.add_version(model).hexsha
+        populate_entity_cache(model)
+
+        model.add_tag('mytag', sha)
+
+        assert model.cachedentity.tags.get().tag == 'mytag'
+        assert model.repo.tag_dict[sha][0].name == 'mytag'
+
+        assert model.get_tags(sha) == {'mytag'}

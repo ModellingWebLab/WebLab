@@ -87,12 +87,11 @@ class VersionMixin:
 
     def get_context_data(self, **kwargs):
         entity = self.get_object()
-        tags = entity.repo.tag_dict
         commit = self.get_commit()
         kwargs.update(**{
             'version': commit,
             'visibility': entity.get_version_visibility(commit.hexsha),
-            'tags': tags.get(commit.hexsha, []),
+            'tags': entity.get_tags(commit.hexsha),
             'master_filename': commit.master_filename,
         })
         return super().get_context_data(**kwargs)
@@ -316,12 +315,12 @@ class EntityTagVersionView(
         Called by Django when a form is submitted.
         """
         form = self.get_form()
-        entity = self.object = self.get_object()
         if form.is_valid():
-            version = self.kwargs['sha']
+            entity = self.object = self.get_object()
+            commit = self.get_commit()
             tag = form.cleaned_data['tag']
             try:
-                entity.repo.tag(tag, ref=version)
+                entity.add_tag(tag, commit.hexsha)
             except GitCommandError as e:
                 msg = e.stderr.strip().split(':', 1)[1][2:-1]
                 form.add_error('tag', msg)
