@@ -152,9 +152,7 @@ class TestEntityVersionView:
         response = client.get(url)
         assert response.status_code == 200
         assert response.context['version'] == version
-        assert len(response.context['tags']) == len(tags)
-        for actual, expected in zip(response.context['tags'], tags):
-            assert actual == expected
+        assert set(response.context['tags']) == set(tags)
 
     def test_view_entity_version(self, client, user, helpers):
         model = recipes.model.make()
