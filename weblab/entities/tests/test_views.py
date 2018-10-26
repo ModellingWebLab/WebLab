@@ -454,11 +454,16 @@ class TestTagging:
 class TestEntityVersionList:
     def test_view_entity_version_list(self, client, user, helpers):
         model = recipes.model.make()
-        helpers.add_version(model, visibility='public')
+        commit1 = helpers.add_version(model, visibility='public')
+        commit2 = helpers.add_version(model, visibility='public')
+        model.add_tag('v1', commit2.hexsha)
 
         response = client.get('/entities/models/%d/versions/' % model.pk)
         assert response.status_code == 200
-        assert response.context['versions'] == [(None, model.repo.latest_commit)]
+        assert response.context['versions'] == [
+            (['v1'], commit2),
+            ([], commit1),
+        ]
 
 
 @pytest.mark.django_db

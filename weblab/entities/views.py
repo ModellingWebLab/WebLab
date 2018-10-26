@@ -479,8 +479,9 @@ class VersionListView(VisibilityMixin, DetailView):
         tags = entity.repo.tag_dict
         kwargs.update(**{
             'versions': list(
-                (tags.get(commit.hexsha), commit)
-                for commit in entity.repo.commits
+                (list(version.tags.values_list('tag', flat=True)),
+                 entity.repo.get_commit(version.sha))
+                for version in entity.cachedentity.versions.prefetch_related('tags')
             )
         })
         return super().get_context_data(**kwargs)
