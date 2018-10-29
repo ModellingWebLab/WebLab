@@ -2,7 +2,7 @@ import pytest
 from django.db.utils import IntegrityError
 
 from core import recipes
-from entities.models import ModelEntity, ProtocolEntity
+from entities.models import Entity, ModelEntity, ProtocolEntity
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedEntity
 from repocache.populate import populate_entity_cache
@@ -125,6 +125,11 @@ class TestEntity:
 
         with pytest.raises(RepoCacheMiss):
             model.get_ref_version_visibility('0'*40)
+
+    def test_is_valid_sha(self):
+        assert Entity._is_valid_sha('0'*40)
+        assert not Entity._is_valid_sha('0'*39)
+        assert not Entity._is_valid_sha('g'*40)
 
     def test_get_ref_version_visibility_invalid_tag(self, helpers):
         model = recipes.model.make()

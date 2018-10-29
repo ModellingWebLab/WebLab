@@ -1,4 +1,4 @@
-from django.db.models import Max
+from django.db.models import F, Max
 
 from .models import CachedEntityVersion
 
@@ -9,14 +9,16 @@ def get_public_entity_ids():
 
     :return: set of entity IDs
     """
-    return {
-        val['entity__entity_id']
-        for val in (CachedEntityVersion.objects.values(
-            'entity__entity_id')
-            .filter(visibility='public')
-            .annotate(Max('timestamp'))
-            .order_by('-timestamp'))
-    }
+    return set(
+        CachedEntityVersion.objects.annotate(
+            latest_ts=Max('entity__versions__timestamp')
+        ).filter(
+            timestamp=F('latest_ts'),
+            visibility='public',
+        ).values_list(
+            'entity__entity_id', flat=True
+        )
+    )
 
 
 def get_restricted_entity_ids():
@@ -25,11 +27,13 @@ def get_restricted_entity_ids():
 
     :return: set of entity IDs
     """
-    return {
-        val['entity__entity_id']
-        for val in (CachedEntityVersion.objects.values(
-            'entity__entity_id')
-            .filter(visibility='restricted')
-            .annotate(Max('timestamp'))
-            .order_by('-timestamp'))
-    }
+    return set(
+        CachedEntityVersion.objects.annotate(
+            latest_ts=Max('entity__versions__timestamp')
+        ).filter(
+            timestamp=F('latest_ts'),
+            visibility='restricted',
+        ).values_list(
+            'entity__entity_id', flat=True
+        )
+    )

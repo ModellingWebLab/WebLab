@@ -122,7 +122,8 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         return self.repocache.get_version(sha).visibility
 
-    def _is_valid_sha(self, ref):
+    @staticmethod
+    def _is_valid_sha(ref):
         if len(ref) == 40:
             try:
                 binascii.unhexlify(ref)

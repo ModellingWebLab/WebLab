@@ -28,6 +28,13 @@ def author():
     return User(full_name='Commit Author', email='author@example.com')
 
 
+@pytest.fixture
+def commit(repo, repo_file, author):
+    repo.add_file(repo_file)
+    commit = repo.commit('commit 1', author)
+    return commit
+
+
 class TestRepository:
     def test_create_and_delete(self, repo):
         repo.create()
@@ -133,18 +140,6 @@ class TestRepository:
         commit = repo.commit('commit 1', author)
         assert commit.master_filename == 'file.cellml'
 
-    def test_master_filename_is_none_if_no_manifest(self, repo, repo_file, author):
-        repo.add_file(repo_file)
-        commit = repo.commit('commit 1', author)
-        assert commit.master_filename is None
-
-    def test_master_filename_is_none_if_none_selected(self, repo, repo_file, author):
-        repo.add_file(repo_file)
-        commit = repo.commit('commit 1', author)
-        repo.generate_manifest()
-
-        assert commit.master_filename is None
-
 
 class TestCommit:
     def test_files(self, repo, repo_file, author):
@@ -164,10 +159,38 @@ class TestCommit:
         archive = repo.get_commit('latest').write_archive()
         assert zipfile.ZipFile(archive).namelist() == ['file.cellml']
 
-    def test_notes(self, repo, repo_file, author):
+    def test_master_filename_is_none_if_no_manifest(self, repo, repo_file, author):
         repo.add_file(repo_file)
         commit = repo.commit('commit 1', author)
+        assert commit.master_filename is None
 
+    def test_master_filename_is_none_if_none_selected(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        commit = repo.commit('commit 1', author)
+        repo.generate_manifest()
+
+        assert commit.master_filename is None
+
+    def test_notes(self, commit):
         assert commit.get_note() is None
         commit.add_note('Visibility: private')
         assert commit.get_note() == 'Visibility: private'
+
+    def test_properties(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        commit = repo.commit('commit 1', author)
+        assert commit.author.name == author.full_name
+        assert commit.author.email == author.email
+        assert commit.hexsha == commit._commit.hexsha
+        assert commit.message == 'commit 1'
+
+    def test_parents(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        commit1 = repo.commit('commit 1', author)
+
+        open(str(repo_file), 'w').write('updated contents')
+        repo.add_file(repo_file)
+        commit2 = repo.commit('commit 2', author)
+
+        assert list(commit2.parents) == [commit1]
+        assert list(commit2.self_and_parents) == [commit2, commit1]
