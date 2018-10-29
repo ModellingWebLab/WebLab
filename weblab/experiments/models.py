@@ -62,7 +62,10 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
     @property
     def visibility(self):
-        return get_joint_visibility(self.model.visibility, self.protocol.visibility)
+        return get_joint_visibility(
+            self.model.get_version_visibility(self.model_version),
+            self.protocol.get_version_visibility(self.protocol_version),
+        )
 
     @property
     def latest_version(self):
