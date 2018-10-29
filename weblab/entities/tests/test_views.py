@@ -208,6 +208,33 @@ class TestEntityVersionView:
         assert response.context['visibility'] == 'restricted'
         assert response.context['form'].initial.get('visibility') == 'restricted'
 
+    def test_cannot_access_invisible_version(self, client, logged_in_user, helpers):
+        model = recipes.model.make()
+        commit1 = helpers.add_version(model, visibility='private')
+        commit2 = helpers.add_version(model, visibility='public')
+        model.add_tag('tag1', commit1.hexsha)
+
+        response = client.get('/entities/models/%d/versions/%s' % (model.pk, commit1.hexsha))
+        assert response.status_code == 404
+
+        response = client.get('/entities/models/%d/versions/%s' % (model.pk, 'tag1'))
+        assert response.status_code == 404
+
+    def test_anonymous_cannot_access_invisible_version(self, client, helpers):
+        model = recipes.model.make()
+        commit1 = helpers.add_version(model, visibility='private')
+        commit2 = helpers.add_version(model, visibility='public')
+        model.add_tag('tag1', commit1.hexsha)
+
+        response = client.get('/entities/models/%d/versions/%s' % (model.pk, commit1.hexsha))
+        assert response.status_code == 302
+
+        response = client.get('/entities/models/%d/versions/%s' % (model.pk, 'tag1'))
+        assert response.status_code == 302
+
+    def test_404_for_version_not_in_cache(self, client, helpers):
+        pass
+
 
 @pytest.mark.django_db
 class TestEntityVersionChangeVisibilityView:
@@ -452,7 +479,7 @@ class TestTagging:
 
 @pytest.mark.django_db
 class TestEntityVersionList:
-    def test_view_entity_version_list(self, client, user, helpers):
+    def test_view_entity_version_list(self, client, helpers):
         model = recipes.model.make()
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='public')
@@ -463,6 +490,17 @@ class TestEntityVersionList:
         assert response.context['versions'] == [
             (['v1'], commit2),
             ([], commit1),
+        ]
+
+    def test_only_shows_visible_versions(self, client, helpers):
+        model = recipes.model.make()
+        commit1 = helpers.add_version(model, visibility='private')
+        commit2 = helpers.add_version(model, visibility='public')
+
+        response = client.get('/entities/models/%d/versions/' % model.pk)
+        assert response.status_code == 200
+        assert response.context['versions'] == [
+            ([], commit2),
         ]
 
 

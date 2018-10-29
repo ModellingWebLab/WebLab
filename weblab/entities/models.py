@@ -1,6 +1,8 @@
+import binascii
 from pathlib import Path
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
 from django.db import models
 
@@ -119,6 +121,33 @@ class Entity(UserCreatedModelMixin, models.Model):
         :return: string representing visibility
         """
         return self.repocache.get_version(sha).visibility
+
+    def _is_valid_sha(self, ref):
+        if len(ref) == 40:
+            try:
+                binascii.unhexlify(ref)
+                return True
+            except binascii.Error:
+                return False
+
+        return False
+
+    def get_ref_version_visibility(self, ref):
+        """
+        Get the visibility of the given entity version, with ref lookup
+
+        :param ref: ref of the relevant commit (SHA, tag or 'latest')
+        """
+        if ref == 'latest':
+            return self.repocache.visibility
+
+        if self._is_valid_sha(ref):
+            return self.get_version_visibility(ref)
+
+        try:
+            return self.repocache.tags.get(tag=ref).version.visibility
+        except ObjectDoesNotExist:
+            raise RepoCacheMiss("Entity version not found")
 
     def add_tag(self, tagname, ref):
         """

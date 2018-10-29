@@ -26,8 +26,9 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 
-from core.visibility import VisibilityMixin, visibility_check
+from core.visibility import Visibility, VisibilityMixin, visibility_check, visibility_query
 from experiments.models import Experiment
+from repocache.exceptions import RepoCacheMiss
 
 from .forms import (
     EntityChangeVisibilityForm,
@@ -68,13 +69,33 @@ class ProtocolEntityTypeMixin:
         return super().get_context_data(**kwargs)
 
 
-class VersionMixin:
+class EntityVersionMixin(VisibilityMixin):
     """
-    Mixin for including in pages describing a specific version
-    of an `Entity` object
+    Mixin for views describing a specific version of an `Entity` object
     """
 
+    def get_owner(self):
+        """
+        Entity ownership filters down to entity version
+        """
+        return self.get_object().author
+
+    def get_visibility(self):
+        """
+        Visibility comes from the entity version
+        """
+        try:
+            return self.get_object().get_ref_version_visibility(self.kwargs['sha'])
+        except RepoCacheMiss:
+            return Visibility.PRIVATE
+
     def get_commit(self):
+        """
+        Get the git commit applicable to this version
+
+        :return: `git.Commit` object
+        :raise: Http404 if commit not found
+        """
         if not hasattr(self, '_commit'):
             try:
                 self._commit = self.get_object().repo.get_commit(self.kwargs['sha'])
@@ -147,7 +168,7 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class EntityVersionView(VisibilityMixin, VersionMixin, DetailView):
+class EntityVersionView(EntityVersionMixin, DetailView):
     """
     View a version of an entity
     """
@@ -185,7 +206,7 @@ def get_file_type(filename):
     return extensions.get(ext[1:], 'Unknown')
 
 
-class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, View):
+class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
     def _file_json(self, blob):
         obj = self.get_object()
         commit = self.get_commit()
@@ -246,7 +267,7 @@ class ProtocolEntityVersionJsonView(ProtocolEntityTypeMixin, EntityVersionJsonVi
     pass
 
 
-class EntityVersionCompareView(VisibilityMixin, VersionMixin, DetailView):
+class EntityVersionCompareView(EntityVersionMixin, DetailView):
     context_object_name = 'entity'
     template_name = 'entities/entity_version_compare.html'
 
@@ -296,7 +317,7 @@ class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
 
 
 class EntityTagVersionView(
-    LoginRequiredMixin, FormMixin, VersionMixin, DetailView
+    LoginRequiredMixin, FormMixin, EntityVersionMixin, DetailView
 ):
     """Add a new tag to an existing version of an entity."""
     context_object_name = 'entity'
@@ -477,11 +498,22 @@ class VersionListView(VisibilityMixin, DetailView):
     def get_context_data(self, **kwargs):
         entity = self.get_object()
         tags = entity.repo.tag_dict
+
+        visibilities = [
+            Visibility.PUBLIC
+        ]
+        if self.request.user.is_authenticated:
+            visibilities.append(Visibility.RESTRICTED)
+            if self.request.user == entity.author:
+                visibilities.append(Visibility.PRIVATE)
+
         kwargs.update(**{
             'versions': list(
                 (list(version.tags.values_list('tag', flat=True)),
                  entity.repo.get_commit(version.sha))
-                for version in entity.cachedentity.versions.prefetch_related('tags')
+                for version in entity.cachedentity.versions.filter(
+                    visibility__in=visibilities
+                ).prefetch_related('tags')
             )
         })
         return super().get_context_data(**kwargs)
@@ -501,32 +533,23 @@ class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
     pass
 
 
-class EntityArchiveView(VisibilityMixin, SingleObjectMixin, VersionMixin, View):
+class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
     """
     Download a version of an entity as a COMBINE archive
     """
     model = Entity
 
-    def is_visible_to_anonymous(self, obj):
+    def check_access_token(self, token):
         """
-        Allow anonymous access to entity download under certain conditions
-
-        If an Authorization token is provided and it matches a RunningExperiment
-        linked to this entity, access is allowed.
+        Override to allow token based access to entity archive downloads -
+        must match a `RunningExperiment` object set up against the entity
         """
-        auth_header = self.request.META.get('HTTP_AUTHORIZATION')
-        if auth_header and auth_header.startswith('Token'):
-            token = auth_header[5:].strip()
-
-            entity_field = 'experiment_version__experiment__%s' % self.kwargs['entity_type']
-            from experiments.models import RunningExperiment
-            if RunningExperiment.objects.filter(
-                id=token,
-                **{entity_field: obj.id}
-            ).exists():
-                return True
-
-        return super().is_visible_to_anonymous(obj)
+        from experiments.models import RunningExperiment
+        entity_field = 'experiment_version__experiment__%s' % self.kwargs['entity_type']
+        return RunningExperiment.objects.filter(
+            id=token,
+            **{entity_field: self.get_object().id}
+        ).exists()
 
     def get(self, request, *args, **kwargs):
         entity = self.get_object()
@@ -576,7 +599,7 @@ class FileUploadView(View):
             return HttpResponseBadRequest(form.errors)
 
 
-class ChangeVisibilityView(UserPassesTestMixin, VersionMixin, DetailView):
+class ChangeVisibilityView(UserPassesTestMixin, EntityVersionMixin, DetailView):
     model = Entity
 
     # Raise a 403 error rather than redirecting to login,
@@ -613,7 +636,7 @@ class ChangeVisibilityView(UserPassesTestMixin, VersionMixin, DetailView):
         return JsonResponse(response)
 
 
-class EntityFileDownloadView(VisibilityMixin, VersionMixin, SingleObjectMixin, View):
+class EntityFileDownloadView(EntityVersionMixin, SingleObjectMixin, View):
     """
     Download an individual file from an entity version
     """

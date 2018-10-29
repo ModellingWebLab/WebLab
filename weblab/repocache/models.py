@@ -26,9 +26,13 @@ class CachedEntity(models.Model):
         :return: string representing visibility, or PRIVATE if no versions found
         """
         try:
-            return self.versions.latest().visibility
+            return self.latest_version.visibility
         except ObjectDoesNotExist:
             return Visibility.PRIVATE
+
+    @property
+    def latest_version(self):
+        return self.versions.latest()
 
     def get_version(self, sha):
         """
@@ -40,7 +44,10 @@ class CachedEntity(models.Model):
         :raise: RepoCacheMiss if entity does not exist in cache, or has no versions
         """
         try:
-            return self.versions.get(sha=sha)
+            if sha == 'latest':
+                return self.latest_version
+            else:
+                return self.versions.get(sha=sha)
         except ObjectDoesNotExist:
             raise RepoCacheMiss("Entity version not found")
 
