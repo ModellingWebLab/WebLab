@@ -50,6 +50,11 @@ def visibility_query(user):
 
 
 def visible_entity_ids(user):
+    """
+    Get IDs of entities which are visible to the given user
+
+    :return: set of entity IDs
+    """
     from repocache.entities import get_public_entity_ids, get_restricted_entity_ids
 
     public_entity_ids = get_public_entity_ids()

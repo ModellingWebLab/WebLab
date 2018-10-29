@@ -3,6 +3,8 @@ from django.db.utils import IntegrityError
 
 from core import recipes
 from entities.models import ModelEntity, ProtocolEntity
+from repocache.exceptions import RepoCacheMiss
+from repocache.models import CachedEntity
 from repocache.populate import populate_entity_cache
 
 
@@ -61,6 +63,23 @@ class TestEntity:
 
         assert model_with_version.get_version_visibility(commit.hexsha) == 'restricted'
 
+    def test_get_and_set_visibility_in_repo(self, helpers):
+        model = recipes.model.make()
+        commit = helpers.add_version(model, cache=False)
+        assert model.get_visibility_from_repo(commit) is None
+
+        model.set_visibility_in_repo(commit, 'restricted')
+        assert model.get_visibility_from_repo(commit) == 'restricted'
+        assert commit.get_note() == 'Visibility: restricted'
+
+    def test_get_repocache(self):
+        model = recipes.model.make()
+        assert CachedEntity.objects.count() == 0
+        assert model.repocache
+        assert CachedEntity.objects.count() == 1
+        assert model.repocache
+        assert CachedEntity.objects.count() == 1
+
     def test_entity_visibility_gets_latest_visibility_from_cache(self):
         model = recipes.model.make()
         recipes.cached_entity_version.make(
@@ -90,6 +109,29 @@ class TestEntity:
         model.set_version_visibility(sha, 'restricted')
 
         assert model.cachedentity.versions.get().visibility == 'restricted'
+
+    def test_get_ref_version_visibility(self, helpers):
+        model = recipes.model.make()
+        sha = helpers.add_version(model, visibility='restricted').hexsha
+        model.add_tag('v1', sha)
+
+        assert model.get_ref_version_visibility(sha) == 'restricted'
+        assert model.get_ref_version_visibility('v1') == 'restricted'
+        assert model.get_ref_version_visibility('latest') == 'restricted'
+
+    def test_get_ref_version_visibility_invalid_hexsha(self, helpers):
+        model = recipes.model.make()
+        sha = helpers.add_version(model, visibility='restricted').hexsha
+
+        with pytest.raises(RepoCacheMiss):
+            model.get_ref_version_visibility('0'*40)
+
+    def test_get_ref_version_visibility_invalid_tag(self, helpers):
+        model = recipes.model.make()
+        sha = helpers.add_version(model, visibility='restricted').hexsha
+
+        with pytest.raises(RepoCacheMiss):
+            model.get_ref_version_visibility('v10')
 
     def test_add_tag(self, helpers):
         model = recipes.model.make()
