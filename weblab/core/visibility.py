@@ -142,6 +142,6 @@ class VisibilityMixin(AccessMixin):
             # For logged in user, raise a 404
             raise Http404
         else:
-            # For logged in user, raise a 404
+            # For anonymous user, redirect to login page
             return self.handle_no_permission()
 
