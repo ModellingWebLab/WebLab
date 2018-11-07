@@ -26,7 +26,7 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 
-from core.visibility import Visibility, VisibilityMixin, visibility_check, visibility_query
+from core.visibility import Visibility, VisibilityMixin, visibility_check
 from experiments.models import Experiment
 from repocache.exceptions import RepoCacheMiss
 

@@ -38,17 +38,6 @@ def get_joint_visibility(*visibilities):
     )]
 
 
-def visibility_query(user):
-    """Get a query filter for whether the given user can see something
-
-    This also handles the case of non-logged-in users.
-    """
-    if user.is_authenticated:
-        return Q(author=user) | ~Q(visibility=Visibility.PRIVATE)
-    else:
-        return Q(visibility=Visibility.PUBLIC)
-
-
 def visible_entity_ids(user):
     """
     Get IDs of entities which are visible to the given user
