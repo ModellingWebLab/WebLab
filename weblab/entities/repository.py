@@ -66,7 +66,7 @@ class Repository:
         :param message: Commit message
         :param author: `User` who is authoring (and committing) the changes
 
-        :return: `git.Commit` object
+        :return: `Commit` object
         """
         return Commit(self, self._repo.index.commit(
             message,
@@ -110,7 +110,7 @@ class Repository:
         """
         Mapping of commits to git tags in the entity repository
 
-        :return: dict of the form { `git.Commit`: ['tag_name'] }
+        :return: dict of the form { 'commit_sha': ['tag_name'] }
         """
         tags = {}
         for tag in self._repo.tags:
@@ -141,7 +141,7 @@ class Repository:
         """
         Latest commit
 
-        :return: `git.Commit` object or `None` if no commits
+        :return: `Commit` object or `None` if no commits
         """
         return Commit(self, self._repo.head.commit) if self._repo.head.is_valid() else None
 
@@ -151,7 +151,7 @@ class Repository:
 
         :param version: Reference to a commit
 
-        :return `git.Commit` object
+        :return `Commit` object
         """
         if version == 'latest':
             return self.latest_commit
@@ -161,7 +161,7 @@ class Repository:
     @property
     def commits(self):
         """
-        :return iterable of `git.Commit` objects in the entity repository
+        :return iterable of `Commit` objects in the entity repository
         """
         if self._repo.head.is_valid():
             return (Commit(self, c) for c in self._repo.iter_commits())
@@ -204,9 +204,19 @@ class Repository:
 
 
 class Commit:
+    """
+    Wrapper class for `git.Commit`
+    """
+
+    # This corresponds to the '--ref' parameter in `git notes` and allows
+    # all weblab notes to be kept in their own store.
     NOTE_REF = 'weblab'
 
     def __init__(self, repo, commit):
+        """
+        :param repo: `Repository` object
+        :param commit: `git.Commit` object
+        """
         self._repo = repo
         self._commit = commit
 
@@ -215,23 +225,25 @@ class Commit:
         """
         All filenames in this commit
 
-        :return: set of all filenames in this commit
+        :return: set of filenames
         """
         return {blob.name for blob in self.files}
 
     @property
     def files(self):
         """
-        :return: iterable of all files in this commit
+        All files in this commit
+
+        :return: iterable of `git.Blob` objects
         """
         return self._commit.tree.blobs
 
-    def get_blob(self, filename, ref='HEAD'):
+    def get_blob(self, filename):
         """
         Get a file from the commit in blob form
 
         :param filename: Name of file to retrieve
-        :return: `git.Blob` object or none if file not found
+        :return: `git.Blob` object or None if file not found
         """
         for blob in self.files:
             if blob.name == filename:
