@@ -40,6 +40,7 @@ def populate_entity_cache(entity):
             # encountered) commits which have no visibility info
             for sha in commits_without_visibility:
                 entity.set_version_visibility(sha, visibility)
+            commits_without_visibility = []
         else:
             commits_without_visibility.append(commit.hexsha)
 

@@ -40,12 +40,14 @@ class TestPopulate:
         v1 = helpers.add_version(model, visibility='restricted', cache=False)
         v2 = helpers.add_version(model, cache=False)
         v3 = helpers.add_version(model, visibility='public', cache=False)
+        v4 = helpers.add_version(model, cache=False)
 
         populate_entity_cache(model)
 
         assert model.repocache.get_version(v1.hexsha).visibility == 'restricted'
         assert model.repocache.get_version(v2.hexsha).visibility == 'restricted'
         assert model.repocache.get_version(v3.hexsha).visibility == 'public'
+        assert model.repocache.get_version(v4.hexsha).visibility == 'public'
 
     def test_falls_back_to_private(self, helpers):
         model = recipes.model.make()
