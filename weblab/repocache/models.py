@@ -39,6 +39,7 @@ class CachedEntity(models.Model):
         Get a version of the entity
 
         :param sha: hex string of the commit SHA of the version
+            or 'latest' to get the latest version
 
         :return: CachedEntityVersion object
         :raise: RepoCacheMiss if entity does not exist in cache, or has no versions
