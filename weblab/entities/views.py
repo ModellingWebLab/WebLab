@@ -453,7 +453,7 @@ class EntityNewVersionView(
                     return self.fail_with_git_errors([e.stderr])
 
             visibility = request.POST['visibility']
-            entity.set_version_visibility(commit.hexsha, visibility)
+            entity.set_visibility_in_repo(commit, visibility)
             entity.repocache.add_version(commit.hexsha)
 
             # Temporary upload files have been safely committed, so can be deleted

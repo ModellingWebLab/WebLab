@@ -106,10 +106,7 @@ class Entity(UserCreatedModelMixin, models.Model):
         commit = self.repo.get_commit(commit)
         self.set_visibility_in_repo(commit, visibility)
 
-        try:
-            self.repocache.get_version(commit.hexsha).set_visibility(visibility)
-        except RepoCacheMiss:
-            pass
+        self.repocache.get_version(commit.hexsha).set_visibility(visibility)
 
     def get_version_visibility(self, sha):
         """
