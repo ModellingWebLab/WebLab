@@ -123,7 +123,7 @@ class VisibilityMixin(AccessMixin):
             if visibility == Visibility.PUBLIC:
                 allow_access = True
 
-            if self.request.user.is_authenticated:
+            elif self.request.user.is_authenticated:
                 # Logged in user can view all except other people's private stuff
                 allow_access = (
                     owner == self.request.user or

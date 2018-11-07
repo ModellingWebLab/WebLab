@@ -854,6 +854,20 @@ class TestEntityArchiveView:
         archive = zipfile.ZipFile(BytesIO(response.content))
         assert archive.filelist[0].filename == 'file1.txt'
 
+    def test_public_entity_still_visible_with_invalid_token(self, client, queued_experiment):
+        model = queued_experiment.experiment.model
+        queued_experiment.experiment.model.set_version_visibility('latest', 'public')
+
+        import uuid
+        response = client.get(
+            '/entities/models/%d/versions/latest/archive' % model.pk,
+            HTTP_AUTHORIZATION='Token {}'.format(uuid.uuid4())
+        )
+
+        assert response.status_code == 200
+        archive = zipfile.ZipFile(BytesIO(response.content))
+        assert archive.filelist[0].filename == 'file1.txt'
+
 
 @pytest.mark.django_db
 class TestFileUpload:
@@ -942,6 +956,11 @@ class TestEntityVisibility:
         assert '/login' in response.url
 
     def test_public_entity_visible_to_anonymous(self, client, helpers, recipe, url):
+        entity = recipe.make()
+        helpers.add_version(entity, visibility='public')
+        assert client.get(url % entity.pk, follow=True).status_code == 200
+
+    def test_public_entity_visible_to_logged_in_user(self, client, user, helpers, recipe, url):
         entity = recipe.make()
         helpers.add_version(entity, visibility='public')
         assert client.get(url % entity.pk, follow=True).status_code == 200
