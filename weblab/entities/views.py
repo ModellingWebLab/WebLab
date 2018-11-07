@@ -87,7 +87,7 @@ class EntityVersionMixin(VisibilityMixin):
         try:
             return self.get_object().get_ref_version_visibility(self.kwargs['sha'])
         except RepoCacheMiss:
-            return Visibility.PRIVATE
+            raise Http404
 
     def get_commit(self):
         """

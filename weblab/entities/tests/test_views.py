@@ -232,8 +232,39 @@ class TestEntityVersionView:
         response = client.get('/entities/models/%d/versions/%s' % (model.pk, 'tag1'))
         assert response.status_code == 302
 
+    def test_no_token_access(self, client, queued_experiment):
+        model = queued_experiment.experiment.model
+        sha = model.repo.latest_commit.hexsha
+        queued_experiment.experiment.model.set_version_visibility(sha, 'private')
+
+        response = client.get(
+            '/entities/models/%d/versions/%s' % (model.pk, sha),
+            HTTP_AUTHORIZATION='Token {}'.format(queued_experiment.signature)
+        )
+
+        assert response.status_code == 302
+
     def test_404_for_version_not_in_cache(self, client, helpers):
-        pass
+        model = recipes.model.make()
+        commit = helpers.add_version(model, visibility='public', cache=False)
+
+        response = client.get(
+            '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha)
+        )
+        assert response.status_code == 404
+
+    def test_404_for_version_not_in_repo(self, client, helpers):
+        model = recipes.model.make()
+        recipes.cached_entity_version.make(
+            entity__entity=model,
+            sha='test-sha',
+            visibility='public'
+        )
+
+        response = client.get(
+            '/entities/models/%d/versions/%s' % (model.pk, 'test-sha')
+        )
+        assert response.status_code == 404
 
 
 @pytest.mark.django_db
