@@ -100,6 +100,15 @@ class TestEntity:
 
         assert model.get_version_visibility('test-sha') == 'restricted'
 
+    def test_get_version_visiblity_uses_default(self):
+        model = recipes.model.make()
+        model.get_version_visibility('non-existent-sha', default='private') == 'private'
+
+    def test_get_version_visiblity_raises_if_no_default(self):
+        model = recipes.model.make()
+        with pytest.raises(RepoCacheMiss):
+            model.get_version_visibility('non-existent-sha')
+
     def test_set_version_visibility_updates_cache(self, helpers):
         model = recipes.model.make()
         sha = helpers.add_version(model).hexsha

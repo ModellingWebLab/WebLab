@@ -111,7 +111,7 @@ class EntityVersionMixin(VisibilityMixin):
         commit = self.get_commit()
         kwargs.update(**{
             'version': commit,
-            'visibility': entity.get_version_visibility(commit.hexsha),
+            'visibility': self.get_visibility(),
             'tags': entity.get_tags(commit.hexsha),
             'master_filename': commit.master_filename,
         })

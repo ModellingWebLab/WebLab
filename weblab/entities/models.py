@@ -108,16 +108,25 @@ class Entity(UserCreatedModelMixin, models.Model):
 
         self.repocache.get_version(commit.hexsha).set_visibility(visibility)
 
-    def get_version_visibility(self, sha):
+    def get_version_visibility(self, sha, default=None):
         """
         Get the visibility of the given entity version
 
         This is fetched from the repocache
 
         :param sha: SHA of the relevant commit
+        :param default: Default visibility if no entry found - defaults to `None`
+
         :return: string representing visibility
+        :raise: RepoCacheMiss if entry not found and no default set
         """
-        return self.repocache.get_version(sha).visibility
+        try:
+            return self.repocache.get_version(sha).visibility
+        except RepoCacheMiss:
+            if default is not None:
+                return default
+            else:
+                raise
 
     @staticmethod
     def _is_valid_sha(ref):
