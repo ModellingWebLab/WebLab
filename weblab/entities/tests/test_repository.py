@@ -4,6 +4,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from git import GitCommandError
 
 from accounts.models import User
 from entities.repository import Repository
@@ -70,6 +71,11 @@ class TestRepository:
         repo.tag('v1')
 
         assert repo.tag_dict[commit.hexsha][0].name == 'v1'
+
+        # A tag cannot be reused / moved
+        repo.commit('second commit', author)
+        with pytest.raises(GitCommandError):
+            repo.tag('v1')
 
     def test_name_for_commit(self, repo, repo_file, author):
         repo.add_file(repo_file)
