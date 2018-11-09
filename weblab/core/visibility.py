@@ -1,5 +1,4 @@
 from django.contrib.auth.mixins import AccessMixin
-from django.db.models import Q
 from django.http import Http404
 
 
@@ -144,4 +143,3 @@ class VisibilityMixin(AccessMixin):
         else:
             # For anonymous user, redirect to login page
             return self.handle_no_permission()
-
