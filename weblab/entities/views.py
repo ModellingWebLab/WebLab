@@ -389,6 +389,7 @@ class EntityNewVersionView(
         delete_file = self.request.GET.get('deletefile')
         if delete_file:
             initial['commit_message'] = 'Delete %s' % delete_file
+        initial['visibility'] = self.get_object().visibility
         return initial
 
     def get_context_data(self, **kwargs):

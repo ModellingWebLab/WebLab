@@ -554,11 +554,12 @@ class TestEntityList:
 class TestVersionCreation:
     def test_new_version_form_includes_latest_version(self, client, user, helpers):
         model = recipes.model.make()
-        commit = helpers.add_version(model)
+        commit = helpers.add_version(model, visibility='public')
         add_permission(user, 'create_model_version')
         response = client.get('/entities/models/%d/versions/new' % model.pk)
         assert response.status_code == 200
         assert response.context['latest_version'] == commit
+        assert b'option value="public" selected' in response.content
 
     def test_no_latest_version(self, client, user):
         add_permission(user, 'create_model_version')
@@ -566,6 +567,7 @@ class TestVersionCreation:
         response = client.get('/entities/models/%d/versions/new' % model.pk)
         assert response.status_code == 200
         assert 'latest_version' not in response.context
+        assert b'option value="private" selected' in response.content
 
     def test_create_model_version(self, user, client):
         add_permission(user, 'create_model_version')
