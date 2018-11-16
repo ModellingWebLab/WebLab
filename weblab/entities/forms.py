@@ -42,6 +42,10 @@ class ProtocolEntityForm(EntityForm):
 
 
 class EntityVersionForm(forms.Form):
+    visibility = forms.ChoiceField(
+        choices=visibility.CHOICES,
+        help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
+    )
     tag = forms.CharField(
         help_text='Optional short label for this version',
         required=False)
