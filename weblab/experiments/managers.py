@@ -1,6 +1,6 @@
 from django.db import models
 
-from core.visibility import visibility_query
+from core.visibility import visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
 
 
@@ -9,9 +9,9 @@ class ExperimentVersionManager(models.Manager):
         """
         Get a queryset of experiments visible to the given user
         """
-        vis_query = visibility_query(user)
-        visible_models = ModelEntity.objects.filter(vis_query)
-        visible_protocols = ProtocolEntity.objects.filter(vis_query)
+        visible_ids = visible_entity_ids(user)
+        visible_models = ModelEntity.objects.filter(pk__in=visible_ids)
+        visible_protocols = ProtocolEntity.objects.filter(pk__in=visible_ids)
         return self.get_queryset().filter(
             experiment__model__in=visible_models,
             experiment__protocol__in=visible_protocols,

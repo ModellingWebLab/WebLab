@@ -1,7 +1,6 @@
 import mimetypes
 import os.path
 import shutil
-from datetime import datetime
 from itertools import groupby
 
 from braces.views import UserFormKwargsMixin
@@ -27,10 +26,12 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 
-from core.visibility import VisibilityMixin, visibility_check
+from core.visibility import Visibility, VisibilityMixin, visibility_check
 from experiments.models import Experiment
+from repocache.exceptions import RepoCacheMiss
 
 from .forms import (
+    EntityChangeVisibilityForm,
     EntityTagVersionForm,
     EntityVersionForm,
     FileUploadForm,
@@ -68,13 +69,33 @@ class ProtocolEntityTypeMixin:
         return super().get_context_data(**kwargs)
 
 
-class VersionMixin:
+class EntityVersionMixin(VisibilityMixin):
     """
-    Mixin for including in pages describing a specific version
-    of an `Entity` object
+    Mixin for views describing a specific version of an `Entity` object
     """
 
+    def get_owner(self):
+        """
+        Entity ownership filters down to entity version
+        """
+        return self.get_object().author
+
+    def get_visibility(self):
+        """
+        Visibility comes from the entity version
+        """
+        try:
+            return self.get_object().get_ref_version_visibility(self.kwargs['sha'])
+        except RepoCacheMiss:
+            raise Http404
+
     def get_commit(self):
+        """
+        Get the git commit applicable to this version
+
+        :return: `git.Commit` object
+        :raise: Http404 if commit not found
+        """
         if not hasattr(self, '_commit'):
             try:
                 self._commit = self.get_object().repo.get_commit(self.kwargs['sha'])
@@ -87,12 +108,12 @@ class VersionMixin:
 
     def get_context_data(self, **kwargs):
         entity = self.get_object()
-        tags = entity.repo.tag_dict
         commit = self.get_commit()
         kwargs.update(**{
             'version': commit,
-            'tags': tags.get(commit, []),
-            'master_filename': entity.repo.master_filename(commit),
+            'visibility': self.get_visibility(),
+            'tags': entity.get_tags(commit.hexsha),
+            'master_filename': commit.master_filename,
         })
         return super().get_context_data(**kwargs)
 
@@ -147,24 +168,28 @@ class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListVi
         return self.model.objects.filter(author=self.request.user)
 
 
-class ModelEntityVersionView(
-    VisibilityMixin, ModelEntityTypeMixin, VersionMixin, DetailView
-):
+class EntityVersionView(EntityVersionMixin, DetailView):
     """
-    View a version of a model
+    View a version of an entity
     """
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
 
+    def get_context_data(self, **kwargs):
+        entity = self.get_object()
+        visibility = entity.get_version_visibility(self.get_commit().hexsha)
+        kwargs['form'] = EntityChangeVisibilityForm(initial={
+            'visibility': visibility,
+        })
+        return super().get_context_data(**kwargs)
 
-class ProtocolEntityVersionView(
-    VisibilityMixin, ProtocolEntityTypeMixin, VersionMixin, DetailView
-):
-    """
-    View a version of a protocol
-    """
-    context_object_name = 'entity'
-    template_name = 'entities/entity_version.html'
+
+class ModelEntityVersionView(ModelEntityTypeMixin, EntityVersionView):
+    pass
+
+
+class ProtocolEntityVersionView(ProtocolEntityTypeMixin, EntityVersionView):
+    pass
 
 
 def get_file_type(filename):
@@ -181,7 +206,7 @@ def get_file_type(filename):
     return extensions.get(ext[1:], 'Unknown')
 
 
-class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, View):
+class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
     def _file_json(self, blob):
         obj = self.get_object()
         commit = self.get_commit()
@@ -191,7 +216,7 @@ class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, Vi
             'name': blob.name,
             'filetype': get_file_type(blob.name),
             'size': blob.size,
-            'created': datetime.fromtimestamp(commit.committed_date),
+            'created': commit.committed_at,
             'url': reverse(
                 'entities:%s_file_download' % obj.entity_type,
                 args=[obj.id, commit.hexsha, blob.name]
@@ -204,7 +229,7 @@ class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, Vi
 
         files = [
             self._file_json(f)
-            for f in commit.tree.blobs
+            for f in commit.files
             if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
         return JsonResponse({
@@ -212,8 +237,8 @@ class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, Vi
                 'id': commit.hexsha,
                 'author': obj.author.full_name,
                 'entityId': obj.id,
-                'visibility': obj.visibility,
-                'created': datetime.fromtimestamp(commit.committed_date),
+                'visibility': obj.get_version_visibility(commit.hexsha),
+                'created': commit.committed_at,
                 'name': obj.name,
                 'version': obj.repo.get_name_for_commit(commit.hexsha),
                 'files': files,
@@ -224,6 +249,10 @@ class EntityVersionJsonView(VisibilityMixin, VersionMixin, SingleObjectMixin, Vi
                 ),
                 'download_url': reverse(
                     'entities:entity_archive',
+                    args=[obj.entity_type, obj.id, commit.hexsha]
+                ),
+                'change_url': reverse(
+                    'entities:change_visibility',
                     args=[obj.entity_type, obj.id, commit.hexsha]
                 ),
             }
@@ -238,7 +267,7 @@ class ProtocolEntityVersionJsonView(ProtocolEntityTypeMixin, EntityVersionJsonVi
     pass
 
 
-class EntityVersionCompareView(VisibilityMixin, VersionMixin, DetailView):
+class EntityVersionCompareView(EntityVersionMixin, DetailView):
     context_object_name = 'entity'
     template_name = 'entities/entity_version_compare.html'
 
@@ -288,7 +317,7 @@ class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
 
 
 class EntityTagVersionView(
-    LoginRequiredMixin, FormMixin, VersionMixin, DetailView
+    LoginRequiredMixin, FormMixin, EntityVersionMixin, DetailView
 ):
     """Add a new tag to an existing version of an entity."""
     context_object_name = 'entity'
@@ -307,12 +336,12 @@ class EntityTagVersionView(
         Called by Django when a form is submitted.
         """
         form = self.get_form()
-        entity = self.object = self.get_object()
         if form.is_valid():
-            version = self.kwargs['sha']
+            entity = self.object = self.get_object()
+            commit = self.get_commit()
             tag = form.cleaned_data['tag']
             try:
-                entity.repo.tag(tag, ref=version)
+                entity.add_tag(tag, commit.hexsha)
             except GitCommandError as e:
                 msg = e.stderr.strip().split(':', 1)[1][2:-1]
                 form.add_error('tag', msg)
@@ -368,7 +397,7 @@ class EntityNewVersionView(
         if latest:
             kwargs.update(**{
                 'latest_version': latest,
-                'master_filename': entity.repo.master_filename(),
+                'master_filename': latest.master_filename,
             })
 
         kwargs['delete_file'] = self.request.GET.get('deletefile')
@@ -413,7 +442,7 @@ class EntityNewVersionView(
 
         if entity.repo.has_changes:
             # Commit and tag the repo
-            entity.repo.commit(request.POST['commit_message'], request.user)
+            commit = entity.repo.commit(request.POST['commit_message'], request.user)
             if request.POST['tag']:
                 try:
                     entity.repo.tag(request.POST['tag'])
@@ -422,6 +451,10 @@ class EntityNewVersionView(
                     for f in entity.repo.untracked_files:
                         os.remove(str(entity.repo_abs_path / f))
                     return self.fail_with_git_errors([e.stderr])
+
+            visibility = request.POST['visibility']
+            entity.set_visibility_in_repo(commit, visibility)
+            entity.repocache.add_version(commit.hexsha)
 
             # Temporary upload files have been safely committed, so can be deleted
             for filename in files_to_delete:
@@ -465,10 +498,22 @@ class VersionListView(VisibilityMixin, DetailView):
     def get_context_data(self, **kwargs):
         entity = self.get_object()
         tags = entity.repo.tag_dict
+
+        visibilities = [
+            Visibility.PUBLIC
+        ]
+        if self.request.user.is_authenticated:
+            visibilities.append(Visibility.RESTRICTED)
+            if self.request.user == entity.author:
+                visibilities.append(Visibility.PRIVATE)
+
         kwargs.update(**{
             'versions': list(
-                (tags.get(commit), commit)
-                for commit in entity.repo.commits
+                (list(version.tags.values_list('tag', flat=True)),
+                 entity.repo.get_commit(version.sha))
+                for version in entity.cachedentity.versions.filter(
+                    visibility__in=visibilities
+                ).prefetch_related('tags')
             )
         })
         return super().get_context_data(**kwargs)
@@ -488,32 +533,23 @@ class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
     pass
 
 
-class EntityArchiveView(VisibilityMixin, SingleObjectMixin, VersionMixin, View):
+class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
     """
     Download a version of an entity as a COMBINE archive
     """
     model = Entity
 
-    def is_visible_to_anonymous(self, obj):
+    def check_access_token(self, token):
         """
-        Allow anonymous access to entity download under certain conditions
-
-        If an Authorization token is provided and it matches a RunningExperiment
-        linked to this entity, access is allowed.
+        Override to allow token based access to entity archive downloads -
+        must match a `RunningExperiment` object set up against the entity
         """
-        auth_header = self.request.META.get('HTTP_AUTHORIZATION')
-        if auth_header and auth_header.startswith('Token'):
-            token = auth_header[5:].strip()
-
-            entity_field = 'experiment_version__experiment__%s' % self.kwargs['entity_type']
-            from experiments.models import RunningExperiment
-            if RunningExperiment.objects.filter(
-                id=token,
-                **{entity_field: obj.id}
-            ).exists():
-                return True
-
-        return super().is_visible_to_anonymous(obj)
+        from experiments.models import RunningExperiment
+        entity_field = 'experiment_version__experiment__%s' % self.kwargs['entity_type']
+        return RunningExperiment.objects.filter(
+            id=token,
+            **{entity_field: self.get_object().id}
+        ).exists()
 
     def get(self, request, *args, **kwargs):
         entity = self.get_object()
@@ -523,7 +559,7 @@ class EntityArchiveView(VisibilityMixin, SingleObjectMixin, VersionMixin, View):
             get_valid_filename('%s_%s.zip' % (entity.name, commit.hexsha))
         )
 
-        archive = entity.repo.archive(self.kwargs['sha'])
+        archive = commit.write_archive()
 
         response = HttpResponse(content_type='application/zip')
         response['Content-Disposition'] = 'attachment; filename=%s' % zipfile_name
@@ -563,13 +599,49 @@ class FileUploadView(View):
             return HttpResponseBadRequest(form.errors)
 
 
-class EntityFileDownloadView(VisibilityMixin, VersionMixin, SingleObjectMixin, View):
+class ChangeVisibilityView(UserPassesTestMixin, EntityVersionMixin, DetailView):
+    model = Entity
+
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have the correct permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_visibility_editable_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Check the form and possibly set the visibility
+
+        Called by Django when a form is submitted.
+        """
+        form = EntityChangeVisibilityForm(self.request.POST)
+        if form.is_valid():
+            obj = self.get_object()
+            sha = self.kwargs['sha']
+            obj.set_version_visibility(sha, self.request.POST['visibility'])
+            response = {
+                'updateVisibility': {
+                    'response': True,
+                    'responseText': 'successfully updated',
+                }
+            }
+        else:
+            response = {
+                'notifications': {
+                    'errors': ['updating visibility failed']
+                }
+            }
+
+        return JsonResponse(response)
+
+
+class EntityFileDownloadView(EntityVersionMixin, SingleObjectMixin, View):
     """
     Download an individual file from an entity version
     """
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
-        entity = self.get_object()
         version = self.get_commit()
 
         content_type, _ = mimetypes.guess_type(filename)
@@ -578,7 +650,7 @@ class EntityFileDownloadView(VisibilityMixin, VersionMixin, SingleObjectMixin, V
 
         response = HttpResponse(content_type=content_type)
         response['Content-Disposition'] = 'attachment; filename=%s' % filename
-        blob = entity.repo.get_blob(filename, version.hexsha)
+        blob = version.get_blob(filename)
         if blob:
             response.write(blob.data_stream.read())
         else:

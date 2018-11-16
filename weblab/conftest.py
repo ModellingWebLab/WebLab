@@ -3,6 +3,7 @@ from django.contrib.auth.models import AnonymousUser
 
 from accounts.models import User
 from core import recipes
+from repocache.populate import populate_entity_cache
 
 
 class Helpers:
@@ -10,7 +11,7 @@ class Helpers:
     Helper functions for tests - this can be passed into tests via a fixture
     """
     @staticmethod
-    def add_version(entity, filename='file1.txt', tag_name=None):
+    def add_version(entity, filename='file1.txt', tag_name=None, visibility=None, cache=True):
         """Add a single commit/version to an entity"""
         entity.repo.create()
         in_repo_path = str(entity.repo_abs_path / filename)
@@ -19,7 +20,15 @@ class Helpers:
         commit = entity.repo.commit('file', User(full_name='author', email='author@example.com'))
         if tag_name:
             entity.repo.tag(tag_name)
+        if visibility:
+            entity.set_visibility_in_repo(commit, visibility)
+        if cache:
+            populate_entity_cache(entity)
         return commit
+
+    @staticmethod
+    def login(client, user):
+        client.login(username=user.email, password='password')
 
 
 @pytest.fixture
@@ -51,14 +60,14 @@ def fake_repo_path(settings, tmpdir):
 @pytest.fixture
 def model_with_version():
     model = recipes.model.make()
-    Helpers.add_version(model)
+    Helpers.add_version(model, visibility='public')
     return model
 
 
 @pytest.fixture
 def protocol_with_version():
     protocol = recipes.protocol.make()
-    Helpers.add_version(protocol)
+    Helpers.add_version(protocol, visibility='public')
     return protocol
 
 

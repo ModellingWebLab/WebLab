@@ -1,9 +1,11 @@
 import os
+from datetime import datetime
 from pathlib import Path
 from shutil import rmtree
 
 from django.utils.functional import cached_property
-from git import Actor, Repo
+from django.utils.timezone import utc
+from git import Actor, GitCommandError, Repo
 
 from core.combine import (
     MANIFEST_FILENAME,
@@ -64,13 +66,13 @@ class Repository:
         :param message: Commit message
         :param author: `User` who is authoring (and committing) the changes
 
-        :return: `git.Commit` object
+        :return: `Commit` object
         """
-        return self._repo.index.commit(
+        return Commit(self, self._repo.index.commit(
             message,
             author=Actor(author.full_name, author.email),
             committer=Actor(author.full_name, author.email),
-        )
+        ))
 
     def tag(self, tag, *, ref='HEAD'):
         """
@@ -108,11 +110,11 @@ class Repository:
         """
         Mapping of commits to git tags in the entity repository
 
-        :return: dict of the form { `git.Commit`: ['tag_name'] }
+        :return: dict of the form { 'commit_sha': ['tag_name'] }
         """
         tags = {}
         for tag in self._repo.tags:
-            tags.setdefault(tag.commit, []).append(tag)
+            tags.setdefault(tag.commit.hexsha, []).append(tag)
         return tags
 
     def get_name_for_commit(self, version):
@@ -124,7 +126,7 @@ class Repository:
         """
         commit = self.get_commit(version)
         for tag in self._repo.tags:
-            if tag.commit == commit:
+            if tag.commit == commit._commit:
                 return tag.name
         return version
 
@@ -139,30 +141,32 @@ class Repository:
         """
         Latest commit
 
-        :return: `git.Commit` object or `None` if no commits
+        :return: `Commit` object or `None` if no commits
         """
-        return self._repo.head.commit if self._repo.head.is_valid() else None
+        return Commit(self, self._repo.head.commit) if self._repo.head.is_valid() else None
 
     def get_commit(self, version):
         """
         Get commit object relating to version
 
-        :param version: Revision specification (sha, branch name, tag etc.)
-            or 'latest' to get latest revision
+        :param version: Reference to a commit
 
-        :return `git.Commit` object
+        :return `Commit` object
         """
         if version == 'latest':
             return self.latest_commit
         else:
-            return self._repo.commit(version)
+            return Commit(self, self._repo.commit(version))
 
     @property
     def commits(self):
         """
-        :return iterable of `git.Commit` objects in the entity repository
+        :return iterable of `Commit` objects in the entity repository
         """
-        return self._repo.iter_commits()
+        if self._repo.head.is_valid():
+            return (Commit(self, c) for c in self._repo.iter_commits())
+        else:
+            return iter(())
 
     @property
     def manifest_path(self):
@@ -198,65 +202,145 @@ class Repository:
         writer.write(self.manifest_path)
         self.add_file(self.manifest_path)
 
-    def master_filename(self, ref=None):
+
+class Commit:
+    """
+    Wrapper class for `git.Commit`
+    """
+
+    # This corresponds to the '--ref' parameter in `git notes` and allows
+    # all weblab notes to be kept in their own store.
+    NOTE_REF = 'weblab'
+
+    def __init__(self, repo, commit):
         """
-        Get name of repository master file, as defined by COMBINE manifest
-
-        :return: master filename, or None if no master file or no manifest
+        :param repo: `Repository` object
+        :param commit: `git.Commit` object
         """
+        self._repo = repo
+        self._commit = commit
 
-        reader = ManifestReader()
-        if ref:
-            for file_ in self.files(ref):
-                if file_.name == MANIFEST_FILENAME:
-                    reader.read(file_.data_stream)
-        else:
-            try:
-                reader.read(self.manifest_path)
-            except FileNotFoundError:
-                pass
-
-        return reader.master_filename
-
-    def filenames(self, ref='HEAD'):
+    @property
+    def filenames(self):
         """
-        Get all filenames in repository
+        All filenames in this commit
 
-        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
-        :return: set of all filenames in repository
+        :return: set of filenames
         """
-        return {
-            blob.name
-            for blob in self.files(ref)
-        }
+        return {blob.name for blob in self.files}
 
-    def files(self, ref='HEAD'):
+    @property
+    def files(self):
         """
-        Get all files in repository
+        All files in this commit
 
-        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
-        :return: iterable of all files in repository
+        :return: iterable of `git.Blob` objects
         """
-        return self.get_commit(ref).tree.blobs
+        return self._commit.tree.blobs
 
-    def get_blob(self, filename, ref='HEAD'):
+    def get_blob(self, filename):
         """
-        Get a file from the repository in blob form
+        Get a file from the commit in blob form
 
         :param filename: Name of file to retrieve
-        :param ref: A reference to a specific commit, defaults to the latest
-        :return: `git.Blob` object or none if file not found
+        :return: `git.Blob` object or None if file not found
         """
-        for blob in self.files(ref):
+        for blob in self.files:
             if blob.name == filename:
                 return blob
 
-    def archive(self, ref='HEAD'):
+    def write_archive(self):
         """
-        Create a Combine Archive of all files in the repository
+        Create a Combine Archive of all files in this commit
 
-        :param ref: Reference to a commit, or `git.Commit`, defaults to the latest
+        :return: file handle to archive
         """
         return ArchiveWriter().write(
-            (self.full_path(fn), fn) for fn in self.filenames(ref)
+            (self._repo.full_path(fn), fn) for fn in self.filenames
         )
+
+    @property
+    def hexsha(self):
+        """
+        SHA of the commit
+
+        :return: hex string of the commit's SHA
+        """
+        return self._commit.hexsha
+
+    @property
+    def author(self):
+        """
+        Author of the commit
+
+        :return: String containing author name
+        """
+        return self._commit.author
+
+    @property
+    def message(self):
+        """
+        Commit message
+
+        :return: String containing commit message
+        """
+        return self._commit.message
+
+    def __eq__(self, other):
+        return other._commit == self._commit
+
+    @property
+    def committed_at(self):
+        """
+        Datetime representation of commit timestamp
+
+        :return: `datetime` object
+        """
+        return datetime.fromtimestamp(self._commit.committed_date).replace(tzinfo=utc)
+
+    @property
+    def master_filename(self):
+        """
+        Get name of master file on this commit, as defined by COMBINE manifest
+
+        :return: master filename, or None if no master file or no manifest
+        """
+        reader = ManifestReader()
+        for file_ in self.files:
+            if file_.name == MANIFEST_FILENAME:
+                reader.read(file_.data_stream)
+
+        return reader.master_filename
+
+    def add_note(self, note):
+        """
+        Add a git note to this commit
+
+        :param: Textual content of the note
+        """
+        cmd = self._repo._repo.git
+        cmd.notes('--ref', self.NOTE_REF, 'add', '-f', '-m', note, self.hexsha)
+
+    def get_note(self):
+        """
+        Get the git note of this commit
+
+        :return: Textual content of the note, or None if there is no note
+        """
+        cmd = self._repo._repo.git
+        try:
+            return cmd.notes('--ref', self.NOTE_REF, 'show', self.hexsha)
+        except GitCommandError:
+            return None
+
+    @property
+    def parents(self):
+        return (
+            Commit(self._repo, parent)
+            for parent in self._commit.iter_parents()
+        )
+
+    @property
+    def self_and_parents(self):
+        yield self
+        yield from self.parents

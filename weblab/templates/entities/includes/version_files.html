@@ -15,7 +15,7 @@
 
   <tbody>
   {% if version %}
-    {% for file in version.tree.blobs %}
+    {% for file in version.files %}
       {% if file.name != 'manifest.xml' %}
       <tr {% if file.name == delete_file %} class="deleting"{% endif %}>
         <td>

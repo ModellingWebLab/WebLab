@@ -1,14 +1,7 @@
-from datetime import datetime
-
 import pytest
 
 import entities.templatetags.entities as entity_tags
 from core import recipes
-
-
-def test_as_datetime():
-    dt = entity_tags.as_datetime(1530628582)
-    assert dt == datetime(2018, 7, 3, 14, 36, 22)
 
 
 def test_human_readable_bytes():
@@ -56,6 +49,8 @@ def test_entity_urls(model_with_version, protocol_with_version):
             '/entities/models/%d/versions/%s/files.json' % (model.pk, model_version.hexsha))
     assert (entity_tags.url_version_compare(model, model_version) ==
             '/entities/models/%d/versions/%s/compare' % (model.pk, model_version.hexsha))
+    assert (entity_tags.url_change_version_visibility(model, model_version) ==
+            '/entities/models/%d/versions/%s/visibility' % (model.pk, model_version.hexsha))
     assert (entity_tags.url_tag_version(model, model_version) ==
             '/entities/tag/%d/%s' % (model.pk, model_version.hexsha))
 
@@ -72,6 +67,8 @@ def test_entity_urls(model_with_version, protocol_with_version):
             (protocol.pk, protocol_version.hexsha))
     assert (entity_tags.url_version_compare(protocol, protocol_version) ==
             '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, protocol_version.hexsha))
+    assert (entity_tags.url_change_version_visibility(protocol, protocol_version) ==
+            '/entities/protocols/%d/versions/%s/visibility' % (protocol.pk, protocol_version.hexsha))
     assert (entity_tags.url_tag_version(protocol, protocol_version) ==
             '/entities/tag/%d/%s' % (protocol.pk, protocol_version.hexsha))
 

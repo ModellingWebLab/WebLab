@@ -1,0 +1,8 @@
+coverage:
+  status:
+    project:
+      default:
+        threshold: 1 # Coverage is allowed to drop by 1%
+  range: 50..90  # Below 50% is red; above 90% is green
+  round: down
+  precision: 1

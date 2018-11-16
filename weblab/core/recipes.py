@@ -5,11 +5,11 @@ user = Recipe('accounts.User', institution='UCL')
 
 model = Recipe(
     'ModelEntity',
-    visibility='public', entity_type='model', name=seq('mymodel')
+    entity_type='model', name=seq('mymodel')
 )
 protocol = Recipe(
     'ProtocolEntity',
-    visibility='public', entity_type='protocol', name=seq('myprotocol')
+    entity_type='protocol', name=seq('myprotocol')
 )
 
 model_file = Recipe('EntityFile', entity=foreign_key(model))
@@ -24,3 +24,7 @@ experiment = Recipe(
 running_experiment = Recipe('RunningExperiment')
 
 experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experiment))
+
+cached_entity = Recipe('CachedEntity')
+cached_entity_version = Recipe('CachedEntityVersion')
+cached_entity_tag = Recipe('CachedEntityTag')

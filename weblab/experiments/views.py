@@ -17,7 +17,7 @@ from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
 
-from core.visibility import VisibilityMixin, visibility_query
+from core.visibility import Visibility, VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
 
 from .forms import ExperimentSimulateCallbackForm
@@ -54,7 +54,7 @@ class ExperimentMatrixJsonView(View):
             'id': version,
             'entityId': entity.id,
             'author': str(entity.author.full_name),
-            'visibility': entity.visibility,
+            'visibility': entity.get_version_visibility(version, default=Visibility.PRIVATE),
             'created': entity.created_at,
             'name': name,
             'url': reverse(
@@ -84,9 +84,9 @@ class ExperimentMatrixJsonView(View):
         }
 
     def get(self, request, *args, **kwargs):
-        q_visibility = visibility_query(request.user)
-        q_models = ModelEntity.objects.filter(q_visibility)
-        q_protocols = ProtocolEntity.objects.filter(q_visibility)
+        visible_ids = visible_entity_ids(request.user)
+        q_models = ModelEntity.objects.filter(id__in=visible_ids)
+        q_protocols = ProtocolEntity.objects.filter(id__in=visible_ids)
 
         model_pks = list(map(int, request.GET.getlist('modelIds[]')))
         protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
@@ -115,7 +115,8 @@ class ExperimentMatrixJsonView(View):
             if model_versions[0] == '*':
                 model_versions = [commit.hexsha for commit in model.repo.commits]
 
-            model_versions = [self.entity_json(model, version) for version in model_versions]
+            model_versions = [self.entity_json(model, version)
+                              for version in model_versions]
         else:
             model_versions = [self.entity_json(model) for model in q_models]
 

@@ -1,5 +1,4 @@
 from django.contrib.auth.mixins import AccessMixin
-from django.db.models import Q
 from django.http import Http404
 
 
@@ -38,15 +37,23 @@ def get_joint_visibility(*visibilities):
     )]
 
 
-def visibility_query(user):
-    """Get a query filter for whether the given user can see something
-
-    This also handles the case of non-logged-in users.
+def visible_entity_ids(user):
     """
+    Get IDs of entities which are visible to the given user
+
+    :return: set of entity IDs
+    """
+    from repocache.entities import get_public_entity_ids, get_restricted_entity_ids
+
+    public_entity_ids = get_public_entity_ids()
+
     if user.is_authenticated:
-        return Q(author=user) | ~Q(visibility=Visibility.PRIVATE)
+        user_entity_ids = set(user.entity_set.values_list('id', flat=True))
+        non_public_entity_ids = get_restricted_entity_ids() | user_entity_ids
+
+        return public_entity_ids | non_public_entity_ids
     else:
-        return Q(visibility=Visibility.PUBLIC)
+        return public_entity_ids
 
 
 def visibility_check(user, obj):
@@ -75,26 +82,64 @@ class VisibilityMixin(AccessMixin):
     If an object is not visible to an anonymous visitor, redirect to login page
     """
 
-    def is_visible_to_anonymous(self, obj):
-        # Anonymous user can only see public objects
-        return obj and obj.visibility == Visibility.PUBLIC
+    def check_access_token(self, token):
+        """
+        Check an access token passed in by HTTP header.
+        By default, token access is not allowed. Certain views can override
+        this.
+        """
+        return False  # Token access not used by default
+
+    def get_visibility(self):
+        """
+        Get the visibility applicable to this view
+
+        :return: string representing visibility
+        """
+        return self.get_object().visibility
+
+    def get_owner(self):
+        """
+        Get the owner applicable to the visibility restrictions on this view
+
+        :return: `User` object
+        """
+        return self.get_object().author
 
     def dispatch(self, request, *args, **kwargs):
-        # We don't necessarily want 'object not found' to give a 404 response
-        # (if the user is anonymous it makes more sense to login-redirect them)
+        # We want to treat "not visible" the same way as "does not exist" -
+        # so defer any exception handling until later
         try:
             obj = self.get_object()
         except Http404:
             obj = None
 
-        if self.request.user.is_authenticated():
-            # Logged in user can view all except other people's private stuff
-            if not obj or (
-                obj.author != self.request.user and
-                obj.visibility == Visibility.PRIVATE
-            ):
-                raise Http404
-        elif not self.is_visible_to_anonymous(obj):
-            return self.handle_no_permission()
+        allow_access = False
 
-        return super().dispatch(request, *args, **kwargs)
+        if obj:
+            visibility = self.get_visibility()
+            owner = self.get_owner()
+            if visibility == Visibility.PUBLIC:
+                allow_access = True
+
+            elif self.request.user.is_authenticated:
+                # Logged in user can view all except other people's private stuff
+                allow_access = (
+                    owner == self.request.user or
+                    visibility != Visibility.PRIVATE
+                )
+            else:
+                auth_header = self.request.META.get('HTTP_AUTHORIZATION')
+                if auth_header and auth_header.startswith('Token'):
+                    token = auth_header[5:].strip()
+                    allow_access = self.check_access_token(token)
+
+        if allow_access:
+            return super().dispatch(request, *args, **kwargs)
+
+        elif self.request.user.is_authenticated:
+            # For logged in user, raise a 404
+            raise Http404
+        else:
+            # For anonymous user, redirect to login page
+            return self.handle_no_permission()

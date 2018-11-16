@@ -57,6 +57,29 @@ class TestExperiment:
         exp.protocol.repo.tag('v2')
         assert exp.nice_protocol_version == 'v2'
 
+    def test_visibility(self, helpers):
+        model = recipes.model.make()
+        protocol = recipes.protocol.make()
+        mv1 = helpers.add_version(model, visibility='private').hexsha
+        mv2 = helpers.add_version(model, visibility='public').hexsha
+        pv1 = helpers.add_version(protocol, visibility='private').hexsha
+        pv2 = helpers.add_version(protocol, visibility='public').hexsha
+
+        assert recipes.experiment.make(
+            model=model, model_version=mv2,
+            protocol=protocol, protocol_version=pv2
+        ).visibility == 'public'
+
+        assert recipes.experiment.make(
+            model=model, model_version=mv1,
+            protocol=protocol, protocol_version=pv1
+        ).visibility == 'private'
+
+        assert recipes.experiment.make(
+            model=model, model_version=mv1,
+            protocol=protocol, protocol_version=pv2
+        ).visibility == 'private'
+
 
 @pytest.mark.django_db
 class TestExperimentVersion:

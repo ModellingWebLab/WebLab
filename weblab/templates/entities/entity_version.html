@@ -30,14 +30,22 @@
 
     <div class="suppl">
       <small>
-        Created <time id="entityversiontime">{{ version.committed_date|as_datetime }}</time>
+        Created <time id="entityversiontime">{{ version.committed_at }}</time>
         by <em id="entityversionauthor">{{ version.author }}</em>.
-        Visibility: {{ entity.visibility }}
-          <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />.
-        {% can_create_version entity.entity_type as permission %}
-        {% if permission %}
-          <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
-        {% endif %}
+        <div id="versionVisibility" data-change-href="{{ entity|url_change_version_visibility:version }}">
+          {% can_create_version entity.entity_type as permission %}
+          {% if permission %}
+            <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
+            <form method="POST" action="">
+              Change visibility: {{ form.visibility }}
+              <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />.
+              <span id="versionVisibilityAction"></span>
+            </form>
+          {% else %}
+            Visibility: {{ visibility }}
+            <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />.
+          {% endif %}
+        </div>
       </small>
     </div>
 

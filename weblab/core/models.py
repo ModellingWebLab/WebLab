@@ -34,5 +34,14 @@ class UserCreatedModelMixin(models.Model):
         """
         return user.is_superuser or user == self.author
 
+    def is_visibility_editable_by(self, user):
+        """
+        Is the entity's version visibility editable by the given user?
+
+        :param user: User object
+        :return: True if visibility editable, False otherwise
+        """
+        return user.is_superuser or user == self.author
+
     class Meta:
         abstract = True

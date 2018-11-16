@@ -15,7 +15,6 @@ from django.test import Client
 from django.utils.dateparse import parse_datetime
 
 from core import recipes
-from core.visibility import Visibility
 from experiments.models import Experiment, ExperimentVersion
 
 
@@ -102,8 +101,7 @@ class TestExperimentMatrix:
 
     def test_anonymous_cannot_see_private_data(self, client, experiment_version):
         model = experiment_version.experiment.model
-        model.visibility = Visibility.PRIVATE
-        model.save()
+        model.set_version_visibility('latest', 'private')
 
         response = client.get('/experiments/matrix')
         data = json.loads(response.content.decode())
@@ -120,9 +118,9 @@ class TestExperimentMatrix:
         other_protocol_version = helpers.add_version(other_protocol)
         recipes.experiment_version.make(
             experiment__model=other_model,
-            experiment__model_version=other_model_version,
+            experiment__model_version=other_model_version.hexsha,
             experiment__protocol=other_protocol,
-            experiment__protocol_version=other_protocol_version,
+            experiment__protocol_version=other_protocol_version.hexsha,
         )
 
         # Throw in a non-existent protocol so we can make sure it gets ignored
@@ -461,7 +459,7 @@ class TestExperimentComparisonView:
     def test_compare_experiments(self, client, experiment_version, helpers):
         exp = experiment_version.experiment
         protocol = recipes.protocol.make()
-        protocol_commit = helpers.add_version(protocol)
+        protocol_commit = helpers.add_version(protocol, visibility='public')
 
         version2 = recipes.experiment_version.make(
             status='SUCCESS',
@@ -484,8 +482,8 @@ class TestExperimentComparisonView:
         ver1 = experiment_version
         exp = ver1.experiment
 
-        proto = recipes.protocol.make(visibility='private')
-        proto_commit = helpers.add_version(proto)
+        proto = recipes.protocol.make()
+        proto_commit = helpers.add_version(proto, visibility='private')
         ver2 = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=exp.model,
@@ -505,8 +503,7 @@ class TestExperimentComparisonView:
 
     def test_no_visible_experiments(self, client, experiment_version):
         proto = experiment_version.experiment.protocol
-        proto.visibility = 'private'
-        proto.save()
+        proto.set_version_visibility('latest', 'private')
         assert experiment_version.visibility == 'private'
 
         response = client.get('/experiments/compare/%d' % (experiment_version.id))
@@ -520,7 +517,7 @@ class TestExperimentComparisonJsonView:
     def test_compare_experiments(self, client, experiment_version, helpers):
         exp = experiment_version.experiment
         protocol = recipes.protocol.make()
-        protocol_commit = helpers.add_version(protocol)
+        protocol_commit = helpers.add_version(protocol, visibility='public')
         exp.protocol.repo.tag('v1')
 
         version2 = recipes.experiment_version.make(
@@ -551,8 +548,8 @@ class TestExperimentComparisonJsonView:
         ver1 = experiment_version
         exp = ver1.experiment
 
-        proto = recipes.protocol.make(visibility='private')
-        proto_commit = helpers.add_version(proto)
+        proto = recipes.protocol.make()
+        proto_commit = helpers.add_version(proto, visibility='private')
         ver2 = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=exp.model,
@@ -571,17 +568,17 @@ class TestExperimentComparisonJsonView:
         assert len(versions) == 1
         assert versions[0]['versionId'] == ver1.id
 
-    def test_file_json(self, client, archive_file_path, helpers):
-        version = recipes.experiment_version.make(
-            author__full_name='test user',
-            experiment__model_version='latest',
-            experiment__protocol_version='latest')
-        version.abs_path.mkdir()
-        shutil.copyfile(archive_file_path, str(version.archive_path))
-        exp = version.experiment
+    def test_file_json(self, client, archive_file_path, helpers, experiment_version):
+        experiment_version.author.full_name = 'test user'
+        experiment_version.author.save()
+        experiment_version.abs_path.mkdir()
+        shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
+        exp = experiment_version.experiment
+        exp.model.set_version_visibility('latest', 'public')
+        exp.protocol.set_version_visibility('latest', 'public')
 
         protocol = recipes.protocol.make()
-        protocol_commit = helpers.add_version(protocol)
+        protocol_commit = helpers.add_version(protocol, visibility='public')
         version2 = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=exp.model,
@@ -593,7 +590,7 @@ class TestExperimentComparisonJsonView:
         shutil.copyfile(archive_file_path, str(version2.archive_path))
 
         response = client.get(
-            ('/experiments/compare/%d/%d/info' % (version.pk, version2.pk))
+            ('/experiments/compare/%d/%d/info' % (experiment_version.pk, version2.pk))
         )
 
         assert response.status_code == 200
@@ -605,7 +602,7 @@ class TestExperimentComparisonJsonView:
         assert not file1['masterFile']
         assert file1['size'] == 27
         assert file1['url'] == (
-            '/experiments/%d/versions/%d/download/stdout.txt' % (exp.pk, version.pk)
+            '/experiments/%d/versions/%d/download/stdout.txt' % (exp.pk, experiment_version.pk)
         )
 
     def test_empty_experiment_list(self, client, experiment_version):
@@ -618,13 +615,13 @@ class TestExperimentComparisonJsonView:
 
 @pytest.mark.django_db
 class TestExperimentVersionJsonView:
-    def test_experiment_json(self, client):
-        version = recipes.experiment_version.make(
-            author__full_name='test user',
-            status='SUCCESS',
-            experiment__model_version='latest',
-            experiment__protocol_version='latest',
-        )
+    def test_experiment_json(self, client, logged_in_user, experiment_version):
+        version = experiment_version
+
+        version.author.full_name = 'test user'
+        version.author.save()
+        version.status = 'SUCCESS'
+        version.abs_path.mkdir()
 
         response = client.get(
             ('/experiments/%d/versions/%d/files.json' % (version.experiment.pk, version.pk))
@@ -650,11 +647,10 @@ class TestExperimentVersionJsonView:
             '/experiments/%d/versions/%d/archive' % (version.experiment.pk, version.pk)
         )
 
-    def test_file_json(self, client, archive_file_path):
-        version = recipes.experiment_version.make(
-            author__full_name='test user',
-            experiment__model_version='latest',
-            experiment__protocol_version='latest')
+    def test_file_json(self, client, archive_file_path, experiment_version):
+        version = experiment_version
+        version.author.full_name = 'test user'
+        version.author.save()
         version.abs_path.mkdir()
         shutil.copyfile(archive_file_path, str(version.archive_path))
 
@@ -696,24 +692,23 @@ class TestExperimentArchiveView:
             'attachment; filename=my_model__my_protocol.zip'
         )
 
-    def test_returns_404_if_no_archive_exists(self, client):
-        version = recipes.experiment_version.make()
-
+    def test_returns_404_if_no_archive_exists(self, client, experiment_version):
         response = client.get(
-            '/experiments/%d/versions/%d/archive' % (version.experiment.pk, version.pk)
+            '/experiments/%d/versions/%d/archive' %
+            (experiment_version.experiment.pk, experiment_version.pk)
         )
         assert response.status_code == 404
 
 
 @pytest.mark.django_db
 class TestExperimentFileDownloadView:
-    def test_download_file(self, client, archive_file_path):
-        version = recipes.experiment_version.make()
-        version.abs_path.mkdir(exist_ok=True)
-        shutil.copyfile(archive_file_path, str(version.archive_path))
+    def test_download_file(self, client, archive_file_path, experiment_version):
+        experiment_version.abs_path.mkdir(exist_ok=True)
+        shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 
         response = client.get(
-            '/experiments/%d/versions/%d/download/stdout.txt' % (version.experiment.pk, version.pk)
+            '/experiments/%d/versions/%d/download/stdout.txt' %
+            (experiment_version.experiment.pk, experiment_version.pk)
         )
         assert response.status_code == 200
         assert response.content == b'line of output\nmore output\n'
@@ -741,9 +736,10 @@ class TestEnforcesExperimentVersionVisibility:
         url
     ):
         experiment_version.author = logged_in_user
-        experiment_version.experiment.model.visibility = 'private'
         experiment_version.save()
-        experiment_version.experiment.model.save()
+        exp = experiment_version.experiment
+        exp.model.set_version_visibility('latest', 'private')
+        exp.protocol.set_version_visibility('latest', 'public')
         os.mkdir(str(experiment_version.abs_path))
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 
@@ -754,17 +750,15 @@ class TestEnforcesExperimentVersionVisibility:
     def test_private_expt_invisible_to_other_user(self, client, other_user,
                                                   experiment_version, url):
         experiment_version.author = other_user
-        experiment_version.experiment.protocol.visibility = 'private'
         experiment_version.save()
-        experiment_version.experiment.protocol.save()
+        experiment_version.experiment.protocol.set_version_visibility('latest', 'private')
 
         exp_url = url % (experiment_version.experiment.pk, experiment_version.pk)
         response = client.get(exp_url)
         assert response.status_code == 404
 
     def test_private_entity_requires_login_for_anonymous(self, client, experiment_version, url):
-        experiment_version.experiment.model.visibility = 'private'
-        experiment_version.experiment.model.save()
+        experiment_version.experiment.model.set_version_visibility('latest', 'private')
 
         exp_url = url % (experiment_version.experiment.pk, experiment_version.pk)
         response = client.get(exp_url)

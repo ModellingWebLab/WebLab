@@ -4,6 +4,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from git import GitCommandError
 
 from accounts.models import User
 from entities.repository import Repository
@@ -28,6 +29,13 @@ def author():
     return User(full_name='Commit Author', email='author@example.com')
 
 
+@pytest.fixture
+def commit(repo, repo_file, author):
+    repo.add_file(repo_file)
+    commit = repo.commit('commit 1', author)
+    return commit
+
+
 class TestRepository:
     def test_create_and_delete(self, repo):
         repo.create()
@@ -46,11 +54,14 @@ class TestRepository:
         assert not repo_file.exists()
 
     def test_commit(self, repo, repo_file, author):
-        repo.add_file(repo_file)
+        assert list(repo.commits) == []
+        assert repo.latest_commit is None
 
+        repo.add_file(repo_file)
         repo.commit('commit_message', author)
 
-        assert repo.files()[0].name == repo_file.name
+        assert len(list(repo.commits)) == 1
+        assert repo.latest_commit.files[0].name == repo_file.name
         assert repo.latest_commit.author.email == author.email
 
     def test_tag(self, repo, repo_file, author):
@@ -59,7 +70,12 @@ class TestRepository:
 
         repo.tag('v1')
 
-        assert repo.tag_dict[commit][0].name == 'v1'
+        assert repo.tag_dict[commit.hexsha][0].name == 'v1'
+
+        # A tag cannot be reused / moved
+        repo.commit('second commit', author)
+        with pytest.raises(GitCommandError):
+            repo.tag('v1')
 
     def test_name_for_commit(self, repo, repo_file, author):
         repo.add_file(repo_file)
@@ -110,7 +126,7 @@ class TestRepository:
         assert repo.get_commit('latest') == commit
         assert next(repo.commits) == commit
 
-    def test_generate_manifest(self, repo, repo_file):
+    def test_generate_manifest(self, repo, repo_file, author):
         repo.add_file(repo_file)
 
         path = Path(repo._root) / 'file2.cellml'
@@ -126,29 +142,61 @@ class TestRepository:
             'http://identifiers.org/combine.specifications/cellml',
             'http://identifiers.org/combine.specifications/cellml',
         ]
-        assert repo.master_filename() == 'file.cellml'
 
-    def test_master_filename_is_none_if_no_manifest(self, repo):
-        assert repo.master_filename() is None
+        commit = repo.commit('commit 1', author)
+        assert commit.master_filename == 'file.cellml'
 
-    def test_master_filename_is_none_if_none_selected(self, repo, repo_file):
-        repo.add_file(repo_file)
-        repo.generate_manifest()
 
-        assert repo.master_filename() is None
-
+class TestCommit:
     def test_files(self, repo, repo_file, author):
         repo.add_file(repo_file)
-        repo.commit('commit 1', author)
+        commit = repo.commit('commit 1', author)
         repo.generate_manifest()
 
-        assert list(repo.filenames()) == ['file.cellml']
-        assert repo.get_blob('file.cellml').data_stream.read().decode() == 'file contents'
-        assert repo.get_blob('nonexistent.cellml') is None
+        assert list(commit.filenames) == ['file.cellml']
+        assert commit.get_blob('file.cellml').data_stream.read().decode() == 'file contents'
+        assert commit.get_blob('nonexistent.cellml') is None
 
-    def test_archive(self, repo, repo_file, author):
+    def test_write_archive(self, repo, repo_file, author):
         repo.add_file(repo_file)
         repo.commit('commit 1', author)
         repo.generate_manifest()
 
-        assert zipfile.ZipFile(repo.archive()).namelist() == ['file.cellml']
+        archive = repo.get_commit('latest').write_archive()
+        assert zipfile.ZipFile(archive).namelist() == ['file.cellml']
+
+    def test_master_filename_is_none_if_no_manifest(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        commit = repo.commit('commit 1', author)
+        assert commit.master_filename is None
+
+    def test_master_filename_is_none_if_none_selected(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        commit = repo.commit('commit 1', author)
+        repo.generate_manifest()
+
+        assert commit.master_filename is None
+
+    def test_notes(self, commit):
+        assert commit.get_note() is None
+        commit.add_note('Visibility: private')
+        assert commit.get_note() == 'Visibility: private'
+
+    def test_properties(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        commit = repo.commit('commit 1', author)
+        assert commit.author.name == author.full_name
+        assert commit.author.email == author.email
+        assert commit.hexsha == commit._commit.hexsha
+        assert commit.message == 'commit 1'
+
+    def test_parents(self, repo, repo_file, author):
+        repo.add_file(repo_file)
+        commit1 = repo.commit('commit 1', author)
+
+        open(str(repo_file), 'w').write('updated contents')
+        repo.add_file(repo_file)
+        commit2 = repo.commit('commit 2', author)
+
+        assert list(commit2.parents) == [commit1]
+        assert list(commit2.self_and_parents) == [commit2, commit1]

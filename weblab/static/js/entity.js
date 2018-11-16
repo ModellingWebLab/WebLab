@@ -19,61 +19,41 @@ var versions = {},
 
 var visualizers = {};
 
-function updateVisibility (jsonObject, actionIndicator)
+function updateVisibility (url, jsonObject)
 {
-	actionIndicator.innerHTML = "<img src='"+contextPath+"/res/img/loading2-new.gif' alt='loading' />";
+  var $actionIndicator = $(doc.version.visibilityAction);
+  $actionIndicator.html("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
 	
-	var xmlhttp = null;
-    // !IE
-    if (window.XMLHttpRequest)
-    {
-        xmlhttp = new XMLHttpRequest();
-    }
-    // IE -- microsoft, we really hate you. every single day.
-    else if (window.ActiveXObject)
-    {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    
-    xmlhttp.open ("POST", document.location.href, true);
-    xmlhttp.setRequestHeader ("Content-type", "application/json");
-
-    xmlhttp.onreadystatechange = function()
-    {
-        if(xmlhttp.readyState != 4)
-        	return;
-        
-    	var json = JSON.parse(xmlhttp.responseText);
-    	//console.log (json);
-    	notifications.display (json);
-    	
-        if(xmlhttp.status == 200)
-        {
-        	if (json.updateVisibility)
-        	{
-	        	var msg = json.updateVisibility.responseText;
-	        	if (json.updateVisibility.response)
-	        	{
-	        		actionIndicator.innerHTML = "<img src='"+contextPath+"/res/img/check.png' alt='valid' /> " + msg;
-	        		var v = versions[jsonObject.version];
-	        		$("#version-item-" + v.id)
-	        			.removeClass("entityviz-" + v.visibility)
-	        			.addClass("entityviz-" + jsonObject.visibility)
-	        			.attr("title", function (index, oldTitle) {
-	        				return oldTitle.replace(/Visibility: (\w+)/, "Visibility: " + jsonObject.visibility);
-	        			});
-	        		v.visibility = jsonObject.visibility;
-	        	}
-	        	else
-	        		actionIndicator.innerHTML = "<img src='"+contextPath+"/res/img/failed.png' alt='invalid' /> " + msg;
-        	}
+  $.post(
+      url,
+      jsonObject,
+      function(json) {
+        if (json.updateVisibility) {
+          var msg = json.updateVisibility.responseText;
+          if (json.updateVisibility.response) {
+            $actionIndicator.html(
+                "<img src='"+staticPath+"img/check.png' alt='valid' /> " + msg);
+            var v = versions[jsonObject.version];
+            $("#version-item-" + v.id)
+              .removeClass("entityviz-" + v.visibility)
+              .addClass("entityviz-" + jsonObject.visibility)
+              .attr("title", function (index, oldTitle) {
+                return oldTitle.replace(/Visibility: (\w+)/, "Visibility: " + jsonObject.visibility);
+              });
+            v.visibility = jsonObject.visibility;
+          } else {
+            $actionIndicator.html("<img src='"+staticPath+"img/failed.png' alt='invalid' /> " + msg);
+          }
         }
-        else
-        {
-        	actionIndicator.innerHTML = "<img src='"+contextPath+"/res/img/failed.png' alt='error' /> sorry, serverside error occurred.";
-        }
-    };
-    xmlhttp.send (JSON.stringify (jsonObject));
+      }
+  ).fail(function() {
+      $actionIndicator.html("<img src='"+staticPath+"img/failed.png' alt='error' /> sorry, serverside error occurred.");
+  }).done(function(json){
+      notifications.display(json);
+  })
+    .fail(function(){
+      notifications.add("sorry, server-side error occurred", "error");
+    });
 }
 
 function deleteEntity (jsonObject)
@@ -298,25 +278,7 @@ function displayVersion (id, showDefault)
 	        dv.exptRunningNote.style.display = "none";
         dv.exptStatus.innerHTML = "Status: " + v.status + ".";
 	}
-	
-	if (dv.visibility)
-	{
-	    // Show chooser for changing entity visibility
-		dv.visibility = removeListeners (dv.visibility);
-		
-		document.getElementById("visibility-" + v.visibility).selected=true;
-		
-		dv.visibility.addEventListener("change", function () {
-			/*console.log (v.id);
-			console.log (dv.visibility.options[dv.visibility.selectedIndex].value);*/
-			updateVisibility ({
-		    	task: "updateVisibility",
-		    	version: v.id,
-		    	visibility: dv.visibility.options[dv.visibility.selectedIndex].value
-		    }, dv.visibilityAction);
-	    }, true);
-	}
-	
+
 	if (dv.deleteBtn)
 	{
 		dv.deleteBtn = removeListeners (dv.deleteBtn);
@@ -846,6 +808,20 @@ function initModel ()
 	
 	window.onpopstate = render;
 	render ();
+
+  var $visibility = $(doc.version.visibility);
+  $visibility.on(
+    'change',
+    '#id_visibility',
+    function() {
+      updateVisibility (
+          $visibility.data('change-href'),
+          {
+            version: curVersion.id,
+            visibility: $(this).val(),
+          })
+    });
+
 		
   $(doc.file.close).click(function (ev) {
     if (ev.which == 1)

@@ -139,6 +139,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/versions/%s/visibility$' % _COMMIT,
+        views.ChangeVisibilityView.as_view(),
+        name='change_visibility',
+    ),
+
+    url(
         r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/versions/%s/archive$' % _COMMIT,
         views.EntityArchiveView.as_view(),
         name='entity_archive',
