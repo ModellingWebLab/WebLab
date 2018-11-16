@@ -80,6 +80,7 @@ class CachedEntityVersion(VisibilityModelMixin):
     class Meta:
         unique_together = ['entity', 'sha']
         get_latest_by = 'timestamp'
+        ordering = ['-timestamp']
 
     def set_visibility(self, visibility):
         """
