@@ -595,6 +595,7 @@ class TestVersionCreation:
         assert 'manifest.xml' in latest.filenames
         assert latest.master_filename is None
         assert model.visibility == 'restricted'
+        assert model.get_tags(latest.hexsha) == {'v1'}
 
     def test_add_multiple_files(self, user, client):
         add_permission(user, 'create_model_version')
