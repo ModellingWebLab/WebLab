@@ -542,15 +542,6 @@ function registerFileDisplayer (elem) {
   }, true);
 }
 
-function registerVersionDisplayer (elem) {
-  elem.addEventListener("click", function (ev) {
-    if (ev.which == 1) {
-      ev.preventDefault();
-      nextPage (elem.href);
-    }
-  }, true);
-}
-
 function updateVersion (rv) {
   var v = versions[rv.id];
   if (!v)
@@ -898,23 +889,6 @@ function init () {
         notifications.display(data);
       });
     });
-  }
-
-  // search for special links
-  var elems = document.getElementsByTagName('a');
-  for (var i = 0; i < elems.length; i++)
-  {
-    var classes = ' ' + elems[i].className + ' ';
-    if(classes.indexOf(' entityversionlink ') > -1)
-    {
-      // links to see the model details
-      registerVersionDisplayer (elems[i]);
-    }
-
-    if(classes.indexOf(' entityversionfilelink ') > -1)
-    {
-      // links to see the file details
-    }
   }
 
   if (doc.entity.deleteBtn)
