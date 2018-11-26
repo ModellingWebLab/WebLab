@@ -3,6 +3,7 @@ var notifications = require('./lib/notifications.js');
 var utils = require('./lib/utils.js')
 var plugins = [
   require('./visualizers/displayContent/displayContent.js'),
+  require('./visualizers/editMetadata/editMetadata.js'),
 ];
 
 
