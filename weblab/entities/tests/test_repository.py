@@ -159,11 +159,30 @@ class TestCommit:
 
     def test_write_archive(self, repo, repo_file, author):
         repo.add_file(repo_file)
-        repo.commit('commit 1', author)
         repo.generate_manifest()
+        repo.commit('commit 1', author)
 
         archive = repo.get_commit('latest').write_archive()
-        assert zipfile.ZipFile(archive).namelist() == ['file.cellml']
+        assert zipfile.ZipFile(archive).namelist() == ['file.cellml', 'manifest.xml']
+
+    def test_write_archive_for_old_version(self, repo, repo_file, author):
+        # Initial commit
+        repo.add_file(repo_file)
+        repo.generate_manifest()
+        v1 = repo.commit('commit 1', author)
+        old_contents = repo_file.open().read()
+
+        # Change file contents
+        with repo_file.open('w') as f:
+            f.write('new contents')
+        repo.add_file(repo_file)
+        repo.commit('commit 2', author)
+
+        # Write archive for commit 1
+        archive = v1.write_archive()
+        zf = zipfile.ZipFile(archive)
+        assert zf.namelist() == ['file.cellml', 'manifest.xml']
+        assert zf.open('file.cellml').read() == old_contents
 
     def test_master_filename_is_none_if_no_manifest(self, repo, repo_file, author):
         repo.add_file(repo_file)
