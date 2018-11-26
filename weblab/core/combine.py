@@ -203,19 +203,23 @@ class ArchiveWriter:
         self._memfile = BytesIO()
         self._zip_archive = zipfile.ZipFile(self._memfile, 'w', zipfile.ZIP_DEFLATED)
 
-    def write(self, filenames):
+    def write(self, file_data):
         """
         Write files to a combine archive
 
         Assumes manifest already exists in the file collection
 
-        @param filenames Iterable of (full_path, filename) pairs
-            where full_path is the full path to the original file
-            and filename is the filename/path to use in the zipfile
+        @param file_data iterable of (filename, contents, date_time) tuples
+            where filename is the filename/path to use in the zipfile,
+            contents is the file content (as str or bytes or file-like), and
+            date_time (a datetime.datetime instance) is the file modification time to store
         @return BytesIO object to which archive data has been written
         """
-        for full_path, filename in filenames:
-            self._zip_archive.write(full_path, filename)
+        for filename, contents, date_time in file_data:
+            info = zipfile.ZipInfo(filename, date_time.timetuple())
+            if not isinstance(contents, (str, bytes)):
+                contents = contents.read()
+            self._zip_archive.writestr(info, contents)
         self._zip_archive.close()
         self._memfile.seek(0)
         return self._memfile

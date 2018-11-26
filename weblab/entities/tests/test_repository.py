@@ -170,7 +170,7 @@ class TestCommit:
         repo.add_file(repo_file)
         repo.generate_manifest()
         v1 = repo.commit('commit 1', author)
-        old_contents = repo_file.open().read()
+        old_contents = repo_file.open().read().encode('UTF-8')
 
         # Change file contents
         with repo_file.open('w') as f:
