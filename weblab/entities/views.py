@@ -444,18 +444,20 @@ class EntityNewVersionView(
         if entity.repo.has_changes:
             # Commit and tag the repo
             commit = entity.repo.commit(request.POST['commit_message'], request.user)
-            if request.POST['tag']:
+
+            visibility = request.POST['visibility']
+            entity.set_visibility_in_repo(commit, visibility)
+            entity.repocache.add_version(commit.hexsha)
+
+            tag = request.POST['tag']
+            if tag:
                 try:
-                    entity.repo.tag(request.POST['tag'])
+                    entity.add_tag(tag, commit.hexsha)
                 except GitCommandError as e:
                     entity.repo.rollback()
                     for f in entity.repo.untracked_files:
                         os.remove(str(entity.repo_abs_path / f))
                     return self.fail_with_git_errors([e.stderr])
-
-            visibility = request.POST['visibility']
-            entity.set_visibility_in_repo(commit, visibility)
-            entity.repocache.add_version(commit.hexsha)
 
             # Temporary upload files have been safely committed, so can be deleted
             for filename in files_to_delete:
