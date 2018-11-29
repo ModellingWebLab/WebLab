@@ -43,5 +43,8 @@ class UserCreatedModelMixin(models.Model):
         """
         return user.is_superuser or user == self.author
 
+    def is_editable_by(self, user):
+        return user.is_superuser or user == self.author
+
     class Meta:
         abstract = True

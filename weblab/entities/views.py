@@ -375,7 +375,7 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
 
 
 class EntityNewVersionView(
-    LoginRequiredMixin, PermissionRequiredMixin, FormMixin, DetailView
+    LoginRequiredMixin, UserPassesTestMixin, FormMixin, DetailView
 ):
     """
     Create a new version of an entity.
@@ -383,6 +383,9 @@ class EntityNewVersionView(
     context_object_name = 'entity'
     template_name = 'entities/entity_newversion.html'
     form_class = EntityVersionForm
+
+    def test_func(self):
+        return self.get_object().is_editable_by(self.request.user)
 
     def get_initial(self):
         initial = super().get_initial()
@@ -481,14 +484,14 @@ class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):
     """
     Create a new version of a model
     """
-    permission_required = 'entities.create_model_version'
+    pass
 
 
 class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView):
     """
     Create a new version of a protocol
     """
-    permission_required = 'entities.create_protocol_version'
+    pass
 
 
 class VersionListView(VisibilityMixin, DetailView):

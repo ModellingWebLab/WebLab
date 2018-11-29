@@ -39,8 +39,6 @@ class MyAccountView(LoginRequiredMixin, UpdateView):
         perms = {
             'entities.create_protocol',
             'entities.create_model',
-            'entities.create_protocol_version',
-            'entities.create_model_version',
         }
 
         codes = self.get_object().get_all_permissions() & perms

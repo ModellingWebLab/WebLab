@@ -478,7 +478,6 @@ class TestTagging:
             model.repo.tag('tag')
 
     def test_user_can_add_tag(self, user, client, helpers):
-        add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         helpers.add_version(model)
         commit = model.repo.latest_commit
@@ -553,52 +552,21 @@ class TestEntityList:
 @pytest.mark.django_db
 class TestVersionCreation:
     def test_new_version_form_includes_latest_version(self, client, user, helpers):
-        model = recipes.model.make()
+        model = recipes.model.make(author=user)
         commit = helpers.add_version(model, visibility='public')
-        add_permission(user, 'create_model_version')
         response = client.get('/entities/models/%d/versions/new' % model.pk)
         assert response.status_code == 200
         assert response.context['latest_version'] == commit
         assert b'option value="public" selected' in response.content
 
     def test_no_latest_version(self, client, user):
-        add_permission(user, 'create_model_version')
-        model = recipes.model.make()
+        model = recipes.model.make(author=user)
         response = client.get('/entities/models/%d/versions/new' % model.pk)
         assert response.status_code == 200
         assert 'latest_version' not in response.context
         assert b'option value="private" selected' in response.content
 
-    def test_create_model_version(self, user, client):
-        add_permission(user, 'create_model_version')
-        model = recipes.model_file.make(
-            entity__author=user,
-            upload=SimpleUploadedFile('model.txt', b'my test model'),
-            original_name='model.txt',
-        ).entity
-        response = client.post(
-            '/entities/models/%d/versions/new' % model.pk,
-            data={
-                'filename[]': 'uploads/model.txt',
-                'commit_message': 'first commit',
-                'tag': 'v1',
-                'visibility': 'restricted',
-            },
-        )
-        assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
-        assert 'v1' in model.repo._repo.tags
-
-        latest = model.repo.latest_commit
-        assert latest.message == 'first commit'
-        assert 'model.txt' in latest.filenames
-        assert 'manifest.xml' in latest.filenames
-        assert latest.master_filename is None
-        assert model.visibility == 'restricted'
-        assert model.get_tags(latest.hexsha) == {'v1'}
-
     def test_add_multiple_files(self, user, client):
-        add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         recipes.model_file.make(
             entity=model,
@@ -632,7 +600,6 @@ class TestVersionCreation:
         assert latest.master_filename == 'file1.txt'
 
     def test_delete_file(self, user, client, helpers):
-        add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         helpers.add_version(model, 'file1.txt')
         helpers.add_version(model, 'file2.txt')
@@ -658,7 +625,6 @@ class TestVersionCreation:
         assert not (model.repo_abs_path / 'file1.txt').exists()
 
     def test_delete_multiple_files(self, user, client, helpers):
-        add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         helpers.add_version(model, 'file1.txt')
         helpers.add_version(model, 'file2.txt')
@@ -686,7 +652,6 @@ class TestVersionCreation:
         assert not (model.repo_abs_path / 'file2.txt').exists()
 
     def test_delete_nonexistent_file(self, user, client, helpers):
-        add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         helpers.add_version(model, 'file1.txt')
 
@@ -703,8 +668,26 @@ class TestVersionCreation:
         assert 'delete-file' not in model.repo._repo.tags
         assert model.repo.latest_commit.message != 'delete file2'
 
-    def test_create_model_version_requires_permissions(self, user, client):
-        model = recipes.model.make(author=user)
+    def test_create_model_version(self, client, logged_in_user):
+        model = recipes.model_file.make(
+            entity__author=logged_in_user,
+            upload=SimpleUploadedFile('model.txt', b'my test model'),
+            original_name='model.txt',
+        ).entity
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': 'uploads/model.txt',
+                'commit_message': 'first commit',
+                'tag': 'v1',
+                'visibility': 'public',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d' % model.id
+
+    def test_cannot_create_model_version_as_non_owner(self, user, client):
+        model = recipes.model.make()
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={},
@@ -712,10 +695,9 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
-    def test_create_protocol_version(self, user, client):
-        add_permission(user, 'create_protocol_version')
+    def test_create_protocol_version_as_owner(self, client, logged_in_user):
         protocol = recipes.protocol_file.make(
-            entity__author=user,
+            entity__author=logged_in_user,
             upload=SimpleUploadedFile('protocol.txt', b'my test protocol'),
             original_name='protocol.txt',
         ).entity
@@ -730,16 +712,9 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d' % protocol.id
-        assert 'v1' in protocol.repo._repo.tags
 
-        latest = protocol.repo.latest_commit
-        assert latest.message == 'first commit'
-        assert 'protocol.txt' in latest.filenames
-        assert latest.author.email == user.email
-        assert latest.author.name == user.full_name
-
-    def test_create_protocol_version_requires_permissions(self, user, client):
-        protocol = recipes.protocol.make(author=user)
+    def test_cannot_create_protocol_version_as_non_owner(self, user, client):
+        protocol = recipes.protocol.make()
         response = client.post(
             '/entities/protocols/%d/versions/new' % protocol.pk,
             data={},
@@ -748,7 +723,6 @@ class TestVersionCreation:
         assert '/login/' in response.url
 
     def test_rolls_back_if_tag_exists(self, user, client, helpers):
-        add_permission(user, 'create_model_version')
         model = recipes.model.make(author=user)
         first_commit = helpers.add_version(model, tag_name='v1')
 

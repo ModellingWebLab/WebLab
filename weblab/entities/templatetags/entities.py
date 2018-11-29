@@ -141,9 +141,8 @@ def url_delete(entity):
 
 
 @register.simple_tag(takes_context=True)
-def can_create_version(context, entity_type):
-    user = context['user']
-    return user.has_perm('entities.create_{}_version'.format(entity_type))
+def can_create_version(context, entity):
+    return entity.is_editable_by(context['user'])
 
 
 @register.simple_tag(takes_context=True)

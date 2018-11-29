@@ -16,3 +16,9 @@ class TestUserCreatedModelMixin:
         assert model.is_visibility_editable_by(user)
         assert model.is_visibility_editable_by(admin_user)
         assert not model.is_visibility_editable_by(other_user)
+
+    def test_editable_by(self, user, admin_user, other_user):
+        model = recipes.model.make(author=user)
+        assert model.is_visibility_editable_by(user)
+        assert model.is_visibility_editable_by(admin_user)
+        assert not model.is_visibility_editable_by(other_user)

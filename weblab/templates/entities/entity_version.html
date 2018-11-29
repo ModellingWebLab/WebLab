@@ -16,7 +16,7 @@
     <div class="closebtn">
       <small>
         <a href="{{ entity|url_versions }}">list all versions</a>
-        {% can_create_version entity.entity_type as permission %}
+        {% can_create_version entity as permission %}
         {% if permission %}
           | <a href="{{ entity|url_newversion }}">add new version</a>
         {% endif %}
@@ -33,7 +33,7 @@
         Created <time id="entityversiontime">{{ version.committed_at }}</time>
         by <em id="entityversionauthor">{{ version.author }}</em>.
         <div id="versionVisibility" data-change-href="{{ entity|url_change_version_visibility:version }}">
-          {% can_create_version entity.entity_type as permission %}
+          {% can_create_version entity as permission %}
           {% if permission %}
             <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
             <form method="POST" action="">

@@ -36,8 +36,6 @@ class Entity(UserCreatedModelMixin, models.Model):
         permissions = (
             ('create_model', 'Can create models'),
             ('create_protocol', 'Can create protocols'),
-            ('create_model_version', 'Can create new versions of a model'),
-            ('create_protocol_version', 'Can create new versions of a protocol'),
         )
 
     def __str__(self):
