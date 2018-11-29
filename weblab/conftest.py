@@ -1,8 +1,10 @@
 import pytest
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import AnonymousUser, Permission
+from django.contrib.contenttypes.models import ContentType
 
 from accounts.models import User
 from core import recipes
+from entities.models import Entity
 from repocache.populate import populate_entity_cache
 
 
@@ -25,6 +27,16 @@ class Helpers:
         if cache:
             populate_entity_cache(entity)
         return commit
+
+    @staticmethod
+    def add_permission(user, perm):
+        """Add permission to a user"""
+        content_type = ContentType.objects.get_for_model(Entity)
+        permission = Permission.objects.get(
+            codename=perm,
+            content_type=content_type,
+        )
+        user.user_permissions.add(permission)
 
     @staticmethod
     def login(client, user):

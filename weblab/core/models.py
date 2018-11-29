@@ -44,7 +44,8 @@ class UserCreatedModelMixin(models.Model):
         return user.is_superuser or user == self.author
 
     def is_editable_by(self, user):
-        return user.is_superuser or user == self.author
+        has_perm = user.has_perm('entities.create_{}'.format(self.entity_type))
+        return has_perm and (user.is_superuser or user == self.author)
 
     class Meta:
         abstract = True

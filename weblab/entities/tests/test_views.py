@@ -5,8 +5,6 @@ from io import BytesIO
 from unittest.mock import patch
 
 import pytest
-from django.contrib.auth.models import Permission
-from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.dateparse import parse_datetime
 
@@ -32,19 +30,10 @@ def other_user():
     return recipes.user.make()
 
 
-def add_permission(user, perm):
-    content_type = ContentType.objects.get_for_model(Entity)
-    permission = Permission.objects.get(
-        codename=perm,
-        content_type=content_type,
-    )
-    user.user_permissions.add(permission)
-
-
 @pytest.mark.django_db
 class TestEntityCreation:
-    def test_create_model(self, user, client):
-        add_permission(user, 'create_model')
+    def test_create_model(self, user, client, helpers):
+        helpers.add_permission(user, 'create_model')
         response = client.post('/entities/models/new', data={
             'name': 'mymodel',
             'visibility': 'private',
@@ -68,8 +57,8 @@ class TestEntityCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
-    def test_create_protocol(self, user, client):
-        add_permission(user, 'create_protocol')
+    def test_create_protocol(self, user, client, helpers):
+        helpers.add_permission(user, 'create_protocol')
         response = client.post('/entities/protocols/new', data={
             'name': 'myprotocol',
             'visibility': 'public',
@@ -552,6 +541,7 @@ class TestEntityList:
 @pytest.mark.django_db
 class TestVersionCreation:
     def test_new_version_form_includes_latest_version(self, client, user, helpers):
+        helpers.add_permission(user, 'create_model')
         model = recipes.model.make(author=user)
         commit = helpers.add_version(model, visibility='public')
         response = client.get('/entities/models/%d/versions/new' % model.pk)
@@ -559,14 +549,16 @@ class TestVersionCreation:
         assert response.context['latest_version'] == commit
         assert b'option value="public" selected' in response.content
 
-    def test_no_latest_version(self, client, user):
+    def test_no_latest_version(self, client, user, helpers):
+        helpers.add_permission(user, 'create_model')
         model = recipes.model.make(author=user)
         response = client.get('/entities/models/%d/versions/new' % model.pk)
         assert response.status_code == 200
         assert 'latest_version' not in response.context
         assert b'option value="private" selected' in response.content
 
-    def test_add_multiple_files(self, user, client):
+    def test_add_multiple_files(self, user, client, helpers):
+        helpers.add_permission(user, 'create_model')
         model = recipes.model.make(author=user)
         recipes.model_file.make(
             entity=model,
@@ -600,6 +592,7 @@ class TestVersionCreation:
         assert latest.master_filename == 'file1.txt'
 
     def test_delete_file(self, user, client, helpers):
+        helpers.add_permission(user, 'create_model')
         model = recipes.model.make(author=user)
         helpers.add_version(model, 'file1.txt')
         helpers.add_version(model, 'file2.txt')
@@ -625,6 +618,7 @@ class TestVersionCreation:
         assert not (model.repo_abs_path / 'file1.txt').exists()
 
     def test_delete_multiple_files(self, user, client, helpers):
+        helpers.add_permission(user, 'create_model')
         model = recipes.model.make(author=user)
         helpers.add_version(model, 'file1.txt')
         helpers.add_version(model, 'file2.txt')
@@ -652,6 +646,7 @@ class TestVersionCreation:
         assert not (model.repo_abs_path / 'file2.txt').exists()
 
     def test_delete_nonexistent_file(self, user, client, helpers):
+        helpers.add_permission(user, 'create_model')
         model = recipes.model.make(author=user)
         helpers.add_version(model, 'file1.txt')
 
@@ -668,7 +663,8 @@ class TestVersionCreation:
         assert 'delete-file' not in model.repo._repo.tags
         assert model.repo.latest_commit.message != 'delete file2'
 
-    def test_create_model_version(self, client, logged_in_user):
+    def test_create_model_version(self, client, logged_in_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
         model = recipes.model_file.make(
             entity__author=logged_in_user,
             upload=SimpleUploadedFile('model.txt', b'my test model'),
@@ -695,7 +691,8 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
-    def test_create_protocol_version_as_owner(self, client, logged_in_user):
+    def test_create_protocol_version(self, client, logged_in_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_protocol')
         protocol = recipes.protocol_file.make(
             entity__author=logged_in_user,
             upload=SimpleUploadedFile('protocol.txt', b'my test protocol'),
@@ -723,6 +720,7 @@ class TestVersionCreation:
         assert '/login/' in response.url
 
     def test_rolls_back_if_tag_exists(self, user, client, helpers):
+        helpers.add_permission(user, 'create_model')
         model = recipes.model.make(author=user)
         first_commit = helpers.add_version(model, tag_name='v1')
 
