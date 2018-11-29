@@ -1,3 +1,4 @@
+import datetime
 import io
 import tempfile
 import xml.etree.ElementTree as ET
@@ -127,9 +128,10 @@ class TestArchiveReader:
 
 class TestWriteArchive:
     def test_writes_archive(self):
-        with tempfile.NamedTemporaryFile() as fn:
-            fn.write(b'file contents')
-            writer = ArchiveWriter()
-            archive = writer.write([(fn.name, 'test.txt')])
+        file_info = ('test.txt', b'file contents', datetime.datetime.utcnow())
+        writer = ArchiveWriter()
+        archive = writer.write([file_info])
+        zf = zipfile.ZipFile(archive)
 
-            assert zipfile.ZipFile(archive).namelist() == ['test.txt']
+        assert zf.namelist() == [file_info[0]]
+        assert zf.open(file_info[0]).read() == file_info[1]

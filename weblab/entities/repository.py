@@ -255,8 +255,9 @@ class Commit:
 
         :return: file handle to archive
         """
+        mtime = self.committed_at
         return ArchiveWriter().write(
-            (self._repo.full_path(fn), fn) for fn in self.filenames
+            (blob.name, blob.data_stream, mtime) for blob in self.files
         )
 
     @property
