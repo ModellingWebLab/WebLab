@@ -4,8 +4,8 @@ $.migrateMute = true;
 require('jquery-ui-browserify');
 var utils = require('./lib/utils.js')
 require('./entitynew.js');
-require('./entity.js');
 require('./db.js');
+var entity = require('./entity.js');
 var experiment = require('./experiment.js');
 var notifications = require('./lib/notifications.js');
 require('./compare.js');
@@ -155,6 +155,8 @@ function initPage ()
 
   if ($('#experiment-version').length > 0) {
     experiment.init()
+  } else if ($('#entityversion').length > 0) {
+    entity.init()
   }
 }
 
