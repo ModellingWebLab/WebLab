@@ -17,3 +17,6 @@ django-braces==1.11.0
 
 # Server monitoring
 rollbar==0.14.2
+
+# Object-level permissions
+django-guardian==1.4.9
