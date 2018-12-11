@@ -695,30 +695,19 @@ class EntityEditorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 
     def get_formset(self):
         entity = self.get_object()
-        editors = entity.get_editors()
+        initial = [{'email': u.email} for u in entity.get_editors()]
+        form_kwargs = {'entity': entity}
         if self.request.method == 'POST':
             return self.formset_class(
                 self.request.POST,
-                initial=[
-                    {'email': user.email}
-                    for user in editors],
-                form_kwargs={
-                    'entity': entity,
-                }
-            )
+                initial=initial,
+                form_kwargs=form_kwargs)
         else:
-            return self.formset_class(
-                initial=[
-                    {'email': user.email}
-                    for user in editors],
-                form_kwargs={
-                    'entity': entity,
-                }
-            )
+            return self.formset_class(initial=initial, form_kwargs=form_kwargs)
 
     def post(self, request, *args, **kwargs):
         formset = self.get_formset()
-        self.object = None
+        self.object = self.get_object()
         if formset.is_valid():
             formset.save()
             return HttpResponseRedirect(self.get_success_url())

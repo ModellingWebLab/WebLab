@@ -12,7 +12,34 @@
 
   <form method="POST" action="">
     {% csrf_token %}
-    {{ formset.as_p }}
+    {{ formset.management_form }}
+    <table>
+    {% for form in formset.forms %}
+      {% if forloop.first %}
+      <thead>
+        <tr>
+          {% for field in form.visible_fields %}
+          <th>{{ field.label|capfirst }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      {% endif %}
+
+      <tr>
+        {% for field in form.visible_fields %}
+          <td>
+            {{ field }}
+            {{ field.errors.as_ul }}
+            {% if forloop.first %}
+              {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+              {% endfor %}
+            {% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+    </table>
 
     <p>
       <button id="savebutton">Save</button>
