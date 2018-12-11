@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
 from django.db import models
+from guardian.shortcuts import get_users_with_perms
 
 from core.models import UserCreatedModelMixin
 from repocache.exceptions import RepoCacheMiss
@@ -194,6 +195,13 @@ class Entity(UserCreatedModelMixin, models.Model):
         :return: set of tag names for the commit
         """
         return set(self.repocache.get_version(sha).tags.values_list('tag', flat=True))
+
+    def get_editors(self):
+        return [
+            user
+            for (user, perms) in get_users_with_perms(self, attach_perms=True).items()
+            if 'edit_entity' in perms
+        ]
 
 
 class EntityManager(models.Manager):

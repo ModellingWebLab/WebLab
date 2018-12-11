@@ -18,6 +18,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.core.exceptions import PermissionDenied
 from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.generic.base import RedirectView
@@ -32,6 +33,7 @@ from repocache.exceptions import RepoCacheMiss
 
 from .forms import (
     EntityChangeVisibilityForm,
+    EntityEditorFormSet,
     EntityTagVersionForm,
     EntityVersionForm,
     FileUploadForm,
@@ -671,3 +673,64 @@ class ModelEntityFileDownloadView(ModelEntityTypeMixin, EntityFileDownloadView):
 
 class ProtocolEntityFileDownloadView(ProtocolEntityTypeMixin, EntityFileDownloadView):
     pass
+
+
+class EntityEditorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = Entity
+    formset_class = EntityEditorFormSet
+    template_name = 'entities/entity_editors_form.html'
+    context_object_name = 'entity'
+
+    def test_func(self):
+        return (
+            self.request.user.is_superuser or
+            self.get_object().author == self.request.user
+        )
+
+    def handle_no_permission(self):
+        if self.raise_exception or self.request.user.is_authenticated:
+            raise PermissionDenied(self.get_permission_denied_message())
+        else:
+            return super().handle_no_permission()
+
+    def get_formset(self):
+        entity = self.get_object()
+        editors = entity.get_editors()
+        if self.request.method == 'POST':
+            return self.formset_class(
+                self.request.POST,
+                initial=[
+                    {'email': user.email}
+                    for user in editors],
+                form_kwargs={
+                    'entity': entity,
+                }
+            )
+        else:
+            return self.formset_class(
+                initial=[
+                    {'email': user.email}
+                    for user in editors],
+                form_kwargs={
+                    'entity': entity,
+                }
+            )
+
+    def post(self, request, *args, **kwargs):
+        formset = self.get_formset()
+        self.object = None
+        if formset.is_valid():
+            formset.save()
+            return HttpResponseRedirect(self.get_success_url())
+        else:
+            return self.render_to_response(self.get_context_data(formset=formset))
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.get_object()
+        return reverse('entities:entity_editors', args=[entity.entity_type, entity.id])
+
+    def get_context_data(self, **kwargs):
+        if 'formset' not in kwargs:
+            kwargs['formset'] = self.get_formset()
+        return super().get_context_data(**kwargs)

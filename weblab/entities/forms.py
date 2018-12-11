@@ -1,7 +1,10 @@
 from braces.forms import UserKwargModelFormMixin
 from django import forms
+from django.forms import formset_factory
 from django.core.exceptions import ValidationError
+from guardian.shortcuts import assign_perm, remove_perm
 
+from accounts.models import User
 from core import visibility
 
 from .models import EntityFile, ModelEntity, ProtocolEntity
@@ -66,6 +69,50 @@ class EntityTagVersionForm(forms.Form):
         label='New tag',
         help_text='Short label for this version',
         required=True)
+
+
+class EntityEditorForm(forms.Form):
+    email = forms.EmailField()
+
+    def __init__(self, *args, **kwargs):
+        self.entity = kwargs.pop('entity')
+        super().__init__(*args, **kwargs)
+        if self.initial.get('email'):
+            self.fields['email'].disabled = True
+
+    def clean_email(self):
+        try:
+            email = self.cleaned_data['email']
+            if email:
+                self.cleaned_data['user'] = User.objects.get(email=email)
+            return email
+        except User.DoesNotExist:
+            raise ValidationError('User not found')
+
+    def add_editor(self):
+        if 'user' in self.cleaned_data:
+            assign_perm('edit_entity', self.cleaned_data['user'], self.entity)
+
+    def remove_editor(self):
+        if 'user' in self.cleaned_data:
+            remove_perm('edit_entity', self.cleaned_data['user'], self.entity)
+
+
+class BaseEntityEditorFormSet(forms.BaseFormSet):
+    def save(self):
+        for form in self.forms:
+            form.add_editor()
+
+        for form in self.deleted_forms:
+            form.remove_editor()
+
+
+EntityEditorFormSet = formset_factory(
+    EntityEditorForm,
+    BaseEntityEditorFormSet,
+    extra=1,
+    can_delete=True,
+)
 
 
 class FileUploadForm(forms.ModelForm):

@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.dateparse import parse_datetime
+from guardian.shortcuts import assign_perm
 
 from accounts.models import User
 from core import recipes
@@ -873,6 +874,108 @@ class TestFileUpload:
         response = client.post('/entities/%d/upload-file' % model.pk, {})
 
         assert response.status_code == 400
+
+
+@pytest.mark.django_db
+class TestEntityEditorsView:
+    def test_anonymous_cannot_view_page(self, client):
+        model = recipes.model.make()
+        response = client.get('/entities/models/%d/editors' % model.pk)
+        assert response.status_code == 302
+        assert '/login/' in response.url
+
+    def test_non_owner_cannot_view_page(self, logged_in_user, client):
+        model = recipes.model.make()
+        response = client.get('/entities/models/%d/editors' % model.pk)
+        assert response.status_code == 403
+
+    def test_owner_can_view_page(self, logged_in_user, client):
+        model = recipes.model.make(author=logged_in_user)
+        response = client.get('/entities/models/%d/editors' % model.pk)
+        assert response.status_code == 200
+        assert 'formset' in response.context
+
+    def test_superuser_can_view_page(self, logged_in_admin, client):
+        model = recipes.model.make()
+        response = client.get('/entities/models/%d/editors' % model.pk)
+        assert response.status_code == 200
+        assert 'formset' in response.context
+
+    def test_loads_existing_editors(self, logged_in_user, other_user, client):
+        model = recipes.model.make(author=logged_in_user)
+        assign_perm('edit_entity', other_user, model)
+        response = client.get('/entities/models/%d/editors' % model.pk)
+        assert response.status_code == 200
+        assert response.context['formset'][0]['email'].value() == other_user.email
+
+    def test_add_editor(self, logged_in_user, other_user, client):
+        model = recipes.model.make(author=logged_in_user)
+        response = client.post('/entities/models/%d/editors' % model.pk,
+                               {
+                                   'form-0-email': other_user.email,
+                                   'form-TOTAL_FORMS': 1,
+                                   'form-MAX_NUM_FORMS': 1,
+                                   'form-MIN_NUM_FORMS': 0,
+                                   'form-INITIAL_FORMS': 0,
+                               })
+        assert response.status_code == 302
+        other_user = User.objects.get(pk=other_user.pk)
+        assert other_user.has_perm('edit_entity', model)
+
+    def test_add_non_existent_user_as_editor(self, logged_in_user, client):
+        model = recipes.model.make(author=logged_in_user)
+        response = client.post('/entities/models/%d/editors' % model.pk,
+                               {
+                                   'form-0-email': 'non-existent@example.com',
+                                   'form-TOTAL_FORMS': 1,
+                                   'form-MAX_NUM_FORMS': 1,
+                                   'form-MIN_NUM_FORMS': 0,
+                                   'form-INITIAL_FORMS': 0,
+                               })
+        assert response.status_code == 200
+        assert 'email' in response.context['formset'][0].errors
+
+    def test_remove_editor(self, logged_in_user, other_user, client):
+        model = recipes.model.make(author=logged_in_user)
+        assign_perm('edit_entity', other_user, model)
+        response = client.post('/entities/models/%d/editors' % model.pk,
+                               {
+                                   'form-0-DELETE': 'on',
+                                   'form-0-email': other_user.email,
+                                   'form-TOTAL_FORMS': 1,
+                                   'form-MAX_NUM_FORMS': 1,
+                                   'form-MIN_NUM_FORMS': 0,
+                                   'form-INITIAL_FORMS': 1,
+                               })
+        assert response.status_code == 302
+        other_user = User.objects.get(pk=other_user.pk)
+        assert not other_user.has_perm('edit_entity', model)
+
+    def test_non_owner_cannot_edit(self, logged_in_user, client):
+        model = recipes.model.make()
+        response = client.post('/entities/models/%d/editors' % model.pk, {})
+        assert response.status_code == 403
+
+    def test_anonymous_cannot_edit(self, client):
+        model = recipes.model.make()
+        response = client.post('/entities/models/%d/editors' % model.pk, {})
+        assert response.status_code == 302
+        assert '/login/' in response.url
+
+    def test_superuser_can_edit(self, client, logged_in_admin, other_user):
+        model = recipes.model.make()
+        response = client.post('/entities/models/%d/editors' % model.pk,
+                               {
+                                   'form-0-email': other_user.email,
+                                   'form-TOTAL_FORMS': 1,
+                                   'form-MAX_NUM_FORMS': 1,
+                                   'form-MIN_NUM_FORMS': 0,
+                                   'form-INITIAL_FORMS': 0,
+                               })
+        assert response.status_code == 302
+        other_user = User.objects.get(pk=other_user.pk)
+        assert other_user.has_perm('edit_entity', model)
+
 
 
 @pytest.mark.django_db
