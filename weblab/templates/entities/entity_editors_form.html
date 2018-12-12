@@ -15,6 +15,7 @@
     {% csrf_token %}
 
     {{ formset.management_form }}
+    <p>Editors can create new versions of the {{ entity.entity_type }}, add tags and change the {{ entity.entity_type }} visibility.</p>
 
     <table class="formset">
       <tbody>
@@ -22,8 +23,8 @@
 
           <tr>
               <td>
-                {% if form.email.value %}
-                  {{ form.email.value }}
+                {% if form.editor %}
+                  {{ form.editor.get_full_name }}
                 {% endif %}
                 {{ form.email }}
                 {{ form.email.errors.as_ul }}

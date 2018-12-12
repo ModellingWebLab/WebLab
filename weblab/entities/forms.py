@@ -81,12 +81,19 @@ class EntityEditorForm(forms.Form):
         super().__init__(*args, **kwargs)
         if self.initial.get('email'):
             self.fields['email'].widget = forms.HiddenInput()
+            self.editor = self._get_user(self.initial['email'])
+
+    def _get_user(self, email):
+        try:
+            return User.objects.get(email=email)
+        except User.DoesNotExist:
+            return None
 
     def clean_email(self):
         try:
             email = self.cleaned_data['email']
             if email:
-                self.cleaned_data['user'] = User.objects.get(email=email)
+                self.cleaned_data['user'] = self._get_user(email)
             return email
         except User.DoesNotExist:
             raise ValidationError('User not found')
