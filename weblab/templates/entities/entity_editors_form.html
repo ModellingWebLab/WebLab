@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load entities %}
+{% load staticfiles %}
 
 {% block title %}{{ entity.entity_type|capfirst }} editors - {% endblock title %}
 
@@ -12,33 +13,34 @@
 
   <form method="POST" action="">
     {% csrf_token %}
-    {{ formset.management_form }}
-    <table>
-    {% for form in formset.forms %}
-      {% if forloop.first %}
-      <thead>
-        <tr>
-          {% for field in form.visible_fields %}
-          <th>{{ field.label|capfirst }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      {% endif %}
 
-      <tr>
-        {% for field in form.visible_fields %}
-          <td>
-            {{ field }}
-            {{ field.errors.as_ul }}
-            {% if forloop.first %}
-              {% for hidden in form.hidden_fields %}
-                {{ hidden }}
-              {% endfor %}
-            {% endif %}
-          </td>
+    {{ formset.management_form }}
+
+    <table class="formset">
+      <tbody>
+        {% for form in formset.forms %}
+
+          <tr>
+              <td>
+                {% if form.email.value %}
+                  {{ form.email.value }}
+                {% endif %}
+                {{ form.email }}
+                {{ form.email.errors.as_ul }}
+              </td>
+              <td>
+                {% for hidden in form.hidden_fields %}
+                  {{ hidden }}
+                {% endfor %}
+                <a href="#" class="delete-row">
+                  {{ form.DELETE }}
+                  <img src="{% static 'img/delete.png' %}" alt="remove editor" title="remove editor"/>
+                </a>
+              </td>
+          </tr>
         {% endfor %}
-      </tr>
-    {% endfor %}
+
+      </tbody>
     </table>
 
     <p>

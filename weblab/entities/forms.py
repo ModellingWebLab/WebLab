@@ -72,13 +72,15 @@ class EntityTagVersionForm(forms.Form):
 
 
 class EntityEditorForm(forms.Form):
-    email = forms.EmailField()
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
+    )
 
     def __init__(self, *args, **kwargs):
         self.entity = kwargs.pop('entity')
         super().__init__(*args, **kwargs)
         if self.initial.get('email'):
-            self.fields['email'].disabled = True
+            self.fields['email'].widget = forms.HiddenInput()
 
     def clean_email(self):
         try:
