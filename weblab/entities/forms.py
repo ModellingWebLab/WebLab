@@ -90,13 +90,13 @@ class EntityEditorForm(forms.Form):
             return None
 
     def clean_email(self):
-        try:
-            email = self.cleaned_data['email']
-            if email:
-                self.cleaned_data['user'] = self._get_user(email)
-            return email
-        except User.DoesNotExist:
-            raise ValidationError('User not found')
+        email = self.cleaned_data['email']
+        if email:
+            user = self._get_user(email)
+            if not user:
+                raise ValidationError('User not found')
+            self.cleaned_data['user'] = user
+        return email
 
     def add_editor(self):
         if 'user' in self.cleaned_data:
@@ -119,7 +119,6 @@ class BaseEntityEditorFormSet(forms.BaseFormSet):
 EntityEditorFormSet = formset_factory(
     EntityEditorForm,
     BaseEntityEditorFormSet,
-    extra=1,
     can_delete=True,
 )
 
