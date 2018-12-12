@@ -14,6 +14,14 @@
         <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
              title="delete all versions of this {{type}}"/></a>
     {% endif %}
+
+    {% can_manage_entity entity as can_manage %}
+    {% if can_manage %}
+      <a title="manage editors for this {{ type }}" href="{{ entity|url_editors }}">
+        manage editors
+      </a>
+    {% endif %}
+
     <br>
     Visibility: {{ entity.visibility }}
   </small>

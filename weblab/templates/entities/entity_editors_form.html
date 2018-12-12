@@ -5,11 +5,9 @@
 {% block title %}{{ entity.entity_type|capfirst }} editors - {% endblock title %}
 
 {% block content %}
-  <h1 id="entityname">
-    <small>{{ entity.entity_type|capfirst }}: </small><span>{{ entity.name }}</span>
-  </h1>
+  {% include "./includes/entity_header.html" %}
 
-  <h2>Add or remove editors for this {{ entity.entity_type }}</h2>
+  <h2><small>Add or remove editors for this {{ entity.entity_type }}</small></h2>
 
   <form method="POST" action="">
     {% csrf_token %}

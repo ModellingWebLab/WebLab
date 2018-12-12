@@ -682,10 +682,7 @@ class EntityEditorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     context_object_name = 'entity'
 
     def test_func(self):
-        return (
-            self.request.user.is_superuser or
-            self.get_object().author == self.request.user
-        )
+        return self.get_object().is_managed_by(self.request.user)
 
     def handle_no_permission(self):
         if self.raise_exception or self.request.user.is_authenticated:
@@ -722,4 +719,5 @@ class EntityEditorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     def get_context_data(self, **kwargs):
         if 'formset' not in kwargs:
             kwargs['formset'] = self.get_formset()
+        kwargs['type'] = self.object.entity_type
         return super().get_context_data(**kwargs)

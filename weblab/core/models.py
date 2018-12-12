@@ -50,5 +50,12 @@ class UserCreatedModelMixin(models.Model):
             user.has_perm('edit_entity', self)
         )
 
+    def is_managed_by(self, user):
+        """
+        Can the given user manage the entity (e.g. change permissions)
+        """
+        return user.is_superuser or user == self.author
+
+
     class Meta:
         abstract = True
