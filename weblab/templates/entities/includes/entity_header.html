@@ -17,8 +17,8 @@
 
     {% can_manage_entity entity as can_manage %}
     {% if can_manage %}
-      <a title="manage editors for this {{ type }}" href="{{ entity|url_editors }}">
-        manage editors
+      <a title="manage collaborators for this {{ type }}" href="{{ entity|url_collaborators }}">
+        collaborators
       </a>
     {% endif %}
 

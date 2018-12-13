@@ -2,18 +2,18 @@
 {% load entities %}
 {% load staticfiles %}
 
-{% block title %}{{ entity.entity_type|capfirst }} editors - {% endblock title %}
+{% block title %}{{ entity.entity_type|capfirst }} collaborators - {% endblock title %}
 
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
-  <h2><small>Add or remove editors for this {{ entity.entity_type }}</small></h2>
+  <h2><small>Add or remove collaborators for this {{ entity.entity_type }}</small></h2>
 
   <form method="POST" action="">
     {% csrf_token %}
 
     {{ formset.management_form }}
-    <p>Editors can create new versions of the {{ entity.entity_type }}, add tags and change the {{ entity.entity_type }} visibility.</p>
+    <p>Collaborators can create new versions of the {{ entity.entity_type }}, add tags and change the {{ entity.entity_type }} visibility.</p>
 
     <table class="formset">
       <tbody>
@@ -21,8 +21,8 @@
 
           <tr>
               <td>
-                {% if form.editor %}
-                  {{ form.editor.get_full_name }}
+                {% if form.collaborator %}
+                  {{ form.collaborator.get_full_name }}
                 {% endif %}
                 {{ form.email }}
                 {{ form.email.errors.as_ul }}
@@ -33,7 +33,7 @@
                 {% endfor %}
                 <a href="#" class="delete-row">
                   {{ form.DELETE }}
-                  <img src="{% static 'img/delete.png' %}" alt="remove editor" title="remove editor"/>
+                  <img src="{% static 'img/delete.png' %}" alt="remove collaborator" title="remove collaborator"/>
                 </a>
               </td>
           </tr>

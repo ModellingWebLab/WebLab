@@ -157,8 +157,8 @@ urlpatterns = [
     ),
 
     url(
-        r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/editors$',
-        views.EntityEditorsView.as_view(),
-        name='entity_editors',
+        r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/collaborators$',
+        views.EntityCollaboratorsView.as_view(),
+        name='entity_collaborators',
     ),
 ]

@@ -52,7 +52,7 @@ class UserCreatedModelMixin(models.Model):
         )
 
     @property
-    def editors(self):
+    def collaborators(self):
         return [
             user
             for (user, perms) in get_users_with_perms(self, attach_perms=True).items()

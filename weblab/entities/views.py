@@ -33,7 +33,7 @@ from repocache.exceptions import RepoCacheMiss
 
 from .forms import (
     EntityChangeVisibilityForm,
-    EntityEditorFormSet,
+    EntityCollaboratorFormSet,
     EntityTagVersionForm,
     EntityVersionForm,
     FileUploadForm,
@@ -82,14 +82,13 @@ class EntityVersionMixin(VisibilityMixin):
 
         :return: set of `User` objects
         """
-        # The object's editors list, filtered down by actual editability
-        # (so including the global permission to edit entities) and including
-        # the author
+        # The object's collaborator list, filtered to ensure all collaborators
+        # have global permissions, and also including the author
         obj = self.get_object()
         return {
-            editor
-            for editor in obj.editors
-            if obj.is_editable_by(editor)
+            user
+            for user in obj.collaborators
+            if obj.is_editable_by(user)
         } | {obj.author}
 
     def get_visibility(self):
@@ -130,7 +129,7 @@ class EntityVersionMixin(VisibilityMixin):
         return super().get_context_data(**kwargs)
 
 
-class EntityEditorRequiredMixin(UserPassesTestMixin):
+class EntityCollaboratorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.get_object().is_editable_by(self.request.user)
 
@@ -334,7 +333,7 @@ class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
 
 
 class EntityTagVersionView(
-    LoginRequiredMixin, EntityEditorRequiredMixin, FormMixin, EntityVersionMixin, DetailView
+    LoginRequiredMixin, EntityCollaboratorRequiredMixin, FormMixin, EntityVersionMixin, DetailView
 ):
     """Add a new tag to an existing version of an entity."""
     context_object_name = 'entity'
@@ -392,7 +391,7 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
 
 
 class EntityNewVersionView(
-    LoginRequiredMixin, EntityEditorRequiredMixin, FormMixin, DetailView
+    LoginRequiredMixin, EntityCollaboratorRequiredMixin, FormMixin, DetailView
 ):
     """
     Create a new version of an entity.
@@ -687,10 +686,10 @@ class ProtocolEntityFileDownloadView(ProtocolEntityTypeMixin, EntityFileDownload
     pass
 
 
-class EntityEditorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     model = Entity
-    formset_class = EntityEditorFormSet
-    template_name = 'entities/entity_editors_form.html'
+    formset_class = EntityCollaboratorFormSet
+    template_name = 'entities/entity_collaborators_form.html'
     context_object_name = 'entity'
 
     def test_func(self):
@@ -704,7 +703,7 @@ class EntityEditorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 
     def get_formset(self):
         entity = self.get_object()
-        initial = [{'email': u.email} for u in entity.editors]
+        initial = [{'email': u.email} for u in entity.collaborators]
         form_kwargs = {'entity': entity}
         if self.request.method == 'POST':
             return self.formset_class(
@@ -726,7 +725,7 @@ class EntityEditorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     def get_success_url(self):
         """What page to show when the form was processed OK."""
         entity = self.get_object()
-        return reverse('entities:entity_editors', args=[entity.entity_type, entity.id])
+        return reverse('entities:entity_collaborators', args=[entity.entity_type, entity.id])
 
     def get_context_data(self, **kwargs):
         if 'formset' not in kwargs:

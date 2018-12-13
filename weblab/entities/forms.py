@@ -71,7 +71,7 @@ class EntityTagVersionForm(forms.Form):
         required=True)
 
 
-class EntityEditorForm(forms.Form):
+class EntityCollaboratorForm(forms.Form):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
     )
@@ -81,7 +81,7 @@ class EntityEditorForm(forms.Form):
         super().__init__(*args, **kwargs)
         if self.initial.get('email'):
             self.fields['email'].widget = forms.HiddenInput()
-            self.editor = self._get_user(self.initial['email'])
+            self.collaborator = self._get_user(self.initial['email'])
 
     def _get_user(self, email):
         try:
@@ -98,27 +98,27 @@ class EntityEditorForm(forms.Form):
             self.cleaned_data['user'] = user
         return email
 
-    def add_editor(self):
+    def add_collaborator(self):
         if 'user' in self.cleaned_data:
             assign_perm('edit_entity', self.cleaned_data['user'], self.entity)
 
-    def remove_editor(self):
+    def remove_collaborator(self):
         if 'user' in self.cleaned_data:
             remove_perm('edit_entity', self.cleaned_data['user'], self.entity)
 
 
-class BaseEntityEditorFormSet(forms.BaseFormSet):
+class BaseEntityCollaboratorFormSet(forms.BaseFormSet):
     def save(self):
         for form in self.forms:
-            form.add_editor()
+            form.add_collaborator()
 
         for form in self.deleted_forms:
-            form.remove_editor()
+            form.remove_collaborator()
 
 
-EntityEditorFormSet = formset_factory(
-    EntityEditorForm,
-    BaseEntityEditorFormSet,
+EntityCollaboratorFormSet = formset_factory(
+    EntityCollaboratorForm,
+    BaseEntityCollaboratorFormSet,
     can_delete=True,
 )
 

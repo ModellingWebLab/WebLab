@@ -141,8 +141,8 @@ def url_delete(entity):
 
 
 @register.filter
-def url_editors(entity):
-    url_name = 'entities:entity_editors'
+def url_collaborators(entity):
+    url_name = 'entities:entity_collaborators'
     return reverse(url_name, args=[entity.entity_type, entity.id])
 
 
