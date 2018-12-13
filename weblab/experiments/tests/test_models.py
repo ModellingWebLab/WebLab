@@ -80,6 +80,19 @@ class TestExperiment:
             protocol=protocol, protocol_version=pv2
         ).visibility == 'private'
 
+    def test_viewers(self, helpers, user, experiment_version):
+        helpers.add_permission(user, 'create_model')
+        helpers.add_permission(user, 'create_protocol')
+
+        exp = experiment_version.experiment
+        assert user not in exp.viewers
+
+        exp.model.add_collaborator(user)
+        assert user not in exp.viewers
+
+        exp.protocol.add_collaborator(user)
+        assert user in exp.viewers
+
 
 @pytest.mark.django_db
 class TestExperimentVersion:

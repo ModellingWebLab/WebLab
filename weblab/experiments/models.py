@@ -72,6 +72,10 @@ class Experiment(UserCreatedModelMixin, models.Model):
         )
 
     @property
+    def viewers(self):
+        return self.model.viewers & self.protocol.viewers #{self.author}
+
+    @property
     def latest_version(self):
         return self.versions.latest('created_at')
 

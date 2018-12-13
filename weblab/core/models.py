@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from guardian.shortcuts import get_users_with_perms
+from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
 from . import visibility
 
@@ -51,6 +51,12 @@ class UserCreatedModelMixin(models.Model):
             user.has_perm('edit_entity', self)
         )
 
+    def add_collaborator(self, user):
+        assign_perm('edit_entity', user, self)
+
+    def remove_collaborator(self, user):
+        remove_perm('edit_entity', user, self)
+
     @property
     def collaborators(self):
         return [
@@ -58,6 +64,27 @@ class UserCreatedModelMixin(models.Model):
             for (user, perms) in get_users_with_perms(self, attach_perms=True).items()
             if 'edit_entity' in perms
         ]
+
+    @property
+    def editors(self):
+        """
+        Users who can edit the object.
+
+        :return set of `User` objects
+        """
+        return {
+            user
+            for user in self.collaborators + [self.author]
+            if self.is_editable_by(user)
+        }
+
+    @property
+    def viewers(self):
+        """
+        The object's collaborator list, filtered to ensure all collaborators
+        have global permissions, and also including the author
+        """
+        return self.editors | {self.author}
 
     def is_managed_by(self, user):
         """

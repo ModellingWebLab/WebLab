@@ -82,14 +82,7 @@ class EntityVersionMixin(VisibilityMixin):
 
         :return: set of `User` objects
         """
-        # The object's collaborator list, filtered to ensure all collaborators
-        # have global permissions, and also including the author
-        obj = self.get_object()
-        return {
-            user
-            for user in obj.collaborators
-            if obj.is_editable_by(user)
-        } | {obj.author}
+        return self.get_object().viewers
 
     def get_visibility(self):
         """

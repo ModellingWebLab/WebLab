@@ -100,11 +100,11 @@ class EntityCollaboratorForm(forms.Form):
 
     def add_collaborator(self):
         if 'user' in self.cleaned_data:
-            assign_perm('edit_entity', self.cleaned_data['user'], self.entity)
+            self.entity.add_collaborator(self.cleaned_data['user'])
 
     def remove_collaborator(self):
         if 'user' in self.cleaned_data:
-            remove_perm('edit_entity', self.cleaned_data['user'], self.entity)
+            self.entity.remove_collaborator(self.cleaned_data['user'])
 
 
 class BaseEntityCollaboratorFormSet(forms.BaseFormSet):

@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import AccessMixin
 from django.http import Http404
+from guardian.shortcuts import get_objects_for_user
 
 
 class Visibility:
@@ -46,7 +47,9 @@ def visible_entity_ids(user):
 
     if user.is_authenticated:
         user_entity_ids = set(user.entity_set.values_list('id', flat=True))
-        non_public_entity_ids = user_entity_ids
+        visible_entity_ids = set(get_objects_for_user(
+            user, 'entities.edit_entity').values_list('id', flat=True))
+        non_public_entity_ids = visible_entity_ids | user_entity_ids
 
         return public_entity_ids | non_public_entity_ids
     else:
@@ -62,7 +65,7 @@ def visibility_check(user, obj):
     :returns: True if the user is allowed to view the object, False otherwise
     """
     if user.is_authenticated:
-        return obj.author == user or obj.visibility != Visibility.PRIVATE
+        return user in obj.viewers or obj.visibility != Visibility.PRIVATE
     else:
         return obj.visibility == Visibility.PUBLIC
 
