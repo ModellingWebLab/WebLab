@@ -196,13 +196,6 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         return set(self.repocache.get_version(sha).tags.values_list('tag', flat=True))
 
-    def get_editors(self):
-        return [
-            user
-            for (user, perms) in get_users_with_perms(self, attach_perms=True).items()
-            if 'edit_entity' in perms
-        ]
-
 
 class EntityManager(models.Manager):
     def get_queryset(self):

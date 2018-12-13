@@ -469,6 +469,7 @@ class TestTagging:
 
     def test_user_can_add_tag(self, user, client, helpers):
         model = recipes.model.make(author=user)
+        helpers.add_permission(user, 'create_model')
         helpers.add_version(model)
         commit = model.repo.latest_commit
 
@@ -485,16 +486,28 @@ class TestTagging:
         assert len(tags) == 1
         assert tags[commit.hexsha][0].name == 'v1'
 
-    @pytest.mark.skip('not yet implemented')
-    def test_tag_view_requires_permissions(self, user, client, helpers):
-        model = recipes.model.make(author=user)
-        commit = helpers.add_version(model)
+    def test_cannot_tag_as_non_owner(self, user, client, helpers):
+        protocol = recipes.protocol.make()
+        commit = helpers.add_version(protocol)
         response = client.post(
-            '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
+            '/entities/tag/%d/%s' % (protocol.pk, commit.hexsha),
             data={},
         )
         assert response.status_code == 302
-        assert '/login/' in response.url
+
+    def test_can_tag_as_non_owner_with_permissions(self, user, client, helpers):
+        protocol = recipes.protocol.make()
+        commit = helpers.add_version(protocol)
+        helpers.add_permission(user, 'create_protocol')
+        assign_perm('edit_entity', user, protocol)
+        response = client.post(
+            '/entities/tag/%d/%s' % (protocol.pk, commit.hexsha),
+            data={
+                'tag': 'v1',
+            },
+        )
+        assert response.status_code == 302
+        assert 'v1' in protocol.repo._repo.tags
 
 
 @pytest.mark.django_db
@@ -999,6 +1012,13 @@ class TestEntityVisibility:
     def test_private_entity_visible_to_self(self, client, user, helpers, recipe, url):
         entity = recipe.make(author=user)
         helpers.add_version(entity, visibility='private')
+        assert client.get(url % entity.pk, follow=True).status_code == 200
+
+    def test_private_entity_visible_to_editor(self, client, user, helpers, recipe, url):
+        entity = recipe.make(author=user)
+        helpers.add_version(entity, visibility='private')
+        helpers.add_permission(user, 'create_%s' % entity.entity_type)
+        assign_perm('edit_entity', user, entity)
         assert client.get(url % entity.pk, follow=True).status_code == 200
 
     def test_private_entity_invisible_to_other_user(

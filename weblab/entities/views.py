@@ -76,11 +76,21 @@ class EntityVersionMixin(VisibilityMixin):
     Mixin for views describing a specific version of an `Entity` object
     """
 
-    def get_owner(self):
+    def get_viewers(self):
         """
-        Entity ownership filters down to entity version
+        Get users who are permitted to view the object regardless of visibility
+
+        :return: set of `User` objects
         """
-        return self.get_object().author
+        # The object's editors list, filtered down by actual editability
+        # (so including the global permission to edit entities) and including
+        # the author
+        obj = self.get_object()
+        return {
+            editor
+            for editor in obj.editors
+            if obj.is_editable_by(editor)
+        } | {obj.author}
 
     def get_visibility(self):
         """
@@ -118,6 +128,11 @@ class EntityVersionMixin(VisibilityMixin):
             'master_filename': commit.master_filename,
         })
         return super().get_context_data(**kwargs)
+
+
+class EntityEditorRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.get_object().is_editable_by(self.request.user)
 
 
 class ModelEntityCreateView(
@@ -319,7 +334,7 @@ class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
 
 
 class EntityTagVersionView(
-    LoginRequiredMixin, FormMixin, EntityVersionMixin, DetailView
+    LoginRequiredMixin, EntityEditorRequiredMixin, FormMixin, EntityVersionMixin, DetailView
 ):
     """Add a new tag to an existing version of an entity."""
     context_object_name = 'entity'
@@ -377,7 +392,7 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
 
 
 class EntityNewVersionView(
-    LoginRequiredMixin, UserPassesTestMixin, FormMixin, DetailView
+    LoginRequiredMixin, EntityEditorRequiredMixin, FormMixin, DetailView
 ):
     """
     Create a new version of an entity.
@@ -385,9 +400,6 @@ class EntityNewVersionView(
     context_object_name = 'entity'
     template_name = 'entities/entity_newversion.html'
     form_class = EntityVersionForm
-
-    def test_func(self):
-        return self.get_object().is_editable_by(self.request.user)
 
     def get_initial(self):
         initial = super().get_initial()
@@ -692,7 +704,7 @@ class EntityEditorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
 
     def get_formset(self):
         entity = self.get_object()
-        initial = [{'email': u.email} for u in entity.get_editors()]
+        initial = [{'email': u.email} for u in entity.editors]
         form_kwargs = {'entity': entity}
         if self.request.method == 'POST':
             return self.formset_class(

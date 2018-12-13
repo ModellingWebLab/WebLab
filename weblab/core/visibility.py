@@ -98,13 +98,13 @@ class VisibilityMixin(AccessMixin):
         """
         return self.get_object().visibility
 
-    def get_owner(self):
+    def get_viewers(self):
         """
-        Get the owner applicable to the visibility restrictions on this view
+        Get users who are permitted to view the object regardless of visibility
 
-        :return: `User` object
+        :return: set of `User` objects
         """
-        return self.get_object().author
+        return {self.get_object().author}
 
     def dispatch(self, request, *args, **kwargs):
         # We want to treat "not visible" the same way as "does not exist" -
@@ -118,14 +118,14 @@ class VisibilityMixin(AccessMixin):
 
         if obj:
             visibility = self.get_visibility()
-            owner = self.get_owner()
+            allowed_users = self.get_viewers()
             if visibility == Visibility.PUBLIC:
                 allow_access = True
 
             elif self.request.user.is_authenticated:
                 # Logged in user can view all except other people's private stuff
                 allow_access = (
-                    owner == self.request.user or
+                    self.request.user in allowed_users or
                     visibility != Visibility.PRIVATE
                 )
             else:

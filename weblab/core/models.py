@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from guardian.shortcuts import get_users_with_perms
 
 from . import visibility
 
@@ -49,6 +50,14 @@ class UserCreatedModelMixin(models.Model):
             user == self.author or
             user.has_perm('edit_entity', self)
         )
+
+    @property
+    def editors(self):
+        return [
+            user
+            for (user, perms) in get_users_with_perms(self, attach_perms=True).items()
+            if 'edit_entity' in perms
+        ]
 
     def is_managed_by(self, user):
         """
