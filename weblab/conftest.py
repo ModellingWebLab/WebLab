@@ -72,14 +72,28 @@ def fake_repo_path(settings, tmpdir):
 @pytest.fixture
 def model_with_version():
     model = recipes.model.make()
-    Helpers.add_version(model, visibility='public')
+    Helpers.add_version(model, visibility='private')
     return model
 
 
 @pytest.fixture
 def protocol_with_version():
     protocol = recipes.protocol.make()
-    Helpers.add_version(protocol, visibility='public')
+    Helpers.add_version(protocol, visibility='private')
+    return protocol
+
+
+@pytest.fixture
+def public_model(helpers):
+    model = recipes.model.make()
+    helpers.add_version(model, visibility='public')
+    return model
+
+
+@pytest.fixture
+def public_protocol(helpers):
+    protocol = recipes.protocol.make()
+    helpers.add_version(protocol, visibility='public')
     return protocol
 
 
@@ -95,13 +109,13 @@ def queued_experiment(model_with_version, protocol_with_version):
 
 
 @pytest.fixture
-def experiment_version(model_with_version, protocol_with_version):
+def experiment_version(public_model, public_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
-        experiment__model=model_with_version,
-        experiment__model_version=model_with_version.repo.latest_commit.hexsha,
-        experiment__protocol=protocol_with_version,
-        experiment__protocol_version=protocol_with_version.repo.latest_commit.hexsha,
+        experiment__model=public_model,
+        experiment__model_version=public_model.repo.latest_commit.hexsha,
+        experiment__protocol=public_protocol,
+        experiment__protocol_version=public_protocol.repo.latest_commit.hexsha,
     )
 
 

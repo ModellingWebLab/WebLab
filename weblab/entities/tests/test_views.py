@@ -188,15 +188,15 @@ class TestEntityVersionView:
     def test_shows_correct_visibility(self, client, logged_in_user, model_with_version):
         model = model_with_version
         commit = model.repo.latest_commit
-        model.set_version_visibility(commit.hexsha, 'restricted')
+        model.set_version_visibility(commit.hexsha, 'public')
 
         response = client.get(
             '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
         )
 
         assert response.status_code == 200
-        assert response.context['visibility'] == 'restricted'
-        assert response.context['form'].initial.get('visibility') == 'restricted'
+        assert response.context['visibility'] == 'public'
+        assert response.context['form'].initial.get('visibility') == 'public'
 
     def test_cannot_access_invisible_version(self, client, logged_in_user, helpers):
         model = recipes.model.make()
@@ -263,16 +263,17 @@ class TestEntityVersionChangeVisibilityView:
         helpers.login(client, user)
         model = recipes.model.make(author=user)
         commit = helpers.add_version(model)
+        assert model.get_version_visibility(commit.hexsha) == 'private'
 
         response = client.post(
             '/entities/models/%d/versions/%s/visibility' % (model.pk, commit.hexsha),
             data={
-                'visibility': 'restricted',
+                'visibility': 'public',
             })
 
         assert response.status_code == 200
-        assert model.get_version_visibility(commit.hexsha) == 'restricted'
-        assert model.repocache.get_version(commit.hexsha).visibility == 'restricted'
+        assert model.get_version_visibility(commit.hexsha) == 'public'
+        assert model.repocache.get_version(commit.hexsha).visibility == 'public'
 
     def test_non_owner_cannot_change_visibility(self, client, user, other_user, helpers):
         helpers.login(client, user)
@@ -282,11 +283,11 @@ class TestEntityVersionChangeVisibilityView:
         response = client.post(
             '/entities/models/%d/versions/%s/visibility' % (model.pk, commit.hexsha),
             data={
-                'visibility': 'restricted',
+                'visibility': 'public',
             })
 
         assert response.status_code == 403
-        assert model.get_version_visibility(commit.hexsha) != 'restricted'
+        assert model.get_version_visibility(commit.hexsha) != 'public'
 
 
 @pytest.mark.django_db
@@ -294,7 +295,7 @@ class TestEntityVersionJsonView:
     def test_version_json(self, client, logged_in_user, helpers):
         model = recipes.model.make(name='mymodel', author__full_name='model author')
         version = helpers.add_version(model)
-        model.set_version_visibility(version.hexsha, 'restricted')
+        model.set_version_visibility(version.hexsha, 'public')
         model.repo.tag('v1')
 
         response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
@@ -308,7 +309,7 @@ class TestEntityVersionJsonView:
         assert ver['id'] == version.hexsha
         assert ver['author'] == 'model author'
         assert ver['entityId'] == model.pk
-        assert ver['visibility'] == 'restricted'
+        assert ver['visibility'] == 'public'
         assert (
             parse_datetime(ver['created']).replace(microsecond=0) ==
             version.committed_at
@@ -759,12 +760,12 @@ class TestVersionCreation:
 
 @pytest.mark.django_db
 class TestEntityFileDownloadView:
-    def test_download_file(self, client, model_with_version):
-        version = model_with_version.repo.latest_commit
+    def test_download_file(self, client, public_model):
+        version = public_model.repo.latest_commit
 
         response = client.get(
             '/entities/models/%d/versions/%s/download/file1.txt' %
-            (model_with_version.pk, version.hexsha)
+            (public_model.pk, version.hexsha)
         )
 
         assert response.status_code == 200
@@ -775,22 +776,22 @@ class TestEntityFileDownloadView:
         assert response['Content-Type'] == 'text/plain'
 
     @patch('mimetypes.guess_type', return_value=(None, None))
-    def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, client, model_with_version):
-        version = model_with_version.repo.latest_commit
+    def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, client, public_model):
+        version = public_model.repo.latest_commit
 
         response = client.get(
             '/entities/models/%d/versions/%s/download/file1.txt' %
-            (model_with_version.pk, version.hexsha)
+            (public_model.pk, version.hexsha)
         )
 
         assert response.status_code == 200
         assert response['Content-Type'] == 'application/octet-stream'
 
-    def test_returns_404_for_nonexistent_file(self, client, model_with_version):
-        version = model_with_version.repo.latest_commit
+    def test_returns_404_for_nonexistent_file(self, client, public_model):
+        version = public_model.repo.latest_commit
         response = client.get(
             '/entities/models/%d/versions/%s/download/nonexistent.txt' %
-            (model_with_version.pk, version.hexsha)
+            (public_model.pk, version.hexsha)
         )
 
         assert response.status_code == 404
@@ -1034,21 +1035,6 @@ class TestEntityVisibility:
     def test_private_entity_requires_login_for_anonymous(self, client, helpers, recipe, url):
         entity = recipe.make()
         helpers.add_version(entity, visibility='private')
-        response = client.get(url % entity.pk)
-        assert response.status_code == 302
-        assert '/login' in response.url
-
-    def test_restricted_entity_visible_to_other_user(
-        self, client, user, other_user, helpers,
-        recipe, url
-    ):
-        entity = recipe.make(author=other_user)
-        helpers.add_version(entity, visibility='restricted')
-        assert client.get(url % entity.pk, follow=True).status_code == 200
-
-    def test_restricted_entity_requires_login_for_anonymous(self, client, helpers, recipe, url):
-        entity = recipe.make()
-        helpers.add_version(entity, visibility='restricted')
         response = client.get(url % entity.pk)
         assert response.status_code == 302
         assert '/login' in response.url

@@ -19,21 +19,3 @@ def get_public_entity_ids():
             'entity__entity_id', flat=True
         )
     )
-
-
-def get_restricted_entity_ids():
-    """
-    Get IDs of all entities with restricted visibility
-
-    :return: set of entity IDs
-    """
-    return set(
-        CachedEntityVersion.objects.annotate(
-            latest_ts=Max('entity__versions__timestamp')
-        ).filter(
-            timestamp=F('latest_ts'),
-            visibility='restricted',
-        ).values_list(
-            'entity__entity_id', flat=True
-        )
-    )

@@ -522,7 +522,6 @@ class VersionListView(VisibilityMixin, DetailView):
             Visibility.PUBLIC
         ]
         if self.request.user.is_authenticated:
-            visibilities.append(Visibility.RESTRICTED)
             if self.request.user == entity.author:
                 visibilities.append(Visibility.PRIVATE)
 

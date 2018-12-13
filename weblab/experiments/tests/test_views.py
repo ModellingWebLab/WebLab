@@ -289,13 +289,13 @@ class TestExperimentMatrix:
         assert len(data['notifications']['errors']) == 1
 
     def test_experiment_without_version_is_ignored(
-        self, client, model_with_version, protocol_with_version
+        self, client, public_model, public_protocol
     ):
         recipes.experiment.make(
-            model=model_with_version,
-            model_version=model_with_version.repo.latest_commit.hexsha,
-            protocol=protocol_with_version,
-            protocol_version=protocol_with_version.repo.latest_commit.hexsha,
+            model=public_model,
+            model_version=public_model.repo.latest_commit.hexsha,
+            protocol=public_protocol,
+            protocol_version=public_protocol.repo.latest_commit.hexsha,
         )
 
         response = client.get('/experiments/matrix')
@@ -304,9 +304,9 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['protocols']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
-    def test_old_version_is_hidden(self, client, model_with_version, experiment_version, helpers):
+    def test_old_version_is_hidden(self, client, public_model, experiment_version, helpers):
         # Add a new model version without corresponding experiment
-        new_version = helpers.add_version(model_with_version, filename='file2.txt')
+        new_version = helpers.add_version(public_model, filename='file2.txt')
 
         # We should now see this version in the matrix, but no experiments
         response = client.get('/experiments/matrix')

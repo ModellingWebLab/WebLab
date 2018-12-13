@@ -4,19 +4,16 @@ from django.http import Http404
 
 class Visibility:
     PRIVATE = 'private'
-    RESTRICTED = 'restricted'
     PUBLIC = 'public'
 
 
 HELP_TEXT = (
     'Public = anyone can view\n'
-    'Restricted = logged in users can view\n'
     'Private = only you can view'
 )
 
 CHOICES = (
     (Visibility.PRIVATE, 'Private'),
-    (Visibility.RESTRICTED, 'Restricted'),
     (Visibility.PUBLIC, 'Public')
 )
 
@@ -27,7 +24,7 @@ def get_joint_visibility(*visibilities):
     """
     # Ordered by most conservative first
     levels = [
-        Visibility.PRIVATE, Visibility.RESTRICTED, Visibility.PUBLIC,
+        Visibility.PRIVATE, Visibility.PUBLIC,
     ]
 
     # Use the most conservative of the two entities' visibilities
@@ -43,13 +40,13 @@ def visible_entity_ids(user):
 
     :return: set of entity IDs
     """
-    from repocache.entities import get_public_entity_ids, get_restricted_entity_ids
+    from repocache.entities import get_public_entity_ids
 
     public_entity_ids = get_public_entity_ids()
 
     if user.is_authenticated:
         user_entity_ids = set(user.entity_set.values_list('id', flat=True))
-        non_public_entity_ids = get_restricted_entity_ids() | user_entity_ids
+        non_public_entity_ids = user_entity_ids
 
         return public_entity_ids | non_public_entity_ids
     else:
@@ -75,7 +72,6 @@ class VisibilityMixin(AccessMixin):
     View mixin implementing visiblity restrictions
 
     Public objects can be seen by all.
-    Restricted objects can be seen only by logged in users.
     Private objects can be seen only by their owner.
 
     If an object is not visible to a logged in user, we generate a 404

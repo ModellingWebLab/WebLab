@@ -8,6 +8,7 @@ from django.db import models
 from guardian.shortcuts import get_users_with_perms
 
 from core.models import UserCreatedModelMixin
+from core.visibility import Visibility
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
@@ -17,6 +18,8 @@ VISIBILITY_NOTE_PREFIX = 'Visibility: '
 
 
 class Entity(UserCreatedModelMixin, models.Model):
+    DEFAULT_VISIBILITY = Visibility.PRIVATE
+
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
     ENTITY_TYPE_CHOICES = (
