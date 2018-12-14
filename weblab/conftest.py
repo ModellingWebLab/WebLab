@@ -164,3 +164,9 @@ def logged_in_user(client, user):
 def logged_in_admin(client, admin_user):
     client.login(username=admin_user.email, password='password')
     return admin_user
+
+
+@pytest.fixture
+def model_creator(user, helpers):
+    helpers.add_permission(user, 'create_model')
+    return User.objects.get(pk=user.pk)

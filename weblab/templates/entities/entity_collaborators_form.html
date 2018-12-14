@@ -28,9 +28,6 @@
                 {{ form.email.errors.as_ul }}
               </td>
               <td>
-                {% for hidden in form.hidden_fields %}
-                  {{ hidden }}
-                {% endfor %}
                 <a href="#" class="delete-row">
                   {{ form.DELETE }}
                   <img src="{% static 'img/delete.png' %}" alt="remove collaborator" title="remove collaborator"/>

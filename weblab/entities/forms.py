@@ -91,12 +91,22 @@ class EntityCollaboratorForm(forms.Form):
 
     def clean_email(self):
         email = self.cleaned_data['email']
-        if email:
-            user = self._get_user(email)
-            if not user:
-                raise ValidationError('User not found')
-            self.cleaned_data['user'] = user
+        user = self._get_user(email)
+        if not user:
+            raise ValidationError('User not found')
+
+        self.cleaned_data['user'] = user
         return email
+
+    def clean(self):
+        deleting = self.cleaned_data['DELETE']
+        if 'user' in self.cleaned_data:
+            has_perm = self.cleaned_data['user'].has_perm('entities.create_%s' % self.entity.entity_type)
+            if not has_perm and not deleting:
+                raise ValidationError({
+                    'email': 'User does not have global permissions to create and edit %ss' %
+                        self.entity.entity_type
+                })
 
     def add_collaborator(self):
         if 'user' in self.cleaned_data:
