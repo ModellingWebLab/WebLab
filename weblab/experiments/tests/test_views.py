@@ -732,14 +732,20 @@ class TestEnforcesExperimentVersionVisibility:
 
     def test_private_expt_visible_to_self(
         self,
-        client, logged_in_user, archive_file_path, experiment_version,
+        client, logged_in_user, archive_file_path, helpers,
         url
     ):
-        experiment_version.author = logged_in_user
-        experiment_version.save()
-        exp = experiment_version.experiment
-        exp.model.set_version_visibility('latest', 'private')
-        exp.protocol.set_version_visibility('latest', 'public')
+        model = recipes.model.make(author=logged_in_user)
+        model_version = helpers.add_version(model, visibility='private')
+        protocol = recipes.protocol.make()
+        protocol_version = helpers.add_version(protocol, visibility='public')
+        experiment_version = recipes.experiment_version.make(
+            experiment__model=model,
+            experiment__model_version=model_version.hexsha,
+            experiment__protocol=protocol,
+            experiment__protocol_version=protocol_version.hexsha,
+        )
+
         os.mkdir(str(experiment_version.abs_path))
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 

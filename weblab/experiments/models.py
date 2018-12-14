@@ -73,7 +73,15 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
     @property
     def viewers(self):
-        return self.model.viewers & self.protocol.viewers #{self.author}
+        """
+        Should never be called if both are public
+        """
+        if self.protocol.visibility == Visibility.PUBLIC:
+            return self.model.viewers
+        elif self.model.visibility == Visibility.PUBLIC:
+            return self.protocol.viewers
+        else:
+            return self.model.viewers & self.protocol.viewers
 
     @property
     def latest_version(self):
@@ -144,6 +152,10 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
     @property
     def visibility(self):
         return self.experiment.visibility
+
+    @property
+    def viewers(self):
+        return self.experiment.viewers
 
     @property
     def abs_path(self):

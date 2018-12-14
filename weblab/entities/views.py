@@ -76,14 +76,6 @@ class EntityVersionMixin(VisibilityMixin):
     Mixin for views describing a specific version of an `Entity` object
     """
 
-    def get_viewers(self):
-        """
-        Get users who are permitted to view the object regardless of visibility
-
-        :return: set of `User` objects
-        """
-        return self.get_object().viewers
-
     def get_visibility(self):
         """
         Visibility comes from the entity version

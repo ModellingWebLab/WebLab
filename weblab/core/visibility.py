@@ -105,7 +105,7 @@ class VisibilityMixin(AccessMixin):
 
         :return: set of `User` objects
         """
-        return {self.get_object().author}
+        return self.get_object().viewers
 
     def dispatch(self, request, *args, **kwargs):
         # We want to treat "not visible" the same way as "does not exist" -
