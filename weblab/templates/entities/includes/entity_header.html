@@ -2,7 +2,7 @@
 {% load entities %}
 
 <h1 id="entityname">
-  <small>{{ type|capfirst }}: </small><span>{{ entity.name }}</span>
+  <a href="{{ entity|url_entity }}"><small>{{ type|capfirst }}: </small><span>{{ entity.name }}</span></a>
 </h1>
 
 <div class="suppl">
@@ -15,14 +15,15 @@
              title="delete all versions of this {{type}}"/></a>
     {% endif %}
 
+    <br>
+    Visibility: {{ entity.visibility }}
+    &nbsp;
     {% can_manage_entity entity as can_manage %}
     {% if can_manage %}
       <a title="manage collaborators for this {{ type }}" href="{{ entity|url_collaborators }}">
-        collaborators
+        manage collaborators
       </a>
     {% endif %}
 
-    <br>
-    Visibility: {{ entity.visibility }}
   </small>
 </div>
