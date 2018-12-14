@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
 from django.db import models
-from guardian.shortcuts import get_users_with_perms
+from guardian.shortcuts import get_users_with_perms, get_objects_for_user
 
 from core.models import UserCreatedModelMixin
 from core.visibility import Visibility
@@ -207,6 +207,12 @@ class EntityManager(models.Manager):
     def create(self, **kwargs):
         kwargs['entity_type'] = self.model.entity_type
         return super().create(**kwargs)
+
+    def with_edit_permission(self, user):
+        if user.has_perm('entities.create_%s' % self.model.entity_type):
+            return get_objects_for_user(user, 'entities.edit_entity')
+        else:
+            return self.none()
 
 
 class ModelEntity(Entity):

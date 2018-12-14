@@ -49,7 +49,8 @@ def test_visible_entity_ids(helpers, user, other_user, anon_user):
     assert visible_entity_ids(other_user) == {public.pk, other_private.pk}
     assert visible_entity_ids(anon_user) == {public.pk}
 
-    helpers.add_permission(user, 'create_model')
     other_private.add_collaborator(user)
-    user = User.objects.get(pk=user.pk)
-    assert other_private.pk in visible_entity_ids(user)
+    assert other_private.pk not in visible_entity_ids(User.objects.get(pk=user.pk))
+
+    helpers.add_permission(user, 'create_model')
+    assert other_private.pk in visible_entity_ids(User.objects.get(pk=user.pk))
