@@ -503,20 +503,15 @@ class VersionListView(VisibilityMixin, DetailView):
         entity = self.get_object()
         tags = entity.repo.tag_dict
 
-        visibilities = [
-            Visibility.PUBLIC
-        ]
-        if self.request.user.is_authenticated:
-            if self.request.user == entity.author:
-                visibilities.append(Visibility.PRIVATE)
+        versions = entity.cachedentity.versions
+        if self.request.user not in entity.viewers:
+            versions = versions.filter(visibility=Visibility.PUBLIC)
 
         kwargs.update(**{
             'versions': list(
                 (list(version.tags.values_list('tag', flat=True)),
                  entity.repo.get_commit(version.sha))
-                for version in entity.cachedentity.versions.filter(
-                    visibility__in=visibilities
-                ).prefetch_related('tags')
+                for version in versions.prefetch_related('tags')
             )
         })
         return super().get_context_data(**kwargs)
