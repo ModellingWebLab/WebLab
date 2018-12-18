@@ -92,6 +92,5 @@ class UserCreatedModelMixin(models.Model):
         """
         return user.is_superuser or user == self.author
 
-
     class Meta:
         abstract = True
