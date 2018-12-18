@@ -232,6 +232,9 @@ form {
     list-style-type: none;
     padding-left: 0;
   }
+  .add-row::before {
+    content:url('../img/add.png')
+  }
 }
 
 #notifications {
