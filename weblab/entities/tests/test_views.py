@@ -594,7 +594,7 @@ class TestVersionCreation:
         model = recipes.model.make(author=logged_in_user)
         helpers.add_version(model, 'file1.txt')
         helpers.add_version(model, 'file2.txt')
-        assert len(model.repo.latest_commit.files) == 2
+        assert len(list(model.repo.latest_commit.files)) == 2
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -611,7 +611,7 @@ class TestVersionCreation:
 
         latest = model.repo.latest_commit
         assert latest.message == 'delete file1'
-        assert len(latest.files) == 2
+        assert len(list(latest.files)) == 2
         assert 'file2.txt' in latest.filenames
         assert not (model.repo_abs_path / 'file1.txt').exists()
 
@@ -621,7 +621,7 @@ class TestVersionCreation:
         helpers.add_version(model, 'file1.txt')
         helpers.add_version(model, 'file2.txt')
         helpers.add_version(model, 'file3.txt')
-        assert len(model.repo.latest_commit.files) == 3
+        assert len(list(model.repo.latest_commit.files)) == 3
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
@@ -638,7 +638,7 @@ class TestVersionCreation:
 
         latest = model.repo.latest_commit
         assert latest.message == 'delete files'
-        assert len(latest.files) == 2
+        assert len(list(latest.files)) == 2
         assert 'file3.txt' in latest.filenames
         assert not (model.repo_abs_path / 'file1.txt').exists()
         assert not (model.repo_abs_path / 'file2.txt').exists()
