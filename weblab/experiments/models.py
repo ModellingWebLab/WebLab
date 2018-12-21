@@ -74,7 +74,13 @@ class Experiment(UserCreatedModelMixin, models.Model):
     @property
     def viewers(self):
         """
-        Should never be called if both are public
+        Get users which have special permissions to view this experiment
+
+        We do not handle the case where both model and protocol are public,
+        since this would make the experiment also public and therefore
+        visible to every user - so calling this method makes very little sense.
+
+        :return: `set` of `User` objects
         """
         if self.protocol.visibility == Visibility.PUBLIC:
             return self.model.viewers
