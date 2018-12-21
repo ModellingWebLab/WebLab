@@ -996,7 +996,7 @@ class TestEntityVisibility:
         assert client.get(url % entity.pk, follow=True).status_code == 200
 
     def test_private_entity_visible_to_editor(self, client, logged_in_user, helpers, recipe, url):
-        entity = recipe.make(author=logged_in_user)
+        entity = recipe.make()
         helpers.add_version(entity, visibility='private')
         helpers.add_permission(logged_in_user, 'create_%s' % entity.entity_type)
         assign_perm('edit_entity', logged_in_user, entity)
