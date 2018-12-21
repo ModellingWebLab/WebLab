@@ -23,9 +23,9 @@ class TestUserCreatedModelMixin:
         model = recipes.model.make()
         assert model.is_editable_by(admin_user)
 
-    def test_can_edit_own_entity_with_global_permission(self, user, helpers):
+    def test_can_edit_own_entity_with_global_permission(self, user):
         model = recipes.model.make(author=user)
-        helpers.add_permission(user, 'create_model')
+        assign_perm('entities.create_model', user)
         user = User.objects.get(pk=user.pk)
         assert model.is_editable_by(user)
 
@@ -35,14 +35,33 @@ class TestUserCreatedModelMixin:
         model = recipes.model.make(author=user)
         assert not model.is_editable_by(user)
 
-    def test_cannot_edit_somebody_elses_entity(self, user, helpers):
+    def test_cannot_edit_somebody_elses_entity(self, user):
         # Even with the right permissions, another user shouldn't be able to edit entity
         model = recipes.model.make()
-        helpers.add_permission(user, 'create_model')
+        assign_perm('entities.create_model', user)
         assert not model.is_editable_by(user)
 
-    def test_can_edit_somebody_elses_entity_with_object_permission(self, user, other_user, helpers):
+    def test_can_edit_somebody_elses_entity_with_object_permission(self, user):
         model = recipes.model.make()
-        helpers.add_permission(user, 'create_model')
+        assign_perm('entities.create_model', user)
         assign_perm('edit_entity', user, model)
         assert model.is_editable_by(user)
+
+    def test_is_collaborator_if_has_edit_permission(self, user):
+        model = recipes.model.make()
+        assert user not in model.collaborators
+
+        assign_perm('edit_entity', user, model)
+        assert user in model.collaborators
+
+    def test_is_viewer_if_has_edit_permission_and_global_permission(self, user):
+        model = recipes.model.make()
+        assign_perm('edit_entity', user, model)
+        assert user not in model.viewers
+
+        assign_perm('entities.create_model', user)
+        assert user in model.viewers
+
+    def test_is_viewer_if_is_author(self, user):
+        model = recipes.model.make(author=user)
+        assert model.viewers == {user}
