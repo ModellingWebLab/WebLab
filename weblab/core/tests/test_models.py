@@ -1,7 +1,6 @@
 import pytest
 from guardian.shortcuts import assign_perm
 
-from accounts.models import User
 from core import recipes
 
 
@@ -23,10 +22,9 @@ class TestUserCreatedModelMixin:
         model = recipes.model.make()
         assert model.is_editable_by(admin_user)
 
-    def test_can_edit_own_entity_with_global_permission(self, user):
+    def test_can_edit_own_entity_with_global_permission(self, user, helpers):
         model = recipes.model.make(author=user)
         assign_perm('entities.create_model', user)
-        user = User.objects.get(pk=user.pk)
         assert model.is_editable_by(user)
 
     def test_cannot_edit_own_entity_without_global_permission(self, user):

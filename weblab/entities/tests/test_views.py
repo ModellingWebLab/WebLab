@@ -9,7 +9,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.dateparse import parse_datetime
 from guardian.shortcuts import assign_perm
 
-from accounts.models import User
 from core import recipes
 from entities.models import Entity, ModelEntity, ProtocolEntity
 
@@ -917,7 +916,6 @@ class TestEntityCollaboratorsView:
                                    'form-INITIAL_FORMS': 0,
                                })
         assert response.status_code == 302
-        other_user = User.objects.get(pk=other_user.pk)
         assert other_user.has_perm('edit_entity', model)
 
     def test_add_non_existent_user_as_editor(self, logged_in_user, client):
@@ -947,7 +945,6 @@ class TestEntityCollaboratorsView:
                                    'form-INITIAL_FORMS': 1,
                                })
         assert response.status_code == 302
-        other_user = User.objects.get(pk=other_user.pk)
         assert not other_user.has_perm('edit_entity', model)
 
     def test_non_owner_cannot_edit(self, logged_in_user, client):
