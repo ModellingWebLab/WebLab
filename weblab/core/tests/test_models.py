@@ -52,12 +52,9 @@ class TestUserCreatedModelMixin:
         assign_perm('edit_entity', user, model)
         assert user in model.collaborators
 
-    def test_is_viewer_if_has_edit_permission_and_global_permission(self, user):
+    def test_is_viewer_if_has_edit_permission(self, user):
         model = recipes.model.make()
         assign_perm('edit_entity', user, model)
-        assert user not in model.viewers
-
-        assign_perm('entities.create_model', user)
         assert user in model.viewers
 
     def test_is_viewer_if_is_author(self, user):

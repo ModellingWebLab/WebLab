@@ -75,8 +75,7 @@ class UserCreatedModelMixin(models.Model):
         """
         Users who have permission to view this object
 
-        - i.e. the author and anybody listed as a collaborator who also has
-        the relevant global permissions for collaboration
+        - i.e. the author and anybody listed as a collaborator
 
         This overrides the 'private' visibility for the object. A 'public'
         object is visible to all anyway.
@@ -84,7 +83,6 @@ class UserCreatedModelMixin(models.Model):
         return {
             user
             for user in self.collaborators
-            if self.is_editable_by(user)
         } | { self.author }
 
     def is_managed_by(self, user):
