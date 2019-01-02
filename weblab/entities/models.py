@@ -201,6 +201,16 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         return set(self.repocache.get_version(sha).tags.values_list('tag', flat=True))
 
+    def analyse_new_version(self, commit):
+        """Hook called when a new version has been created successfully.
+
+        This can be used by subclasses to, e.g., add ephemeral files to the commit,
+        or trigger Celery tasks to analyse the new entity.
+
+        :param commit: a `Commit` object for the new version
+        """
+        pass
+
 
 class EntityManager(models.Manager):
     def get_queryset(self):
@@ -237,6 +247,38 @@ class ProtocolEntity(Entity):
     class Meta:
         proxy = True
         verbose_name_plural = 'Protocol entities'
+
+    # The name of a (possibly ephemeral) file containing documentation for the protocol
+    README_NAME = 'readme.md'
+
+    def analyse_new_version(self, commit):
+        """Hook called when a new version has been created successfully.
+
+        Parses the main protocol file to look for documentation and extracts it into
+        an ephemeral readme.md file, if such a file does not already exist.
+
+        This isn't very intelligent or efficient - it's just a proof-of-concept of the
+        ephemeral file approach. In due course we'll call a Celery task to do further
+        processing. (TODO)
+
+        :param entity: the entity which has had a new version added
+        :param commit: a `Commit` object for the new version
+        """
+        if self.README_NAME not in commit.filenames:
+            main_file_name = commit.master_filename
+            if main_file_name is None:
+                return  # TODO: Add error to errors.txt instead!
+            main_file = commit.get_blob(main_file_name)
+            if main_file is None:
+                return  # TODO: Add error to errors.txt instead!
+            content = main_file.data_stream.read()
+            header_start = content.find(b'documentation')
+            doc_start = content.find(b'{', header_start)
+            doc_end = content.find(b'}', doc_start)
+            if doc_start >= 0 and doc_end > doc_start:
+                doc = content[doc_start + 1:doc_end]
+                # Create ephemeral file
+                commit.add_ephemeral_file(self.README_NAME, doc)
 
 
 class EntityFile(models.Model):

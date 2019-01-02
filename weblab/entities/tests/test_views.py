@@ -691,15 +691,18 @@ class TestVersionCreation:
 
     def test_create_protocol_version(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_protocol')
+        doc = b'\n# Title\n\ndocumentation goes here\nand here'
+        content = b'my test protocol\ndocumentation\n{' + doc + b'}'
         protocol = recipes.protocol_file.make(
             entity__author=logged_in_user,
-            upload=SimpleUploadedFile('protocol.txt', b'my test protocol'),
+            upload=SimpleUploadedFile('protocol.txt', content),
             original_name='protocol.txt',
         ).entity
         response = client.post(
             '/entities/protocols/%d/versions/new' % protocol.pk,
             data={
                 'filename[]': 'uploads/protocol.txt',
+                'mainEntry': ['protocol.txt'],
                 'commit_message': 'first commit',
                 'tag': 'v1',
                 'visibility': 'public',
@@ -707,6 +710,11 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d' % protocol.id
+        # Check documentation parsing
+        commit = protocol.repo.latest_commit
+        assert ProtocolEntity.README_NAME in commit.filenames
+        readme = commit.get_blob(ProtocolEntity.README_NAME)
+        assert readme.data_stream.read() == doc
 
     def test_cannot_create_protocol_version_as_non_owner(self, logged_in_user, client):
         protocol = recipes.protocol.make()
