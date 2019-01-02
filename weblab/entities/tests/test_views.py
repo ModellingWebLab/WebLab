@@ -9,7 +9,6 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.dateparse import parse_datetime
 from guardian.shortcuts import assign_perm
 
-from accounts.models import User
 from core import recipes
 from entities.models import Entity, ModelEntity, ProtocolEntity
 
@@ -925,7 +924,6 @@ class TestEntityCollaboratorsView:
                                    'form-INITIAL_FORMS': 0,
                                })
         assert response.status_code == 302
-        other_user = User.objects.get(pk=other_user.pk)
         assert other_user.has_perm('edit_entity', model)
 
     def test_add_non_existent_user_as_editor(self, logged_in_user, client):
@@ -955,7 +953,6 @@ class TestEntityCollaboratorsView:
                                    'form-INITIAL_FORMS': 1,
                                })
         assert response.status_code == 302
-        other_user = User.objects.get(pk=other_user.pk)
         assert not other_user.has_perm('edit_entity', model)
 
     def test_non_owner_cannot_edit(self, logged_in_user, client):
@@ -1006,10 +1003,9 @@ class TestEntityVisibility:
         helpers.add_version(entity, visibility='private')
         assert client.get(url % entity.pk, follow=True).status_code == 200
 
-    def test_private_entity_visible_to_editor(self, client, logged_in_user, helpers, recipe, url):
-        entity = recipe.make(author=logged_in_user)
+    def test_private_entity_visible_to_collaborator(self, client, logged_in_user, helpers, recipe, url):
+        entity = recipe.make()
         helpers.add_version(entity, visibility='private')
-        helpers.add_permission(logged_in_user, 'create_%s' % entity.entity_type)
         assign_perm('edit_entity', logged_in_user, entity)
         assert client.get(url % entity.pk, follow=True).status_code == 200
 

@@ -169,4 +169,4 @@ def logged_in_admin(client, admin_user):
 @pytest.fixture
 def model_creator(user, helpers):
     helpers.add_permission(user, 'create_model')
-    return User.objects.get(pk=user.pk)
+    return user

@@ -1,7 +1,6 @@
 import pytest
 from guardian.shortcuts import assign_perm
 
-from accounts.models import User
 from core import recipes
 
 
@@ -25,8 +24,7 @@ class TestUserCreatedModelMixin:
 
     def test_can_edit_own_entity_with_global_permission(self, user, helpers):
         model = recipes.model.make(author=user)
-        helpers.add_permission(user, 'create_model')
-        user = User.objects.get(pk=user.pk)
+        assign_perm('entities.create_model', user)
         assert model.is_editable_by(user)
 
     def test_cannot_edit_own_entity_without_global_permission(self, user):
@@ -35,14 +33,30 @@ class TestUserCreatedModelMixin:
         model = recipes.model.make(author=user)
         assert not model.is_editable_by(user)
 
-    def test_cannot_edit_somebody_elses_entity(self, user, helpers):
+    def test_cannot_edit_somebody_elses_entity(self, user):
         # Even with the right permissions, another user shouldn't be able to edit entity
         model = recipes.model.make()
-        helpers.add_permission(user, 'create_model')
+        assign_perm('entities.create_model', user)
         assert not model.is_editable_by(user)
 
-    def test_can_edit_somebody_elses_entity_with_object_permission(self, user, other_user, helpers):
+    def test_can_edit_somebody_elses_entity_with_object_permission(self, user):
         model = recipes.model.make()
-        helpers.add_permission(user, 'create_model')
+        assign_perm('entities.create_model', user)
         assign_perm('edit_entity', user, model)
         assert model.is_editable_by(user)
+
+    def test_is_collaborator_if_has_edit_permission(self, user):
+        model = recipes.model.make()
+        assert user not in model.collaborators
+
+        assign_perm('edit_entity', user, model)
+        assert user in model.collaborators
+
+    def test_is_viewer_if_has_edit_permission(self, user):
+        model = recipes.model.make()
+        assign_perm('edit_entity', user, model)
+        assert user in model.viewers
+
+    def test_is_viewer_if_is_author(self, user):
+        model = recipes.model.make(author=user)
+        assert model.viewers == {user}

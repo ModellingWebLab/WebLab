@@ -59,6 +59,11 @@ class UserCreatedModelMixin(models.Model):
 
     @property
     def collaborators(self):
+        """
+        All users who have specifically been permitted to collaborate this object
+
+        :return list of `User` objects
+        """
         return [
             user
             for (user, perms) in get_users_with_perms(self, attach_perms=True).items()
@@ -66,25 +71,19 @@ class UserCreatedModelMixin(models.Model):
         ]
 
     @property
-    def editors(self):
+    def viewers(self):
         """
-        Users who can edit the object.
+        Users who have permission to view this object
 
-        :return set of `User` objects
+        - i.e. the author and anybody listed as a collaborator
+
+        This overrides the 'private' visibility for the object. A 'public'
+        object is visible to all anyway.
         """
         return {
             user
-            for user in self.collaborators + [self.author]
-            if self.is_editable_by(user)
-        }
-
-    @property
-    def viewers(self):
-        """
-        The object's collaborator list, filtered to ensure all collaborators
-        have global permissions, and also including the author
-        """
-        return self.editors | {self.author}
+            for user in self.collaborators
+        } | { self.author }
 
     def is_managed_by(self, user):
         """

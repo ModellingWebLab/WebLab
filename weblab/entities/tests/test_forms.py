@@ -36,11 +36,6 @@ class TestEntityCollaboratorFormSet:
         assert not form.is_valid()
         assert 'email' in form.errors
 
-    def test_raises_validation_error_if_no_global_permission(self, user, public_model):
-        form = self._form({'email': user.email, 'DELETE': False}, public_model)
-        assert not form.is_valid()
-        assert 'email' in form.errors
-
     def test_add_collaborator(self, public_model, model_creator):
         form = self._form({'email': model_creator.email, 'DELETE': False}, public_model)
         assert form.is_valid()
