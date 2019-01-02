@@ -352,7 +352,12 @@ class Commit:
         :param path: path to the file on disk
 
         One of content or path must be given.
+
+        Raises ValueError if the name has already been used for a real or
+        ephemeral file.
         """
+        if name in self.filenames:
+            raise ValueError("File name '{}' has already been used".format(name))
         cmd = self._repo._repo.git
         with TemporaryDirectory() as tmpdir:
             if path is None:

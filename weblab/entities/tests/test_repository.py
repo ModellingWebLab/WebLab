@@ -290,3 +290,16 @@ class TestCommit:
         assert commit1.list_ephemeral_files() == {name}
         assert commit1.filenames == {name}
         assert commit1.get_ephemeral_file(name).data_stream.read() == content
+
+    def test_ephemeral_name_repeat_error(self, commit):
+        name = 'readme.md'
+        commit.add_ephemeral_file(name, b'content 1')
+        with pytest.raises(ValueError):
+            commit.add_ephemeral_file(name, b'content 2')
+
+    def test_ephemeral_name_matches_real_file_error(self, commit):
+        with pytest.raises(ValueError):
+            commit.add_ephemeral_file('file.cellml', b'content')
+
+    def test_get_missing_ephemeral_file(self, commit):
+        assert commit.get_ephemeral_file('not-present.md') is None
