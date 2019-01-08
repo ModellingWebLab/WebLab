@@ -468,6 +468,7 @@ class EntityNewVersionView(
             # Temporary upload files have been safely committed, so can be deleted
             for filename in files_to_delete:
                 os.remove(filename)
+            entity.analyse_new_version(commit)
             return HttpResponseRedirect(
                 reverse('entities:%s' % entity.entity_type, args=[entity.id]))
         else:
@@ -506,7 +507,6 @@ class VersionListView(VisibilityMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         entity = self.object
-        tags = entity.repo.tag_dict
 
         versions = entity.cachedentity.versions
         if self.request.user not in entity.viewers:
