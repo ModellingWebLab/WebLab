@@ -22,7 +22,7 @@ class TestUserCreatedModelMixin:
         model = recipes.model.make()
         assert model.is_editable_by(admin_user)
 
-    def test_can_edit_own_entity_with_global_permission(self, user, helpers):
+    def test_can_edit_own_entity_with_global_permission(self, user):
         model = recipes.model.make(author=user)
         assign_perm('entities.create_model', user)
         assert model.is_editable_by(user)

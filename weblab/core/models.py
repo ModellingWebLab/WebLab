@@ -60,7 +60,7 @@ class UserCreatedModelMixin(models.Model):
     @property
     def collaborators(self):
         """
-        All users who have specifically been permitted to collaborate this object
+        All users who have specifically been permitted to collaborate on this object
 
         :return list of `User` objects
         """
