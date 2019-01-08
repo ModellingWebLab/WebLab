@@ -24,7 +24,7 @@
         <li title="{{ entity.name }}">
           <strong><a href="{{ entity|url_entity }}">{{ entity.name }}</a></strong>
 
-          {% can_create_version type as permission %}
+          {% can_create_version entity as permission %}
           {% if permission %}
           <small>(<a href="{{ entity|url_newversion }}">add new version</a>)</small>
           {% endif %}

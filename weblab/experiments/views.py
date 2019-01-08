@@ -54,7 +54,7 @@ class ExperimentMatrixJsonView(View):
             'id': version,
             'entityId': entity.id,
             'author': str(entity.author.full_name),
-            'visibility': entity.get_version_visibility(version, default=Visibility.PRIVATE),
+            'visibility': entity.get_version_visibility(version, default=entity.DEFAULT_VISIBILITY),
             'created': entity.created_at,
             'name': name,
             'url': reverse(

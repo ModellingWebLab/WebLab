@@ -20,7 +20,7 @@ def populate_entity_cache(entity):
 
     tag_dict = entity.repo.tag_dict
 
-    visibility = 'private'
+    visibility = entity.DEFAULT_VISIBILITY
     commits_without_visibility = []
     for commit in entity.repo.commits:
         visibility = entity.get_visibility_from_repo(commit)
@@ -28,7 +28,7 @@ def populate_entity_cache(entity):
             entity=cached,
             sha=commit.hexsha,
             timestamp=commit.committed_at,
-            visibility=visibility or Visibility.PRIVATE
+            visibility=visibility or entity.DEFAULT_VISIBILITY
         )
 
         # If the commit has no visibility info in the repo. remember this

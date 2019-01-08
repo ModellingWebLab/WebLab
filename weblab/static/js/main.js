@@ -9,6 +9,7 @@ var entity = require('./entity.js');
 var experiment = require('./experiment.js');
 var notifications = require('./lib/notifications.js');
 require('./compare.js');
+require('django-formset');
 
 
 function removeListeners (element)
@@ -158,6 +159,12 @@ function initPage ()
   } else if ($('#entityversion').length > 0) {
     entity.init()
   }
+
+
+  $("table.formset tbody tr").formset({
+    addText: 'add another',
+    deleteText: 'remove',
+  });
 }
 
 document.addEventListener("DOMContentLoaded", initPage, false);

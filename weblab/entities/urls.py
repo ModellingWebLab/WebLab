@@ -155,4 +155,10 @@ urlpatterns = [
         views.FileUploadView.as_view(),
         name='upload_file',
     ),
+
+    url(
+        r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/collaborators$',
+        views.EntityCollaboratorsView.as_view(),
+        name='entity_collaborators',
+    ),
 ]

@@ -8,7 +8,7 @@
 
   <h2>Versions</h2>
 
-  {% can_create_version entity.entity_type as permission %}
+  {% can_create_version entity as permission %}
   {% if permission %}
   <a href="{{ entity|url_newversion }}" class="button">Add new version</a>
   {% endif %}

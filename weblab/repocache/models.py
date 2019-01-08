@@ -28,7 +28,7 @@ class CachedEntity(models.Model):
         try:
             return self.latest_version.visibility
         except ObjectDoesNotExist:
-            return Visibility.PRIVATE
+            return Entity.DEFAULT_VISIBILITY
 
     @property
     def latest_version(self):

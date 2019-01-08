@@ -1,8 +1,10 @@
 import pytest
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.models import AnonymousUser, Permission
+from django.contrib.contenttypes.models import ContentType
 
 from accounts.models import User
 from core import recipes
+from entities.models import Entity
 from repocache.populate import populate_entity_cache
 
 
@@ -25,6 +27,16 @@ class Helpers:
         if cache:
             populate_entity_cache(entity)
         return commit
+
+    @staticmethod
+    def add_permission(user, perm):
+        """Add permission to a user"""
+        content_type = ContentType.objects.get_for_model(Entity)
+        permission = Permission.objects.get(
+            codename=perm,
+            content_type=content_type,
+        )
+        user.user_permissions.add(permission)
 
     @staticmethod
     def login(client, user):
@@ -60,14 +72,28 @@ def fake_repo_path(settings, tmpdir):
 @pytest.fixture
 def model_with_version():
     model = recipes.model.make()
-    Helpers.add_version(model, visibility='public')
+    Helpers.add_version(model, visibility='private')
     return model
 
 
 @pytest.fixture
 def protocol_with_version():
     protocol = recipes.protocol.make()
-    Helpers.add_version(protocol, visibility='public')
+    Helpers.add_version(protocol, visibility='private')
+    return protocol
+
+
+@pytest.fixture
+def public_model(helpers):
+    model = recipes.model.make()
+    helpers.add_version(model, visibility='public')
+    return model
+
+
+@pytest.fixture
+def public_protocol(helpers):
+    protocol = recipes.protocol.make()
+    helpers.add_version(protocol, visibility='public')
     return protocol
 
 
@@ -83,13 +109,13 @@ def queued_experiment(model_with_version, protocol_with_version):
 
 
 @pytest.fixture
-def experiment_version(model_with_version, protocol_with_version):
+def experiment_version(public_model, public_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
-        experiment__model=model_with_version,
-        experiment__model_version=model_with_version.repo.latest_commit.hexsha,
-        experiment__protocol=protocol_with_version,
-        experiment__protocol_version=protocol_with_version.repo.latest_commit.hexsha,
+        experiment__model=public_model,
+        experiment__model_version=public_model.repo.latest_commit.hexsha,
+        experiment__protocol=public_protocol,
+        experiment__protocol_version=public_protocol.repo.latest_commit.hexsha,
     )
 
 
@@ -138,3 +164,9 @@ def logged_in_user(client, user):
 def logged_in_admin(client, admin_user):
     client.login(username=admin_user.email, password='password')
     return admin_user
+
+
+@pytest.fixture
+def model_creator(user, helpers):
+    helpers.add_permission(user, 'create_model')
+    return user

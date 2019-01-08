@@ -63,9 +63,31 @@ class Experiment(UserCreatedModelMixin, models.Model):
     @property
     def visibility(self):
         return get_joint_visibility(
-            self.model.get_version_visibility(self.model_version, default=Visibility.PRIVATE),
-            self.protocol.get_version_visibility(self.protocol_version, default=Visibility.PRIVATE),
+            self.model.get_version_visibility(
+                self.model_version,
+                default=self.model.DEFAULT_VISIBILITY),
+            self.protocol.get_version_visibility(
+                self.protocol_version,
+                default=self.protocol.DEFAULT_VISIBILITY),
         )
+
+    @property
+    def viewers(self):
+        """
+        Get users which have special permissions to view this experiment
+
+        We do not handle the case where both model and protocol are public,
+        since this would make the experiment also public and therefore
+        visible to every user - so calling this method makes very little sense.
+
+        :return: `set` of `User` objects
+        """
+        if self.protocol.visibility == Visibility.PUBLIC:
+            return self.model.viewers
+        elif self.model.visibility == Visibility.PUBLIC:
+            return self.protocol.viewers
+        else:
+            return self.model.viewers & self.protocol.viewers
 
     @property
     def latest_version(self):
@@ -136,6 +158,10 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
     @property
     def visibility(self):
         return self.experiment.visibility
+
+    @property
+    def viewers(self):
+        return self.experiment.viewers
 
     @property
     def abs_path(self):

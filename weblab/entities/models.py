@@ -5,8 +5,10 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
 from django.db import models
+from guardian.shortcuts import get_objects_for_user
 
 from core.models import UserCreatedModelMixin
+from core.visibility import HELP_TEXT as VIS_HELP_TEXT, Visibility
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
@@ -16,6 +18,10 @@ VISIBILITY_NOTE_PREFIX = 'Visibility: '
 
 
 class Entity(UserCreatedModelMixin, models.Model):
+    DEFAULT_VISIBILITY = Visibility.PRIVATE
+
+    VISIBILITY_HELP = VIS_HELP_TEXT
+
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
     ENTITY_TYPE_CHOICES = (
@@ -36,8 +42,8 @@ class Entity(UserCreatedModelMixin, models.Model):
         permissions = (
             ('create_model', 'Can create models'),
             ('create_protocol', 'Can create protocols'),
-            ('create_model_version', 'Can create new versions of a model'),
-            ('create_protocol_version', 'Can create new versions of a protocol'),
+            # Edit entity is used as an object-level permission
+            ('edit_entity', 'Can edit entity'),
         )
 
     def __str__(self):
@@ -203,6 +209,12 @@ class EntityManager(models.Manager):
     def create(self, **kwargs):
         kwargs['entity_type'] = self.model.entity_type
         return super().create(**kwargs)
+
+    def with_edit_permission(self, user):
+        if user.has_perm('entities.create_%s' % self.model.entity_type):
+            return get_objects_for_user(user, 'entities.edit_entity')
+        else:
+            return self.none()
 
 
 class ModelEntity(Entity):

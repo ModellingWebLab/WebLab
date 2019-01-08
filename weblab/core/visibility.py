@@ -4,19 +4,16 @@ from django.http import Http404
 
 class Visibility:
     PRIVATE = 'private'
-    RESTRICTED = 'restricted'
     PUBLIC = 'public'
 
 
 HELP_TEXT = (
     'Public = anyone can view\n'
-    'Restricted = logged in users can view\n'
     'Private = only you can view'
 )
 
 CHOICES = (
     (Visibility.PRIVATE, 'Private'),
-    (Visibility.RESTRICTED, 'Restricted'),
     (Visibility.PUBLIC, 'Public')
 )
 
@@ -27,7 +24,7 @@ def get_joint_visibility(*visibilities):
     """
     # Ordered by most conservative first
     levels = [
-        Visibility.PRIVATE, Visibility.RESTRICTED, Visibility.PUBLIC,
+        Visibility.PRIVATE, Visibility.PUBLIC,
     ]
 
     # Use the most conservative of the two entities' visibilities
@@ -43,15 +40,20 @@ def visible_entity_ids(user):
 
     :return: set of entity IDs
     """
-    from repocache.entities import get_public_entity_ids, get_restricted_entity_ids
+    from entities.models import ModelEntity, ProtocolEntity
+    from repocache.entities import get_public_entity_ids
 
     public_entity_ids = get_public_entity_ids()
 
     if user.is_authenticated:
-        user_entity_ids = set(user.entity_set.values_list('id', flat=True))
-        non_public_entity_ids = get_restricted_entity_ids() | user_entity_ids
+        # Get the user's own entities and those they have permission for
+        visible = user.entity_set.all().union(
+            ModelEntity.objects.with_edit_permission(user),
+            ProtocolEntity.objects.with_edit_permission(user),
+        )
+        visible_ids = set(visible.values_list('id', flat=True))
 
-        return public_entity_ids | non_public_entity_ids
+        return public_entity_ids | visible_ids
     else:
         return public_entity_ids
 
@@ -64,10 +66,10 @@ def visibility_check(user, obj):
     :param: the object - must have `visibility` and `author` fields
     :returns: True if the user is allowed to view the object, False otherwise
     """
-    if user.is_authenticated:
-        return obj.author == user or obj.visibility != Visibility.PRIVATE
-    else:
-        return obj.visibility == Visibility.PUBLIC
+    return (
+        obj.visibility == Visibility.PUBLIC or
+        user.is_authenticated and user in obj.viewers
+    )
 
 
 class VisibilityMixin(AccessMixin):
@@ -75,7 +77,6 @@ class VisibilityMixin(AccessMixin):
     View mixin implementing visiblity restrictions
 
     Public objects can be seen by all.
-    Restricted objects can be seen only by logged in users.
     Private objects can be seen only by their owner.
 
     If an object is not visible to a logged in user, we generate a 404
@@ -98,13 +99,13 @@ class VisibilityMixin(AccessMixin):
         """
         return self.get_object().visibility
 
-    def get_owner(self):
+    def get_viewers(self):
         """
-        Get the owner applicable to the visibility restrictions on this view
+        Get users who are permitted to view the object regardless of visibility
 
-        :return: `User` object
+        :return: set of `User` objects
         """
-        return self.get_object().author
+        return self.get_object().viewers
 
     def dispatch(self, request, *args, **kwargs):
         # We want to treat "not visible" the same way as "does not exist" -
@@ -118,14 +119,14 @@ class VisibilityMixin(AccessMixin):
 
         if obj:
             visibility = self.get_visibility()
-            owner = self.get_owner()
+            allowed_users = self.get_viewers()
             if visibility == Visibility.PUBLIC:
                 allow_access = True
 
             elif self.request.user.is_authenticated:
                 # Logged in user can view all except other people's private stuff
                 allow_access = (
-                    owner == self.request.user or
+                    self.request.user in allowed_users or
                     visibility != Visibility.PRIVATE
                 )
             else:

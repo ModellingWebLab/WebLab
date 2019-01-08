@@ -16,5 +16,5 @@ ROLLBAR = {
     'access_token': secrets.ROLLBAR_POST_SERVER_ITEM_ACCESS_TOKEN,  # noqa
     'environment': 'development' if DEBUG else 'production',
     'branch': 'master',
-    'root': BASE_DIR,  # noqa
+    'root': str(BASE_DIR),  # noqa
 }
