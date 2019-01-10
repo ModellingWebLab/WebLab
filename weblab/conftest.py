@@ -109,6 +109,20 @@ def queued_experiment(model_with_version, protocol_with_version):
 
 
 @pytest.fixture
+def experiment_with_result(model_with_version, protocol_with_version):
+    version = recipes.experiment_version.make(
+        status='SUCCESS',
+        experiment__model=model_with_version,
+        experiment__protocol=protocol_with_version,
+    )
+    version.abs_path.mkdir()
+    with (version.abs_path / 'result.txt').open('w') as f:
+        f.write('experiment results')
+    return version
+
+
+
+@pytest.fixture
 def experiment_version(public_model, public_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
