@@ -2,7 +2,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from core.models import VisibilityModelMixin
-from core.visibility import Visibility
 from entities.models import Entity
 
 from .exceptions import RepoCacheMiss
@@ -15,7 +14,7 @@ class CachedEntity(models.Model):
     This is intended to reflect the state of the entity's repository,
     and should not be changed without first changing the repo.
     """
-    entity = models.OneToOneField(Entity)
+    entity = models.OneToOneField(Entity, on_delete=models.CASCADE)
 
     @property
     def visibility(self):
@@ -73,7 +72,7 @@ class CachedEntityVersion(VisibilityModelMixin):
     """
     Cache for a single version / commit in an entity's repository
     """
-    entity = models.ForeignKey(CachedEntity, related_name='versions')
+    entity = models.ForeignKey(CachedEntity, on_delete=models.CASCADE, related_name='versions')
     sha = models.CharField(max_length=40)
     timestamp = models.DateTimeField()
 
@@ -110,7 +109,7 @@ class CachedEntityTag(models.Model):
     """
     entity = models.ForeignKey(CachedEntity, related_name='tags')
     tag = models.CharField(max_length=255)
-    version = models.ForeignKey(CachedEntityVersion, related_name='tags')
+    version = models.ForeignKey(CachedEntityVersion, on_delete=models.CASCADE, related_name='tags')
 
     class Meta:
         unique_together = ['entity', 'tag']
