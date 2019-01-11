@@ -688,7 +688,8 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
-    def test_create_protocol_version(self, client, logged_in_user, helpers):
+    @patch('entities.processing.submit_check_protocol_task')
+    def test_create_protocol_version(self, mock_check, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_protocol')
         doc = b'\n# Title\n\ndocumentation goes here\nand here'
         content = b'my test protocol\ndocumentation\n{' + doc + b'}'
@@ -714,6 +715,9 @@ class TestVersionCreation:
         assert ProtocolEntity.README_NAME in commit.filenames
         readme = commit.get_blob(ProtocolEntity.README_NAME)
         assert readme.data_stream.read() == doc
+        # Check new version analysis "happened"
+        assert mock_check.called
+        mock_check.assert_called_once_with(protocol, commit.hexsha)
 
     def test_cannot_create_protocol_version_as_non_owner(self, logged_in_user, client):
         protocol = recipes.protocol.make()

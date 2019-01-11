@@ -113,3 +113,22 @@ class CachedEntityTag(models.Model):
 
     class Meta:
         unique_together = ['entity', 'tag']
+
+
+class ProtocolInterface(models.Model):
+    """
+    A record of the ontology terms comprising a protocol's interface with models.
+
+    Eventually this will be stored in a proper RDF triple store rather than in the DB.
+
+    A blank term is added to indicate that the interface has been analysed, in case of no actual terms being found.
+    """
+    protocol_version = models.ForeignKey(CachedEntityVersion, on_delete=models.CASCADE, related_name='interface')
+    term = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text='an ontology term in the interface')
+    optional = models.BooleanField(help_text='whether this term is required to be present in models')
+
+    class Meta:
+        unique_together = ['protocol_version', 'term']

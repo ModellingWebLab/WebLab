@@ -19,8 +19,10 @@ from django.http import (
     JsonResponse,
 )
 from django.core.exceptions import PermissionDenied
+from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
@@ -41,6 +43,7 @@ from .forms import (
     ProtocolEntityForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity
+from .processing import process_check_protocol_callback
 
 
 class ModelEntityTypeMixin:
@@ -721,3 +724,10 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailVie
             kwargs['formset'] = self.get_formset()
         kwargs['type'] = self.object.entity_type
         return super().get_context_data(**kwargs)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CheckProtocolCallbackView(View):
+    def post(self, request, *args, **kwargs):
+        result = process_check_protocol_callback(request.POST)
+        return JsonResponse(result)
