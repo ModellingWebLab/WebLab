@@ -207,6 +207,13 @@ class Entity(UserCreatedModelMixin, models.Model):
         This can be used by subclasses to, e.g., add ephemeral files to the commit,
         or trigger Celery tasks to analyse the new entity.
 
+        Warning: this doesn't function like a normal polymorphic method for objects
+        retrieved from the database. You'll get an instance of whatever class you
+        request, so if you search for any Entity you'll end up calling this method,
+        not the subclass implementation as you might have expected. If this turns
+        out to be a problem in practice, we can look at using django-polymorphic as
+        a solution.
+
         :param commit: a `Commit` object for the new version
         """
         pass
