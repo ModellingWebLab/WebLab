@@ -779,6 +779,7 @@ function init() {
 				archivelink : document.getElementById("downloadArchive"),
 				filedetails : document.getElementById("entityversionfiledetails"),
 				experimentlist: document.getElementById("entityexperimentlist"),
+				experimentpartners: document.getElementById("entityexperimentlistpartners"),
 				visibility: document.getElementById("versionVisibility"),
 				visibilityAction : document.getElementById("versionVisibilityAction"),
 				deleteBtn: document.getElementById("deleteVersion"),
@@ -797,23 +798,24 @@ function init() {
   entityType = $(doc.version).data('entity-type');
   compareType = entityType == 'model' ? 'protocol' : 'model';
 	
-	window.onpopstate = render;
-	render ();
+  if (doc.version.details) {
+    window.onpopstate = render;
+    render ();
+  }
 
   var $visibility = $(doc.version.visibility);
   $visibility.on(
-    'change',
-    '#id_visibility',
-    function() {
-      updateVisibility (
-          $visibility.data('change-href'),
-          {
-            version: curVersion.id,
-            visibility: $(this).val(),
-          })
-    });
+      'change',
+      '#id_visibility',
+      function() {
+        updateVisibility (
+            $visibility.data('change-href'),
+            {
+              version: curVersion.id,
+              visibility: $(this).val(),
+            })
+      });
 
-		
   $(doc.file.close).click(function (ev) {
     if (ev.which == 1)
     {
@@ -881,6 +883,16 @@ function init() {
 	
 	
 	// Comparing experiments click events
+  var $exp_list = $(doc.version.experimentpartners).children("ul");
+  $("#entityexperimentlistpartnersactall").click(function () {
+    $exp_list.find("input").filter(":visible").prop('checked', true);
+  });
+  $("#entityexperimentlistpartnersactnone").click(function () {
+    $exp_list.find("input").prop('checked', false);
+  });
+  $("#entityexperimentlistpartnersactlatest").click(function () {
+    $exp_list.children("li").children("input").prop('checked', true);
+  });
 	$("#entityexperimentlist_showallversions").click(function () {
 		$(this).toggleClass("selected");
 		$exp_list.find("ul").toggle();
