@@ -899,6 +899,16 @@ function init() {
 		$("#entityexperimentlist_span_latest").toggle();
     return false;
 	});
+  $("#entityexperimentlistpartnersactcompare").click(function () {
+    var url = $(this).data('base-href');
+    $exp_list.find("input:checked").filter(":visible").each(function () {
+      url += '/' + this.value;
+    });
+    if (url)
+      document.location = url; //contextPath + "/compare/e/" + url;
+    else
+      window.alert("You need to select some " + compareType + "s to compare.");
+  });
 	
   $("#entityexperimentlist_span_latest").hide();
 
