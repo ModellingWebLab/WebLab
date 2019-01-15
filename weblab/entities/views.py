@@ -43,30 +43,22 @@ from .forms import (
 from .models import Entity, ModelEntity, ProtocolEntity
 
 
-class ModelEntityTypeMixin:
+class EntityTypeMixin:
     """
     Mixin for including in pages about `ModelEntity` objects
     """
-    model = ModelEntity
+    @property
+    def model(self):
+        return next(
+            et 
+            for et in (ModelEntity, ProtocolEntity)
+            if et.entity_type == self.kwargs['entity_type']
+        )
 
     def get_context_data(self, **kwargs):
         kwargs.update({
-            'type': ModelEntity.entity_type,
-            'other_type': ProtocolEntity.entity_type,
-        })
-        return super().get_context_data(**kwargs)
-
-
-class ProtocolEntityTypeMixin:
-    """
-    Mixin for including in pages about `ProtocolEntity` objects
-    """
-    model = ProtocolEntity
-
-    def get_context_data(self, **kwargs):
-        kwargs.update({
-            'type': ProtocolEntity.entity_type,
-            'other_type': ModelEntity.entity_type,
+            'type': self.model.entity_type,
+            'other_type': self.model.other_type,
         })
         return super().get_context_data(**kwargs)
 
@@ -123,40 +115,37 @@ class EntityCollaboratorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.get_object().is_editable_by(self.request.user)
 
-
-class ModelEntityCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, ModelEntityTypeMixin,
+class EntityCreateView(
+    LoginRequiredMixin, PermissionRequiredMixin, EntityTypeMixin,
     UserFormKwargsMixin, CreateView
 ):
     """
-    Create new model entity
+    Create new entity
     """
-    form_class = ModelEntityForm
-    permission_required = 'entities.create_model'
     template_name = 'entities/entity_form.html'
 
+    @property
+    def permission_required(self):
+        if self.model is ModelEntity:
+            return 'entities.create_model'
+        elif self.model is ProtocolEntity:
+            return 'entities.create_protocol'
+
+    @property
+    def form_class(self):
+        if self.model is ModelEntity:
+            return ModelEntityForm
+        elif self.model is ProtocolEntity:
+            return ProtocolEntityForm
+
     def get_success_url(self):
-        return reverse('entities:model_newversion', args=[self.object.pk])
+        return reverse('entities:newversion',
+                       args=[self.kwargs['entity_type'], self.object.pk])
 
 
-class ProtocolEntityCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, ProtocolEntityTypeMixin,
-    UserFormKwargsMixin, CreateView
-):
+class EntityListView(LoginRequiredMixin, EntityTypeMixin, ListView):
     """
-    Create new protocol entity
-    """
-    form_class = ProtocolEntityForm
-    permission_required = 'entities.create_protocol'
-    template_name = 'entities/entity_form.html'
-
-    def get_success_url(self):
-        return reverse('entities:protocol_newversion', args=[self.object.pk])
-
-
-class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
-    """
-    List all user's model entities
+    List all user's entities of the given type
     """
     template_name = 'entities/entity_list.html'
 
@@ -164,17 +153,7 @@ class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
         return self.model.objects.filter(author=self.request.user)
 
 
-class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListView):
-    """
-    List all user's protocol entities
-    """
-    template_name = 'entities/entity_list.html'
-
-    def get_queryset(self):
-        return self.model.objects.filter(author=self.request.user)
-
-
-class EntityVersionView(EntityVersionMixin, DetailView):
+class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
     """
     View a version of an entity
     """
@@ -189,13 +168,6 @@ class EntityVersionView(EntityVersionMixin, DetailView):
         })
         return super().get_context_data(**kwargs)
 
-
-class ModelEntityVersionView(ModelEntityTypeMixin, EntityVersionView):
-    pass
-
-
-class ProtocolEntityVersionView(ProtocolEntityTypeMixin, EntityVersionView):
-    pass
 
 
 def get_file_type(filename):
@@ -212,7 +184,7 @@ def get_file_type(filename):
     return extensions.get(ext[1:], 'Unknown')
 
 
-class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
+class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
     def _file_json(self, blob):
         obj = self._get_object()
         commit = self.get_commit()
@@ -224,8 +196,8 @@ class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
             'size': blob.size,
             'created': commit.committed_at,
             'url': reverse(
-                'entities:%s_file_download' % obj.entity_type,
-                args=[obj.id, commit.hexsha, blob.name]
+                'entities:file_download',
+                args=[obj.entity_type, obj.id, commit.hexsha, blob.name]
             ),
         }
 
@@ -250,8 +222,8 @@ class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
                 'files': files,
                 'numFiles': len(files),
                 'url': reverse(
-                    'entities:%s_version' % obj.entity_type,
-                    args=[obj.id, commit.hexsha]
+                    'entities:version',
+                    args=[obj.entity_type, obj.id, commit.hexsha]
                 ),
                 'download_url': reverse(
                     'entities:entity_archive',
@@ -265,15 +237,8 @@ class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
         })
 
 
-class ModelEntityVersionJsonView(ModelEntityTypeMixin, EntityVersionJsonView):
-    pass
 
-
-class ProtocolEntityVersionJsonView(ProtocolEntityTypeMixin, EntityVersionJsonView):
-    pass
-
-
-class EntityVersionCompareView(EntityVersionMixin, DetailView):
+class EntityVersionCompareView(EntityTypeMixin, EntityVersionMixin, DetailView):
     context_object_name = 'entity'
     template_name = 'entities/entity_version_compare.html'
 
@@ -301,14 +266,6 @@ class EntityVersionCompareView(EntityVersionMixin, DetailView):
         return super().get_context_data(**kwargs)
 
 
-class ModelEntityVersionCompareView(ModelEntityTypeMixin, EntityVersionCompareView):
-    pass
-
-
-class ProtocolEntityVersionCompareView(ProtocolEntityTypeMixin, EntityVersionCompareView):
-    pass
-
-
 class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
     """
     View an entity
@@ -318,8 +275,8 @@ class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
     model = Entity
 
     def get_redirect_url(self, *args, **kwargs):
-        url_name = 'entities:{}_version'.format(kwargs['entity_type'])
-        return reverse(url_name, args=[kwargs['pk'], 'latest'])
+        url_name = 'entities:version'
+        return reverse(url_name, args=[kwargs['entity_type'], kwargs['pk'], 'latest'])
 
 
 class EntityTagVersionView(
@@ -360,7 +317,7 @@ class EntityTagVersionView(
         """What page to show when the form was processed OK."""
         entity = self._get_object()
         version = self.kwargs['sha']
-        return reverse('entities:%s_version' % entity.entity_type, args=[entity.id, version])
+        return reverse('entities:version', args=[entity.entity_type, entity.id, version])
 
 
 class EntityDeleteView(UserPassesTestMixin, DeleteView):
@@ -376,12 +333,11 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
         return self.get_object().is_deletable_by(self.request.user)
 
     def get_success_url(self, *args, **kwargs):
-        url_name = 'entities:{}s'.format(self.kwargs['entity_type'])
-        return reverse(url_name)
+        return reverse('entities:list', args=[self.kwargs['entity_type']])
 
 
 class EntityNewVersionView(
-    LoginRequiredMixin, EntityCollaboratorRequiredMixin, FormMixin, DetailView
+    EntityTypeMixin, LoginRequiredMixin, EntityCollaboratorRequiredMixin, FormMixin, DetailView
 ):
     """
     Create a new version of an entity.
@@ -470,7 +426,7 @@ class EntityNewVersionView(
                 os.remove(filename)
             entity.analyse_new_version(commit)
             return HttpResponseRedirect(
-                reverse('entities:%s' % entity.entity_type, args=[entity.id]))
+                reverse('entities:detail', args=[entity.entity_type, entity.id]))
         else:
             # Nothing changed, so inform the user and do nothing else.
             form = self.get_form()
@@ -484,21 +440,7 @@ class EntityNewVersionView(
         return self.form_invalid(form)
 
 
-class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):
-    """
-    Create a new version of a model
-    """
-    pass
-
-
-class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView):
-    """
-    Create a new version of a protocol
-    """
-    pass
-
-
-class VersionListView(VisibilityMixin, DetailView):
+class EntityVersionListView(EntityTypeMixin, VisibilityMixin, DetailView):
     """
     Base class for listing versions of an entity
     """
@@ -521,19 +463,6 @@ class VersionListView(VisibilityMixin, DetailView):
         })
         return super().get_context_data(**kwargs)
 
-
-class ModelEntityVersionListView(ModelEntityTypeMixin, VersionListView):
-    """
-    List versions of a model
-    """
-    pass
-
-
-class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
-    """
-    List versions of a protocol
-    """
-    pass
 
 
 class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
@@ -639,7 +568,7 @@ class ChangeVisibilityView(UserPassesTestMixin, EntityVersionMixin, DetailView):
         return JsonResponse(response)
 
 
-class EntityFileDownloadView(EntityVersionMixin, SingleObjectMixin, View):
+class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
     """
     Download an individual file from an entity version
     """
@@ -660,14 +589,6 @@ class EntityFileDownloadView(EntityVersionMixin, SingleObjectMixin, View):
             raise Http404
 
         return response
-
-
-class ModelEntityFileDownloadView(ModelEntityTypeMixin, EntityFileDownloadView):
-    pass
-
-
-class ProtocolEntityFileDownloadView(ProtocolEntityTypeMixin, EntityFileDownloadView):
-    pass
 
 
 class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):

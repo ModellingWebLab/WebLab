@@ -6,68 +6,67 @@ from . import views
 _COMMIT = r'(?P<sha>[^^~:/ ]+)'
 _FILENAME = r'(?P<filename>[\w\-.]+)'
 _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
+_ENTITY_TYPE = '(?P<entity_type>model|protocol)s'
 
 urlpatterns = [
     url(
-        r'^models/$',
-        views.ModelEntityListView.as_view(),
-        name='models',
+        r'^%s/$' % _ENTITY_TYPE,
+        views.EntityListView.as_view(),
+        name='list',
     ),
 
     url(
-        r'^models/new$',
-        views.ModelEntityCreateView.as_view(),
-        name='new_model',
+        r'^%s/new$' % _ENTITY_TYPE,
+        views.EntityCreateView.as_view(),
+        name='new',
     ),
 
     url(
-        r'^models/(?P<pk>\d+)$',
+        r'^%s/(?P<pk>\d+)$' % _ENTITY_TYPE,
         views.EntityView.as_view(),
-        {'entity_type': 'model'},
-        name='model',
+        name='detail',
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/delete$',
+        r'^%s/(?P<pk>\d+)/delete$' % _ENTITY_TYPE,
         views.EntityDeleteView.as_view(),
-        {'entity_type': 'model'},
-        name='model_delete',
+        name='delete',
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/versions/$',
-        views.ModelEntityVersionListView.as_view(),
-        name='model_versions',
+        r'^%s/(?P<pk>\d+)/versions/$' % _ENTITY_TYPE,
+        views.EntityVersionListView.as_view(),
+        name='version_list',
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/versions/new$',
-        views.ModelEntityNewVersionView.as_view(),
-        name='model_newversion',
+        r'^%s/(?P<pk>\d+)/versions/new$' % _ENTITY_TYPE,
+        views.EntityNewVersionView.as_view(),
+        name='newversion',
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/versions/%s(?:/%s)?$' % (_COMMIT, _FILEVIEW),
-        views.ModelEntityVersionView.as_view(),
-        name='model_version',
+        r'^%s/(?P<pk>\d+)/versions/%s(?:/%s)?$' % (_ENTITY_TYPE, _COMMIT, _FILEVIEW),
+        views.EntityVersionView.as_view(),
+        name='version',
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/versions/%s/files.json$' % _COMMIT,
-        views.ModelEntityVersionJsonView.as_view(),
-        name='model_version_json',
+        r'^%s/(?P<pk>\d+)/versions/%s/files.json$' % (_ENTITY_TYPE, _COMMIT),
+        views.EntityVersionJsonView.as_view(),
+        name='version_json',
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/versions/%s/compare$' % _COMMIT,
-        views.ModelEntityVersionCompareView.as_view(),
-        name='model_version_compare',
+        r'^%s/(?P<pk>\d+)/versions/%s/compare$' % (_ENTITY_TYPE, _COMMIT),
+        views.EntityVersionCompareView.as_view(),
+        name='version_compare',
     ),
 
     url(
-        r'^models/(?P<pk>\d+)/versions/%s/download/%s$' % (_COMMIT, _FILENAME),
-        views.ModelEntityFileDownloadView.as_view(),
-        name='model_file_download',
+        r'^%s/(?P<pk>\d+)/versions/%s/download/%s$' % (_ENTITY_TYPE, _COMMIT, _FILENAME),
+        views.EntityFileDownloadView.as_view(),
+        name='file_download',
     ),
 
     url(
@@ -77,75 +76,13 @@ urlpatterns = [
     ),
 
     url(
-        r'^protocols/$',
-        views.ProtocolEntityListView.as_view(),
-        name='protocols',
-    ),
-
-    url(
-        r'^protocols/new$',
-        views.ProtocolEntityCreateView.as_view(),
-        name='new_protocol',
-    ),
-
-    url(
-        r'^protocols/(?P<pk>\d+)$',
-        views.EntityView.as_view(),
-        {'entity_type': 'protocol'},
-        name='protocol',
-    ),
-
-    url(
-        r'^protocols/(?P<pk>\d+)/delete$',
-        views.EntityDeleteView.as_view(),
-        {'entity_type': 'protocol'},
-        name='protocol_delete',
-    ),
-
-    url(
-        r'^protocols/(?P<pk>\d+)/versions/$',
-        views.ProtocolEntityVersionListView.as_view(),
-        name='protocol_versions',
-    ),
-
-    url(
-        r'^protocols/(?P<pk>\d+)/versions/new$',
-        views.ProtocolEntityNewVersionView.as_view(),
-        name='protocol_newversion',
-    ),
-
-    url(
-        r'^protocols/(?P<pk>\d+)/versions/%s(?:/%s)?$' % (_COMMIT, _FILEVIEW),
-        views.ProtocolEntityVersionView.as_view(),
-        name='protocol_version',
-    ),
-
-    url(
-        r'^protocols/(?P<pk>\d+)/versions/%s/files.json$' % _COMMIT,
-        views.ProtocolEntityVersionJsonView.as_view(),
-        name='protocol_version_json',
-    ),
-
-    url(
-        r'^protocols/(?P<pk>\d+)/versions/%s/compare$' % _COMMIT,
-        views.ProtocolEntityVersionCompareView.as_view(),
-        name='protocol_version_compare',
-    ),
-
-    url(
-        r'^protocols/(?P<pk>\d+)/versions/%s/download/%s$' % (_COMMIT, _FILENAME),
-        views.ProtocolEntityFileDownloadView.as_view(),
-        name='protocol_file_download',
-    ),
-
-    url(
-        r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/versions/%s/visibility$' % _COMMIT,
+        r'^%s/(?P<pk>\d+)/versions/%s/visibility$' % (_ENTITY_TYPE, _COMMIT),
         views.ChangeVisibilityView.as_view(),
         name='change_visibility',
     ),
 
     url(
-        r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/versions/%s/archive$' % _COMMIT,
+        r'^%s/(?P<pk>\d+)/versions/%s/archive$' % (_ENTITY_TYPE, _COMMIT),
         views.EntityArchiveView.as_view(),
         name='entity_archive',
     ),
@@ -157,7 +94,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/collaborators$',
+        r'^%s/(?P<pk>\d+)/collaborators$' % _ENTITY_TYPE,
         views.EntityCollaboratorsView.as_view(),
         name='entity_collaborators',
     ),
