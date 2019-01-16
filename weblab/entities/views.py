@@ -21,6 +21,7 @@ from django.http import (
 from django.core.exceptions import PermissionDenied
 from django.utils.text import get_valid_filename
 from django.views import View
+from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
@@ -264,6 +265,10 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
         ]
 
         return super().get_context_data(**kwargs)
+
+
+class EntityCompareView(EntityTypeMixin, TemplateView):
+    template_name = 'entities/compare.html'
 
 
 class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):

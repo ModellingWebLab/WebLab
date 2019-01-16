@@ -64,6 +64,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/compare(?P<versions>(/\d+:%s){1,})(?:/show/%s)?$' % (_ENTITY_TYPE, _COMMIT, _FILEVIEW),
+        views.EntityCompareView.as_view(),
+        name='compare',
+    ),
+
+    url(
         r'^%s/(?P<pk>\d+)/versions/%s/download/%s$' % (_ENTITY_TYPE, _COMMIT, _FILENAME),
         views.EntityFileDownloadView.as_view(),
         name='file_download',
