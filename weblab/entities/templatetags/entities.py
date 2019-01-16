@@ -47,6 +47,19 @@ def url_tag_version(entity, version):
     return reverse('entities:tag_version', args=[entity.id, version.hexsha])
 
 
+@register.simple_tag
+def url_entity_comparison_base(entity_type):
+    """
+    Base URL for entity comparison page
+    """
+    # Use dummy IDs to set up a comparison URL, then chop them off to
+    # get the base. This will be used by javascript to generate comparisons
+    # between experiment versions.
+    url = reverse('entities:compare', args=[entity_type, '/1:a'])
+    return url[:-4]
+
+
+
 @register.filter
 def name_of_model(experiment):
     model = experiment.model

@@ -13,29 +13,39 @@
   <a href="{{ entity|url_newversion }}" class="button">Add new version</a>
   {% endif %}
 
-  <div id="entityversionlist_content">
-    <ul>
-    {% for tags, commit in versions %}
-    <li>
-      <p>
-        <strong>
-          <a class="entityversionlink" href="{{ entity|url_version:commit }}">
-            {% include "./includes/version_name.html" with tags=tags version=commit only %}
-          </a>
-        </strong>
-        by <em>{{ commit.author }}</em><br />
-        <span class="suppl">
-          <small>created </small> <time>{{commit.committed_at}}</time>
-          {% with commit.files|length as numfiles %}
-          <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize}}
-          {% endwith %}
-        </span><br />
-        <span class="suppl">
-          {{ commit.message|linebreaksbr }}
-        </span>
-      </p>
-    </li>
-    {% endfor %}
-    </ul>
+  <div id="entityversionlist">
+    <div id="entityversionlist_content">
+      <ul>
+      {% for tags, commit in versions %}
+      <li>
+        <p>
+          <input class="comparisonCheckBox" type="checkbox" value="{{ entity.id }}:{{ commit.hexsha }}">
+          <strong>
+            <a class="entityversionlink" href="{{ entity|url_version:commit }}">
+              {% include "./includes/version_name.html" with tags=tags version=commit only %}
+            </a>
+          </strong>
+          by <em>{{ commit.author }}</em><br />
+          <span class="suppl">
+            <small>created </small> <time>{{commit.committed_at}}</time>
+            {% with commit.files|length as numfiles %}
+            <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize}}
+            {% endwith %}
+          </span><br />
+          <span class="suppl">
+            {{ commit.message|linebreaksbr }}
+          </span>
+        </p>
+      </li>
+      {% endfor %}
+      </ul>
+    </div>
+    <div id="compareVersionsSelectors">
+        [<small><a id="compareVersionsSelectorsAll">select all</a></small>]
+        [<small><a id="compareVersionsSelectorsNone">select none</a></small>]
+    </div>
+    <button id="compareVersions" data-base-href="{% url_entity_comparison_base entity.entity_type %}">compare selected versions</button>
   </div>
+
+
 {% endblock %}
