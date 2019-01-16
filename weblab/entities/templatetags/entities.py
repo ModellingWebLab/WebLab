@@ -100,13 +100,13 @@ def url_version_json(entity, commit):
 
 
 @register.filter
-def url_version_compare(entity, commit):
-    """Generate the view URL for comparing a specific version of this entity
-    to entities of the other type.
+def url_compare_experiments(entity, commit):
+    """Generate the view URL for comparing experiments using
+    a specific version of this entity
 
-    e.g. comparing a version of a model to the available set of protocols
+    e.g. comparing experiments using version of a model across all available protocols
     """
-    url_name = 'entities:version_compare'
+    url_name = 'entities:compare_experiments'
     last_tag = _url_friendly_label(entity, commit)
     args = [entity.entity_type, entity.id, last_tag]
     return reverse(url_name, args=args)

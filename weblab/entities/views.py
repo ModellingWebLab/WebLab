@@ -238,9 +238,9 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
 
 
 
-class EntityVersionCompareView(EntityTypeMixin, EntityVersionMixin, DetailView):
+class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailView):
     context_object_name = 'entity'
-    template_name = 'entities/entity_version_compare.html'
+    template_name = 'entities/compare_experiments.html'
 
     def get_context_data(self, **kwargs):
         entity = self._get_object()
