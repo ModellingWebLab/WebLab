@@ -6,7 +6,7 @@ register = template.Library()
 
 
 @register.filter
-def url_comparison_json(experiment_versions):
+def url_experiment_comparison_json(experiment_versions):
     """
     Build URL for experiment comparison json
     """
@@ -18,7 +18,7 @@ def url_comparison_json(experiment_versions):
 
 
 @register.simple_tag
-def url_comparison_base():
+def url_experiment_comparison_base():
     """
     Base URL for experiment comparison page
     """

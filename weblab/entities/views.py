@@ -5,6 +5,7 @@ from itertools import groupby
 
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -28,7 +29,7 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 
-from core.visibility import Visibility, VisibilityMixin, visibility_check
+from core.visibility import Visibility, VisibilityMixin, visibility_check, visible_entity_ids
 from experiments.models import Experiment
 from repocache.exceptions import RepoCacheMiss
 
@@ -267,8 +268,103 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
         return super().get_context_data(**kwargs)
 
 
-class EntityCompareView(EntityTypeMixin, TemplateView):
+class EntityComparisonView(EntityTypeMixin, TemplateView):
     template_name = 'entities/compare.html'
+
+    def get_context_data(self, **kwargs):
+        valid_versions = []
+        for version in self.kwargs['versions'].strip('/').split('/'):
+            id, sha = version.split(':')
+            # TODO: visibility check against versions
+            if Entity.is_valid_version(id, sha):
+                valid_versions.append(version)
+            else:
+                messages.error(
+                    self.request,
+                    'Some requested entities could not be found '
+                    '(or you don\'t have permission to see them)'
+                )
+
+        kwargs['entity_versions'] = valid_versions
+        return super().get_context_data(**kwargs)
+
+
+class EntityComparisonJsonView(View):
+    """
+    Serve up JSON view of multiple entity versions for comparison
+    """
+    def _file_json(self, entity, commit, blob):
+        """
+        JSON for a single file in a version of the entity
+
+        :param entity: Entity object
+        :param commit: `Commit` object
+        :param archive_file: ArchiveFile object
+        """
+        return {
+            'id': blob.name,
+            'name': blob.name,
+            'author': entity.author.full_name,
+            'created': commit.committed_at,
+            'filetype': get_file_type(blob.name),
+            'masterFile': False,    # TODO
+            'size': blob.size,
+            'url': reverse(
+                'entities:file_download',
+                args=[entity.entity_type, entity.id, commit.hexsha, blob.name]
+            ),
+        }
+
+    def _version_json(self, entity, commit):
+        """
+        JSON for a single entity version
+
+        :param entity: Entity object
+        :param commit: `Commit` object
+        """
+        files = [
+            self._file_json(entity, commit, f)
+            for f in commit.files
+            if f.name not in ['manifest.xml', 'metadata.rdf']
+        ]
+        return {
+            'id': commit.hexsha,
+            'author': entity.author.full_name,
+            'parsedOk': False,
+            'visibility': entity.get_version_visibility(commit.hexsha, default=entity.DEFAULT_VISIBILITY),
+            'created': commit.committed_at,
+            'name': entity.name,
+            'version': entity.repo.get_name_for_commit(commit.hexsha),
+            'files': files,
+            'commitMessage': commit.message,
+            'numFiles': len(files),
+#            'url': reverse(
+#                'experiments:version', args=[exp.id, version.id]
+#            ),
+#            'download_url': reverse(
+#                'experiments:archive', args=[exp.id, version.id]
+#            ),
+        }
+
+    def get(self, request, *args, **kwargs):
+        json_entities = []
+        for version in self.kwargs['versions'].strip('/').split('/'):
+            id, sha = version.split(':')
+            # TODO: visibility check against versions
+            if Entity.is_valid_version(id, sha):
+                entity = Entity.objects.get(pk=id)
+                json_entities.append(
+                    self._version_json(entity, entity.repo.get_commit(sha))
+                )
+
+        response = {
+            'getEntityInfos': {
+                'entities': json_entities
+            }
+        }
+
+        return JsonResponse(response)
+
 
 
 class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):

@@ -65,9 +65,16 @@ urlpatterns = [
 
     url(
         r'^%s/compare(?P<versions>(/\d+:%s){1,})(?:/show/%s)?$' % (_ENTITY_TYPE, _COMMIT, _FILEVIEW),
-        views.EntityCompareView.as_view(),
+        views.EntityComparisonView.as_view(),
         name='compare',
     ),
+
+    url(
+        r'^%s/compare(?P<versions>(/\d+:%s)*)/info$' % (_ENTITY_TYPE, _COMMIT),
+        views.EntityComparisonJsonView.as_view(),
+        name='compare_json',
+    ),
+
 
     url(
         r'^%s/(?P<pk>\d+)/versions/%s/download/%s$' % (_ENTITY_TYPE, _COMMIT, _FILENAME),

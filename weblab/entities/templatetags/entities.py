@@ -47,6 +47,18 @@ def url_tag_version(entity, version):
     return reverse('entities:tag_version', args=[entity.id, version.hexsha])
 
 
+@register.filter
+def url_entity_comparison_json(entity_versions, entity_type):
+    """
+    Build URL for entity comparison json
+    """
+    if entity_versions:
+        version_ids = '/' + '/'.join(entity_versions)
+    else:
+        version_ids = ''
+    return reverse('entities:compare_json', args=[entity_type, version_ids])
+
+
 @register.simple_tag
 def url_entity_comparison_base(entity_type):
     """
@@ -57,7 +69,6 @@ def url_entity_comparison_base(entity_type):
     # between experiment versions.
     url = reverse('entities:compare', args=[entity_type, '/1:a'])
     return url[:-4]
-
 
 
 @register.filter

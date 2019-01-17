@@ -211,6 +211,11 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         pass
 
+    @classmethod
+    def is_valid_version(cls, entity_id, hexsha):
+        from repocache.models import CachedEntityVersion
+        return CachedEntityVersion.objects.filter(entity__entity=entity_id, sha=hexsha).exists()
+
 
 class EntityManager(models.Manager):
     def get_queryset(self):
