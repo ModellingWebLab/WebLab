@@ -417,6 +417,107 @@ class TestProtocolEntityVersionCompareView:
 
 
 @pytest.mark.django_db
+class TestEntityComparisonView:
+    def test_loads_entity_versions(self, client, logged_in_user, model_with_version):
+        commit = model_with_version.repo.latest_commit
+        version_spec = '%d:%s' % (model_with_version.pk, commit.hexsha)
+        response = client.get(
+            '/entities/models/compare/%s' % version_spec
+        )
+
+        assert response.status_code == 200
+        assert response.context['entity_versions'] == [version_spec]
+
+    def test_ignores_invalid_versions(self, client, logged_in_user, model_with_version):
+        commit = model_with_version.repo.latest_commit
+        version_spec = '%d:%s' % (model_with_version.pk, commit.hexsha)
+        response = client.get(
+            '/entities/models/compare/%s/%d:nocommit' % (version_spec, model_with_version.pk)
+        )
+
+        assert response.status_code == 200
+        assert response.context['entity_versions'] == [version_spec]
+
+    def test_no_valid_versions(self, client, logged_in_user):
+        model = recipes.model.make()
+        response = client.get(
+            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk+1, model.pk)
+        )
+
+        assert response.status_code == 200
+        assert response.context['entity_versions'] == []
+
+
+@pytest.mark.django_db
+class TestEntityComparisonJsonView:
+    def test_compare_entities(self, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        v2 = helpers.add_version(model)
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        response = client.get(
+            '/entities/models/compare/%s/%s/info' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert versions[0]['id'] == v1.hexsha
+        assert versions[1]['id'] == v2.hexsha
+        assert versions[0]['author'] == model.author.full_name
+        assert versions[0]['visibility'] == 'public'
+        assert versions[0]['name'] == model.name
+        assert versions[0]['version'] == v1.hexsha
+        assert versions[0]['numFiles'] == 1
+        assert versions[0]['commitMessage'] == v1.message
+
+    def test_file_json(self, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        response = client.get(
+            '/entities/models/compare/%s/info' % v1_spec
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert versions[0]['id'] == v1.hexsha
+        assert versions[0]['numFiles'] == 1
+        file_ = versions[0]['files'][0]
+        assert file_['id'] == 'file1.txt'
+        assert file_['name'] == 'file1.txt'
+        assert file_['author'] == model.author.full_name
+        assert file_['filetype'] == 'TXTPROTOCOL'
+        #assert file_['masterFile']
+        assert file_['size'] == 15
+        assert file_['url'] == (
+            '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, v1.hexsha))
+
+    def test_ignores_invalid_versions(self, client, logged_in_user, model_with_version):
+        commit = model_with_version.repo.latest_commit
+        version_spec = '%d:%s' % (model_with_version.pk, commit.hexsha)
+        response = client.get(
+            '/entities/models/compare/%s/%d:nocommit' % (version_spec, model_with_version.pk)
+        )
+
+        assert response.status_code == 200
+        assert response.context['entity_versions'] == [version_spec]
+
+    def test_no_valid_versions(self, client, logged_in_user):
+        model = recipes.model.make()
+        response = client.get(
+            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk+1, model.pk)
+        )
+
+        assert response.status_code == 200
+        assert response.context['entity_versions'] == []
+
+
+@pytest.mark.django_db
 class TestTagging:
     def test_tag_specific_ref(self, helpers):
         model = recipes.model.make()

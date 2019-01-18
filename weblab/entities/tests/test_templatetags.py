@@ -32,11 +32,9 @@ def test_file_type():
 
 
 @pytest.mark.django_db
-def test_entity_urls(model_with_version, protocol_with_version):
+def test_model_urls(model_with_version):
     model = model_with_version
-    protocol = protocol_with_version
     model_version = model.repo.latest_commit
-    protocol_version = protocol.repo.latest_commit
 
     assert entity_tags.url_new('model') == '/entities/models/new'
     assert entity_tags.url_entity(model) == '/entities/models/%d' % model.pk
@@ -49,10 +47,21 @@ def test_entity_urls(model_with_version, protocol_with_version):
             '/entities/models/%d/versions/%s/files.json' % (model.pk, model_version.hexsha))
     assert (entity_tags.url_compare_experiments(model, model_version) ==
             '/entities/models/%d/versions/%s/compare' % (model.pk, model_version.hexsha))
+
     assert (entity_tags.url_change_version_visibility(model, model_version) ==
             '/entities/models/%d/versions/%s/visibility' % (model.pk, model_version.hexsha))
     assert (entity_tags.url_tag_version(model, model_version) ==
             '/entities/tag/%d/%s' % (model.pk, model_version.hexsha))
+
+    assert (entity_tags.url_entity_comparison_json(
+                ['%d:%s' % (model.pk, model_version.hexsha)], 'model') ==
+            '/entities/models/compare/%d:%s/info' % (model.pk, model_version.hexsha))
+
+
+@pytest.mark.django_db
+def test_protocol_urls(protocol_with_version):
+    protocol = protocol_with_version
+    protocol_version = protocol.repo.latest_commit
 
     assert entity_tags.url_new('protocol') == '/entities/protocols/new'
     assert entity_tags.url_entity(protocol) == '/entities/protocols/%d' % protocol.pk
@@ -71,6 +80,13 @@ def test_entity_urls(model_with_version, protocol_with_version):
             '/entities/protocols/%d/versions/%s/visibility' % (protocol.pk, protocol_version.hexsha))
     assert (entity_tags.url_tag_version(protocol, protocol_version) ==
             '/entities/tag/%d/%s' % (protocol.pk, protocol_version.hexsha))
+
+    assert entity_tags.url_entity_comparison_base('model') == '/entities/models/compare'
+    assert entity_tags.url_entity_comparison_base('protocol') == '/entities/protocols/compare'
+
+    assert (entity_tags.url_entity_comparison_json(
+                ['%d:%s' % (protocol.pk, protocol_version.hexsha)], 'protocol') ==
+            '/entities/protocols/compare/%d:%s/info' % (protocol.pk, protocol_version.hexsha))
 
 
 @pytest.mark.django_db
