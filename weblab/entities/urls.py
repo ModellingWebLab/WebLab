@@ -111,4 +111,10 @@ urlpatterns = [
         views.EntityCollaboratorsView.as_view(),
         name='entity_collaborators',
     ),
+
+    url(
+        r'^%s/diff(?P<versions>(/\d+:%s){2})/%s$' % (_ENTITY_TYPE, _COMMIT, _FILENAME),
+        views.EntityDiffView.as_view(),
+        name='diff',
+    ),
 ]

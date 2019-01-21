@@ -1,7 +1,9 @@
 import mimetypes
 import os.path
 import shutil
+import subprocess
 from itertools import groupby
+from tempfile import NamedTemporaryFile
 
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
@@ -743,3 +745,38 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailVie
             kwargs['formset'] = self.get_formset()
         kwargs['type'] = self.object.entity_type
         return super().get_context_data(**kwargs)
+
+
+class EntityDiffView(View):
+    def get(self, request, *args, **kwargs):
+        filename = self.kwargs['filename']
+        json_entities = []
+
+        versions = self.kwargs['versions'].strip('/').split('/')
+
+        files = []
+        for version in versions:
+            id, sha = version.split(':')
+            if Entity.is_valid_version(id, sha):
+                entity = Entity.objects.get(pk=id)
+                files.append(entity.repo.get_commit(sha).get_blob(filename))
+
+        f1, f2 = files
+        with NamedTemporaryFile() as tmp1, NamedTemporaryFile() as tmp2:
+            tmp1.write(f1.data_stream.read())
+            tmp2.write(f2.data_stream.read())
+            tmp1.flush()
+            tmp2.flush()
+
+            result = subprocess.run(
+                ['diff', '-a', tmp1.name, tmp2.name],
+                stdout=subprocess.PIPE)
+            diff = result.stdout.decode()
+
+        response = {
+            'getUnixDiff': {
+                'unixDiff': diff,
+            }
+        }
+
+        return JsonResponse(response)
