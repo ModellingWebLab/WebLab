@@ -1,3 +1,4 @@
+import json
 import mimetypes
 import os.path
 import shutil
@@ -729,5 +730,5 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailVie
 @method_decorator(csrf_exempt, name='dispatch')
 class CheckProtocolCallbackView(View):
     def post(self, request, *args, **kwargs):
-        result = process_check_protocol_callback(request.POST)
+        result = process_check_protocol_callback(json.loads(request.body.decode()))
         return JsonResponse(result)

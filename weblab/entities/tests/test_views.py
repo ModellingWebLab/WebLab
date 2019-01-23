@@ -1,5 +1,6 @@
 import io
 import json
+import uuid
 import zipfile
 from io import BytesIO
 from unittest.mock import patch
@@ -10,7 +11,16 @@ from django.utils.dateparse import parse_datetime
 from guardian.shortcuts import assign_perm
 
 from core import recipes
-from entities.models import Entity, ModelEntity, ProtocolEntity
+from entities.models import AnalysisTask, Entity, ModelEntity, ProtocolEntity
+
+
+@pytest.fixture
+def analysis_task(protocol_with_version):
+    """A single AnalysisTask instance with associated Protocol version & repocache set up."""
+    task = recipes.analysis_task.make(
+        entity=protocol_with_version,
+        version=protocol_with_version.repocache.latest_version.sha)
+    return task
 
 
 @pytest.mark.django_db
@@ -750,6 +760,145 @@ class TestVersionCreation:
         assert response.status_code == 200
         assert model.repo.latest_commit == first_commit
         assert not (model.repo_abs_path / 'model.txt').exists()
+
+
+@pytest.mark.django_db
+class TestCheckProtocolCallbackView:
+    def test_stores_empty_interface(self, client, analysis_task):
+        task_id = str(analysis_task.id)
+        protocol = analysis_task.entity
+        hexsha = analysis_task.version
+        version = protocol.repocache.get_version(hexsha)
+
+        # Check there is no interface initially
+        assert not version.interface.exists()
+
+        # Submit the fake task response
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': task_id,
+            'returntype': 'success',
+            'required': [],
+            'optional': [],
+        }), content_type='application/json')
+        assert response.status_code == 200
+
+        # Check the analysis task has been deleted
+        assert not AnalysisTask.objects.filter(id=task_id).exists()
+
+        # Check there is a blank interface term
+        assert version.interface.count() == 1
+        assert version.interface.get().term == ''
+        assert version.interface.get().optional
+
+    def test_stores_actual_interface(self, client, analysis_task):
+        task_id = str(analysis_task.id)
+        protocol = analysis_task.entity
+        hexsha = analysis_task.version
+        version = protocol.repocache.get_version(hexsha)
+
+        # Check there is no interface initially
+        assert not version.interface.exists()
+
+        # Submit the fake task response
+        req = ['r1', 'r2']
+        opt = ['o1']
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': task_id,
+            'returntype': 'success',
+            'required': req,
+            'optional': opt,
+        }), content_type='application/json')
+        assert response.status_code == 200
+
+        # Check the analysis task has been deleted
+        assert not AnalysisTask.objects.filter(id=task_id).exists()
+
+        # Check the terms are as expected
+        assert version.interface.count() == len(req) + len(opt)
+        assert set(version.interface.values_list('term', flat=True)) == set(req) | set(opt)
+        for term in version.interface.all():
+            if term.term in opt:
+                assert term.optional
+            else:
+                assert term.term in req
+                assert not term.optional
+
+    def test_stores_error_response(self, client, analysis_task):
+        task_id = str(analysis_task.id)
+        protocol = analysis_task.entity
+        hexsha = analysis_task.version
+        version = protocol.repocache.get_version(hexsha)
+
+        # Check there is no interface or error file initially
+        assert not version.interface.exists()
+        commit = protocol.repo.get_commit(hexsha)
+        assert 'errors.txt' not in commit.filenames
+
+        # Submit the fake task response
+        msg = 'My test error message'
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': task_id,
+            'returntype': 'failed',
+            'returnmsg': msg,
+        }), content_type='application/json')
+        assert response.status_code == 200
+
+        # Check the analysis task has been deleted
+        assert not AnalysisTask.objects.filter(id=task_id).exists()
+
+        # Check there's an ephemeral error file
+        commit = protocol.repo.get_commit(hexsha)
+        assert 'errors.txt' in commit.filenames
+        assert msg in commit.get_blob('errors.txt').data_stream.read().decode('UTF-8')
+
+    def test_errors_on_duplicate_terms(self, client, analysis_task):
+        # Submit the fake task response
+        req = ['r1', 'r2']
+        opt = ['o1', 'r2']
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': str(analysis_task.id),
+            'returntype': 'success',
+            'required': req,
+            'optional': opt,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error'].startswith('duplicate term provided: ')
+
+    def test_errors_on_no_signature(self, client):
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'returntype': 'failed',
+        }), content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error'] == 'missing signature'
+
+    def test_errors_on_bad_signature(self, client):
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': str(uuid.uuid4()),
+        }), content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error'] == 'invalid signature'
+
+    def test_errors_on_missing_returntype(self, client):
+        analysis_task = recipes.analysis_task.make()
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': str(analysis_task.id),
+        }), content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error'] == 'missing returntype'
+
+    def test_errors_on_missing_terms(self, client):
+        analysis_task = recipes.analysis_task.make()
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': str(analysis_task.id),
+            'returntype': 'success',
+        }), content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error'] == 'missing terms'
 
 
 @pytest.mark.django_db

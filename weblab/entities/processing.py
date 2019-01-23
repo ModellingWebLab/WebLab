@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 import requests
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db import IntegrityError
 
 from repocache.models import ProtocolInterface
 
@@ -112,7 +113,10 @@ def process_check_protocol_callback(data):
         if not terms:
             # Store a blank term so we know the interface has been analysed
             terms.append(ProtocolInterface(protocol_version=cached_version, term='', optional=True))
-        ProtocolInterface.objects.bulk_create(terms)
+        try:
+            ProtocolInterface.objects.bulk_create(terms)
+        except IntegrityError as e:
+            return {'error': 'duplicate term provided: ' + str(e)}
     else:
         # Store error message as an ephemeral file
         error_message = data.get('returnmsg', '')
