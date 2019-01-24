@@ -29,7 +29,7 @@ def submit_check_protocol_task(protocol, protocol_version):
     it expects to interact with models.
 
     :param protocol: the ``Protocol`` object
-    :param protocol_version: the new version just created
+    :param protocol_version: the new version SHA just created
     """
     # If we've already analysed this protocol, this should be a no-op
     cached_version = protocol.repocache.get_version(protocol_version)

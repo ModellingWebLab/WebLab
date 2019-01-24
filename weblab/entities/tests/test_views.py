@@ -796,7 +796,8 @@ class TestVersionCreation:
 
 @pytest.mark.django_db
 class TestCheckProtocolCallbackView:
-    def test_stores_empty_interface(self, client, analysis_task):
+    @patch('requests.post')
+    def test_stores_empty_interface(self, mock_post, client, analysis_task):
         task_id = str(analysis_task.id)
         protocol = analysis_task.entity
         hexsha = analysis_task.version
@@ -821,6 +822,13 @@ class TestCheckProtocolCallbackView:
         assert version.interface.count() == 1
         assert version.interface.get().term == ''
         assert version.interface.get().optional
+
+        # Check submitting a new task is now a no-op
+        from entities.processing import submit_check_protocol_task
+        submit_check_protocol_task(protocol, hexsha)
+
+        assert not mock_post.called
+        assert not AnalysisTask.objects.filter(entity=protocol).exists()
 
     def test_stores_actual_interface(self, client, analysis_task):
         task_id = str(analysis_task.id)
