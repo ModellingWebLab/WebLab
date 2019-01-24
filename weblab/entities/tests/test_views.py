@@ -6,6 +6,7 @@ from io import BytesIO
 from unittest.mock import patch
 
 import pytest
+import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.dateparse import parse_datetime
 from guardian.shortcuts import assign_perm
@@ -728,6 +729,37 @@ class TestVersionCreation:
         # Check new version analysis "happened"
         assert mock_check.called
         mock_check.assert_called_once_with(protocol, commit.hexsha)
+
+    @patch('requests.post', side_effect=requests.exceptions.ConnectionError)
+    def test_protocol_analysis_connection_error(self, mock_post, client, logged_in_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_protocol')
+        doc = b'\n# Title\n\ndocumentation goes here\nand here'
+        content = b'my test protocol\ndocumentation\n{' + doc + b'}'
+        protocol = recipes.protocol_file.make(
+            entity__author=logged_in_user,
+            upload=SimpleUploadedFile('protocol.txt', content),
+            original_name='protocol.txt',
+        ).entity
+        response = client.post(
+            '/entities/protocols/%d/versions/new' % protocol.pk,
+            data={
+                'filename[]': 'uploads/protocol.txt',
+                'mainEntry': ['protocol.txt'],
+                'commit_message': 'first commit',
+                'tag': 'v1',
+                'visibility': 'public',
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/entities/protocols/%d' % protocol.id
+        # Check documentation parsing
+        commit = protocol.repo.latest_commit
+        assert ProtocolEntity.README_NAME in commit.filenames
+        readme = commit.get_blob(ProtocolEntity.README_NAME)
+        assert readme.data_stream.read() == doc
+        # Check new version analysis "happened" but failed cleanly
+        assert mock_post.called
+        assert not AnalysisTask.objects.exists()
 
     def test_cannot_create_protocol_version_as_non_owner(self, logged_in_user, client):
         protocol = recipes.protocol.make()
