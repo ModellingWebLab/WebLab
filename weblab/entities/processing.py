@@ -119,7 +119,7 @@ def process_check_protocol_callback(data):
             return {'error': 'duplicate term provided: ' + str(e)}
     else:
         # Store error message as an ephemeral file
-        error_message = data.get('returnmsg', '')
+        error_message = data.get('returnmsg', '').replace('<br/>', '\n')
         if not error_message:
             return {'error': 'no error message supplied'}
         commit = entity.repo.get_commit(version)
