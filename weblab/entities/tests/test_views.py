@@ -976,11 +976,24 @@ class TestEntityArchiveView:
 
     def test_anonymous_protocol_download_for_running_experiment(self, client, queued_experiment):
         protocol = queued_experiment.experiment.protocol
-        queued_experiment.experiment.protocol.set_version_visibility('latest', 'private')
+        protocol.set_version_visibility('latest', 'private')
 
         response = client.get(
             '/entities/protocols/%d/versions/latest/archive' % protocol.pk,
             HTTP_AUTHORIZATION='Token {}'.format(queued_experiment.signature)
+        )
+
+        assert response.status_code == 200
+        archive = zipfile.ZipFile(BytesIO(response.content))
+        assert archive.filelist[0].filename == 'file1.txt'
+
+    def test_anonymous_protocol_download_for_analysis_task(self, client, analysis_task):
+        protocol = analysis_task.entity
+        protocol.set_version_visibility('latest', 'private')
+
+        response = client.get(
+            '/entities/protocols/%d/versions/latest/archive' % protocol.pk,
+            HTTP_AUTHORIZATION='Token {}'.format(analysis_task.id)
         )
 
         assert response.status_code == 200
