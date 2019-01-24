@@ -226,9 +226,12 @@ class TestCommit:
         content = b'readme content'
         name = 'readme.md'
 
+        assert commit.filenames == set()
         assert commit.list_ephemeral_files() == set()
+        assert commit.ephemeral_file_names == set()
         commit.add_ephemeral_file(name, content)
         assert commit.list_ephemeral_files() == {name}
+        assert commit.ephemeral_file_names == {name}
         assert commit.get_ephemeral_file(name).data_stream.read() == content
         e_files = list(commit.ephemeral_files)
         assert len(e_files) == 1
@@ -242,6 +245,7 @@ class TestCommit:
         # We make a commit with a normal file
         repo.add_file(repo_file)
         commit = repo.commit('commit 1', author)
+        assert commit.filenames == {'file.cellml'}
 
         # We add 2 ephemeral files
         content1 = b'readme content'
@@ -253,7 +257,7 @@ class TestCommit:
         commit.add_ephemeral_file(name2, content2)
 
         # All 3 files are listed as present
-        assert commit.list_ephemeral_files() == {name1, name2}
+        assert commit.ephemeral_file_names == {name1, name2}
         assert commit.get_ephemeral_file(name1).data_stream.read() == content1
         assert commit.get_ephemeral_file(name2).data_stream.read() == content2
 
@@ -283,11 +287,11 @@ class TestCommit:
         commit2 = repo.commit('commit 2', author)
 
         # The ephemeral file does not appear in the latest version
-        assert commit2.list_ephemeral_files() == set()
+        assert commit2.ephemeral_file_names == set()
         assert commit2.filenames == {'file.cellml'}
 
         # The ephemeral file still appears in the original commit
-        assert commit1.list_ephemeral_files() == {name}
+        assert commit1.ephemeral_file_names == {name}
         assert commit1.filenames == {name}
         assert commit1.get_ephemeral_file(name).data_stream.read() == content
 

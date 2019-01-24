@@ -93,7 +93,7 @@ class EntityVersionMixin(VisibilityMixin):
         """
         Get the git commit applicable to this version
 
-        :return: `git.Commit` object
+        :return: `entities.repository.Commit` object
         :raise: Http404 if commit not found
         """
         if not hasattr(self, '_commit'):
