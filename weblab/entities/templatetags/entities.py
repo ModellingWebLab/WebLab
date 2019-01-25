@@ -71,6 +71,18 @@ def url_entity_comparison_base(entity_type):
     return url[:-4]
 
 
+@register.simple_tag
+def url_entity_diff_base(entity_type):
+    """
+    Base URL for entity diff
+    """
+    # Use dummy IDs to set up a diff URL, then chop them off to
+    # get the base. This will be used by javascript to generate diff URLs
+    # between experiment versions.
+    url = reverse('entities:diff', args=[entity_type, '/1:a/2:b', 'file.json'])
+    return url.split('/1:a/2:b')[0]
+
+
 @register.filter
 def name_of_model(experiment):
     model = experiment.model

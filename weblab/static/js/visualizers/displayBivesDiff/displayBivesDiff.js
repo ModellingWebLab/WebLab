@@ -72,19 +72,16 @@ bivesDiffer.prototype.laterClickListener = function (later, file, tr)
 
 bivesDiffer.prototype.computeDifferences = function (former, later, matrixKey)
 {
-	var request = {
-			task: "getBivesDiff",
-			entity1: former.entityLink.id,
-			file1: former.entityFileLink.id,
-			entity2: later.entityLink.id,
-			file2: later.entityFileLink.id
-	};
-	
+  var diffBase = $('#entitiesToCompare').data('diff-base-href');
+  var href = diffBase + '/' +
+    (former.entityLink.entityId + ':' + former.entityLink.id) + '/' +
+		(later.entityLink.entityId + ':' + later.entityLink.id) + '/' +
+    former.entityFileLink.id +
+    '?type=bives';
+
 	var diffs = this.diffs;
 	
-	$.post (document.location.href, JSON.stringify(request)).done (function (data)
-	{
-		//console.log (data);
+	$.getJSON(href, function (data) {
 		if (data && data.getBivesDiff && data.getBivesDiff.response)
 		{
 			var diff = data.getBivesDiff.bivesDiff;
@@ -114,7 +111,7 @@ bivesDiffer.prototype.computeDifferences = function (former, later, matrixKey)
 			{
 				var rnLink = $("<span></span>").addClass ("bivesTab").text ("Reaction Network");
 				var reactionsDiffId = "bivesGrapheneAppRn-" + diff.id;
-				crnDiv.append ("<div id='" + reactionsDiffId + "' ng-controller='MainCtrl'><sg-graphene imports='exports' template='"+contextPath + "/res/js/visualizers/displayBivesDiff/graphene-sems/template.html'></sg-graphene></div>");
+				crnDiv.append ("<div id='" + reactionsDiffId + "' ng-controller='MainCtrl'><sg-graphene imports='exports' template='"+staticPath + "js/visualizers/displayBivesDiff/graphene-sems/template.html'></sg-graphene></div>");
 				head.append (rnLink);
 				diffDiv.append (crnDiv);
 				rnLink.click (function ()
@@ -186,7 +183,7 @@ bivesDiffer.prototype.computeDifferences = function (former, later, matrixKey)
 			{
 				var chLink = $("<span></span>").addClass ("bivesTab").text ("Component Hierarchy");
 				var hierarchyDiffId = "bivesGrapheneAppCh-" + diff.id;
-				chDiv.append ("<div id='" + hierarchyDiffId+ "' ng-controller='MainCtrl'><sg-graphene imports='exports' template='"+contextPath + "/res/js/visualizers/displayBivesDiff/graphene-sems/template.html'></sg-graphene></div>");
+				chDiv.append ("<div id='" + hierarchyDiffId+ "' ng-controller='MainCtrl'><sg-graphene imports='exports' template='"+staticPath + "js/visualizers/displayBivesDiff/graphene-sems/template.html'></sg-graphene></div>");
 				head.append (chLink);
 				diffDiv.append (chDiv);
 				chLink.click (function ()
@@ -272,8 +269,7 @@ bivesDiffer.prototype.computeDifferences = function (former, later, matrixKey)
 		}
 		else
 			diffs[matrixKey].empty ().append ("failed to compute the differences");
-	}).fail (function () 
-	{
+	}).fail (function () {
 		diffs[matrixKey].empty ().append ("failed to compute the differences");
 	});
 };
@@ -286,7 +282,7 @@ bivesDiffer.prototype.showDiff = function ()
 		if (!this.diffs[matrixKey])
 		{
 			// compute the diff and show it afterwards
-			this.diffs[matrixKey] = $("<div></div>").html ("<img src='"+contextPath+"/res/img/loading2-new.gif' alt='loading' /> calling BiVeS to compute the differences");
+			this.diffs[matrixKey] = $("<div></div>").html ("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' /> calling BiVeS to compute the differences");
 			this.computeDifferences (this.formerFile, this.laterFile, matrixKey);
 		}
 

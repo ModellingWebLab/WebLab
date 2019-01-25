@@ -71,18 +71,16 @@ unixDiffer.prototype.laterClickListener = function (later, file, tr)
 
 unixDiffer.prototype.computeDifferences = function (former, later, matrixKey)
 {
-	var request = {
-			task: "getUnixDiff",
-			entity1: former.entityLink.id,
-			file1: former.entityFileLink.id,
-			entity2: later.entityLink.id,
-			file2: later.entityFileLink.id
-	};
-	
+  var diffBase = $('#entitiesToCompare').data('diff-base-href');
+  var href = diffBase + '/' +
+    (former.entityLink.entityId + ':' + former.entityLink.id) + '/' +
+		(later.entityLink.entityId + ':' + later.entityLink.id) + '/' +
+    former.entityFileLink.id +
+    "?type=unix";
+
 	var diffs = this.diffs;
 	
-	$.post (document.location.href, JSON.stringify(request)).done (function (data)
-	{
+	$.getJSON(href, function (data) {
 		console.log (data);
 		if (data && data.getUnixDiff && data.getUnixDiff.response)
 		{
@@ -105,8 +103,7 @@ unixDiffer.prototype.computeDifferences = function (former, later, matrixKey)
 		}
 		else
 			diffs[matrixKey].empty ().append ("failed to compute the differences");
-	}).fail (function () 
-	{
+	}).fail (function () {
 		diffs[matrixKey].empty ().append ("failed to compute the differences");
 	});
 };

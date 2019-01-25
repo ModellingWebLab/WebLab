@@ -5,6 +5,7 @@ import subprocess
 from itertools import groupby
 from tempfile import NamedTemporaryFile
 
+import requests
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
 from django.contrib import messages
@@ -331,6 +332,7 @@ class EntityComparisonJsonView(View):
         ]
         return {
             'id': commit.hexsha,
+            'entityId': entity.id,
             'author': entity.author.full_name,
             'parsedOk': False,
             'visibility': entity.get_version_visibility(commit.hexsha, default=entity.DEFAULT_VISIBILITY),
@@ -748,6 +750,65 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailVie
 
 
 class EntityDiffView(View):
+    def _get_unix_diff(self, file1, file2):
+        with NamedTemporaryFile() as tmp1, NamedTemporaryFile() as tmp2:
+            tmp1.write(file1.data_stream.read())
+            tmp2.write(file2.data_stream.read())
+            tmp1.flush()
+            tmp2.flush()
+
+            result = {}
+            try:
+                output = subprocess.run(
+                    ['diff', '-a', tmp1.name, tmp2.name],
+                    stdout=subprocess.PIPE)
+                result['unixDiff'] = output.stdout.decode()
+                result['response'] = True
+            except subprocess.SubprocessError as e:
+                result['responseText'] = "Couldn't compute unix diff (%s)" % e
+
+            return {
+                'getUnixDiff': result
+            }
+
+    def _get_bives_diff(self, file1, file2):
+        file1_url = 'file1_url'
+        file2_url = 'file2_url'
+        bives_url = settings.BIVES_URL 
+        post_data = {
+            'files': [
+                file1.data_stream.read().decode(),
+                file2.data_stream.read().decode(),
+            ],
+            'commands': [
+                'compHierarchyJson',
+                'reactionsJson',
+                'reportHtml',
+                'xmlDiff',
+            ]
+        }
+
+        result = {}
+        bives_response = requests.post(bives_url, json=post_data)
+
+        if bives_response.ok:
+            bives_json = bives_response.json()
+
+            if 'error' in bives_json:
+                result['responseText'] = '\n'.join(bives_json['error'])
+            else:
+                result['bivesDiff'] = bives_json
+                result['response'] = True
+        else:
+            result['responseText'] = (
+                'bives request failed: %d (%s)' %
+                (bives_response.status_code, bives_response.content.decode())
+            )
+
+        return {
+            'getBivesDiff': result
+        }
+
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
         json_entities = []
@@ -761,22 +822,10 @@ class EntityDiffView(View):
                 entity = Entity.objects.get(pk=id)
                 files.append(entity.repo.get_commit(sha).get_blob(filename))
 
-        f1, f2 = files
-        with NamedTemporaryFile() as tmp1, NamedTemporaryFile() as tmp2:
-            tmp1.write(f1.data_stream.read())
-            tmp2.write(f2.data_stream.read())
-            tmp1.flush()
-            tmp2.flush()
-
-            result = subprocess.run(
-                ['diff', '-a', tmp1.name, tmp2.name],
-                stdout=subprocess.PIPE)
-            diff = result.stdout.decode()
-
-        response = {
-            'getUnixDiff': {
-                'unixDiff': diff,
-            }
-        }
+        diff_type = self.request.GET.get('type', 'unix')
+        if diff_type == 'unix':
+            response = self._get_unix_diff(*files)
+        elif diff_type == 'bives':
+            response = self._get_bives_diff(*files)
 
         return JsonResponse(response)

@@ -2,6 +2,7 @@ import io
 import json
 import zipfile
 from io import BytesIO
+from subprocess import SubprocessError
 from unittest.mock import patch
 
 import pytest
@@ -1101,7 +1102,111 @@ class TestEntityDiffView:
 ---
 > v2 contents
 '''
+        assert data['getUnixDiff']['response']
 
+    @patch('subprocess.run')
+    def test_unix_diff_returns_error_on_process_error(self, mock_run, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, contents='v1 contents\n')
+        v2 = helpers.add_version(model, contents='v2 contents\n')
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+
+        mock_run.side_effect = SubprocessError('something went wrong')
+
+        response = client.get(
+            '/entities/models/diff/%s/%s/file1.txt?type=unix' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'response' not in data['getUnixDiff']
+        assert data['getUnixDiff']['responseText'] == (
+            "Couldn't compute unix diff (something went wrong)")
+
+
+    @patch('requests.post')
+    def test_bives_diff(self, mock_post, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, contents='v1 contents\n')
+        v2 = helpers.add_version(model, contents='v2 contents\n')
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+
+        mock_post.return_value.json.return_value = {
+            'bivesDiff': 'diff-contents',
+        }
+
+        response = client.get(
+            '/entities/models/diff/%s/%s/file1.txt?type=bives' % (v1_spec, v2_spec)
+        )
+
+        mock_post.assert_called_with(
+            'https://bives.bio.informatik.uni-rostock.de/',
+            json={
+                'files': [
+                    'v1 contents\n',
+                    'v2 contents\n'
+                ],
+                'commands': [
+                    'compHierarchyJson',
+                    'reactionsJson',
+                    'reportHtml',
+                    'xmlDiff',
+                ]})
+
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['getBivesDiff']['bivesDiff'] == {'bivesDiff': 'diff-contents'}
+        assert data['getBivesDiff']['response']
+
+    @patch('requests.post')
+    def test_bives_diff_returns_error_on_server_error(self, mock_post, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, contents='v1 contents\n')
+        v2 = helpers.add_version(model, contents='v2 contents\n')
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+
+        mock_post.return_value.ok = False
+        mock_post.return_value.status_code = 400
+        mock_post.return_value.content = b'Server error'
+
+        response = client.get(
+            '/entities/models/diff/%s/%s/file1.txt?type=bives' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'response' not in data['getBivesDiff']
+        assert data['getBivesDiff']['responseText'] == 'bives request failed: 400 (Server error)'
+
+
+    @patch('requests.post')
+    def test_bives_diff_returns_error_on_server_error_message(self, mock_post, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, contents='v1 contents\n')
+        v2 = helpers.add_version(model, contents='v2 contents\n')
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+
+        mock_post.return_value.json.return_value = {
+            'error': ['error-message'],
+        }
+
+        response = client.get(
+            '/entities/models/diff/%s/%s/file1.txt?type=bives' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'response' not in data['getBivesDiff']
+        assert data['getBivesDiff']['responseText'] == 'error-message'
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("recipe,url", [
