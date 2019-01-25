@@ -863,7 +863,8 @@ class TestCheckProtocolCallbackView:
                 assert term.term in req
                 assert not term.optional
 
-    def test_stores_error_response(self, client, analysis_task):
+    @patch('requests.post')
+    def test_stores_error_response(self, mock_post, client, analysis_task):
         task_id = str(analysis_task.id)
         protocol = analysis_task.entity
         hexsha = analysis_task.version
@@ -890,6 +891,13 @@ class TestCheckProtocolCallbackView:
         commit = protocol.repo.get_commit(hexsha)
         assert 'errors.txt' in commit.filenames
         assert msg in commit.get_blob('errors.txt').data_stream.read().decode('UTF-8')
+
+        # Check submitting a new task is now a no-op
+        from entities.processing import submit_check_protocol_task
+        submit_check_protocol_task(protocol, hexsha)
+
+        assert not mock_post.called
+        assert not AnalysisTask.objects.filter(entity=protocol).exists()
 
     def test_errors_on_duplicate_terms(self, client, analysis_task):
         # Submit the fake task response

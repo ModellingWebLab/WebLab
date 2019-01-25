@@ -126,8 +126,11 @@ def process_check_protocol_callback(data):
 
         if ERROR_FILE_NAME in commit.filenames:
             logger.warning('Error file already exists in commit. New error message is: %s', error_message)
-
-        content = b'Error analysing protocol:\n\n' + error_message.encode('UTF-8')
-        commit.add_ephemeral_file(ERROR_FILE_NAME, content)
+        else:
+            content = b'Error analysing protocol:\n\n' + error_message.encode('UTF-8')
+            commit.add_ephemeral_file(ERROR_FILE_NAME, content)
+        # Don't try to analyse this protocol again
+        cached_version = entity.repocache.get_version(version)
+        ProtocolInterface(protocol_version=cached_version, term='', optional=True).save()
 
     return {}
