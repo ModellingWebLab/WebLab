@@ -194,7 +194,7 @@ class TestEntityVersionView:
     def test_cannot_access_invisible_version(self, client, logged_in_user, helpers):
         model = recipes.model.make()
         commit1 = helpers.add_version(model, visibility='private')
-        commit2 = helpers.add_version(model, visibility='public')
+        helpers.add_version(model, visibility='public')
         model.add_tag('tag1', commit1.hexsha)
 
         response = client.get('/entities/models/%d/versions/%s' % (model.pk, commit1.hexsha))
@@ -206,7 +206,7 @@ class TestEntityVersionView:
     def test_anonymous_cannot_access_invisible_version(self, client, helpers):
         model = recipes.model.make()
         commit1 = helpers.add_version(model, visibility='private')
-        commit2 = helpers.add_version(model, visibility='public')
+        helpers.add_version(model, visibility='public')
         model.add_tag('tag1', commit1.hexsha)
 
         response = client.get('/entities/models/%d/versions/%s' % (model.pk, commit1.hexsha))
@@ -521,7 +521,7 @@ class TestEntityVersionList:
 
     def test_only_shows_visible_versions(self, client, helpers):
         model = recipes.model.make()
-        commit1 = helpers.add_version(model, visibility='private')
+        helpers.add_version(model, visibility='private')
         commit2 = helpers.add_version(model, visibility='public')
 
         response = client.get('/entities/models/%d/versions/' % model.pk)
@@ -731,7 +731,7 @@ class TestVersionCreation:
         mock_check.assert_called_once_with(protocol, commit.hexsha)
 
     @patch('requests.post', side_effect=requests.exceptions.ConnectionError)
-    def test_protocol_analysis_connection_error(self, mock_post, client, logged_in_user, helpers):
+    def test_protocol_analysis_errors(self, mock_post, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_protocol')
         doc = b'\n# Title\n\ndocumentation goes here\nand here'
         content = b'my test protocol\ndocumentation\n{' + doc + b'}'
@@ -758,6 +758,15 @@ class TestVersionCreation:
         readme = commit.get_blob(ProtocolEntity.README_NAME)
         assert readme.data_stream.read() == doc
         # Check new version analysis "happened" but failed cleanly
+        assert mock_post.called
+        assert not AnalysisTask.objects.exists()
+
+        # If instead the backend returns an error...
+        mock_post.side_effect = None
+        mock_post.return_value.content = b'error'
+        # ...then we should also get a clean failure
+        from entities.processing import submit_check_protocol_task
+        submit_check_protocol_task(protocol, commit.hexsha)
         assert mock_post.called
         assert not AnalysisTask.objects.exists()
 
