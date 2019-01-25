@@ -13,6 +13,7 @@ from guardian.shortcuts import assign_perm
 
 from core import recipes
 from entities.models import AnalysisTask, Entity, ModelEntity, ProtocolEntity
+from repocache.models import ProtocolInterface
 
 
 @pytest.fixture
@@ -329,6 +330,38 @@ class TestEntityVersionJsonView:
         assert file_['size'] == 15
         assert (file_['url'] ==
                 '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, version.hexsha))
+
+
+@pytest.mark.django_db
+class TestGetProtocolInterfacesJsonView:
+    def test_single_public_protocol(self, client, helpers):
+        # Make a public protocol version
+        protocol = recipes.protocol.make()
+        helpers.add_version(protocol)
+        version = protocol.repocache.latest_version
+        protocol.set_version_visibility(version.sha, 'public')
+        # Give it an interface
+        req = ['r1', 'r2']
+        opt = ['o1']
+        terms = [
+            ProtocolInterface(protocol_version=version, term=t, optional=False) for t in req
+        ] + [
+            ProtocolInterface(protocol_version=version, term=t, optional=True) for t in opt
+        ]
+        ProtocolInterface.objects.bulk_create(terms)
+
+        response = client.get('/entities/protocols/get_interfaces')
+
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        interfaces = data['interfaces']
+
+        assert len(interfaces) == 1
+        iface = interfaces[0]
+        assert iface['name'] == protocol.name
+        assert set(iface['required']) == set(req)
+        assert set(iface['optional']) == set(opt)
 
 
 @pytest.mark.django_db

@@ -95,6 +95,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^protocols/get_interfaces$',
+        views.GetProtocolInterfacesJsonView.as_view(),
+        name='get_protocol_interfaces',
+    ),
+
+    url(
         r'^protocols/(?P<pk>\d+)$',
         views.EntityView.as_view(),
         {'entity_type': 'protocol'},

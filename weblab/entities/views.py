@@ -20,6 +20,7 @@ from django.http import (
     JsonResponse,
 )
 from django.core.exceptions import PermissionDenied
+from django.db.models import F, Max
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
@@ -30,9 +31,10 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 
-from core.visibility import Visibility, VisibilityMixin, visibility_check
+from core.visibility import Visibility, VisibilityMixin, visibility_check, visible_entity_ids
 from experiments.models import Experiment
 from repocache.exceptions import RepoCacheMiss
+from repocache.models import CachedEntityVersion
 
 from .forms import (
     EntityChangeVisibilityForm,
@@ -734,3 +736,37 @@ class CheckProtocolCallbackView(View):
     def post(self, request, *args, **kwargs):
         result = process_check_protocol_callback(json.loads(request.body.decode()))
         return JsonResponse(result)
+
+
+class GetProtocolInterfacesJsonView(View):
+    """Get the interfaces for the latest versions of all protocols visible to the user.
+
+    Returns a JSON object ``{'interfaces': [{'name': str, 'required': [], 'optional': []}, ...]}``
+    where ``name`` contains a ``Protocol.name`` and the ``required`` and ``optional`` arrays list
+    the terms in that protocol's interface.
+    """
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        visible_entities = visible_entity_ids(user)
+        cached_proto_versions = CachedEntityVersion.objects.annotate(
+            latest_ts=Max('entity__versions__timestamp')
+        ).filter(
+            timestamp=F('latest_ts'),  # TODO: this might give you a later private version that you can't see...
+            entity__in=visible_entities
+        ).annotate(
+            name=F('entity__entity__name')
+        ).prefetch_related(
+            'interface'
+        )
+        interfaces = [
+            {
+                'name': version.name,
+                'required': [iface.term for iface in version.interface.all() if not iface.optional and iface.term],
+                'optional': [iface.term for iface in version.interface.all() if iface.optional],
+            }
+            for version in cached_proto_versions
+        ]
+
+        return JsonResponse({
+            'interfaces': interfaces
+        })
