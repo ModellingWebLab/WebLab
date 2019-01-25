@@ -37,17 +37,17 @@ class TestPopulate:
 
     def test_falls_back_to_older_visibilities(self, helpers):
         model = recipes.model.make()
-        v1 = helpers.add_version(model, visibility='restricted', cache=False)
+        v1 = helpers.add_version(model, visibility='public', cache=False)
         v2 = helpers.add_version(model, cache=False)
-        v3 = helpers.add_version(model, visibility='public', cache=False)
+        v3 = helpers.add_version(model, visibility='private', cache=False)
         v4 = helpers.add_version(model, cache=False)
 
         populate_entity_cache(model)
 
-        assert model.repocache.get_version(v1.hexsha).visibility == 'restricted'
-        assert model.repocache.get_version(v2.hexsha).visibility == 'restricted'
-        assert model.repocache.get_version(v3.hexsha).visibility == 'public'
-        assert model.repocache.get_version(v4.hexsha).visibility == 'public'
+        assert model.repocache.get_version(v1.hexsha).visibility == 'public'
+        assert model.repocache.get_version(v2.hexsha).visibility == 'public'
+        assert model.repocache.get_version(v3.hexsha).visibility == 'private'
+        assert model.repocache.get_version(v4.hexsha).visibility == 'private'
 
     def test_falls_back_to_private(self, helpers):
         model = recipes.model.make()
@@ -59,12 +59,12 @@ class TestPopulate:
 
     def test_applies_missing_visibilities(self, helpers):
         model = recipes.model.make()
-        v1 = helpers.add_version(model, visibility='restricted')
+        v1 = helpers.add_version(model, visibility='public')
         v2 = helpers.add_version(model)
         v3 = helpers.add_version(model)
 
         populate_entity_cache(model)
 
-        assert v1.get_note() == 'Visibility: restricted'
-        assert v2.get_note() == 'Visibility: restricted'
-        assert v3.get_note() == 'Visibility: restricted'
+        assert v1.get_note() == 'Visibility: public'
+        assert v2.get_note() == 'Visibility: public'
+        assert v3.get_note() == 'Visibility: public'

@@ -1,11 +1,14 @@
+import binascii
 import os
 from datetime import datetime
+from itertools import chain
 from pathlib import Path
 from shutil import rmtree
+from tempfile import TemporaryDirectory
 
 from django.utils.functional import cached_property
 from django.utils.timezone import utc
-from git import Actor, GitCommandError, Repo
+from git import Actor, Blob, GitCommandError, Repo
 
 from core.combine import (
     MANIFEST_FILENAME,
@@ -212,6 +215,13 @@ class Commit:
     # all weblab notes to be kept in their own store.
     NOTE_REF = 'weblab'
 
+    # This notes ref is used for the list of ephemeral file names.
+    FILE_LIST_REF = 'weblab-files-list'
+
+    # This is the base notes ref for individual file contents. The file
+    # name will be appended to it.
+    FILE_REF_BASE = 'weblab-files/'
+
     def __init__(self, repo, commit):
         """
         :param repo: `Repository` object
@@ -220,14 +230,14 @@ class Commit:
         self._repo = repo
         self._commit = commit
 
-    @property
+    @cached_property
     def filenames(self):
         """
         All filenames in this commit
 
         :return: set of filenames
         """
-        return {blob.name for blob in self.files}
+        return {blob.name for blob in self._commit.tree.blobs} | self.ephemeral_file_names
 
     @property
     def files(self):
@@ -236,7 +246,7 @@ class Commit:
 
         :return: iterable of `git.Blob` objects
         """
-        return self._commit.tree.blobs
+        return chain(self._commit.tree.blobs, self.ephemeral_files)
 
     def get_blob(self, filename):
         """
@@ -255,8 +265,9 @@ class Commit:
 
         :return: file handle to archive
         """
+        mtime = self.committed_at
         return ArchiveWriter().write(
-            (self._repo.full_path(fn), fn) for fn in self.filenames
+            (blob.name, blob.data_stream, mtime) for blob in self.files
         )
 
     @property
@@ -298,7 +309,7 @@ class Commit:
         """
         return datetime.fromtimestamp(self._commit.committed_date).replace(tzinfo=utc)
 
-    @property
+    @cached_property
     def master_filename(self):
         """
         Get name of master file on this commit, as defined by COMBINE manifest
@@ -316,7 +327,7 @@ class Commit:
         """
         Add a git note to this commit
 
-        :param: Textual content of the note
+        :param note: Textual content of the note
         """
         cmd = self._repo._repo.git
         cmd.notes('--ref', self.NOTE_REF, 'add', '-f', '-m', note, self.hexsha)
@@ -332,6 +343,74 @@ class Commit:
             return cmd.notes('--ref', self.NOTE_REF, 'show', self.hexsha)
         except GitCommandError:
             return None
+
+    def add_ephemeral_file(self, name, content=None, path=None):
+        """Add an ephemeral file as a git note.
+
+        :param name: file name
+        :param content: bytes object containing the file contents
+        :param path: path to the file on disk
+
+        One of content or path must be given.
+
+        Raises ValueError if the name has already been used for a real or
+        ephemeral file.
+        """
+        if name in self.filenames:
+            raise ValueError("File name '{}' has already been used".format(name))
+        cmd = self._repo._repo.git
+        with TemporaryDirectory() as tmpdir:
+            if path is None:
+                # Write content to a temporary file
+                assert content is not None
+                path = os.path.join(tmpdir, name)
+                with open(path, 'wb') as f:
+                    f.write(content)
+            # Store file in the git object DB
+            obj_id = cmd.hash_object('-w', path)
+            # Add this file to the list of ephemeral files for this commit
+            cmd.notes('--ref', self.FILE_LIST_REF, 'append', '-m', name, self.hexsha)
+            # Add the file as a note
+            cmd.notes('--ref', self.FILE_REF_BASE + name, 'add', '-f', '-C', obj_id, self.hexsha)
+        # Clear cached properties so they get recalculated on next access
+        del self.ephemeral_file_names
+        del self.filenames
+
+    def get_ephemeral_file(self, name):
+        """Get the contents of an ephemeral file as a Blob object.
+
+        :param name: name of file to retrieve
+        :return: `git.Blob` object or None if file not found
+        """
+        cmd = self._repo._repo.git
+        try:
+            blob_hexsha = cmd.notes('--ref', self.FILE_REF_BASE + name, 'list', self.hexsha)
+            binsha = binascii.a2b_hex(blob_hexsha)
+            return Blob(self._repo._repo, binsha, path=name)
+        except GitCommandError:
+            return None
+
+    def list_ephemeral_files(self):
+        """Get the names of any ephemeral files associated with this commit.
+
+        :return: set of file names
+        """
+        cmd = self._repo._repo.git
+        try:
+            names_note = cmd.notes('--ref', self.FILE_LIST_REF, 'show', self.hexsha)
+            return {n for n in names_note.split('\n') if n}
+        except GitCommandError:
+            return set()
+
+    @property
+    def ephemeral_files(self):
+        """An iterable of `git.Blob` objects representing ephemeral files."""
+        for name in self.ephemeral_file_names:
+            yield self.get_ephemeral_file(name)
+
+    @cached_property
+    def ephemeral_file_names(self):
+        return self.list_ephemeral_files()
 
     @property
     def parents(self):

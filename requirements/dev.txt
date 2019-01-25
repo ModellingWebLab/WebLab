@@ -13,7 +13,8 @@ decorator==4.1.2          # via ipython, traitlets
 defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2
 django-braces==1.11.0
-django==1.11.15           # via model-mommy
+django-guardian==1.4.9
+django==1.11.15
 first==2.0.1              # via pip-tools
 flake8==3.4.1
 gitdb2==2.0.3             # via gitpython
@@ -47,7 +48,7 @@ requests-oauthlib==0.8.0  # via social-auth-core
 requests==2.18.4          # via codecov, requests-oauthlib, rollbar, social-auth-core
 rollbar==0.14.2
 simplegeneric==0.8.1      # via ipython
-six==1.10.0               # via model-mommy, pip-tools, prompt-toolkit, rollbar, social-auth-app-django, social-auth-core, traitlets
+six==1.10.0               # via django-guardian, model-mommy, pip-tools, prompt-toolkit, rollbar, social-auth-app-django, social-auth-core, traitlets
 smmap2==2.0.3             # via gitdb2
 social-auth-app-django==1.2.0
 social-auth-core==1.4.0   # via social-auth-app-django

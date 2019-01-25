@@ -40,8 +40,8 @@ class TestEntityCacheModels:
 @pytest.mark.django_db
 class TestEntityCacheModelsVisibility:
     def test_entity_visibility(self):
-        version = recipes.cached_entity_version.make(visibility='restricted')
-        assert version.entity.visibility == 'restricted'
+        version = recipes.cached_entity_version.make(visibility='public')
+        assert version.entity.visibility == 'public'
 
     def test_entity_visibility_is_private_if_no_versions(self):
         cached = recipes.cached_entity.make()
@@ -53,13 +53,13 @@ class TestEntityCacheModelsVisibility:
 
     def test_set_entity_version_visibility(self):
         version = recipes.cached_entity_version.make()
-        version.set_visibility('restricted')
+        version.set_visibility('public')
         version.refresh_from_db()
-        assert version.visibility == 'restricted'
+        assert version.visibility == 'public'
 
     def test_add_version(self, helpers):
         model = recipes.model.make()
-        commit = helpers.add_version(model, visibility='restricted', cache=False)
+        commit = helpers.add_version(model, visibility='public', cache=False)
 
         assert model.repocache.versions.count() == 0
         model.repocache.add_version(commit.hexsha)
@@ -67,4 +67,4 @@ class TestEntityCacheModelsVisibility:
         version = model.repocache.get_version(commit.hexsha)
         assert version.sha == commit.hexsha
         assert version.timestamp == commit.committed_at
-        assert version.visibility == 'restricted'
+        assert version.visibility == 'public'

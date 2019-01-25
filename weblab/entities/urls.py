@@ -9,6 +9,12 @@ _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 
 urlpatterns = [
     url(
+        r'^callback/check-proto$',
+        views.CheckProtocolCallbackView.as_view(),
+        name='protocol_check_callback',
+    ),
+
+    url(
         r'^models/$',
         views.ModelEntityListView.as_view(),
         name='models',
@@ -154,5 +160,11 @@ urlpatterns = [
         r'^(?P<pk>\d+)/upload-file$',
         views.FileUploadView.as_view(),
         name='upload_file',
+    ),
+
+    url(
+        r'^(?P<entity_type>model|protocol)s/(?P<pk>\d+)/collaborators$',
+        views.EntityCollaboratorsView.as_view(),
+        name='entity_collaborators',
     ),
 ]

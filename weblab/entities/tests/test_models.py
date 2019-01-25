@@ -59,18 +59,20 @@ class TestEntity:
 
     def test_set_and_get_version_visibility(self, model_with_version):
         commit = model_with_version.repo.latest_commit
-        model_with_version.set_version_visibility(commit.hexsha, 'restricted')
+        assert model_with_version.get_version_visibility(commit.hexsha) == 'private'
 
-        assert model_with_version.get_version_visibility(commit.hexsha) == 'restricted'
+        model_with_version.set_version_visibility(commit.hexsha, 'public')
+
+        assert model_with_version.get_version_visibility(commit.hexsha) == 'public'
 
     def test_get_and_set_visibility_in_repo(self, helpers):
         model = recipes.model.make()
         commit = helpers.add_version(model, cache=False)
         assert model.get_visibility_from_repo(commit) is None
 
-        model.set_visibility_in_repo(commit, 'restricted')
-        assert model.get_visibility_from_repo(commit) == 'restricted'
-        assert commit.get_note() == 'Visibility: restricted'
+        model.set_visibility_in_repo(commit, 'public')
+        assert model.get_visibility_from_repo(commit) == 'public'
+        assert commit.get_note() == 'Visibility: public'
 
     def test_get_repocache(self):
         model = recipes.model.make()
@@ -85,24 +87,24 @@ class TestEntity:
         recipes.cached_entity_version.make(
             entity__entity=model,
             sha='test-sha',
-            visibility='restricted'
+            visibility='public'
         )
 
-        assert model.visibility == 'restricted'
+        assert model.visibility == 'public'
 
     def test_get_version_visibility_fetches_from_cache(self):
         model = recipes.model.make()
         recipes.cached_entity_version.make(
             entity__entity=model,
             sha='test-sha',
-            visibility='restricted'
+            visibility='public'
         )
 
-        assert model.get_version_visibility('test-sha') == 'restricted'
+        assert model.get_version_visibility('test-sha') == 'public'
 
     def test_get_version_visiblity_uses_default(self):
         model = recipes.model.make()
-        model.get_version_visibility('non-existent-sha', default='private') == 'private'
+        model.get_version_visibility('non-existent-sha', default='public') == 'public'
 
     def test_get_version_visiblity_raises_if_no_default(self):
         model = recipes.model.make()
@@ -115,34 +117,34 @@ class TestEntity:
 
         populate_entity_cache(model)
 
-        model.set_version_visibility(sha, 'restricted')
+        model.set_version_visibility(sha, 'public')
 
-        assert model.cachedentity.versions.get().visibility == 'restricted'
+        assert model.cachedentity.versions.get().visibility == 'public'
 
     def test_get_ref_version_visibility(self, helpers):
         model = recipes.model.make()
-        sha = helpers.add_version(model, visibility='restricted').hexsha
+        sha = helpers.add_version(model, visibility='public').hexsha
         model.add_tag('v1', sha)
 
-        assert model.get_ref_version_visibility(sha) == 'restricted'
-        assert model.get_ref_version_visibility('v1') == 'restricted'
-        assert model.get_ref_version_visibility('latest') == 'restricted'
+        assert model.get_ref_version_visibility(sha) == 'public'
+        assert model.get_ref_version_visibility('v1') == 'public'
+        assert model.get_ref_version_visibility('latest') == 'public'
 
     def test_get_ref_version_visibility_invalid_hexsha(self, helpers):
         model = recipes.model.make()
-        sha = helpers.add_version(model, visibility='restricted').hexsha
+        helpers.add_version(model, visibility='public').hexsha
 
         with pytest.raises(RepoCacheMiss):
-            model.get_ref_version_visibility('0'*40)
+            model.get_ref_version_visibility('0' * 40)
 
     def test_is_valid_sha(self):
-        assert Entity._is_valid_sha('0'*40)
-        assert not Entity._is_valid_sha('0'*39)
-        assert not Entity._is_valid_sha('g'*40)
+        assert Entity._is_valid_sha('0' * 40)
+        assert not Entity._is_valid_sha('0' * 39)
+        assert not Entity._is_valid_sha('g' * 40)
 
     def test_get_ref_version_visibility_invalid_tag(self, helpers):
         model = recipes.model.make()
-        sha = helpers.add_version(model, visibility='restricted').hexsha
+        helpers.add_version(model, visibility='public').hexsha
 
         with pytest.raises(RepoCacheMiss):
             model.get_ref_version_visibility('v10')

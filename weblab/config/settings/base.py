@@ -48,6 +48,7 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     'social_django',
+    'guardian',
 ]
 
 LOCAL_APPS = [
@@ -140,6 +141,7 @@ AUTHENTICATION_BACKENDS = [
     'social_core.backends.google.GoogleOAuth2',
     'social_core.backends.github.GithubOAuth2',
     'django.contrib.auth.backends.ModelBackend',
+    'guardian.backends.ObjectPermissionBackend',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

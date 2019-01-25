@@ -1,12 +1,15 @@
 import binascii
+import uuid
 from pathlib import Path
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
 from django.db import models
+from guardian.shortcuts import get_objects_for_user
 
 from core.models import UserCreatedModelMixin
+from core.visibility import HELP_TEXT as VIS_HELP_TEXT, Visibility
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
@@ -16,6 +19,10 @@ VISIBILITY_NOTE_PREFIX = 'Visibility: '
 
 
 class Entity(UserCreatedModelMixin, models.Model):
+    DEFAULT_VISIBILITY = Visibility.PRIVATE
+
+    VISIBILITY_HELP = VIS_HELP_TEXT
+
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
     ENTITY_TYPE_CHOICES = (
@@ -36,8 +43,8 @@ class Entity(UserCreatedModelMixin, models.Model):
         permissions = (
             ('create_model', 'Can create models'),
             ('create_protocol', 'Can create protocols'),
-            ('create_model_version', 'Can create new versions of a model'),
-            ('create_protocol_version', 'Can create new versions of a protocol'),
+            # Edit entity is used as an object-level permission
+            ('edit_entity', 'Can edit entity'),
         )
 
     def __str__(self):
@@ -195,6 +202,23 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         return set(self.repocache.get_version(sha).tags.values_list('tag', flat=True))
 
+    def analyse_new_version(self, commit):
+        """Hook called when a new version has been created successfully.
+
+        This can be used by subclasses to, e.g., add ephemeral files to the commit,
+        or trigger Celery tasks to analyse the new entity.
+
+        Warning: this doesn't function like a normal polymorphic method for objects
+        retrieved from the database. You'll get an instance of whatever class you
+        request, so if you search for any Entity you'll end up calling this method,
+        not the subclass implementation as you might have expected. If this turns
+        out to be a problem in practice, we can look at using django-polymorphic as
+        a solution.
+
+        :param commit: a `Commit` object for the new version
+        """
+        pass
+
 
 class EntityManager(models.Manager):
     def get_queryset(self):
@@ -203,6 +227,12 @@ class EntityManager(models.Manager):
     def create(self, **kwargs):
         kwargs['entity_type'] = self.model.entity_type
         return super().create(**kwargs)
+
+    def with_edit_permission(self, user):
+        if user.has_perm('entities.create_%s' % self.model.entity_type):
+            return get_objects_for_user(user, 'entities.edit_entity')
+        else:
+            return self.none()
 
 
 class ModelEntity(Entity):
@@ -226,6 +256,42 @@ class ProtocolEntity(Entity):
         proxy = True
         verbose_name_plural = 'Protocol entities'
 
+    # The name of a (possibly ephemeral) file containing documentation for the protocol
+    README_NAME = 'readme.md'
+
+    def analyse_new_version(self, commit):
+        """Hook called when a new version has been created successfully.
+
+        Parses the main protocol file to look for documentation and extracts it into
+        an ephemeral readme.md file, if such a file does not already exist.
+
+        This isn't very intelligent or efficient - it's just a proof-of-concept of the
+        ephemeral file approach.
+
+        We also submit a Celery job to do further processing. Eventually this task will
+        also extract the readme for us.
+
+        :param entity: the entity which has had a new version added
+        :param commit: a `Commit` object for the new version
+        """
+        from .processing import submit_check_protocol_task
+        if self.README_NAME not in commit.filenames:
+            main_file_name = commit.master_filename
+            if main_file_name is None:
+                return  # TODO: Add error to errors.txt instead!
+            main_file = commit.get_blob(main_file_name)
+            if main_file is None:
+                return  # TODO: Add error to errors.txt instead!
+            content = main_file.data_stream.read()
+            header_start = content.find(b'documentation')
+            doc_start = content.find(b'{', header_start)
+            doc_end = content.find(b'}', doc_start)
+            if doc_start >= 0 and doc_end > doc_start:
+                doc = content[doc_start + 1:doc_end]
+                # Create ephemeral file
+                commit.add_ephemeral_file(self.README_NAME, doc)
+        submit_check_protocol_task(self, commit.hexsha)
+
 
 class EntityFile(models.Model):
     entity = models.ForeignKey(Entity, related_name='files')
@@ -234,3 +300,16 @@ class EntityFile(models.Model):
 
     def __str__(self):
         return self.original_name
+
+
+class AnalysisTask(models.Model):
+    """
+    A celery task analysing an entity version.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    entity = models.ForeignKey(Entity, related_name='analysis_tasks')
+    version = models.CharField(max_length=40)
+
+    class Meta:
+        # Don't analyse the same entity version twice at the same time!
+        unique_together = ['entity', 'version']

@@ -1,3 +1,4 @@
+import json
 import mimetypes
 import os.path
 import shutil
@@ -18,8 +19,11 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.core.exceptions import PermissionDenied
+from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
@@ -32,6 +36,7 @@ from repocache.exceptions import RepoCacheMiss
 
 from .forms import (
     EntityChangeVisibilityForm,
+    EntityCollaboratorFormSet,
     EntityTagVersionForm,
     EntityVersionForm,
     FileUploadForm,
@@ -39,6 +44,7 @@ from .forms import (
     ProtocolEntityForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity
+from .processing import process_check_protocol_callback
 
 
 class ModelEntityTypeMixin:
@@ -74,18 +80,12 @@ class EntityVersionMixin(VisibilityMixin):
     Mixin for views describing a specific version of an `Entity` object
     """
 
-    def get_owner(self):
-        """
-        Entity ownership filters down to entity version
-        """
-        return self.get_object().author
-
     def get_visibility(self):
         """
         Visibility comes from the entity version
         """
         try:
-            return self.get_object().get_ref_version_visibility(self.kwargs['sha'])
+            return self._get_object().get_ref_version_visibility(self.kwargs['sha'])
         except RepoCacheMiss:
             raise Http404
 
@@ -93,12 +93,12 @@ class EntityVersionMixin(VisibilityMixin):
         """
         Get the git commit applicable to this version
 
-        :return: `git.Commit` object
+        :return: `entities.repository.Commit` object
         :raise: Http404 if commit not found
         """
         if not hasattr(self, '_commit'):
             try:
-                self._commit = self.get_object().repo.get_commit(self.kwargs['sha'])
+                self._commit = self._get_object().repo.get_commit(self.kwargs['sha'])
                 if not self._commit:
                     raise Http404
             except BadName:
@@ -106,8 +106,13 @@ class EntityVersionMixin(VisibilityMixin):
 
         return self._commit
 
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
     def get_context_data(self, **kwargs):
-        entity = self.get_object()
+        entity = self._get_object()
         commit = self.get_commit()
         kwargs.update(**{
             'version': commit,
@@ -116,6 +121,11 @@ class EntityVersionMixin(VisibilityMixin):
             'master_filename': commit.master_filename,
         })
         return super().get_context_data(**kwargs)
+
+
+class EntityCollaboratorRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.get_object().is_editable_by(self.request.user)
 
 
 class ModelEntityCreateView(
@@ -176,7 +186,7 @@ class EntityVersionView(EntityVersionMixin, DetailView):
     template_name = 'entities/entity_version.html'
 
     def get_context_data(self, **kwargs):
-        entity = self.get_object()
+        entity = self._get_object()
         visibility = entity.get_version_visibility(self.get_commit().hexsha)
         kwargs['form'] = EntityChangeVisibilityForm(initial={
             'visibility': visibility,
@@ -208,7 +218,7 @@ def get_file_type(filename):
 
 class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
     def _file_json(self, blob):
-        obj = self.get_object()
+        obj = self._get_object()
         commit = self.get_commit()
 
         return {
@@ -224,7 +234,7 @@ class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
         }
 
     def get(self, request, *args, **kwargs):
-        obj = self.get_object()
+        obj = self._get_object()
         commit = self.get_commit()
 
         files = [
@@ -272,7 +282,7 @@ class EntityVersionCompareView(EntityVersionMixin, DetailView):
     template_name = 'entities/entity_version_compare.html'
 
     def get_context_data(self, **kwargs):
-        entity = self.get_object()
+        entity = self._get_object()
         commit = self.get_commit()
 
         entity_type = entity.entity_type
@@ -317,7 +327,7 @@ class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
 
 
 class EntityTagVersionView(
-    LoginRequiredMixin, FormMixin, EntityVersionMixin, DetailView
+    LoginRequiredMixin, EntityCollaboratorRequiredMixin, FormMixin, EntityVersionMixin, DetailView
 ):
     """Add a new tag to an existing version of an entity."""
     context_object_name = 'entity'
@@ -326,7 +336,7 @@ class EntityTagVersionView(
     template_name = 'entities/entity_tag_version.html'
 
     def get_context_data(self, **kwargs):
-        entity = self.get_object()
+        entity = self._get_object()
         kwargs['type'] = entity.entity_type
         return super().get_context_data(**kwargs)
 
@@ -337,7 +347,7 @@ class EntityTagVersionView(
         """
         form = self.get_form()
         if form.is_valid():
-            entity = self.object = self.get_object()
+            entity = self._get_object()
             commit = self.get_commit()
             tag = form.cleaned_data['tag']
             try:
@@ -352,7 +362,7 @@ class EntityTagVersionView(
 
     def get_success_url(self):
         """What page to show when the form was processed OK."""
-        entity = self.get_object()
+        entity = self._get_object()
         version = self.kwargs['sha']
         return reverse('entities:%s_version' % entity.entity_type, args=[entity.id, version])
 
@@ -375,7 +385,7 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
 
 
 class EntityNewVersionView(
-    LoginRequiredMixin, PermissionRequiredMixin, FormMixin, DetailView
+    LoginRequiredMixin, EntityCollaboratorRequiredMixin, FormMixin, DetailView
 ):
     """
     Create a new version of an entity.
@@ -389,10 +399,11 @@ class EntityNewVersionView(
         delete_file = self.request.GET.get('deletefile')
         if delete_file:
             initial['commit_message'] = 'Delete %s' % delete_file
+        initial['visibility'] = self.get_object().visibility
         return initial
 
     def get_context_data(self, **kwargs):
-        entity = self.get_object()
+        entity = self.object
         latest = entity.repo.latest_commit
         if latest:
             kwargs.update(**{
@@ -443,22 +454,25 @@ class EntityNewVersionView(
         if entity.repo.has_changes:
             # Commit and tag the repo
             commit = entity.repo.commit(request.POST['commit_message'], request.user)
-            if request.POST['tag']:
+
+            visibility = request.POST['visibility']
+            entity.set_visibility_in_repo(commit, visibility)
+            entity.repocache.add_version(commit.hexsha)
+
+            tag = request.POST['tag']
+            if tag:
                 try:
-                    entity.repo.tag(request.POST['tag'])
+                    entity.add_tag(tag, commit.hexsha)
                 except GitCommandError as e:
                     entity.repo.rollback()
                     for f in entity.repo.untracked_files:
                         os.remove(str(entity.repo_abs_path / f))
                     return self.fail_with_git_errors([e.stderr])
 
-            visibility = request.POST['visibility']
-            entity.set_visibility_in_repo(commit, visibility)
-            entity.repocache.add_version(commit.hexsha)
-
             # Temporary upload files have been safely committed, so can be deleted
             for filename in files_to_delete:
                 os.remove(filename)
+            entity.analyse_new_version(commit)
             return HttpResponseRedirect(
                 reverse('entities:%s' % entity.entity_type, args=[entity.id]))
         else:
@@ -478,14 +492,14 @@ class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):
     """
     Create a new version of a model
     """
-    permission_required = 'entities.create_model_version'
+    pass
 
 
 class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView):
     """
     Create a new version of a protocol
     """
-    permission_required = 'entities.create_protocol_version'
+    pass
 
 
 class VersionListView(VisibilityMixin, DetailView):
@@ -496,24 +510,17 @@ class VersionListView(VisibilityMixin, DetailView):
     template_name = 'entities/entity_versions.html'
 
     def get_context_data(self, **kwargs):
-        entity = self.get_object()
-        tags = entity.repo.tag_dict
+        entity = self.object
 
-        visibilities = [
-            Visibility.PUBLIC
-        ]
-        if self.request.user.is_authenticated:
-            visibilities.append(Visibility.RESTRICTED)
-            if self.request.user == entity.author:
-                visibilities.append(Visibility.PRIVATE)
+        versions = entity.cachedentity.versions
+        if self.request.user not in entity.viewers:
+            versions = versions.filter(visibility=Visibility.PUBLIC)
 
         kwargs.update(**{
             'versions': list(
                 (list(version.tags.values_list('tag', flat=True)),
                  entity.repo.get_commit(version.sha))
-                for version in entity.cachedentity.versions.filter(
-                    visibility__in=visibilities
-                ).prefetch_related('tags')
+                for version in versions.prefetch_related('tags')
             )
         })
         return super().get_context_data(**kwargs)
@@ -542,17 +549,19 @@ class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
     def check_access_token(self, token):
         """
         Override to allow token based access to entity archive downloads -
-        must match a `RunningExperiment` object set up against the entity
+        must match a `RunningExperiment` or `AnalysisTask` object set up against the entity
         """
+        from entities.models import AnalysisTask
         from experiments.models import RunningExperiment
         entity_field = 'experiment_version__experiment__%s' % self.kwargs['entity_type']
-        return RunningExperiment.objects.filter(
+        self_id = self._get_object().id
+        return (RunningExperiment.objects.filter(
             id=token,
-            **{entity_field: self.get_object().id}
-        ).exists()
+            **{entity_field: self_id}
+        ).exists() or AnalysisTask.objects.filter(id=token, entity=self_id).exists())
 
     def get(self, request, *args, **kwargs):
-        entity = self.get_object()
+        entity = self._get_object()
         commit = self.get_commit()
 
         zipfile_name = os.path.join(
@@ -607,7 +616,7 @@ class ChangeVisibilityView(UserPassesTestMixin, EntityVersionMixin, DetailView):
     raise_exception = True
 
     def test_func(self):
-        return self.get_object().is_visibility_editable_by(self.request.user)
+        return self._get_object().is_visibility_editable_by(self.request.user)
 
     def post(self, request, *args, **kwargs):
         """
@@ -617,7 +626,7 @@ class ChangeVisibilityView(UserPassesTestMixin, EntityVersionMixin, DetailView):
         """
         form = EntityChangeVisibilityForm(self.request.POST)
         if form.is_valid():
-            obj = self.get_object()
+            obj = self._get_object()
             sha = self.kwargs['sha']
             obj.set_version_visibility(sha, self.request.POST['visibility'])
             response = {
@@ -665,3 +674,63 @@ class ModelEntityFileDownloadView(ModelEntityTypeMixin, EntityFileDownloadView):
 
 class ProtocolEntityFileDownloadView(ProtocolEntityTypeMixin, EntityFileDownloadView):
     pass
+
+
+class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = Entity
+    formset_class = EntityCollaboratorFormSet
+    template_name = 'entities/entity_collaborators_form.html'
+    context_object_name = 'entity'
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def test_func(self):
+        return self._get_object().is_managed_by(self.request.user)
+
+    def handle_no_permission(self):
+        if self.raise_exception or self.request.user.is_authenticated:
+            raise PermissionDenied(self.get_permission_denied_message())
+        else:
+            return super().handle_no_permission()
+
+    def get_formset(self):
+        entity = self._get_object()
+        initial = [{'email': u.email} for u in entity.collaborators]
+        form_kwargs = {'entity': entity}
+        if self.request.method == 'POST':
+            return self.formset_class(
+                self.request.POST,
+                initial=initial,
+                form_kwargs=form_kwargs)
+        else:
+            return self.formset_class(initial=initial, form_kwargs=form_kwargs)
+
+    def post(self, request, *args, **kwargs):
+        self.object = self._get_object()
+        formset = self.get_formset()
+        if formset.is_valid():
+            formset.save()
+            return HttpResponseRedirect(self.get_success_url())
+        else:
+            return self.render_to_response(self.get_context_data(formset=formset))
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.object
+        return reverse('entities:entity_collaborators', args=[entity.entity_type, entity.id])
+
+    def get_context_data(self, **kwargs):
+        if 'formset' not in kwargs:
+            kwargs['formset'] = self.get_formset()
+        kwargs['type'] = self.object.entity_type
+        return super().get_context_data(**kwargs)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CheckProtocolCallbackView(View):
+    def post(self, request, *args, **kwargs):
+        result = process_check_protocol_callback(json.loads(request.body.decode()))
+        return JsonResponse(result)

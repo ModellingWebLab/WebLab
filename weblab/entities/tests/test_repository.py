@@ -61,7 +61,7 @@ class TestRepository:
         repo.commit('commit_message', author)
 
         assert len(list(repo.commits)) == 1
-        assert repo.latest_commit.files[0].name == repo_file.name
+        assert next(repo.latest_commit.files).name == repo_file.name
         assert repo.latest_commit.author.email == author.email
 
     def test_tag(self, repo, repo_file, author):
@@ -159,11 +159,30 @@ class TestCommit:
 
     def test_write_archive(self, repo, repo_file, author):
         repo.add_file(repo_file)
-        repo.commit('commit 1', author)
         repo.generate_manifest()
+        repo.commit('commit 1', author)
 
         archive = repo.get_commit('latest').write_archive()
-        assert zipfile.ZipFile(archive).namelist() == ['file.cellml']
+        assert zipfile.ZipFile(archive).namelist() == ['file.cellml', 'manifest.xml']
+
+    def test_write_archive_for_old_version(self, repo, repo_file, author):
+        # Initial commit
+        repo.add_file(repo_file)
+        repo.generate_manifest()
+        v1 = repo.commit('commit 1', author)
+        old_contents = repo_file.open().read().encode('UTF-8')
+
+        # Change file contents
+        with repo_file.open('w') as f:
+            f.write('new contents')
+        repo.add_file(repo_file)
+        repo.commit('commit 2', author)
+
+        # Write archive for commit 1
+        archive = v1.write_archive()
+        zf = zipfile.ZipFile(archive)
+        assert zf.namelist() == ['file.cellml', 'manifest.xml']
+        assert zf.open('file.cellml').read() == old_contents
 
     def test_master_filename_is_none_if_no_manifest(self, repo, repo_file, author):
         repo.add_file(repo_file)
@@ -200,3 +219,91 @@ class TestCommit:
 
         assert list(commit2.parents) == [commit1]
         assert list(commit2.self_and_parents) == [commit2, commit1]
+
+    def test_add_and_get_ephemeral_file(self, repo, author):
+        repo.create()
+        commit = repo.commit('commit 1', author)
+        content = b'readme content'
+        name = 'readme.md'
+
+        assert commit.filenames == set()
+        assert commit.list_ephemeral_files() == set()
+        assert commit.ephemeral_file_names == set()
+        commit.add_ephemeral_file(name, content)
+        assert commit.list_ephemeral_files() == {name}
+        assert commit.ephemeral_file_names == {name}
+        assert commit.get_ephemeral_file(name).data_stream.read() == content
+        e_files = list(commit.ephemeral_files)
+        assert len(e_files) == 1
+        assert e_files[0].data_stream.read() == content
+
+        assert commit.filenames == {name}
+        assert list(commit.files) == list(e_files)
+        assert commit.get_blob(name) == commit.get_ephemeral_file(name)
+
+    def test_ephemeral_and_normal_files(self, repo, repo_file, author):
+        # We make a commit with a normal file
+        repo.add_file(repo_file)
+        commit = repo.commit('commit 1', author)
+        assert commit.filenames == {'file.cellml'}
+
+        # We add 2 ephemeral files
+        content1 = b'readme content'
+        name1 = 'readme.md'
+        commit.add_ephemeral_file(name1, content1)
+
+        content2 = b'errors content'
+        name2 = 'errors.txt'
+        commit.add_ephemeral_file(name2, content2)
+
+        # All 3 files are listed as present
+        assert commit.ephemeral_file_names == {name1, name2}
+        assert commit.get_ephemeral_file(name1).data_stream.read() == content1
+        assert commit.get_ephemeral_file(name2).data_stream.read() == content2
+
+        assert commit.filenames == {name1, name2, 'file.cellml'}
+        assert commit.get_blob(name1) == commit.get_ephemeral_file(name1)
+        assert commit.get_blob(name2) == commit.get_ephemeral_file(name2)
+
+        for f in commit.files:
+            assert f.name in {name1, name2, 'file.cellml'}
+            if f.name == name1:
+                assert f.data_stream.read() == content1
+            elif f.name == name2:
+                assert f.data_stream.read() == content2
+            else:
+                assert f.data_stream.read() == b'file contents'
+
+    def test_ephemeral_files_do_not_persist(self, repo, repo_file, author):
+        # We add an ephemeral file to the first commit
+        repo.create()
+        commit1 = repo.commit('commit 1', author)
+        content = b'readme content'
+        name = 'readme.md'
+        commit1.add_ephemeral_file(name, content)
+
+        # We make a new commit
+        repo.add_file(repo_file)
+        commit2 = repo.commit('commit 2', author)
+
+        # The ephemeral file does not appear in the latest version
+        assert commit2.ephemeral_file_names == set()
+        assert commit2.filenames == {'file.cellml'}
+
+        # The ephemeral file still appears in the original commit
+        assert commit1.ephemeral_file_names == {name}
+        assert commit1.filenames == {name}
+        assert commit1.get_ephemeral_file(name).data_stream.read() == content
+
+    def test_ephemeral_name_repeat_error(self, commit):
+        name = 'readme.md'
+        commit.add_ephemeral_file(name, b'content 1')
+        with pytest.raises(ValueError):
+            commit.add_ephemeral_file(name, b'content 2')
+
+    def test_ephemeral_name_matches_real_file_error(self, commit):
+        with pytest.raises(ValueError):
+            commit.add_ephemeral_file('file.cellml', b'content')
+
+    def test_get_missing_ephemeral_file(self, commit):
+        assert commit.get_ephemeral_file('not-present.md') is None

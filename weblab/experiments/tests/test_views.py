@@ -289,13 +289,13 @@ class TestExperimentMatrix:
         assert len(data['notifications']['errors']) == 1
 
     def test_experiment_without_version_is_ignored(
-        self, client, model_with_version, protocol_with_version
+        self, client, public_model, public_protocol
     ):
         recipes.experiment.make(
-            model=model_with_version,
-            model_version=model_with_version.repo.latest_commit.hexsha,
-            protocol=protocol_with_version,
-            protocol_version=protocol_with_version.repo.latest_commit.hexsha,
+            model=public_model,
+            model_version=public_model.repo.latest_commit.hexsha,
+            protocol=public_protocol,
+            protocol_version=public_protocol.repo.latest_commit.hexsha,
         )
 
         response = client.get('/experiments/matrix')
@@ -304,9 +304,9 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['protocols']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
-    def test_old_version_is_hidden(self, client, model_with_version, experiment_version, helpers):
+    def test_old_version_is_hidden(self, client, public_model, experiment_version, helpers):
         # Add a new model version without corresponding experiment
-        new_version = helpers.add_version(model_with_version, filename='file2.txt')
+        new_version = helpers.add_version(public_model, filename='file2.txt')
 
         # We should now see this version in the matrix, but no experiments
         response = client.get('/experiments/matrix')
@@ -732,14 +732,20 @@ class TestEnforcesExperimentVersionVisibility:
 
     def test_private_expt_visible_to_self(
         self,
-        client, logged_in_user, archive_file_path, experiment_version,
+        client, logged_in_user, archive_file_path, helpers,
         url
     ):
-        experiment_version.author = logged_in_user
-        experiment_version.save()
-        exp = experiment_version.experiment
-        exp.model.set_version_visibility('latest', 'private')
-        exp.protocol.set_version_visibility('latest', 'public')
+        model = recipes.model.make(author=logged_in_user)
+        model_version = helpers.add_version(model, visibility='private')
+        protocol = recipes.protocol.make()
+        protocol_version = helpers.add_version(protocol, visibility='public')
+        experiment_version = recipes.experiment_version.make(
+            experiment__model=model,
+            experiment__model_version=model_version.hexsha,
+            experiment__protocol=protocol,
+            experiment__protocol_version=protocol_version.hexsha,
+        )
+
         os.mkdir(str(experiment_version.abs_path))
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 

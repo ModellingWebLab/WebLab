@@ -17,6 +17,7 @@
   {% if version %}
     {% for file in version.files %}
       {% if file.name != 'manifest.xml' %}
+      {% if not edit or file.name not in version.ephemeral_file_names %}
       <tr {% if file.name == delete_file %} class="deleting"{% endif %}>
         <td>
           {% if edit %}
@@ -34,12 +35,13 @@
         <td class="type">{{ file.name|file_type }}</td>
         <td class="size">{{ file.size|human_readable_bytes }}</td>
         <td class="action">
-          {% can_create_version entity.type as permission %}
+          {% can_create_version entity as permission %}
           {% if permission %}
             <a class="delete-file" href="{{ entity|url_newversion }}?deletefile={{ file.name }}" title="delete this file"><img src="{% static 'img/delete.png' %}" alt="delete this file" title="delete this file"/></a>
           {% endif %}
         </td>
       </tr>
+      {% endif %}
       {% endif %}
     {% endfor %}
   {% endif %}
