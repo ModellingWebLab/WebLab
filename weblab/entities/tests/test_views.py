@@ -322,7 +322,7 @@ class TestEntityVersionJsonView:
 
 
 @pytest.mark.django_db
-class TestModelEntityVersionCompareView:
+class TestModelEntityCompareExperimentsView:
     def test_shows_related_experiments(self, client, experiment_version):
         exp = experiment_version.experiment
         sha = exp.model.repo.latest_commit.hexsha
@@ -368,7 +368,7 @@ class TestModelEntityVersionCompareView:
 
 
 @pytest.mark.django_db
-class TestProtocolEntityVersionCompareView:
+class TestProtocolEntityCompareExperimentsView:
     def test_shows_related_experiments(self, client, logged_in_user, experiment_version):
         exp = experiment_version.experiment
         exp.protocol.set_version_visibility('latest', 'public')
@@ -419,9 +419,10 @@ class TestProtocolEntityVersionCompareView:
 
 @pytest.mark.django_db
 class TestEntityComparisonView:
-    def test_loads_entity_versions(self, client, logged_in_user, model_with_version):
-        commit = model_with_version.repo.latest_commit
-        version_spec = '%d:%s' % (model_with_version.pk, commit.hexsha)
+    def test_loads_entity_versions(self, client, helpers, logged_in_user):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        version_spec = '%d:%s' % (model.pk, v1.hexsha)
         response = client.get(
             '/entities/models/compare/%s' % version_spec
         )
@@ -429,11 +430,41 @@ class TestEntityComparisonView:
         assert response.status_code == 200
         assert response.context['entity_versions'] == [version_spec]
 
-    def test_ignores_invalid_versions(self, client, logged_in_user, model_with_version):
-        commit = model_with_version.repo.latest_commit
-        version_spec = '%d:%s' % (model_with_version.pk, commit.hexsha)
+    def test_cannot_compare_entities_with_no_access(self, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        v2 = helpers.add_version(model, visibility='private')
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
         response = client.get(
-            '/entities/models/compare/%s/%d:nocommit' % (version_spec, model_with_version.pk)
+            '/entities/models/compare/%s/%s' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        assert response.context['entity_versions'] == [v1_spec]
+
+    def test_can_compare_entities_if_collaborator(self, client, logged_in_user, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        v2 = helpers.add_version(model, visibility='private')
+        assign_perm('edit_entity', logged_in_user, model)
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        response = client.get(
+            '/entities/models/compare/%s/%s' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        assert response.context['entity_versions'] == [v1_spec, v2_spec]
+
+    def test_ignores_invalid_versions(self, client, helpers, logged_in_user):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        version_spec = '%d:%s' % (model.pk, v1.hexsha)
+        response = client.get(
+            '/entities/models/compare/%s/%d:nocommit' % (version_spec, model.pk)
         )
 
         assert response.status_code == 200
@@ -474,6 +505,42 @@ class TestEntityComparisonJsonView:
         assert versions[0]['numFiles'] == 1
         assert versions[0]['commitMessage'] == v1.message
 
+    def test_cannot_compare_entities_with_no_access(self, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        v2 = helpers.add_version(model, visibility='private')
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        response = client.get(
+            '/entities/models/compare/%s/%s/info' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert len(versions) == 1
+        assert versions[0]['id'] == v1.hexsha
+
+    def test_can_compare_entities_if_collaborator(self, client, logged_in_user, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        v2 = helpers.add_version(model, visibility='private')
+        assign_perm('edit_entity', logged_in_user, model)
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        response = client.get(
+            '/entities/models/compare/%s/%s/info' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert len(versions) == 2
+        assert versions[0]['id'] == v1.hexsha
+        assert versions[1]['id'] == v2.hexsha
+
     def test_file_json(self, client, helpers):
         model = recipes.model.make()
         v1 = helpers.add_version(model, visibility='public')
@@ -498,11 +565,12 @@ class TestEntityComparisonJsonView:
         assert file_['url'] == (
             '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, v1.hexsha))
 
-    def test_ignores_invalid_versions(self, client, logged_in_user, model_with_version):
-        commit = model_with_version.repo.latest_commit
-        version_spec = '%d:%s' % (model_with_version.pk, commit.hexsha)
+    def test_ignores_invalid_versions(self, client, logged_in_user, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        version_spec = '%d:%s' % (model.pk, v1.hexsha)
         response = client.get(
-            '/entities/models/compare/%s/%d:nocommit' % (version_spec, model_with_version.pk)
+            '/entities/models/compare/%s/%d:nocommit' % (version_spec, model.pk)
         )
 
         assert response.status_code == 200
@@ -1086,8 +1154,8 @@ class TestEntityCollaboratorsView:
 class TestEntityDiffView:
     def test_unix_diff(self, client, helpers):
         model = recipes.model.make()
-        v1 = helpers.add_version(model, contents='v1 contents\n')
-        v2 = helpers.add_version(model, contents='v2 contents\n')
+        v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
+        v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
         v1_spec = '%d:%s' % (model.pk, v1.hexsha)
         v2_spec = '%d:%s' % (model.pk, v2.hexsha)
@@ -1104,11 +1172,42 @@ class TestEntityDiffView:
 '''
         assert data['getUnixDiff']['response']
 
+    def test_cannot_diff_entities_with_no_access(self, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        v2 = helpers.add_version(model, visibility='private')
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        response = client.get(
+            '/entities/models/diff/%s/%s/file1.txt' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'response' not in data['getUnixDiff']
+
+    def test_can_diff_entities_if_collaborator(self, client, logged_in_user, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        v2 = helpers.add_version(model, visibility='private')
+        assign_perm('edit_entity', logged_in_user, model)
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        response = client.get(
+            '/entities/models/diff/%s/%s/file1.txt' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['getUnixDiff']['response']
+
     @patch('subprocess.run')
     def test_unix_diff_returns_error_on_process_error(self, mock_run, client, helpers):
         model = recipes.model.make()
-        v1 = helpers.add_version(model, contents='v1 contents\n')
-        v2 = helpers.add_version(model, contents='v2 contents\n')
+        v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
+        v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
         v1_spec = '%d:%s' % (model.pk, v1.hexsha)
         v2_spec = '%d:%s' % (model.pk, v2.hexsha)
@@ -1129,8 +1228,8 @@ class TestEntityDiffView:
     @patch('requests.post')
     def test_bives_diff(self, mock_post, client, helpers):
         model = recipes.model.make()
-        v1 = helpers.add_version(model, contents='v1 contents\n')
-        v2 = helpers.add_version(model, contents='v2 contents\n')
+        v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
+        v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
         v1_spec = '%d:%s' % (model.pk, v1.hexsha)
         v2_spec = '%d:%s' % (model.pk, v2.hexsha)
@@ -1166,8 +1265,8 @@ class TestEntityDiffView:
     @patch('requests.post')
     def test_bives_diff_returns_error_on_server_error(self, mock_post, client, helpers):
         model = recipes.model.make()
-        v1 = helpers.add_version(model, contents='v1 contents\n')
-        v2 = helpers.add_version(model, contents='v2 contents\n')
+        v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
+        v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
         v1_spec = '%d:%s' % (model.pk, v1.hexsha)
         v2_spec = '%d:%s' % (model.pk, v2.hexsha)
@@ -1189,8 +1288,8 @@ class TestEntityDiffView:
     @patch('requests.post')
     def test_bives_diff_returns_error_on_server_error_message(self, mock_post, client, helpers):
         model = recipes.model.make()
-        v1 = helpers.add_version(model, contents='v1 contents\n')
-        v2 = helpers.add_version(model, contents='v2 contents\n')
+        v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
+        v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
         v1_spec = '%d:%s' % (model.pk, v1.hexsha)
         v2_spec = '%d:%s' % (model.pk, v2.hexsha)

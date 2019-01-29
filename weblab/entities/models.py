@@ -8,7 +8,7 @@ from django.db import models
 from guardian.shortcuts import get_objects_for_user
 
 from core.models import UserCreatedModelMixin
-from core.visibility import HELP_TEXT as VIS_HELP_TEXT, Visibility
+from core.visibility import HELP_TEXT as VIS_HELP_TEXT, Visibility, is_visible_to_user
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
@@ -211,10 +211,12 @@ class Entity(UserCreatedModelMixin, models.Model):
         """
         pass
 
-    @classmethod
-    def is_valid_version(cls, entity_id, hexsha):
-        from repocache.models import CachedEntityVersion
-        return CachedEntityVersion.objects.filter(entity__entity=entity_id, sha=hexsha).exists()
+    def is_version_visible_to_user(self, hexsha, user):
+        return is_visible_to_user(
+            self.get_version_visibility(hexsha),
+            self.viewers,
+            user
+        )
 
 
 class EntityManager(models.Manager):

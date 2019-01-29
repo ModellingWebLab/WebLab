@@ -118,17 +118,10 @@ class VisibilityMixin(AccessMixin):
         allow_access = False
 
         if obj:
-            visibility = self.get_visibility()
-            allowed_users = self.get_viewers()
-            if visibility == Visibility.PUBLIC:
+            if is_visible_to_user(self.get_visibility(),
+                                  self.get_viewers(),
+                                  self.request.user):
                 allow_access = True
-
-            elif self.request.user.is_authenticated:
-                # Logged in user can view all except other people's private stuff
-                allow_access = (
-                    self.request.user in allowed_users or
-                    visibility != Visibility.PRIVATE
-                )
             else:
                 auth_header = self.request.META.get('HTTP_AUTHORIZATION')
                 if auth_header and auth_header.startswith('Token'):
@@ -144,3 +137,18 @@ class VisibilityMixin(AccessMixin):
         else:
             # For anonymous user, redirect to login page
             return self.handle_no_permission()
+
+
+def is_visible_to_user(visibility, allowed_users, user):
+    allow_access = False
+
+    if visibility == Visibility.PUBLIC:
+        # Public is visible to everybody
+        return True
+
+    elif user.is_authenticated:
+        # Logged in user can view all except other people's private stuff
+        return (
+            user in allowed_users or
+            visibility != Visibility.PRIVATE
+        )

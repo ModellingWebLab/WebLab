@@ -32,7 +32,7 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 
-from core.visibility import Visibility, VisibilityMixin, visibility_check, visible_entity_ids
+from core.visibility import Visibility, VisibilityMixin, visibility_check, is_visible_to_user
 from experiments.models import Experiment
 from repocache.exceptions import RepoCacheMiss
 
@@ -278,10 +278,11 @@ class EntityComparisonView(EntityTypeMixin, TemplateView):
         valid_versions = []
         for version in self.kwargs['versions'].strip('/').split('/'):
             id, sha = version.split(':')
-            # TODO: visibility check against versions
-            if Entity.is_valid_version(id, sha):
-                valid_versions.append(version)
-            else:
+            try:
+                entity = Entity.objects.get(pk=id)
+                if entity.is_version_visible_to_user(sha, self.request.user):
+                    valid_versions.append(version)
+            except (RepoCacheMiss, Entity.DoesNotExist):
                 messages.error(
                     self.request,
                     'Some requested entities could not be found '
@@ -310,7 +311,6 @@ class EntityComparisonJsonView(View):
             'author': entity.author.full_name,
             'created': commit.committed_at,
             'filetype': get_file_type(blob.name),
-            'masterFile': False,    # TODO
             'size': blob.size,
             'url': reverse(
                 'entities:file_download',
@@ -342,24 +342,20 @@ class EntityComparisonJsonView(View):
             'files': files,
             'commitMessage': commit.message,
             'numFiles': len(files),
-#            'url': reverse(
-#                'experiments:version', args=[exp.id, version.id]
-#            ),
-#            'download_url': reverse(
-#                'experiments:archive', args=[exp.id, version.id]
-#            ),
         }
 
     def get(self, request, *args, **kwargs):
         json_entities = []
         for version in self.kwargs['versions'].strip('/').split('/'):
             id, sha = version.split(':')
-            # TODO: visibility check against versions
-            if Entity.is_valid_version(id, sha):
+            try:
                 entity = Entity.objects.get(pk=id)
-                json_entities.append(
-                    self._version_json(entity, entity.repo.get_commit(sha))
-                )
+                if entity.is_version_visible_to_user(sha, request.user):
+                    json_entities.append(
+                        self._version_json(entity, entity.repo.get_commit(sha))
+                    )
+            except (RepoCacheMiss, Entity.DoesNotExist):
+                pass
 
         response = {
             'getEntityInfos': {
@@ -368,7 +364,6 @@ class EntityComparisonJsonView(View):
         }
 
         return JsonResponse(response)
-
 
 
 class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
@@ -767,9 +762,7 @@ class EntityDiffView(View):
             except subprocess.SubprocessError as e:
                 result['responseText'] = "Couldn't compute unix diff (%s)" % e
 
-            return {
-                'getUnixDiff': result
-            }
+            return result
 
     def _get_bives_diff(self, file1, file2):
         file1_url = 'file1_url'
@@ -805,9 +798,7 @@ class EntityDiffView(View):
                 (bives_response.status_code, bives_response.content.decode())
             )
 
-        return {
-            'getBivesDiff': result
-        }
+        return result
 
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
@@ -815,17 +806,32 @@ class EntityDiffView(View):
 
         versions = self.kwargs['versions'].strip('/').split('/')
 
+        diff_type = self.request.GET.get('type', 'unix')
+        if diff_type == 'unix':
+            task = 'getUnixDiff'
+        elif diff_type == 'bives':
+            task = 'getBivesDiff'
+
         files = []
         for version in versions:
             id, sha = version.split(':')
-            if Entity.is_valid_version(id, sha):
+            try:
                 entity = Entity.objects.get(pk=id)
-                files.append(entity.repo.get_commit(sha).get_blob(filename))
+                if entity.is_version_visible_to_user(sha, request.user):
+                    files.append(entity.repo.get_commit(sha).get_blob(filename))
+            except (RepoCacheMiss, Entity.DoesNotExist):
+                pass
 
-        diff_type = self.request.GET.get('type', 'unix')
-        if diff_type == 'unix':
-            response = self._get_unix_diff(*files)
+
+        if len(files) != 2:
+            result = {
+                'responseText': 'invalid request'
+            }
+        elif diff_type == 'unix':
+            result = self._get_unix_diff(*files)
         elif diff_type == 'bives':
-            response = self._get_bives_diff(*files)
+            result = self._get_bives_diff(*files)
 
-        return JsonResponse(response)
+        return JsonResponse({
+            task: result
+        })
