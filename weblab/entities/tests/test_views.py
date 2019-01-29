@@ -8,12 +8,13 @@ from unittest.mock import patch
 import pytest
 import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models.functions import Now
 from django.utils.dateparse import parse_datetime
 from guardian.shortcuts import assign_perm
 
 from core import recipes
 from entities.models import AnalysisTask, Entity, ModelEntity, ProtocolEntity
-from repocache.models import ProtocolInterface
+from repocache.models import CachedEntityVersion, ProtocolInterface
 
 
 @pytest.fixture
@@ -334,21 +335,32 @@ class TestEntityVersionJsonView:
 
 @pytest.mark.django_db
 class TestGetProtocolInterfacesJsonView:
-    def test_single_public_protocol(self, client, helpers):
-        # Make a public protocol version
-        protocol = recipes.protocol.make()
-        helpers.add_version(protocol)
+    def add_version_with_interface(self, helpers, protocol, req, opt, vis='public'):
+        """Helper method to add a new version and give it an interface in one go."""
+        import time
+        time.sleep(0.7)
+        helpers.add_version(protocol, visibility=vis)
         version = protocol.repocache.latest_version
-        protocol.set_version_visibility(version.sha, 'public')
+        # version = CachedEntityVersion.objects.create(
+        #     entity=protocol.repocache,
+        #     sha=uuid.uuid4(),
+        #     timestamp=Now(),
+        #     visibility=vis,
+        # )
         # Give it an interface
-        req = ['r1', 'r2']
-        opt = ['o1']
         terms = [
             ProtocolInterface(protocol_version=version, term=t, optional=False) for t in req
         ] + [
             ProtocolInterface(protocol_version=version, term=t, optional=True) for t in opt
         ]
         ProtocolInterface.objects.bulk_create(terms)
+
+    def test_single_public_protocol(self, client, helpers):
+        # Make a public protocol version
+        protocol = recipes.protocol.make()
+        req = ['r1', 'r2']
+        opt = ['o1']
+        self.add_version_with_interface(helpers, protocol, req, opt)
 
         response = client.get('/entities/protocols/get_interfaces')
 
@@ -362,6 +374,45 @@ class TestGetProtocolInterfacesJsonView:
         assert iface['name'] == protocol.name
         assert set(iface['required']) == set(req)
         assert set(iface['optional']) == set(opt)
+
+    def test_complex_visibilities(self, client, logged_in_user, other_user, helpers):
+        # helpers.add_permission(logged_in_user, 'create_protocol')
+        # One public protocol with 2 versions, each with a different interface
+        protocol1 = recipes.protocol.make()
+        self.add_version_with_interface(helpers, protocol1, ['p1r1'], ['p1o1'], vis='public')
+        self.add_version_with_interface(helpers, protocol1, ['p1r2'], ['p1o2'], vis='public')
+
+        # A private protocol owned by logged_in_user, with 2 versions, each with a different interface
+        protocol2 = recipes.protocol.make(author=logged_in_user)
+        self.add_version_with_interface(helpers, protocol2, ['p2r1'], ['p2o1'], vis='private')
+        self.add_version_with_interface(helpers, protocol2, ['p2r2'], ['p2o2'], vis='private')
+
+        # A private protocol owned by other_user, with 2 versions, each with a different interface, first one public
+        protocol3 = recipes.protocol.make(author=other_user)
+        self.add_version_with_interface(helpers, protocol3, ['p3r1'], ['p3o1'], vis='public')
+        self.add_version_with_interface(helpers, protocol3, ['p3r2'], ['p3o2'], vis='private')
+
+        # A private protocol owned by other_user but shared with logged_in_user,
+        # with 3 versions, each with a different interface, middle one public
+        protocol4 = recipes.protocol.make(author=other_user)
+        assign_perm('edit_entity', logged_in_user, protocol4)
+        self.add_version_with_interface(helpers, protocol4, ['p4r1'], ['p4o1'], vis='private')
+        self.add_version_with_interface(helpers, protocol4, ['p4r2'], ['p4o2'], vis='public')
+        self.add_version_with_interface(helpers, protocol4, ['p4r3'], ['p4o3'], vis='private')
+
+        # Get all interfaces visible to logged_in_user
+        response = client.get('/entities/protocols/get_interfaces')
+        assert response.status_code == 200
+        interfaces = json.loads(response.content.decode())['interfaces']
+        assert len(interfaces) == 4
+
+        expected = [
+            {'name': 'myprotocol1', 'required': ['p1r2'], 'optional': ['p1o2']},
+            {'name': 'myprotocol2', 'required': ['p2r2'], 'optional': ['p2o2']},
+            {'name': 'myprotocol3', 'required': ['p3r1'], 'optional': ['p3o1']},
+            {'name': 'myprotocol4', 'required': ['p4r3'], 'optional': ['p4o3']},
+        ]
+        assert set(interfaces) == set(expected)
 
 
 @pytest.mark.django_db
@@ -1094,7 +1145,6 @@ class TestEntityArchiveView:
         model = queued_experiment.experiment.model
         queued_experiment.experiment.model.set_version_visibility('latest', 'public')
 
-        import uuid
         response = client.get(
             '/entities/models/%d/versions/latest/archive' % model.pk,
             HTTP_AUTHORIZATION='Token {}'.format(uuid.uuid4())
