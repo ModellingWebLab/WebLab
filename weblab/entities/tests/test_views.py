@@ -593,6 +593,8 @@ class TestEntityVersionList:
     def test_view_entity_version_list(self, client, helpers):
         model = recipes.model.make()
         commit1 = helpers.add_version(model, visibility='public')
+        import time
+        time.sleep(1)  # TODO: Hack to prevent identical timestamps!
         commit2 = helpers.add_version(model, visibility='public')
         model.add_tag('v1', commit2.hexsha)
 
