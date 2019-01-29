@@ -6,7 +6,7 @@ from django.db import models
 
 from core.combine import ArchiveReader
 from core.models import UserCreatedModelMixin
-from core.visibility import get_joint_visibility, Visibility
+from core.visibility import get_joint_visibility, Visibility, visibility_check
 from entities.models import ModelEntity, ProtocolEntity
 
 from .managers import ExperimentVersionManager
@@ -88,6 +88,16 @@ class Experiment(UserCreatedModelMixin, models.Model):
             return self.protocol.viewers
         else:
             return self.model.viewers & self.protocol.viewers
+
+    def is_visible_to_user(self, user):
+        """
+        Can the user view the given experiment?
+
+        :param user: user to test against
+
+        :returns: True if the user is allowed to view the experiment, False otherwise
+        """
+        return visibility_check(self.visibility, self.viewers, user)
 
     @property
     def latest_version(self):

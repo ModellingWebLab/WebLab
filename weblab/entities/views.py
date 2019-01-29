@@ -32,7 +32,9 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 
-from core.visibility import Visibility, VisibilityMixin, visibility_check, is_visible_to_user
+from core.visibility import (
+    Visibility, VisibilityMixin, visibility_check
+)
 from experiments.models import Experiment
 from repocache.exceptions import RepoCacheMiss
 
@@ -260,7 +262,7 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
 
         experiments = [
             exp for exp in experiments
-            if visibility_check(self.request.user, exp)
+            if exp.is_visible_to_user(self.request.user)
         ]
 
         kwargs['comparisons'] = [

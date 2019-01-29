@@ -8,7 +8,7 @@ from django.db import models
 from guardian.shortcuts import get_objects_for_user
 
 from core.models import UserCreatedModelMixin
-from core.visibility import HELP_TEXT as VIS_HELP_TEXT, Visibility, is_visible_to_user
+from core.visibility import HELP_TEXT as VIS_HELP_TEXT, Visibility, visibility_check
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
@@ -212,7 +212,15 @@ class Entity(UserCreatedModelMixin, models.Model):
         pass
 
     def is_version_visible_to_user(self, hexsha, user):
-        return is_visible_to_user(
+        """
+        Is a version of the entity visible to the user?
+
+        :param hexsha: SHA of the relevant ccommit
+        :param user: `User` object
+
+        :return: True if visible to user, False otherwise
+        """
+        return visibility_check(
             self.get_version_visibility(hexsha),
             self.viewers,
             user
