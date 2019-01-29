@@ -20,7 +20,7 @@ from django.http import (
     JsonResponse,
 )
 from django.core.exceptions import PermissionDenied
-from django.db.models import F, Max
+from django.db.models import F, Q
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
@@ -747,41 +747,17 @@ class GetProtocolInterfacesJsonView(View):
     the terms in that protocol's interface.
     """
     def get(self, request, *args, **kwargs):
-        print([(v.entity.entity.id, v.id, v.sha[:6], v.visibility, v.timestamp.timestamp(),
-                v.entity.entity.author.full_name[:7])
-               for v in CachedEntityVersion.objects.all()])
-        print([(v.entity.entity.id, v.id, v.sha[:6], v.timestamp.timestamp(), v.latest_ts.timestamp())
-               for v in CachedEntityVersion.objects.annotate(latest_ts=Max('timestamp')).all()])
-        print([(v.entity.entity.id, v.id, v.sha[:6], v.timestamp.timestamp())
-               for v in CachedEntityVersion.objects.exclude(
-                   visibility='private').order_by(
-                   'entity__id').distinct('entity__id').all()])
-        print([(v['id'], v['timestamp'].timestamp(), v['latest_ts'].timestamp())
-               for v in CachedEntityVersion.objects.values(
-                   'id', 'timestamp').annotate(latest_ts=Max('timestamp')).filter(
-                   timestamp=F('latest_ts')).all()])
-        print([(v['id'], v['timestamp'].timestamp(), v['latest_ts'].timestamp())
-               for v in CachedEntityVersion.objects.exclude(
-                   visibility='private').values('id', 'timestamp').annotate(
-                   latest_ts=Max('timestamp'))])
-        # Get public versions
-        public_versions = CachedEntityVersion.objects.exclude(
-            visibility='private',
-        # ).order_by(
-        #     'entity__id',
-        #     '-timestamp',
-        # ).distinct(
-        #     'entity__id',
-        ).annotate(
-            name=F('entity__entity__name'),
-            eid=F('entity__id'),
-        )
-        print('Public:', [(v.entity.entity.id, v.id, v.name, v.sha[:6]) for v in public_versions.all()])
-        # print('Public version IDs:', [v for v in public_versions.all()])
-        # If logged in, get also versions we can see
+        for v in CachedEntityVersion.objects.all():
+            print('Version', v.id, v.sha[:6], 'of', v.entity.entity.id, v.entity.entity.name,
+                  'by', v.entity.entity.author.full_name[:7], v.visibility, v.timestamp.timestamp())
+            for i in v.interface.all():
+                print('  Iface:', i.term, i.optional)
+        # Base where clause: don't show private versions
+        where = ~Q(visibility='private')
+        # If the user is logged in, we also need private versions they have access to:
+        # from the user's own protocols and those they have permission for
         user = request.user
         if user.is_authenticated:
-            # Get the user's own protocols and those they have permission for
             visible_protocols = user.entity_set.filter(
                 entity_type='protocol'
             ).union(
@@ -789,45 +765,22 @@ class GetProtocolInterfacesJsonView(View):
             ).values_list(
                 'id', flat=True
             )
-            print('Entity set', [(e.id, e.name) for e in user.entity_set.all()])
-            print('Visible protocols:', [p for p in visible_protocols.all()])
-            print('Edit perm', [p.id for p in ProtocolEntity.objects.with_edit_permission(user).all()])
-            print('View perm', [p.id for p in get_objects_for_user(user, 'entities.edit_entity')])
-            # Get the latest version of each
-            visible_versions = CachedEntityVersion.objects.filter(
-                entity__entity__in=visible_protocols,
-            # ).order_by(
-            #     'entity__id',
-            #     '-timestamp',
-            # ).distinct(
-            #     'entity__id',
-            ).annotate(
-                name=F('entity__entity__name'),
-                eid=F('entity__id'),
-            )
-            print('Visible versions:',
-                  [(v.entity.entity.id, v.id, v.entity.entity.name, v.sha[:6]) for v in visible_versions.all()])
-            # print('Visible version IDs:', [v for v in visible_versions.all()])
-            visible_versions = visible_versions.union(
-                public_versions
-            )
-        else:
-            visible_versions = public_versions
-        # Remove duplicates and add extra info to reduce DB queries
-        visible_versions = visible_versions.order_by(
-            'eid',
+            where = where | Q(entity__entity__in=visible_protocols)
+        # Now sort and filter these so we only get the latest version per protocol,
+        # then annotate with the extra info we need to reduce total query count
+        visible_versions = CachedEntityVersion.objects.filter(
+            where,
+        ).order_by(
+            'entity__id',
             '-timestamp',
         ).distinct(
-            'eid',
+            'entity__id',
+        ).annotate(
+            name=F('entity__entity__name'),
         ).prefetch_related(
             'interface'
         )
-        # visible_versions = visible_versions.annotate(
-        #     name=F('entity__entity__name')
-        # ).prefetch_related(
-        #     'interface'
-        # )
-        print('Final result', [v for v in visible_versions])
+        print('Final result', [(v.name, v.interface.all()) for v in visible_versions])
         interfaces = [
             {
                 'name': version.name,

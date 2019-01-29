@@ -339,8 +339,9 @@ class TestGetProtocolInterfacesJsonView:
         """Helper method to add a new version and give it an interface in one go."""
         import time
         time.sleep(0.7)
-        helpers.add_version(protocol, visibility=vis)
-        version = protocol.repocache.latest_version
+        commit = helpers.add_version(protocol, visibility=vis)
+        version = protocol.repocache.get_version(commit.hexsha)
+        print('Added', commit.hexsha[:6], version.id, protocol.repocache.latest_version.id)
         # version = CachedEntityVersion.objects.create(
         #     entity=protocol.repocache,
         #     sha=uuid.uuid4(),
@@ -406,13 +407,17 @@ class TestGetProtocolInterfacesJsonView:
         interfaces = json.loads(response.content.decode())['interfaces']
         assert len(interfaces) == 4
 
-        expected = [
-            {'name': 'myprotocol1', 'required': ['p1r2'], 'optional': ['p1o2']},
-            {'name': 'myprotocol2', 'required': ['p2r2'], 'optional': ['p2o2']},
-            {'name': 'myprotocol3', 'required': ['p3r1'], 'optional': ['p3o1']},
-            {'name': 'myprotocol4', 'required': ['p4r3'], 'optional': ['p4o3']},
-        ]
-        assert set(interfaces) == set(expected)
+        expected = {
+            'myprotocol1': {'required': ['p1r2'], 'optional': ['p1o2']},
+            'myprotocol2': {'required': ['p2r2'], 'optional': ['p2o2']},
+            'myprotocol3': {'required': ['p3r1'], 'optional': ['p3o1']},
+            'myprotocol4': {'required': ['p4r3'], 'optional': ['p4o3']},
+        }
+        print('Interfaces', interfaces)
+        for iface in interfaces:
+            assert iface['name'] in expected
+            assert iface['required'] == expected[iface['name']]['required']
+            assert iface['optional'] == expected[iface['name']]['optional']
 
 
 @pytest.mark.django_db
