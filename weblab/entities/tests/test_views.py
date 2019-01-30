@@ -366,7 +366,14 @@ class TestGetProtocolInterfacesJsonView:
         assert set(iface['optional']) == set(opt)
 
     def test_complex_visibilities(self, client, logged_in_user, other_user, helpers):
-        # helpers.add_permission(logged_in_user, 'create_protocol')
+        # Models shouldn't appear at all
+        model1 = recipes.model.make()
+        helpers.add_fake_version(model1, 'public')
+        model2 = recipes.model.make(author=logged_in_user)
+        helpers.add_fake_version(model2, 'private')
+        model3 = recipes.model.make(author=other_user)
+        helpers.add_fake_version(model3, 'public')
+        helpers.add_fake_version(model3, 'private')
         # One public protocol with 2 versions, each with a different interface
         protocol1 = recipes.protocol.make()
         self.add_version_with_interface(helpers, protocol1, ['p1r1'], ['p1o1'], vis='public')

@@ -761,6 +761,8 @@ class GetProtocolInterfacesJsonView(View):
                 'id', flat=True
             )
             where = where | Q(entity__entity__in=visible_protocols)
+        # Ensure we only get protocols
+        where = Q(entity__entity__entity_type='protocol') & where
         # Now sort and filter these so we only get the latest version per protocol,
         # then annotate with the extra info we need to reduce total query count
         visible_versions = CachedEntityVersion.objects.filter(
