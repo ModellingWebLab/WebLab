@@ -76,6 +76,7 @@ def visibility_check(visibility, allowed_users, user):
 
     elif user.is_authenticated:
         # Logged in user can view all except other people's private stuff
+        # unless given special permissions to do so
         return (
             user in allowed_users or
             visibility != Visibility.PRIVATE

@@ -91,7 +91,7 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
     def is_visible_to_user(self, user):
         """
-        Can the user view the given experiment?
+        Can the user view the experiment?
 
         :param user: user to test against
 

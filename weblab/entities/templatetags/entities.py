@@ -66,7 +66,7 @@ def url_entity_comparison_base(entity_type):
     """
     # Use dummy IDs to set up a comparison URL, then chop them off to
     # get the base. This will be used by javascript to generate comparisons
-    # between experiment versions.
+    # between entity versions.
     url = reverse('entities:compare', args=[entity_type, '/1:a'])
     return url[:-4]
 
@@ -78,7 +78,7 @@ def url_entity_diff_base(entity_type):
     """
     # Use dummy IDs to set up a diff URL, then chop them off to
     # get the base. This will be used by javascript to generate diff URLs
-    # between experiment versions.
+    # between entity versions.
     url = reverse('entities:diff', args=[entity_type, '/1:a/2:b', 'file.json'])
     return url.split('/1:a/2:b')[0]
 
