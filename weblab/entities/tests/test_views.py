@@ -402,7 +402,6 @@ class TestGetProtocolInterfacesJsonView:
             'myprotocol3': {'required': ['p3r1'], 'optional': ['p3o1']},
             'myprotocol4': {'required': ['p4r3'], 'optional': ['p4o3']},
         }
-        print('Interfaces', interfaces)
         for iface in interfaces:
             assert iface['name'] in expected
             assert iface['required'] == expected[iface['name']]['required']

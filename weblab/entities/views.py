@@ -747,11 +747,6 @@ class GetProtocolInterfacesJsonView(View):
     the terms in that protocol's interface.
     """
     def get(self, request, *args, **kwargs):
-        for v in CachedEntityVersion.objects.all():
-            print('Version', v.id, v.sha[:6], 'of', v.entity.entity.id, v.entity.entity.name,
-                  'by', v.entity.entity.author.full_name[:7], v.visibility, v.timestamp.timestamp())
-            for i in v.interface.all():
-                print('  Iface:', i.term, i.optional)
         # Base where clause: don't show private versions
         where = ~Q(visibility='private')
         # If the user is logged in, we also need private versions they have access to:
@@ -781,7 +776,6 @@ class GetProtocolInterfacesJsonView(View):
         ).prefetch_related(
             'interface'
         )
-        print('Final result', [(v.name, v.interface.all()) for v in visible_versions])
         interfaces = [
             {
                 'name': version.name,
