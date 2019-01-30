@@ -337,8 +337,6 @@ class TestEntityVersionJsonView:
 class TestGetProtocolInterfacesJsonView:
     def add_version_with_interface(self, helpers, protocol, req, opt, vis='public'):
         """Helper method to add a new version and give it an interface in one go."""
-        import time
-        time.sleep(0.7)
         commit = helpers.add_version(protocol, visibility=vis)
         version = protocol.repocache.get_version(commit.hexsha)
         print('Added', commit.hexsha[:6], version.id, protocol.repocache.latest_version.id)
@@ -598,8 +596,6 @@ class TestEntityVersionList:
     def test_view_entity_version_list(self, client, helpers):
         model = recipes.model.make()
         commit1 = helpers.add_version(model, visibility='public')
-        import time
-        time.sleep(1)  # TODO: Hack to prevent identical timestamps!
         commit2 = helpers.add_version(model, visibility='public')
         model.add_tag('v1', commit2.hexsha)
 
