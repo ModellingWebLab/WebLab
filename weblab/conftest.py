@@ -1,10 +1,14 @@
+import uuid
+
 import pytest
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.functions import Now
 
 from accounts.models import User
 from core import recipes
 from entities.models import Entity
+from repocache.models import CachedEntityVersion
 from repocache.populate import populate_entity_cache
 
 
@@ -27,6 +31,17 @@ class Helpers:
         if cache:
             populate_entity_cache(entity)
         return commit
+
+    @staticmethod
+    def add_fake_version(entity, visibility, date=None):
+        """Add a new commit/version only in the cache, not in git."""
+        version = CachedEntityVersion.objects.create(
+            entity=entity.repocache,
+            sha=uuid.uuid4(),
+            timestamp=date or Now(),
+            visibility=visibility,
+        )
+        return version
 
     @staticmethod
     def add_permission(user, perm):

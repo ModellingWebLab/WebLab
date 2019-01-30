@@ -772,6 +772,8 @@ class GetProtocolInterfacesJsonView(View):
             where,
         ).order_by(
             'entity__id',
+            '-timestamp',
+            '-pk',
         ).distinct(
             'entity__id',
         ).annotate(

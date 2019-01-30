@@ -8,13 +8,12 @@ from unittest.mock import patch
 import pytest
 import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db.models.functions import Now
 from django.utils.dateparse import parse_datetime
 from guardian.shortcuts import assign_perm
 
 from core import recipes
 from entities.models import AnalysisTask, Entity, ModelEntity, ProtocolEntity
-from repocache.models import CachedEntityVersion, ProtocolInterface
+from repocache.models import ProtocolInterface
 
 
 @pytest.fixture
@@ -337,15 +336,7 @@ class TestEntityVersionJsonView:
 class TestGetProtocolInterfacesJsonView:
     def add_version_with_interface(self, helpers, protocol, req, opt, vis='public'):
         """Helper method to add a new version and give it an interface in one go."""
-        commit = helpers.add_version(protocol, visibility=vis)
-        version = protocol.repocache.get_version(commit.hexsha)
-        print('Added', commit.hexsha[:6], version.id, protocol.repocache.latest_version.id)
-        # version = CachedEntityVersion.objects.create(
-        #     entity=protocol.repocache,
-        #     sha=uuid.uuid4(),
-        #     timestamp=Now(),
-        #     visibility=vis,
-        # )
+        version = helpers.add_fake_version(protocol, vis)
         # Give it an interface
         terms = [
             ProtocolInterface(protocol_version=version, term=t, optional=False) for t in req
