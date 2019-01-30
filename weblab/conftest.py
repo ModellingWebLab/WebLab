@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 import pytest
@@ -23,7 +24,7 @@ class Helpers:
         in_repo_path = str(entity.repo_abs_path / filename)
         open(in_repo_path, 'w').write('entity contents')
         entity.repo.add_file(in_repo_path)
-        commit = entity.repo.commit('file', User(full_name='author', email='author@example.com'))
+        commit = Helpers.fake_commit(entity.repo, 'file', User(full_name='author', email='author@example.com'))
         if tag_name:
             entity.repo.tag(tag_name)
         if visibility:
@@ -42,6 +43,30 @@ class Helpers:
             visibility=visibility,
         )
         return version
+
+    # Used to ensure each test commit has a different timestamp
+    NEXT_COMMIT_TIMESTAMP = datetime.datetime(2010, 1, 1)
+
+    @classmethod
+    def fake_commit(cls, repo, message, author, date=None):
+        """Make a test git commit with a fake date.
+
+        This is identical to ``entities.repository.Repository.commit`` except
+        that it allows the author & commit dates to be overridden. By default
+        a numerically ascending sequence of timestamps will be used, 1 second
+        apart, to ensure each test commit has a different timestamp.
+        """
+        from entities.repository import Actor, Commit
+        if date is None:
+            date = cls.NEXT_COMMIT_TIMESTAMP.isoformat()
+            cls.NEXT_COMMIT_TIMESTAMP += datetime.timedelta(seconds=1)
+        return Commit(repo, repo._repo.index.commit(
+            message,
+            author=Actor(author.full_name, author.email),
+            author_date=date,
+            committer=Actor(author.full_name, author.email),
+            commit_date=date,
+        ))
 
     @staticmethod
     def add_permission(user, perm):
