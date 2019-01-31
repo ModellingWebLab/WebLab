@@ -68,8 +68,6 @@ def visibility_check(visibility, allowed_users, user):
 
     :returns: True if the user has permission to view, False otherwise
     """
-    allow_access = False
-
     if visibility == Visibility.PUBLIC:
         # Public is visible to everybody
         return True
@@ -81,6 +79,8 @@ def visibility_check(visibility, allowed_users, user):
             user in allowed_users or
             visibility != Visibility.PRIVATE
         )
+
+    return False
 
 
 class VisibilityMixin(AccessMixin):

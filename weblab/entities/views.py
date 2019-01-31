@@ -52,7 +52,7 @@ from .models import Entity, ModelEntity, ProtocolEntity
 
 class EntityTypeMixin:
     """
-    Mixin for including in pages about `ModelEntity` objects
+    Mixin for including in pages about `Entity` objects
     """
     @property
     def model(self):
@@ -305,7 +305,7 @@ class EntityComparisonJsonView(View):
 
         :param entity: Entity object
         :param commit: `Commit` object
-        :param archive_file: ArchiveFile object
+        :param blob: `git.Blob` object
         """
         return {
             'id': blob.name,

@@ -560,7 +560,6 @@ class TestEntityComparisonJsonView:
         assert file_['name'] == 'file1.txt'
         assert file_['author'] == model.author.full_name
         assert file_['filetype'] == 'TXTPROTOCOL'
-        #assert file_['masterFile']
         assert file_['size'] == 15
         assert file_['url'] == (
             '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, v1.hexsha))

@@ -17,7 +17,7 @@ def test_get_joint_visibility():
 
 
 @pytest.mark.django_db
-def test_visibility_check(helpers, user, other_user, anon_user):
+def test_visibility_check(user, other_user, anon_user):
     assert visibility_check('public', [user], user)
     assert visibility_check('private', [user], user)
 
