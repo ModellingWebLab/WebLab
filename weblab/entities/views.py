@@ -813,6 +813,9 @@ class EntityDiffView(View):
             task = 'getUnixDiff'
         elif diff_type == 'bives':
             task = 'getBivesDiff'
+        else:
+            return JsonResponse({'error': 'invalid diff type'})
+
 
         files = []
         for version in versions:

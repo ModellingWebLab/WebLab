@@ -266,9 +266,11 @@ bivesDiffer.prototype.computeDifferences = function (former, later, matrixKey)
 				diffDiv.append ("server didn't return any diff");
 			
 			
-		}
-		else
+		} else if (data && data.error) {
+			diffs[matrixKey].empty ().append (data.error);
+    } else {
 			diffs[matrixKey].empty ().append ("failed to compute the differences");
+    }
 	}).fail (function () {
 		diffs[matrixKey].empty ().append ("failed to compute the differences");
 	});

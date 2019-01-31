@@ -1171,6 +1171,22 @@ class TestEntityDiffView:
 '''
         assert data['getUnixDiff']['response']
 
+    def test_error_for_invalid_diff_type(self, client, helpers):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public')
+        v2 = helpers.add_version(model, visibility='private')
+
+        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        response = client.get(
+            '/entities/models/diff/%s/%s/file1.txt?type=invalid' % (v1_spec, v2_spec)
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error']
+
+
     def test_cannot_diff_entities_with_no_access(self, client, helpers):
         model = recipes.model.make()
         v1 = helpers.add_version(model, visibility='public')
