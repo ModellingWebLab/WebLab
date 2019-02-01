@@ -12,16 +12,18 @@ EntityVersionList.prototype = {
     });
     $("#compareVersions").click (function () {
       var url = $(this).data('base-href');
+      var numToCompare = 0;
       $(".comparisonCheckBox").each (function () {
         if ($(this).prop('checked')) {
           url += '/' + $(this).val();
+          numToCompare += 1;
         }
       });
-      console.log(url);
-      if (url)
+      if (numToCompare < 2) {
+        window.alert("You need to select at least 2 versions to compare.");
+      } else {
         document.location = url;
-      else
-        window.alert("You need to select some versions to compare.");
+      }
     });
   }	
 };
