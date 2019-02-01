@@ -1,0 +1,34 @@
+
+{% extends "base.html" %}
+
+{% load entities %}
+{% load experiments %}
+{% load staticfiles %}
+
+{% block title %}{{ type|capfirst }}: compare {{ other_type }}s - {% endblock title %}
+
+{% block content %}
+    <div id="entityexperimentlist">
+      <h1>Comparison of {{ type }}s</h1>
+      <div id="entitiesToCompare"
+        data-comparison-href="{{ entity_versions|url_entity_comparison_json:type }}"
+        data-diff-base-href="{% url_entity_diff_base type %}"
+        >
+          loading...
+          </div>
+          <div id="filedetails">
+            <div class="closebtn"><small>
+                <a id="exportPlot" style="display: none;">export plot data</a> | 
+                <a id="fileclose">&otimes; close</a>
+            </small></div>
+              <h3 id="filename"></h3>
+              <div id="filedisplay"></div>
+          </div>
+
+          <div id="files">
+            <h3 id="outputFileHeadline"></h3>
+            <table id="filestable">
+          </table>
+        </div>
+    </div>
+{% endblock content %}

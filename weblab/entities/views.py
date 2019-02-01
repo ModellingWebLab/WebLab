@@ -1,10 +1,14 @@
 import mimetypes
 import os.path
 import shutil
+import subprocess
 from itertools import groupby
+from tempfile import NamedTemporaryFile
 
+import requests
 from braces.views import UserFormKwargsMixin
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -21,13 +25,16 @@ from django.http import (
 from django.core.exceptions import PermissionDenied
 from django.utils.text import get_valid_filename
 from django.views import View
+from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 
-from core.visibility import Visibility, VisibilityMixin, visibility_check
+from core.visibility import (
+    Visibility, VisibilityMixin, visibility_check
+)
 from experiments.models import Experiment
 from repocache.exceptions import RepoCacheMiss
 
@@ -43,30 +50,22 @@ from .forms import (
 from .models import Entity, ModelEntity, ProtocolEntity
 
 
-class ModelEntityTypeMixin:
+class EntityTypeMixin:
     """
-    Mixin for including in pages about `ModelEntity` objects
+    Mixin for including in pages about `Entity` objects
     """
-    model = ModelEntity
+    @property
+    def model(self):
+        return next(
+            et 
+            for et in (ModelEntity, ProtocolEntity)
+            if et.entity_type == self.kwargs['entity_type']
+        )
 
     def get_context_data(self, **kwargs):
         kwargs.update({
-            'type': ModelEntity.entity_type,
-            'other_type': ProtocolEntity.entity_type,
-        })
-        return super().get_context_data(**kwargs)
-
-
-class ProtocolEntityTypeMixin:
-    """
-    Mixin for including in pages about `ProtocolEntity` objects
-    """
-    model = ProtocolEntity
-
-    def get_context_data(self, **kwargs):
-        kwargs.update({
-            'type': ProtocolEntity.entity_type,
-            'other_type': ModelEntity.entity_type,
+            'type': self.model.entity_type,
+            'other_type': self.model.other_type,
         })
         return super().get_context_data(**kwargs)
 
@@ -123,40 +122,37 @@ class EntityCollaboratorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.get_object().is_editable_by(self.request.user)
 
-
-class ModelEntityCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, ModelEntityTypeMixin,
+class EntityCreateView(
+    LoginRequiredMixin, PermissionRequiredMixin, EntityTypeMixin,
     UserFormKwargsMixin, CreateView
 ):
     """
-    Create new model entity
+    Create new entity
     """
-    form_class = ModelEntityForm
-    permission_required = 'entities.create_model'
     template_name = 'entities/entity_form.html'
 
+    @property
+    def permission_required(self):
+        if self.model is ModelEntity:
+            return 'entities.create_model'
+        elif self.model is ProtocolEntity:
+            return 'entities.create_protocol'
+
+    @property
+    def form_class(self):
+        if self.model is ModelEntity:
+            return ModelEntityForm
+        elif self.model is ProtocolEntity:
+            return ProtocolEntityForm
+
     def get_success_url(self):
-        return reverse('entities:model_newversion', args=[self.object.pk])
+        return reverse('entities:newversion',
+                       args=[self.kwargs['entity_type'], self.object.pk])
 
 
-class ProtocolEntityCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, ProtocolEntityTypeMixin,
-    UserFormKwargsMixin, CreateView
-):
+class EntityListView(LoginRequiredMixin, EntityTypeMixin, ListView):
     """
-    Create new protocol entity
-    """
-    form_class = ProtocolEntityForm
-    permission_required = 'entities.create_protocol'
-    template_name = 'entities/entity_form.html'
-
-    def get_success_url(self):
-        return reverse('entities:protocol_newversion', args=[self.object.pk])
-
-
-class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
-    """
-    List all user's model entities
+    List all user's entities of the given type
     """
     template_name = 'entities/entity_list.html'
 
@@ -164,17 +160,7 @@ class ModelEntityListView(LoginRequiredMixin, ModelEntityTypeMixin, ListView):
         return self.model.objects.filter(author=self.request.user)
 
 
-class ProtocolEntityListView(LoginRequiredMixin, ProtocolEntityTypeMixin, ListView):
-    """
-    List all user's protocol entities
-    """
-    template_name = 'entities/entity_list.html'
-
-    def get_queryset(self):
-        return self.model.objects.filter(author=self.request.user)
-
-
-class EntityVersionView(EntityVersionMixin, DetailView):
+class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
     """
     View a version of an entity
     """
@@ -189,13 +175,6 @@ class EntityVersionView(EntityVersionMixin, DetailView):
         })
         return super().get_context_data(**kwargs)
 
-
-class ModelEntityVersionView(ModelEntityTypeMixin, EntityVersionView):
-    pass
-
-
-class ProtocolEntityVersionView(ProtocolEntityTypeMixin, EntityVersionView):
-    pass
 
 
 def get_file_type(filename):
@@ -212,7 +191,7 @@ def get_file_type(filename):
     return extensions.get(ext[1:], 'Unknown')
 
 
-class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
+class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
     def _file_json(self, blob):
         obj = self._get_object()
         commit = self.get_commit()
@@ -224,8 +203,8 @@ class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
             'size': blob.size,
             'created': commit.committed_at,
             'url': reverse(
-                'entities:%s_file_download' % obj.entity_type,
-                args=[obj.id, commit.hexsha, blob.name]
+                'entities:file_download',
+                args=[obj.entity_type, obj.id, commit.hexsha, blob.name]
             ),
         }
 
@@ -250,8 +229,8 @@ class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
                 'files': files,
                 'numFiles': len(files),
                 'url': reverse(
-                    'entities:%s_version' % obj.entity_type,
-                    args=[obj.id, commit.hexsha]
+                    'entities:version',
+                    args=[obj.entity_type, obj.id, commit.hexsha]
                 ),
                 'download_url': reverse(
                     'entities:entity_archive',
@@ -265,17 +244,10 @@ class EntityVersionJsonView(EntityVersionMixin, SingleObjectMixin, View):
         })
 
 
-class ModelEntityVersionJsonView(ModelEntityTypeMixin, EntityVersionJsonView):
-    pass
 
-
-class ProtocolEntityVersionJsonView(ProtocolEntityTypeMixin, EntityVersionJsonView):
-    pass
-
-
-class EntityVersionCompareView(EntityVersionMixin, DetailView):
+class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailView):
     context_object_name = 'entity'
-    template_name = 'entities/entity_version_compare.html'
+    template_name = 'entities/compare_experiments.html'
 
     def get_context_data(self, **kwargs):
         entity = self._get_object()
@@ -290,7 +262,7 @@ class EntityVersionCompareView(EntityVersionMixin, DetailView):
 
         experiments = [
             exp for exp in experiments
-            if visibility_check(self.request.user, exp)
+            if exp.is_visible_to_user(self.request.user)
         ]
 
         kwargs['comparisons'] = [
@@ -301,12 +273,99 @@ class EntityVersionCompareView(EntityVersionMixin, DetailView):
         return super().get_context_data(**kwargs)
 
 
-class ModelEntityVersionCompareView(ModelEntityTypeMixin, EntityVersionCompareView):
-    pass
+class EntityComparisonView(EntityTypeMixin, TemplateView):
+    template_name = 'entities/compare.html'
+
+    def get_context_data(self, **kwargs):
+        valid_versions = []
+        for version in self.kwargs['versions'].strip('/').split('/'):
+            id, sha = version.split(':')
+            try:
+                entity = Entity.objects.get(pk=id)
+                if entity.is_version_visible_to_user(sha, self.request.user):
+                    valid_versions.append(version)
+            except (RepoCacheMiss, Entity.DoesNotExist):
+                messages.error(
+                    self.request,
+                    'Some requested entities could not be found '
+                    '(or you don\'t have permission to see them)'
+                )
+
+        kwargs['entity_versions'] = valid_versions
+        return super().get_context_data(**kwargs)
 
 
-class ProtocolEntityVersionCompareView(ProtocolEntityTypeMixin, EntityVersionCompareView):
-    pass
+class EntityComparisonJsonView(View):
+    """
+    Serve up JSON view of multiple entity versions for comparison
+    """
+    def _file_json(self, entity, commit, blob):
+        """
+        JSON for a single file in a version of the entity
+
+        :param entity: Entity object
+        :param commit: `Commit` object
+        :param blob: `git.Blob` object
+        """
+        return {
+            'id': blob.name,
+            'name': blob.name,
+            'author': entity.author.full_name,
+            'created': commit.committed_at,
+            'filetype': get_file_type(blob.name),
+            'size': blob.size,
+            'url': reverse(
+                'entities:file_download',
+                args=[entity.entity_type, entity.id, commit.hexsha, blob.name]
+            ),
+        }
+
+    def _version_json(self, entity, commit):
+        """
+        JSON for a single entity version
+
+        :param entity: Entity object
+        :param commit: `Commit` object
+        """
+        files = [
+            self._file_json(entity, commit, f)
+            for f in commit.files
+            if f.name not in ['manifest.xml', 'metadata.rdf']
+        ]
+        return {
+            'id': commit.hexsha,
+            'entityId': entity.id,
+            'author': entity.author.full_name,
+            'parsedOk': False,
+            'visibility': entity.get_version_visibility(commit.hexsha, default=entity.DEFAULT_VISIBILITY),
+            'created': commit.committed_at,
+            'name': entity.name,
+            'version': entity.repo.get_name_for_commit(commit.hexsha),
+            'files': files,
+            'commitMessage': commit.message,
+            'numFiles': len(files),
+        }
+
+    def get(self, request, *args, **kwargs):
+        json_entities = []
+        for version in self.kwargs['versions'].strip('/').split('/'):
+            id, sha = version.split(':')
+            try:
+                entity = Entity.objects.get(pk=id)
+                if entity.is_version_visible_to_user(sha, request.user):
+                    json_entities.append(
+                        self._version_json(entity, entity.repo.get_commit(sha))
+                    )
+            except (RepoCacheMiss, Entity.DoesNotExist):
+                pass
+
+        response = {
+            'getEntityInfos': {
+                'entities': json_entities
+            }
+        }
+
+        return JsonResponse(response)
 
 
 class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
@@ -318,8 +377,8 @@ class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
     model = Entity
 
     def get_redirect_url(self, *args, **kwargs):
-        url_name = 'entities:{}_version'.format(kwargs['entity_type'])
-        return reverse(url_name, args=[kwargs['pk'], 'latest'])
+        url_name = 'entities:version'
+        return reverse(url_name, args=[kwargs['entity_type'], kwargs['pk'], 'latest'])
 
 
 class EntityTagVersionView(
@@ -360,7 +419,7 @@ class EntityTagVersionView(
         """What page to show when the form was processed OK."""
         entity = self._get_object()
         version = self.kwargs['sha']
-        return reverse('entities:%s_version' % entity.entity_type, args=[entity.id, version])
+        return reverse('entities:version', args=[entity.entity_type, entity.id, version])
 
 
 class EntityDeleteView(UserPassesTestMixin, DeleteView):
@@ -376,12 +435,11 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
         return self.get_object().is_deletable_by(self.request.user)
 
     def get_success_url(self, *args, **kwargs):
-        url_name = 'entities:{}s'.format(self.kwargs['entity_type'])
-        return reverse(url_name)
+        return reverse('entities:list', args=[self.kwargs['entity_type']])
 
 
 class EntityNewVersionView(
-    LoginRequiredMixin, EntityCollaboratorRequiredMixin, FormMixin, DetailView
+    EntityTypeMixin, LoginRequiredMixin, EntityCollaboratorRequiredMixin, FormMixin, DetailView
 ):
     """
     Create a new version of an entity.
@@ -470,7 +528,7 @@ class EntityNewVersionView(
                 os.remove(filename)
             entity.analyse_new_version(commit)
             return HttpResponseRedirect(
-                reverse('entities:%s' % entity.entity_type, args=[entity.id]))
+                reverse('entities:detail', args=[entity.entity_type, entity.id]))
         else:
             # Nothing changed, so inform the user and do nothing else.
             form = self.get_form()
@@ -484,21 +542,7 @@ class EntityNewVersionView(
         return self.form_invalid(form)
 
 
-class ModelEntityNewVersionView(ModelEntityTypeMixin, EntityNewVersionView):
-    """
-    Create a new version of a model
-    """
-    pass
-
-
-class ProtocolEntityNewVersionView(ProtocolEntityTypeMixin, EntityNewVersionView):
-    """
-    Create a new version of a protocol
-    """
-    pass
-
-
-class VersionListView(VisibilityMixin, DetailView):
+class EntityVersionListView(EntityTypeMixin, VisibilityMixin, DetailView):
     """
     Base class for listing versions of an entity
     """
@@ -521,19 +565,6 @@ class VersionListView(VisibilityMixin, DetailView):
         })
         return super().get_context_data(**kwargs)
 
-
-class ModelEntityVersionListView(ModelEntityTypeMixin, VersionListView):
-    """
-    List versions of a model
-    """
-    pass
-
-
-class ProtocolEntityVersionListView(ProtocolEntityTypeMixin, VersionListView):
-    """
-    List versions of a protocol
-    """
-    pass
 
 
 class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
@@ -639,7 +670,7 @@ class ChangeVisibilityView(UserPassesTestMixin, EntityVersionMixin, DetailView):
         return JsonResponse(response)
 
 
-class EntityFileDownloadView(EntityVersionMixin, SingleObjectMixin, View):
+class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
     """
     Download an individual file from an entity version
     """
@@ -660,14 +691,6 @@ class EntityFileDownloadView(EntityVersionMixin, SingleObjectMixin, View):
             raise Http404
 
         return response
-
-
-class ModelEntityFileDownloadView(ModelEntityTypeMixin, EntityFileDownloadView):
-    pass
-
-
-class ProtocolEntityFileDownloadView(ProtocolEntityTypeMixin, EntityFileDownloadView):
-    pass
 
 
 class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
@@ -721,3 +744,99 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailVie
             kwargs['formset'] = self.get_formset()
         kwargs['type'] = self.object.entity_type
         return super().get_context_data(**kwargs)
+
+
+class EntityDiffView(View):
+    def _get_unix_diff(self, file1, file2):
+        with NamedTemporaryFile() as tmp1, NamedTemporaryFile() as tmp2:
+            tmp1.write(file1.data_stream.read())
+            tmp2.write(file2.data_stream.read())
+            tmp1.flush()
+            tmp2.flush()
+
+            result = {}
+            try:
+                output = subprocess.run(
+                    ['diff', '-a', tmp1.name, tmp2.name],
+                    stdout=subprocess.PIPE)
+                result['unixDiff'] = output.stdout.decode()
+                result['response'] = True
+            except subprocess.SubprocessError as e:
+                result['responseText'] = "Couldn't compute unix diff (%s)" % e
+
+            return result
+
+    def _get_bives_diff(self, file1, file2):
+        file1_url = 'file1_url'
+        file2_url = 'file2_url'
+        bives_url = settings.BIVES_URL 
+        post_data = {
+            'files': [
+                file1.data_stream.read().decode(),
+                file2.data_stream.read().decode(),
+            ],
+            'commands': [
+                'compHierarchyJson',
+                'reactionsJson',
+                'reportHtml',
+                'xmlDiff',
+            ]
+        }
+
+        result = {}
+        bives_response = requests.post(bives_url, json=post_data)
+
+        if bives_response.ok:
+            bives_json = bives_response.json()
+
+            if 'error' in bives_json:
+                result['responseText'] = '\n'.join(bives_json['error'])
+            else:
+                result['bivesDiff'] = bives_json
+                result['response'] = True
+        else:
+            result['responseText'] = (
+                'bives request failed: %d (%s)' %
+                (bives_response.status_code, bives_response.content.decode())
+            )
+
+        return result
+
+    def get(self, request, *args, **kwargs):
+        filename = self.kwargs['filename']
+        json_entities = []
+
+        versions = self.kwargs['versions'].strip('/').split('/')
+
+        diff_type = self.request.GET.get('type', 'unix')
+        if diff_type == 'unix':
+            task = 'getUnixDiff'
+        elif diff_type == 'bives':
+            task = 'getBivesDiff'
+        else:
+            return JsonResponse({'error': 'invalid diff type'})
+
+
+        files = []
+        for version in versions:
+            id, sha = version.split(':')
+            try:
+                entity = Entity.objects.get(pk=id)
+                if entity.is_version_visible_to_user(sha, request.user):
+                    files.append(entity.repo.get_commit(sha).get_blob(filename))
+            except (RepoCacheMiss, Entity.DoesNotExist):
+                pass
+
+
+        if len(files) != 2:
+            result = {
+                'responseText': 'invalid request'
+            }
+        elif diff_type == 'unix':
+            result = self._get_unix_diff(*files)
+        elif diff_type == 'bives':
+            result = self._get_bives_diff(*files)
+
+        return JsonResponse({
+            task: result
+        })
