@@ -5,18 +5,18 @@ from core import recipes
 
 
 @pytest.mark.django_db
-def test_url_comparison_json():
+def test_url_experiment_comparison_json():
     versions = recipes.experiment_version.make(_quantity=3)
 
     compare_url = '/experiments/compare/%d/%d/%d/info' % tuple(ver.id for ver in versions)
-    assert exp_tags.url_comparison_json(versions) == compare_url
+    assert exp_tags.url_experiment_comparison_json(versions) == compare_url
 
-    assert exp_tags.url_comparison_json([]) == '/experiments/compare/info'
+    assert exp_tags.url_experiment_comparison_json([]) == '/experiments/compare/info'
 
 
 @pytest.mark.django_db
-def test_url_comparison_base():
-    assert exp_tags.url_comparison_base() == '/experiments/compare'
+def test_url_experiment_comparison_base():
+    assert exp_tags.url_experiment_comparison_base() == '/experiments/compare'
 
 
 @pytest.mark.django_db

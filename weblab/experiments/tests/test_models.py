@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from core import recipes
+from experiments.models import Experiment, ExperimentVersion
 
 
 @pytest.fixture
@@ -102,6 +103,27 @@ class TestExperiment:
 
         exp.protocol.add_collaborator(user)
         assert user in exp.viewers
+
+    def test_data_is_deleted_when_experiment_is_deleted(self, experiment_with_result):
+        exp_path = experiment_with_result.abs_path
+
+        assert exp_path.exists()
+
+        experiment_with_result.delete()
+
+        assert not exp_path.exists()
+
+    def test_experiment_is_deleted_when_model_is_deleted(self, experiment_with_result):
+        experiment_id = experiment_with_result.experiment.id
+        version_id = experiment_with_result.id
+        exp_path = experiment_with_result.abs_path
+        assert exp_path.exists()
+
+        experiment_with_result.experiment.model.delete()
+
+        assert not Experiment.objects.filter(id=experiment_id).exists()
+        assert not ExperimentVersion.objects.filter(id=version_id).exists()
+        assert not exp_path.exists()
 
 
 @pytest.mark.django_db

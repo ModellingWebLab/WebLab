@@ -27,7 +27,7 @@ class TestEntityNameUniqueness:
 
 
 @pytest.mark.django_db
-def test_deletion():
+def test_deletion_permissions():
     user, other_user = recipes.user.make(_quantity=2)
     model = recipes.model.make(author=user)
     superuser = recipes.user.make(is_superuser=True)
@@ -160,3 +160,11 @@ class TestEntity:
         assert model.repo.tag_dict[sha][0].name == 'mytag'
 
         assert model.get_tags(sha) == {'mytag'}
+
+    def test_entity_repo_is_deleted_when_entity_is_deleted(self, model_with_version):
+        repo_path = model_with_version.repo_abs_path
+        assert repo_path.exists()
+
+        model_with_version.delete()
+
+        assert not repo_path.exists()
