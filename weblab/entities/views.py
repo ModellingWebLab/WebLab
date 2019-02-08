@@ -405,6 +405,12 @@ class EntityNewVersionView(
         initial['visibility'] = self.get_object().visibility
         return initial
 
+    def get_form_kwargs(self):
+        """Build the kwargs required to instantiate an EntityVersionForm."""
+        kwargs = super().get_form_kwargs()
+        kwargs['entity_type'] = self.object.entity_type
+        return kwargs
+
     def get_context_data(self, **kwargs):
         entity = self.object
         latest = entity.repo.latest_commit

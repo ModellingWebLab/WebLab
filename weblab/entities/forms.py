@@ -2,7 +2,6 @@ from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.forms import formset_factory
 from django.core.exceptions import ValidationError
-from guardian.shortcuts import assign_perm, remove_perm
 
 from accounts.models import User
 from core import visibility
@@ -11,6 +10,7 @@ from .models import EntityFile, ModelEntity, ProtocolEntity
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for creating an entirely new entity."""
     def clean_name(self):
         name = self.cleaned_data['name']
         if self._meta.model.objects.filter(name=name).exists():
@@ -45,6 +45,7 @@ class ProtocolEntityForm(EntityForm):
 
 
 class EntityVersionForm(forms.Form):
+    """Used to create a new version of an existing entity."""
     visibility = forms.ChoiceField(
         choices=visibility.CHOICES,
         help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
@@ -55,6 +56,16 @@ class EntityVersionForm(forms.Form):
     commit_message = forms.CharField(
         label='Description of this version',
         widget=forms.Textarea)
+    rerun_expts = forms.BooleanField(
+        label='',
+        help_text='Re-run experiments involving the previous version of this %s',
+        widget=forms.CheckboxInput(attrs={'class': 'inline'}),
+        required=False)
+
+    def __init__(self, *args, **kwargs):
+        entity_type = kwargs.pop('entity_type')
+        super().__init__(*args, **kwargs)
+        self.fields['rerun_expts'].help_text = self.fields['rerun_expts'].help_text % entity_type
 
 
 class EntityChangeVisibilityForm(forms.Form):

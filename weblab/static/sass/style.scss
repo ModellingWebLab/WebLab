@@ -237,6 +237,16 @@ form {
   }
 }
 
+/* Useful for checkbox-style inputs */
+input.inline {
+  display: inline;
+  margin-left: 0;
+}
+
+input.inline+span {
+  display: inline;
+}
+
 #notifications {
     position: absolute;
     width: $page-width;
