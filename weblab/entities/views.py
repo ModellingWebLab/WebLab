@@ -482,8 +482,10 @@ class EntityNewVersionView(
             for filename in files_to_delete:
                 os.remove(filename)
             entity.analyse_new_version(commit)
+
+            # Show the user the new version
             return HttpResponseRedirect(
-                reverse('entities:%s' % entity.entity_type, args=[entity.id]))
+                reverse('entities:%s_version' % entity.entity_type, args=[entity.id, commit.hexsha]))
         else:
             # Nothing changed, so inform the user and do nothing else.
             form = self.get_form()
