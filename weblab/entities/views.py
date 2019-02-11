@@ -1,3 +1,4 @@
+import json
 import mimetypes
 import os.path
 import shutil
@@ -23,8 +24,10 @@ from django.http import (
     JsonResponse,
 )
 from django.core.exceptions import PermissionDenied
+from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
@@ -48,6 +51,7 @@ from .forms import (
     ProtocolEntityForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity
+from .processing import process_check_protocol_callback
 
 
 class EntityTypeMixin:
@@ -88,7 +92,7 @@ class EntityVersionMixin(VisibilityMixin):
         """
         Get the git commit applicable to this version
 
-        :return: `git.Commit` object
+        :return: `entities.repository.Commit` object
         :raise: Http404 if commit not found
         """
         if not hasattr(self, '_commit'):
@@ -576,14 +580,16 @@ class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
     def check_access_token(self, token):
         """
         Override to allow token based access to entity archive downloads -
-        must match a `RunningExperiment` object set up against the entity
+        must match a `RunningExperiment` or `AnalysisTask` object set up against the entity
         """
+        from entities.models import AnalysisTask
         from experiments.models import RunningExperiment
         entity_field = 'experiment_version__experiment__%s' % self.kwargs['entity_type']
-        return RunningExperiment.objects.filter(
+        self_id = self._get_object().id
+        return (RunningExperiment.objects.filter(
             id=token,
-            **{entity_field: self._get_object().id}
-        ).exists()
+            **{entity_field: self_id}
+        ).exists() or AnalysisTask.objects.filter(id=token, entity=self_id).exists())
 
     def get(self, request, *args, **kwargs):
         entity = self._get_object()
@@ -744,6 +750,13 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailVie
             kwargs['formset'] = self.get_formset()
         kwargs['type'] = self.object.entity_type
         return super().get_context_data(**kwargs)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CheckProtocolCallbackView(View):
+    def post(self, request, *args, **kwargs):
+        result = process_check_protocol_callback(json.loads(request.body.decode()))
+        return JsonResponse(result)
 
 
 class EntityDiffView(View):

@@ -17,7 +17,7 @@ from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
 
-from core.visibility import Visibility, VisibilityMixin, visible_entity_ids
+from core.visibility import VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
 
 from .forms import ExperimentSimulateCallbackForm

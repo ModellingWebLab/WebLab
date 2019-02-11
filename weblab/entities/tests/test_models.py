@@ -132,19 +132,19 @@ class TestEntity:
 
     def test_get_ref_version_visibility_invalid_hexsha(self, helpers):
         model = recipes.model.make()
-        sha = helpers.add_version(model, visibility='public').hexsha
+        helpers.add_version(model, visibility='public').hexsha
 
         with pytest.raises(RepoCacheMiss):
-            model.get_ref_version_visibility('0'*40)
+            model.get_ref_version_visibility('0' * 40)
 
     def test_is_valid_sha(self):
-        assert Entity._is_valid_sha('0'*40)
-        assert not Entity._is_valid_sha('0'*39)
-        assert not Entity._is_valid_sha('g'*40)
+        assert Entity._is_valid_sha('0' * 40)
+        assert not Entity._is_valid_sha('0' * 39)
+        assert not Entity._is_valid_sha('g' * 40)
 
     def test_get_ref_version_visibility_invalid_tag(self, helpers):
         model = recipes.model.make()
-        sha = helpers.add_version(model, visibility='public').hexsha
+        helpers.add_version(model, visibility='public').hexsha
 
         with pytest.raises(RepoCacheMiss):
             model.get_ref_version_visibility('v10')

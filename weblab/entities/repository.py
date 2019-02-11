@@ -230,14 +230,14 @@ class Commit:
         self._repo = repo
         self._commit = commit
 
-    @property
+    @cached_property
     def filenames(self):
         """
         All filenames in this commit
 
         :return: set of filenames
         """
-        return {blob.name for blob in self._commit.tree.blobs} | self.list_ephemeral_files()
+        return {blob.name for blob in self._commit.tree.blobs} | self.ephemeral_file_names
 
     @property
     def files(self):
@@ -309,7 +309,7 @@ class Commit:
         """
         return datetime.fromtimestamp(self._commit.committed_date).replace(tzinfo=utc)
 
-    @property
+    @cached_property
     def master_filename(self):
         """
         Get name of master file on this commit, as defined by COMBINE manifest
@@ -372,6 +372,9 @@ class Commit:
             cmd.notes('--ref', self.FILE_LIST_REF, 'append', '-m', name, self.hexsha)
             # Add the file as a note
             cmd.notes('--ref', self.FILE_REF_BASE + name, 'add', '-f', '-C', obj_id, self.hexsha)
+        # Clear cached properties so they get recalculated on next access
+        del self.ephemeral_file_names
+        del self.filenames
 
     def get_ephemeral_file(self, name):
         """Get the contents of an ephemeral file as a Blob object.
@@ -402,8 +405,12 @@ class Commit:
     @property
     def ephemeral_files(self):
         """An iterable of `git.Blob` objects representing ephemeral files."""
-        for name in self.list_ephemeral_files():
+        for name in self.ephemeral_file_names:
             yield self.get_ephemeral_file(name)
+
+    @cached_property
+    def ephemeral_file_names(self):
+        return self.list_ephemeral_files()
 
     @property
     def parents(self):

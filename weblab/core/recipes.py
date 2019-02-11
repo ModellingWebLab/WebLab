@@ -15,6 +15,8 @@ protocol = Recipe(
 model_file = Recipe('EntityFile', entity=foreign_key(model))
 protocol_file = Recipe('EntityFile', entity=foreign_key(protocol))
 
+analysis_task = Recipe('AnalysisTask', entity=foreign_key(protocol))
+
 experiment = Recipe(
     'Experiment',
     model=foreign_key(model),

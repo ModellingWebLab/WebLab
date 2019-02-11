@@ -10,6 +10,12 @@ _ENTITY_TYPE = '(?P<entity_type>model|protocol)s'
 
 urlpatterns = [
     url(
+        r'^callback/check-proto$',
+        views.CheckProtocolCallbackView.as_view(),
+        name='protocol_check_callback',
+    ),
+
+    url(
         r'^%s/$' % _ENTITY_TYPE,
         views.EntityListView.as_view(),
         name='list',

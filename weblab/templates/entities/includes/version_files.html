@@ -17,6 +17,7 @@
   {% if version %}
     {% for file in version.files %}
       {% if file.name != 'manifest.xml' %}
+      {% if not edit or file.name not in version.ephemeral_file_names %}
       <tr {% if file.name == delete_file %} class="deleting"{% endif %}>
         <td>
           {% if edit %}
@@ -40,6 +41,7 @@
           {% endif %}
         </td>
       </tr>
+      {% endif %}
       {% endif %}
     {% endfor %}
   {% endif %}

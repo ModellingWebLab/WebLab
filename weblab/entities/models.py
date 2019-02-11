@@ -1,4 +1,5 @@
 import binascii
+import uuid
 from pathlib import Path
 
 from django.conf import settings
@@ -207,6 +208,13 @@ class Entity(UserCreatedModelMixin, models.Model):
         This can be used by subclasses to, e.g., add ephemeral files to the commit,
         or trigger Celery tasks to analyse the new entity.
 
+        Warning: this doesn't function like a normal polymorphic method for objects
+        retrieved from the database. You'll get an instance of whatever class you
+        request, so if you search for any Entity you'll end up calling this method,
+        not the subclass implementation as you might have expected. If this turns
+        out to be a problem in practice, we can look at using django-polymorphic as
+        a solution.
+
         :param commit: a `Commit` object for the new version
         """
         pass
@@ -273,12 +281,15 @@ class ProtocolEntity(Entity):
         an ephemeral readme.md file, if such a file does not already exist.
 
         This isn't very intelligent or efficient - it's just a proof-of-concept of the
-        ephemeral file approach. In due course we'll call a Celery task to do further
-        processing. (TODO)
+        ephemeral file approach.
+
+        We also submit a Celery job to do further processing. Eventually this task will
+        also extract the readme for us.
 
         :param entity: the entity which has had a new version added
         :param commit: a `Commit` object for the new version
         """
+        from .processing import submit_check_protocol_task
         if self.README_NAME not in commit.filenames:
             main_file_name = commit.master_filename
             if main_file_name is None:
@@ -294,6 +305,7 @@ class ProtocolEntity(Entity):
                 doc = content[doc_start + 1:doc_end]
                 # Create ephemeral file
                 commit.add_ephemeral_file(self.README_NAME, doc)
+        submit_check_protocol_task(self, commit.hexsha)
 
 
 class EntityFile(models.Model):
@@ -303,3 +315,16 @@ class EntityFile(models.Model):
 
     def __str__(self):
         return self.original_name
+
+
+class AnalysisTask(models.Model):
+    """
+    A celery task analysing an entity version.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    entity = models.ForeignKey(Entity, related_name='analysis_tasks')
+    version = models.CharField(max_length=40)
+
+    class Meta:
+        # Don't analyse the same entity version twice at the same time!
+        unique_together = ['entity', 'version']
