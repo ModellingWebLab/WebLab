@@ -595,28 +595,16 @@ function parseUrl (event)
 {
 	var entityIds = null;
   var parts = document.location.pathname.split("/")
-	//var t = document.location.href.split ("/");
-	//console.log (t);
 
 	for (var i = 0; i < parts.length; i++)
 	{
-    /*
-		if ("/" + t[i] == contextPath && t[i+2] == "m")
-		{
-			basicurl = t.slice (0, i + 3).join ("/") + "/";
-			entityType = "model";
-			entityIds = t.slice (i + 3);
-		}
-		if ("/" + t[i] == contextPath && t[i+2] == "p")
-		{
-			basicurl = t.slice (0, i + 3).join ("/") + "/";
-			entityType = "protocol";
-			entityIds = t.slice (i + 3);
-		}
-    */
     if (parts[i] == 'experiments') {
       basicurl = parts.slice(0, i+2).join('/') + '/';
       entityType = 'experiment';
+      entityIds = parts.slice(i+2);
+    } else if ((parts[i] == 'models' || parts[i] == 'protocols') && parts[i+1] == 'compare') {
+      basicurl = parts.slice(0, i+2).join('/') + '/';
+      entityType = parts[i].slice(0, parts[i].length-1);
       entityIds = parts.slice(i+2);
     }
 	}
@@ -659,14 +647,7 @@ function parseUrl (event)
 	if (!tableParsed)
 	{
 		tableParsed = true;
-		if (entityType == "experiment")
-			getInfos ($("#entitiesToCompare").data('comparison-href'));
-		else
-			getInfos ({
-				task: "getEntityInfos",
-				getBy: "versionId",
-				ids: entityIds
-			});
+		getInfos ($("#entitiesToCompare").data('comparison-href'));
 	}
 	else
 		handleReq ();

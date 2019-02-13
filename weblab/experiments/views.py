@@ -58,8 +58,8 @@ class ExperimentMatrixJsonView(View):
             'created': entity.created_at,
             'name': name,
             'url': reverse(
-                'entities:%s_version' % entity.entity_type,
-                args=[entity.id, friendly_version]
+                'entities:version',
+                args=[entity.entity_type, entity.id, friendly_version]
             ),
         }
 

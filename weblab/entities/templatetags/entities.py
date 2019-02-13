@@ -34,20 +34,53 @@ def file_type(filename):
 
 @register.filter
 def url_versions(entity):
-    url_name = 'entities:{}_versions'.format(entity.entity_type)
-    return reverse(url_name, args=[entity.id])
+    return reverse('entities:version_list', args=[entity.entity_type, entity.id])
 
 
 @register.filter
 def url_newversion(entity):
-    url_name = 'entities:{}_newversion'.format(entity.entity_type)
-    return reverse(url_name, args=[entity.id])
+    return reverse('entities:newversion', args=[entity.entity_type, entity.id])
 
 
 @register.filter
 def url_tag_version(entity, version):
-    url_name = 'entities:tag_version'
-    return reverse(url_name, args=[entity.id, version.hexsha])
+    return reverse('entities:tag_version', args=[entity.id, version.hexsha])
+
+
+@register.filter
+def url_entity_comparison_json(entity_versions, entity_type):
+    """
+    Build URL for entity comparison json
+    """
+    if entity_versions:
+        version_ids = '/' + '/'.join(entity_versions)
+    else:
+        version_ids = ''
+    return reverse('entities:compare_json', args=[entity_type, version_ids])
+
+
+@register.simple_tag
+def url_entity_comparison_base(entity_type):
+    """
+    Base URL for entity comparison page
+    """
+    # Use dummy IDs to set up a comparison URL, then chop them off to
+    # get the base. This will be used by javascript to generate comparisons
+    # between entity versions.
+    url = reverse('entities:compare', args=[entity_type, '/1:a'])
+    return url[:-4]
+
+
+@register.simple_tag
+def url_entity_diff_base(entity_type):
+    """
+    Base URL for entity diff
+    """
+    # Use dummy IDs to set up a diff URL, then chop them off to
+    # get the base. This will be used by javascript to generate diff URLs
+    # between entity versions.
+    url = reverse('entities:diff', args=[entity_type, '/1:a/2:b', 'file.json'])
+    return url.split('/1:a/2:b')[0]
 
 
 @register.filter
@@ -85,10 +118,10 @@ def url_version(entity, commit):
     a tag, or the tag contains a /, or the tag is one of our reserved
     names (new, latest), we fall back to the SHA1.
     """
-    url_name = 'entities:{}_version'.format(entity.entity_type)
+    url_name = 'entities:version'
     last_tag = _url_friendly_label(entity, commit)
-    args = [entity.id, last_tag]
-    return reverse(url_name, args=args)
+    args = [entity.entity_type, entity.id, last_tag]
+    return reverse('entities:version', args=args)
 
 
 @register.filter
@@ -96,22 +129,22 @@ def url_version_json(entity, commit):
     """
     Generate the json URL for a specific version of this entity.
     """
-    url_name = 'entities:{}_version_json'.format(entity.entity_type)
+    url_name = 'entities:version_json'
     last_tag = _url_friendly_label(entity, commit)
-    args = [entity.id, last_tag]
+    args = [entity.entity_type, entity.id, last_tag]
     return reverse(url_name, args=args)
 
 
 @register.filter
-def url_version_compare(entity, commit):
-    """Generate the view URL for comparing a specific version of this entity
-    to entities of the other type.
+def url_compare_experiments(entity, commit):
+    """Generate the view URL for comparing experiments using
+    a specific version of this entity
 
-    e.g. comparing a version of a model to the available set of protocols
+    e.g. comparing experiments using version of a model across all available protocols
     """
-    url_name = 'entities:{}_version_compare'.format(entity.entity_type)
+    url_name = 'entities:compare_experiments'
     last_tag = _url_friendly_label(entity, commit)
-    args = [entity.id, last_tag]
+    args = [entity.entity_type, entity.id, last_tag]
     return reverse(url_name, args=args)
 
 
@@ -124,20 +157,19 @@ def url_change_version_visibility(entity, commit):
 
 @register.filter
 def url_entity(entity):
-    url_name = 'entities:{}'.format(entity.entity_type)
-    return reverse(url_name, args=[entity.id])
+    url_name = 'entities:detail'
+    return reverse(url_name, args=[entity.entity_type, entity.id])
 
 
 @register.filter
 def url_new(entity_type):
-    url_name = 'entities:new_{}'.format(entity_type)
-    return reverse(url_name)
+    return reverse('entities:new', args=[entity_type])
 
 
 @register.filter
 def url_delete(entity):
-    url_name = 'entities:{}_delete'.format(entity.entity_type)
-    return reverse(url_name, args=[entity.id])
+    url_name = 'entities:delete'
+    return reverse(url_name, args=[entity.entity_type, entity.id])
 
 
 @register.filter
