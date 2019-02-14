@@ -812,6 +812,7 @@ class GetProtocolInterfacesJsonView(View):
 
         return JsonResponse({
             'interfaces': interfaces
+        })
 
 
 class EntityDiffView(View):
