@@ -29,6 +29,9 @@ def populate_entity_cache(entity):
                 'visibility': visibility or entity.DEFAULT_VISIBILITY,
             }
         )[0]
+        if visibility and visibility != version.visibility:
+            version.visibility = visibility
+            version.save()
 
         # If the commit has no visibility info in the repo, remember this
         # and wait until we find visibility on an earlier commit (which
