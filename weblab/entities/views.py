@@ -836,9 +836,6 @@ class EntityDiffView(View):
             return result
 
     def _get_bives_diff(self, file1, file2):
-        file1_url = 'file1_url'
-        file2_url = 'file2_url'
-        bives_url = settings.BIVES_URL 
         post_data = {
             'files': [
                 file1.data_stream.read().decode(),
@@ -853,7 +850,7 @@ class EntityDiffView(View):
         }
 
         result = {}
-        bives_response = requests.post(bives_url, json=post_data)
+        bives_response = requests.post(settings.BIVES_URL, json=post_data)
 
         if bives_response.ok:
             bives_json = bives_response.json()
@@ -873,7 +870,6 @@ class EntityDiffView(View):
 
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
-        json_entities = []
 
         versions = self.kwargs['versions'].strip('/').split('/')
 
@@ -885,7 +881,6 @@ class EntityDiffView(View):
         else:
             return JsonResponse({'error': 'invalid diff type'})
 
-
         files = []
         for version in versions:
             id, sha = version.split(':')
@@ -895,7 +890,6 @@ class EntityDiffView(View):
                     files.append(entity.repo.get_commit(sha).get_blob(filename))
             except (RepoCacheMiss, Entity.DoesNotExist):
                 pass
-
 
         if len(files) != 2:
             result = {
