@@ -843,10 +843,10 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
+        latest = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
         assert 'v1' in model.repo._repo.tags
 
-        latest = model.repo.latest_commit
         assert latest.message == 'files'
         assert 'file1.txt' in latest.filenames
         assert 'file2.txt' in latest.filenames
@@ -869,10 +869,10 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
+        latest = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
         assert 'delete-file' in model.repo._repo.tags
 
-        latest = model.repo.latest_commit
         assert latest.message == 'delete file1'
         assert len(list(latest.files)) == 2
         assert 'file2.txt' in latest.filenames
@@ -896,10 +896,10 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
+        latest = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
         assert 'delete-files' in model.repo._repo.tags
 
-        latest = model.repo.latest_commit
         assert latest.message == 'delete files'
         assert len(list(latest.files)) == 2
         assert 'file3.txt' in latest.filenames
@@ -941,7 +941,8 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
+        commit = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, commit.hexsha)
 
     def test_cannot_create_model_version_as_non_owner(self, logged_in_user, client):
         model = recipes.model.make()
@@ -973,9 +974,9 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/protocols/%d' % protocol.id
-        # Check documentation parsing
         commit = protocol.repo.latest_commit
+        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.hexsha)
+        # Check documentation parsing
         assert ProtocolEntity.README_NAME in commit.filenames
         readme = commit.get_blob(ProtocolEntity.README_NAME)
         assert readme.data_stream.read() == doc
@@ -1004,9 +1005,9 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/protocols/%d' % protocol.id
-        # Check documentation parsing
         commit = protocol.repo.latest_commit
+        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.hexsha)
+        # Check documentation parsing
         assert ProtocolEntity.README_NAME in commit.filenames
         readme = commit.get_blob(ProtocolEntity.README_NAME)
         assert readme.data_stream.read() == doc
