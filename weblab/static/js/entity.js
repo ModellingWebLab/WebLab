@@ -780,6 +780,7 @@ function init() {
 				archivelink : document.getElementById("downloadArchive"),
 				filedetails : document.getElementById("entityversionfiledetails"),
 				experimentlist: document.getElementById("entityexperimentlist"),
+				experimentpartners: document.getElementById("entityexperimentlistpartners"),
 				visibility: document.getElementById("versionVisibility"),
 				visibilityAction : document.getElementById("versionVisibilityAction"),
 				deleteBtn: document.getElementById("deleteVersion"),
@@ -798,23 +799,24 @@ function init() {
   entityType = $(doc.version).data('entity-type');
   compareType = entityType == 'model' ? 'protocol' : 'model';
 	
-	window.onpopstate = render;
-	render ();
+  if (doc.version.details) {
+    window.onpopstate = render;
+    render ();
+  }
 
   var $visibility = $(doc.version.visibility);
   $visibility.on(
-    'change',
-    '#id_visibility',
-    function() {
-      updateVisibility (
-          $visibility.data('change-href'),
-          {
-            version: curVersion.id,
-            visibility: $(this).val(),
-          })
-    });
+      'change',
+      '#id_visibility',
+      function() {
+        updateVisibility (
+            $visibility.data('change-href'),
+            {
+              version: curVersion.id,
+              visibility: $(this).val(),
+            })
+      });
 
-		
   $(doc.file.close).click(function (ev) {
     if (ev.which == 1)
     {
@@ -861,33 +863,33 @@ function init() {
 	
 	$(".deleteVersionLink").click(deleteVersionCallback);
 
-	// Comparing entity versions click events
-	$("#compareVersionsSelectorsAll").click (function () {
-		$(".comparisonCheckBox").prop('checked', true);
-	});
-	$("#compareVersionsSelectorsNone").click (function () {
-		$(".comparisonCheckBox").prop('checked', false);
-	});
-	$("#compareVersions").click (function () {
-		var url = "";
-		$(".comparisonCheckBox").each (function () {
-			if ($(this).prop('checked'))
-				url += $(this).val () + "/";
-		});
-		if (url)
-		    document.location = (contextPath + "/compare/" + entityType.charAt(0) + "/" + url);
-		else
-		    window.alert("You need to select some " + compareType + "s to compare.");
-	});
-	
-	
 	// Comparing experiments click events
+  var $exp_list = $(doc.version.experimentpartners).children("ul");
+  $("#entityexperimentlistpartnersactall").click(function () {
+    $exp_list.find("input").filter(":visible").prop('checked', true);
+  });
+  $("#entityexperimentlistpartnersactnone").click(function () {
+    $exp_list.find("input").prop('checked', false);
+  });
+  $("#entityexperimentlistpartnersactlatest").click(function () {
+    $exp_list.children("li").children("input").prop('checked', true);
+  });
 	$("#entityexperimentlist_showallversions").click(function () {
 		$(this).toggleClass("selected");
 		$exp_list.find("ul").toggle();
 		$("#entityexperimentlist_span_latest").toggle();
     return false;
 	});
+  $("#entityexperimentlistpartnersactcompare").click(function () {
+    var url = $(this).data('base-href');
+    $exp_list.find("input:checked").filter(":visible").each(function () {
+      url += '/' + this.value;
+    });
+    if (url)
+      document.location = url; //contextPath + "/compare/e/" + url;
+    else
+      window.alert("You need to select some " + compareType + "s to compare.");
+  });
 	
   $("#entityexperimentlist_span_latest").hide();
 

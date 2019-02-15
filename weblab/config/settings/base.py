@@ -219,3 +219,6 @@ CHASTE_PASSWORD = os.environ.get('CHASTE_PASSWORD', 'YOUR_BACKEND_PASSWORD')
 # This allows us to provide the Chaste backend with URLs that it can access
 # (it may not be able to do so via the user-accessible URL)
 CALLBACK_BASE_URL = os.environ.get('CALLBACK_BASE_URL', 'http://localhost:8000')
+
+# URL for Bives comparison
+BIVES_URL = "https://bives.bio.informatik.uni-rostock.de/"

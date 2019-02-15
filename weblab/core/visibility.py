@@ -58,18 +58,29 @@ def visible_entity_ids(user):
         return public_entity_ids
 
 
-def visibility_check(user, obj):
+def visibility_check(visibility, allowed_users, user):
     """
-    Object-based visibility check - can the user view the given object?
+    Visibility check
 
-    :param: user to test against
-    :param: the object - must have `visibility` and `author` fields
-    :returns: True if the user is allowed to view the object, False otherwise
+    :param visibility: `Visibility` value
+    :param allowed_users: Users that have special privileges in this scenario
+    :param: user: user to test against
+
+    :returns: True if the user has permission to view, False otherwise
     """
-    return (
-        obj.visibility == Visibility.PUBLIC or
-        user.is_authenticated and user in obj.viewers
-    )
+    if visibility == Visibility.PUBLIC:
+        # Public is visible to everybody
+        return True
+
+    elif user.is_authenticated:
+        # Logged in user can view all except other people's private stuff
+        # unless given special permissions to do so
+        return (
+            user in allowed_users or
+            visibility != Visibility.PRIVATE
+        )
+
+    return False
 
 
 class VisibilityMixin(AccessMixin):
@@ -118,17 +129,10 @@ class VisibilityMixin(AccessMixin):
         allow_access = False
 
         if obj:
-            visibility = self.get_visibility()
-            allowed_users = self.get_viewers()
-            if visibility == Visibility.PUBLIC:
+            if visibility_check(self.get_visibility(),
+                                self.get_viewers(),
+                                self.request.user):
                 allow_access = True
-
-            elif self.request.user.is_authenticated:
-                # Logged in user can view all except other people's private stuff
-                allow_access = (
-                    self.request.user in allowed_users or
-                    visibility != Visibility.PRIVATE
-                )
             else:
                 auth_header = self.request.META.get('HTTP_AUTHORIZATION')
                 if auth_header and auth_header.startswith('Token'):

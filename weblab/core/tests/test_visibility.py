@@ -1,7 +1,12 @@
 import pytest
 
 from core import recipes
-from core.visibility import Visibility, get_joint_visibility, visibility_check, visible_entity_ids
+from core.visibility import (
+    Visibility,
+    get_joint_visibility,
+    visibility_check,
+    visible_entity_ids
+)
 from accounts.models import User
 
 
@@ -12,27 +17,15 @@ def test_get_joint_visibility():
 
 
 @pytest.mark.django_db
-def test_visibility_check(helpers, user, other_user, anon_user):
-    my_public, my_private = recipes.model.make(author=user, _quantity=2)
-    helpers.add_version(my_public, visibility='public')
-    helpers.add_version(my_private, visibility='private')
+def test_visibility_check(user, other_user, anon_user):
+    assert visibility_check('public', [user], user)
+    assert visibility_check('private', [user], user)
 
-    other_public, other_private = recipes.model.make(author=other_user, _quantity=2)
-    helpers.add_version(other_public, visibility='public')
-    helpers.add_version(other_private, visibility='private')
+    assert visibility_check('public', [], other_user)
+    assert not visibility_check('private', [], other_user)
 
-    assert visibility_check(user, my_public)
-    assert visibility_check(user, my_private)
-
-    assert visibility_check(user, other_public)
-    assert not visibility_check(user, other_private)
-
-    assert visibility_check(anon_user, my_public)
-    assert not visibility_check(anon_user, my_private)
-
-    helpers.add_permission(user, 'create_model')
-    other_private.add_collaborator(user)
-    assert visibility_check(user, other_private)
+    assert visibility_check('public', [], anon_user)
+    assert not visibility_check('private', [], anon_user)
 
 
 @pytest.mark.django_db

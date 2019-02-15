@@ -796,7 +796,6 @@ function init() {
       filedetails : document.getElementById("entityversionfiledetails"),
       experimentlist: document.getElementById("entityexperimentlist"),
       experimentpartners: document.getElementById("entityexperimentlistpartners"),
-      compareAll: document.getElementById("compare-all-models"),
       switcher: document.getElementById("experiment-files-switcher"),
       visibility: document.getElementById("versionVisibility"),
       visibilityAction : document.getElementById("versionVisibilityAction"),
@@ -907,67 +906,6 @@ function init() {
   }
 
   $(".deleteVersionLink").click(deleteVersionCallback);
-
-  // Comparing entity versions click events
-  $("#compareVersionsSelectorsAll").click (function () {
-    $(".comparisonCheckBox").prop('checked', true);
-  });
-  $("#compareVersionsSelectorsNone").click (function () {
-    $(".comparisonCheckBox").prop('checked', false);
-  });
-  $("#compareVersions").click (function () {
-    var url = "";
-    $(".comparisonCheckBox").each (function () {
-      if ($(this).prop('checked'))
-        url += $(this).val () + "/";
-    });
-    /*
-       if (url)
-       document.location = (staticPath + "/compare/" + entityType.charAt(0) + "/" + url);
-       else
-       window.alert("You need to select some " + compareType + "s to compare.");
-       */
-  });
-
-
-  // Comparing experiments click events
-  var $exp_list = $(doc.version.experimentpartners).children("ul");
-  $("#entityexperimentlistpartnersactall").click(function () {
-    $exp_list.find("input").filter(":visible").prop('checked', true);
-  });
-  $("#entityexperimentlistpartnersactnone").click(function () {
-    $exp_list.find("input").prop('checked', false);
-  });
-  $("#entityexperimentlistpartnersactlatest").click(function () {
-    $exp_list.children("li").children("input").prop('checked', true);
-  });
-  $("#entityexperimentlist_showallversions").click(function () {
-    $(this).toggleClass("selected");
-    $exp_list.find("ul").toggle();
-    $("#entityexperimentlist_span_latest").toggle();
-  });
-  $("#entityexperimentlistpartnersactcompare").click(function () {
-    var url = "";
-    $exp_list.find("input:checked").filter(":visible").each(function () {
-      url += this.value + "/";
-    });
-    if (url)
-      document.location = staticPath + "/compare/e/" + url;
-    else
-      window.alert("You need to select some " + compareType + "s to compare.");
-  });
-  $(doc.version.compareAll).click(function () {
-    var url = "";
-    $exp_list.find("input").filter(":visible").each(function () {
-      url += this.value + "/";
-    });
-    if (url == "")
-      url = allComparisonsUrl;
-    if (url)
-      document.location = staticPath + "/compare/e/" + url;
-    else
-      window.alert("No experiments available to compare!");
-  });
 
   $(plugins).each(function(i, plugin) {
     visualizers[plugin.name] = plugin.get_visualizer()
