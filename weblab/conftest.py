@@ -166,7 +166,6 @@ def experiment_with_result(model_with_version, protocol_with_version):
     return version
 
 
-
 @pytest.fixture
 def experiment_version(public_model, public_protocol):
     return recipes.experiment_version.make(

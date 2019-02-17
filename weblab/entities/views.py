@@ -38,7 +38,7 @@ from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import (
-    Visibility, VisibilityMixin, visibility_check
+    Visibility, VisibilityMixin
 )
 from experiments.models import Experiment
 from repocache.exceptions import RepoCacheMiss
@@ -64,7 +64,7 @@ class EntityTypeMixin:
     @property
     def model(self):
         return next(
-            et 
+            et
             for et in (ModelEntity, ProtocolEntity)
             if et.entity_type == self.kwargs['entity_type']
         )
@@ -129,6 +129,7 @@ class EntityCollaboratorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.get_object().is_editable_by(self.request.user)
 
+
 class EntityCreateView(
     LoginRequiredMixin, PermissionRequiredMixin, EntityTypeMixin,
     UserFormKwargsMixin, CreateView
@@ -181,7 +182,6 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
             'visibility': visibility,
         })
         return super().get_context_data(**kwargs)
-
 
 
 def get_file_type(filename):
@@ -249,7 +249,6 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
                 ),
             }
         })
-
 
 
 class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailView):
@@ -579,7 +578,6 @@ class EntityVersionListView(EntityTypeMixin, VisibilityMixin, DetailView):
             )
         })
         return super().get_context_data(**kwargs)
-
 
 
 class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):

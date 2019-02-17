@@ -10,7 +10,8 @@ var pages = [ "matrix" ],//, "search" ],
 
 /**
  * Submit a request to create an experiment.
- * @param jsonObject  the data to send
+ * @param jsonObject  the data to send;
+ *    an object with fields { task: "newExperiment", model, model_version, protocol, protocol_version }
  * @param $td  the table cell to contain this experiment
  * @param entry  the entry for this experiment in the data matrix
  */
