@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db import IntegrityError
 
+from experiments.models import Experiment, PlannedExperiment
 from repocache.models import ProtocolInterface
 
 from .models import AnalysisTask
@@ -134,3 +135,37 @@ def process_check_protocol_callback(data):
         ProtocolInterface(protocol_version=cached_version, term='', optional=True).save()
 
     return {}
+
+
+def record_experiments_to_run(user, entity, commit):
+    """Record what experiments to run automatically on a new entity version.
+
+    Any experiments that were run with the parent version(s) (that are visible to the user)
+    should be repeated with the new version.
+
+    :param user: the user that created the new version
+    :param entity: the entity that has had a new version created
+    :param commit: the `Commit` object for the new version
+    """
+    new_version_kwargs = {
+        entity.entity_type: entity,
+        entity.entity_type + '_version': commit.hexsha,
+    }
+    for parent in commit.parents:
+        # Find visible experiments involving this parent
+        parent_kwargs = {
+            entity.entity_type: entity,
+            entity.entity_type + '_version': parent.hexsha,
+        }
+        for expt in Experiment.objects.filter(**parent_kwargs):
+            if expt.is_visible_to_user(user):
+                # Record the new experiment to run
+                print(expt.model.name, expt.model_version[:10], expt.protocol.name, expt.protocol_version[:10])
+                kwargs = {
+                    'model_id': expt.model_id,
+                    'model_version': expt.model_version,
+                    'protocol_id': expt.protocol_id,
+                    'protocol_version': expt.protocol_version,
+                }
+                kwargs.update(new_version_kwargs)
+                PlannedExperiment.objects.get_or_create(**kwargs)

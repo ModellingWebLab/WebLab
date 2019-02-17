@@ -54,7 +54,7 @@ from .forms import (
     ProtocolEntityForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity
-from .processing import process_check_protocol_callback
+from .processing import process_check_protocol_callback, record_experiments_to_run
 
 
 class EntityTypeMixin:
@@ -538,7 +538,11 @@ class EntityNewVersionView(
             # Temporary upload files have been safely committed, so can be deleted
             for filename in files_to_delete:
                 os.remove(filename)
+
+            # Trigger entity analysis & experiment runs, if required
             entity.analyse_new_version(commit)
+            if request.POST.get('rerun_expts'):
+                record_experiments_to_run(request.user, entity, commit)
 
             # Show the user the new version
             return HttpResponseRedirect(

@@ -225,3 +225,20 @@ class RunningExperiment(models.Model):
     experiment_version = models.ForeignKey(ExperimentVersion, related_name='running')
 
     task_id = models.CharField(max_length=50)
+
+
+class PlannedExperiment(models.Model):
+    """Specification for an experiment that should be run.
+
+    This is provided as part of the JSON data when displaying entity versions, so that JS code
+    can submit new experiment runs automatically and notify the user of success/failure. See
+    https://github.com/ModellingWebLab/WebLab/pull/114.
+    """
+    model = models.ForeignKey(ModelEntity, related_name='planned_model_experiments')
+    protocol = models.ForeignKey(ProtocolEntity, related_name='planned_protocol_experiments')
+
+    model_version = models.CharField(max_length=50)
+    protocol_version = models.CharField(max_length=50)
+
+    class Meta:
+        unique_together = ('model', 'protocol', 'model_version', 'protocol_version')
