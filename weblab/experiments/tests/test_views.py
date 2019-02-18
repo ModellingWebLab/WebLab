@@ -15,11 +15,13 @@ from django.test import Client
 from django.utils.dateparse import parse_datetime
 
 from core import recipes
-from experiments.models import Experiment, ExperimentVersion
+from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 
 
-def mock_submit(url, body):
-    return Mock(content=('%s succ celery-task-id' % body['signature']).encode())
+def generate_response(template='%s succ celery-task-id'):
+    def mock_submit(url, body):
+        return Mock(content=(template % body['signature']).encode())
+    return mock_submit
 
 
 def add_permission(user, perm):
@@ -40,6 +42,46 @@ def archive_file_path():
 def archive_file(archive_file_path):
     with open(archive_file_path, 'rb') as fp:
         yield fp
+
+
+@pytest.fixture
+def planned_experiments(model_with_version, protocol_with_version):
+    """Fill in DB for NewExperimentView tests."""
+    model = model_with_version
+    protocol = protocol_with_version
+    model_version = model.repo.latest_commit.hexsha
+    protocol_version = protocol.repo.latest_commit.hexsha
+    PlannedExperiment(
+        model=model,
+        protocol=protocol,
+        model_version=model_version,
+        protocol_version=protocol_version
+    ).save()
+    PlannedExperiment(
+        model=model,
+        protocol=protocol,
+        model_version=uuid.uuid4(),
+        protocol_version=uuid.uuid4()
+    ).save()
+    PlannedExperiment(
+        model=model,
+        protocol=recipes.protocol.make(),
+        model_version=model_version,
+        protocol_version=uuid.uuid4()
+    ).save()
+    PlannedExperiment(
+        model=recipes.model.make(),
+        protocol=protocol,
+        model_version=uuid.uuid4(),
+        protocol_version=protocol_version
+    ).save()
+    PlannedExperiment(
+        model=recipes.model.make(),
+        protocol=recipes.protocol.make(),
+        model_version=uuid.uuid4(),
+        protocol_version=uuid.uuid4()
+    ).save()
+    return PlannedExperiment.objects.count()
 
 
 @pytest.mark.django_db
@@ -317,15 +359,14 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['experiments']) == 0
 
 
-@patch('requests.post', side_effect=mock_submit)
+@patch('requests.post', side_effect=generate_response())
 @pytest.mark.django_db
 class TestNewExperimentView:
     @pytest.mark.usefixtures('logged_in_user')
     def test_submits_experiment(
         self, mock_post,
-        client, logged_in_user, model_with_version, protocol_with_version
+        client, logged_in_user, model_with_version, protocol_with_version, planned_experiments
     ):
-
         model = model_with_version
         protocol = protocol_with_version
         model_version = model.repo.latest_commit.hexsha
@@ -353,6 +394,13 @@ class TestNewExperimentView:
         assert data['newExperiment']['versionId'] == version.id
         assert data['newExperiment']['expName'] == version.experiment.name
 
+        # Check this has been removed from the list of planned experiments
+        assert PlannedExperiment.objects.count() == planned_experiments - 1
+        assert PlannedExperiment.objects.filter(
+            model=model, model_version=model_version,
+            protocol=protocol, protocol_version=protocol_version
+        ).count() == 0
+
     @pytest.mark.usefixtures('logged_in_user')
     def test_submit_experiment_requires_permissions(self, mock_post, client, logged_in_user):
         response = client.post('/experiments/new', {})
@@ -365,6 +413,88 @@ class TestNewExperimentView:
             data['newExperiment']['responseText'] ==
             'You are not allowed to create a new experiment'
         )
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_failure_keeps_planned_experiment(
+        self, mock_post,
+        client, logged_in_user, model_with_version, protocol_with_version, planned_experiments
+    ):
+        mock_post.side_effect = generate_response('%s an error occurred')
+
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
+        add_permission(logged_in_user, 'create_experiment')
+        response = client.post(
+            '/experiments/new',
+            {
+                'model': model.pk,
+                'protocol': protocol.pk,
+                'model_version': model_version,
+                'protocol_version': protocol_version,
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+
+        assert 'newExperiment' in data
+        assert not data['newExperiment']['response']
+
+        version = ExperimentVersion.objects.get()
+
+        assert data['newExperiment']['expId'] == version.experiment.id
+        assert data['newExperiment']['versionId'] == version.id
+        assert data['newExperiment']['expName'] == version.experiment.name
+
+        # Check this hasn't been removed from the list of planned experiments
+        assert PlannedExperiment.objects.count() == planned_experiments
+        assert PlannedExperiment.objects.filter(
+            model=model, model_version=model_version,
+            protocol=protocol, protocol_version=protocol_version
+        ).count() == 1
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_inapplicable_removes_planned_experiment(
+        self, mock_post,
+        client, logged_in_user, model_with_version, protocol_with_version, planned_experiments
+    ):
+        mock_post.side_effect = generate_response('%s inapplicable')
+
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
+        add_permission(logged_in_user, 'create_experiment')
+        response = client.post(
+            '/experiments/new',
+            {
+                'model': model.pk,
+                'protocol': protocol.pk,
+                'model_version': model_version,
+                'protocol_version': protocol_version,
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+
+        assert 'newExperiment' in data
+        assert not data['newExperiment']['response']
+
+        version = ExperimentVersion.objects.get()
+
+        assert data['newExperiment']['expId'] == version.experiment.id
+        assert data['newExperiment']['versionId'] == version.id
+        assert data['newExperiment']['expName'] == version.experiment.name
+
+        # Check this has been removed from the list of planned experiments
+        assert PlannedExperiment.objects.count() == planned_experiments - 1
+        assert PlannedExperiment.objects.filter(
+            model=model, model_version=model_version,
+            protocol=protocol, protocol_version=protocol_version
+        ).count() == 0
 
     @pytest.mark.usefixtures('logged_in_user')
     def test_rerun_experiment(
