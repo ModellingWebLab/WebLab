@@ -28,7 +28,7 @@
           by <em>{{ commit.author }}</em><br />
           <span class="suppl">
             <small>created </small> <time>{{commit.committed_at}}</time>
-            {% with commit.files|length as numfiles %}
+            {% with commit.filenames|length as numfiles %}
             <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize}}
             {% endwith %}
           </span><br />
