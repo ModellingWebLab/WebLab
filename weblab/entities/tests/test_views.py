@@ -331,9 +331,9 @@ class TestEntityVersionJsonView:
 
         assert len(ver['planned_experiments']) == 1
         planned = ver['planned_experiments'][0]
-        assert planned['model_id'] == model.pk
+        assert planned['model'] == model.pk
         assert planned['model_version'] == version.hexsha
-        assert planned['protocol_id'] == planned_expt.protocol.pk
+        assert planned['protocol'] == planned_expt.protocol.pk
         assert planned['protocol_version'] == str(planned_expt.protocol_version)
 
 

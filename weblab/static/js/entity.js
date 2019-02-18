@@ -742,11 +742,46 @@ function init() {
         notifications.display(data);
         if (data.version) {
           curVersion = data.version;
+          triggerExperimentSubmission(curVersion.planned_experiments, false);
           updateVersion(curVersion);
           displayVersion(curVersion.id, !(fileName && pluginName));
           displayFile(fileName, pluginName);
         }
       });
+    }
+  }
+
+  /**
+   * Asynchronously submit a list of experiments to the front-end for execution on the task queue.
+   * Will register a callback every 0.2s to submit the next experiment until they're all done,
+   * so the UI doesn't freeze.
+   * @param plannedExperiments  array of objects with keys model, model_version, protocol, protocol_version
+   *     specifying the experiments to launch. May be empty.
+   * @param submitNow  whether to submit a job now, or just register the first callback.
+   */
+  function triggerExperimentSubmission(plannedExperiments, submitNow)
+  {
+    if (plannedExperiments && submitNow)
+    {
+      // Submit the first planned experiment to the queue
+      var exptSpec = plannedExperiments.pop();
+      exptSpec["task"] = "newExperiment";
+      $.post('/experiments/new', exptSpec, function(data) {
+        var msg = data.newExperiment.responseText;
+        if (data.newExperiment.response)
+          notifications.add(msg, "info");
+        else
+          notifications.add(msg, "error");
+      }).fail(function() {
+        notifications.add("Server-side error occurred submitting experiment.", "error");
+      }).always(function(data) {
+        notifications.display(data);
+      });
+    }
+    if (plannedExperiments)
+    {
+      // Call this function again after a delay
+      window.setTimeout(function(){triggerExperimentSubmission(plannedExperiments, true);}, 200);
     }
   }
 

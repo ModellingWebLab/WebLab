@@ -223,7 +223,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
             obj.entity_type + '_version': commit.hexsha
         }
         return list(PlannedExperiment.objects.filter(**kwargs).values(
-            'model_id', 'protocol_id', 'model_version', 'protocol_version'))
+            'model', 'protocol', 'model_version', 'protocol_version'))
 
     def get(self, request, *args, **kwargs):
         obj = self._get_object()
