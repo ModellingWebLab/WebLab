@@ -293,6 +293,11 @@ class TestEntityVersionJsonView:
         version = helpers.add_version(model)
         model.set_version_visibility(version.hexsha, 'public')
         model.repo.tag('v1')
+        planned_expt = PlannedExperiment(
+            model=model, model_version=version.hexsha,
+            protocol=recipes.protocol.make(), protocol_version=uuid.uuid4(),
+        )
+        planned_expt.save()
 
         response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
 
@@ -315,23 +320,21 @@ class TestEntityVersionJsonView:
         assert ver['url'] == '/entities/models/%d/versions/%s' % (model.pk, version.hexsha)
         assert (ver['download_url'] ==
                 '/entities/models/%d/versions/%s/archive' % (model.pk, version.hexsha))
+        assert 'change_url' in ver
 
-    def test_file_json(self, client, helpers):
-        model = recipes.model.make()
-        version = helpers.add_version(model, visibility='public')
-        model.repo.tag('v1')
-
-        response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
-
-        assert response.status_code == 200
-
-        data = json.loads(response.content.decode())
-        file_ = data['version']['files'][0]
+        file_ = ver['files'][0]
         assert file_['id'] == file_['name'] == 'file1.txt'
         assert file_['filetype'] == 'TXTPROTOCOL'
         assert file_['size'] == 15
         assert (file_['url'] ==
                 '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, version.hexsha))
+
+        assert len(ver['planned_experiments']) == 1
+        planned = ver['planned_experiments'][0]
+        assert planned['model_id'] == model.pk
+        assert planned['model_version'] == version.hexsha
+        assert planned['protocol_id'] == planned_expt.protocol.pk
+        assert planned['protocol_version'] == str(planned_expt.protocol_version)
 
 
 @pytest.mark.django_db

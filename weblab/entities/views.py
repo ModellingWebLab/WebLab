@@ -40,7 +40,7 @@ from guardian.shortcuts import get_objects_for_user
 from core.visibility import (
     Visibility, VisibilityMixin
 )
-from experiments.models import Experiment
+from experiments.models import Experiment, PlannedExperiment
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedEntityVersion
 
@@ -215,6 +215,16 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
             ),
         }
 
+    def _planned_experiments(self):
+        obj = self._get_object()
+        commit = self.get_commit()
+        kwargs = {
+            obj.entity_type: obj,
+            obj.entity_type + '_version': commit.hexsha
+        }
+        return list(PlannedExperiment.objects.filter(**kwargs).values(
+            'model_id', 'protocol_id', 'model_version', 'protocol_version'))
+
     def get(self, request, *args, **kwargs):
         obj = self._get_object()
         commit = self.get_commit()
@@ -235,6 +245,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
                 'version': obj.repo.get_name_for_commit(commit.hexsha),
                 'files': files,
                 'numFiles': len(files),
+                'planned_experiments': self._planned_experiments(),
                 'url': reverse(
                     'entities:version',
                     args=[obj.entity_type, obj.id, commit.hexsha]
