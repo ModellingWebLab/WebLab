@@ -16,6 +16,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^protocols/get_interfaces$',
+        views.GetProtocolInterfacesJsonView.as_view(),
+        name='get_protocol_interfaces',
+    ),
+
+    url(
         r'^%s/$' % _ENTITY_TYPE,
         views.EntityListView.as_view(),
         name='list',

@@ -4,6 +4,7 @@ var utils = require('./lib/utils.js')
 var expt_common = require('./expt_common.js');
 var plugins = [
   require('./visualizers/displayContent/displayContent.js'),
+  require('./visualizers/editMetadata/editMetadata.js'),
 ];
 
 

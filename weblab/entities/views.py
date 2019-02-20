@@ -24,6 +24,7 @@ from django.http import (
     JsonResponse,
 )
 from django.core.exceptions import PermissionDenied
+from django.db.models import F, Q
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
@@ -34,12 +35,14 @@ from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
+from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import (
     Visibility, VisibilityMixin, visibility_check
 )
 from experiments.models import Experiment
 from repocache.exceptions import RepoCacheMiss
+from repocache.models import CachedEntityVersion
 
 from .forms import (
     EntityChangeVisibilityForm,
@@ -759,6 +762,59 @@ class CheckProtocolCallbackView(View):
         return JsonResponse(result)
 
 
+class GetProtocolInterfacesJsonView(View):
+    """Get the interfaces for the latest versions of all protocols visible to the user.
+
+    Returns a JSON object ``{'interfaces': [{'name': str, 'required': [], 'optional': []}, ...]}``
+    where ``name`` contains a ``Protocol.name`` and the ``required`` and ``optional`` arrays list
+    the terms in that protocol's interface.
+    """
+    def get(self, request, *args, **kwargs):
+        # Base where clause: don't show private versions
+        where = ~Q(visibility='private')
+        # If the user is logged in, we also need private versions they have access to:
+        # from the user's own protocols and those they have permission for
+        user = request.user
+        if user.is_authenticated:
+            visible_protocols = user.entity_set.filter(
+                entity_type='protocol'
+            ).union(
+                get_objects_for_user(user, 'entities.edit_entity'),
+            ).values_list(
+                'id', flat=True
+            )
+            where = where | Q(entity__entity__in=visible_protocols)
+        # Ensure we only get protocols
+        where = Q(entity__entity__entity_type='protocol') & where
+        # Now sort and filter these so we only get the latest version per protocol,
+        # then annotate with the extra info we need to reduce total query count
+        visible_versions = CachedEntityVersion.objects.filter(
+            where,
+        ).order_by(
+            'entity__id',
+            '-timestamp',
+            '-pk',
+        ).distinct(
+            'entity__id',
+        ).annotate(
+            name=F('entity__entity__name'),
+        ).prefetch_related(
+            'interface'
+        )
+        interfaces = [
+            {
+                'name': version.name,
+                'required': [iface.term for iface in version.interface.all() if not iface.optional and iface.term],
+                'optional': [iface.term for iface in version.interface.all() if iface.optional],
+            }
+            for version in visible_versions
+        ]
+
+        return JsonResponse({
+            'interfaces': interfaces
+        })
+
+
 class EntityDiffView(View):
     def _get_unix_diff(self, file1, file2):
         with NamedTemporaryFile() as tmp1, NamedTemporaryFile() as tmp2:
@@ -780,9 +836,6 @@ class EntityDiffView(View):
             return result
 
     def _get_bives_diff(self, file1, file2):
-        file1_url = 'file1_url'
-        file2_url = 'file2_url'
-        bives_url = settings.BIVES_URL 
         post_data = {
             'files': [
                 file1.data_stream.read().decode(),
@@ -797,7 +850,7 @@ class EntityDiffView(View):
         }
 
         result = {}
-        bives_response = requests.post(bives_url, json=post_data)
+        bives_response = requests.post(settings.BIVES_URL, json=post_data)
 
         if bives_response.ok:
             bives_json = bives_response.json()
@@ -817,7 +870,6 @@ class EntityDiffView(View):
 
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
-        json_entities = []
 
         versions = self.kwargs['versions'].strip('/').split('/')
 
@@ -829,7 +881,6 @@ class EntityDiffView(View):
         else:
             return JsonResponse({'error': 'invalid diff type'})
 
-
         files = []
         for version in versions:
             id, sha = version.split(':')
@@ -839,7 +890,6 @@ class EntityDiffView(View):
                     files.append(entity.repo.get_commit(sha).get_blob(filename))
             except (RepoCacheMiss, Entity.DoesNotExist):
                 pass
-
 
         if len(files) != 2:
             result = {

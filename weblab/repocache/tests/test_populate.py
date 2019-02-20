@@ -35,6 +35,19 @@ class TestPopulate:
         assert not cached.versions.exists()
         assert not cached.tags.exists()
 
+    def test_changes_wrong_visibility(self, model_with_version):
+        populate_entity_cache(model_with_version)
+
+        cached = model_with_version.cachedentity
+        assert cached is not None
+        assert cached.latest_version.visibility == 'private'
+
+        latest = model_with_version.repo.latest_commit
+        model_with_version.set_visibility_in_repo(latest, 'public')
+        assert cached.latest_version.visibility == 'private'
+        populate_entity_cache(model_with_version)
+        assert cached.latest_version.visibility == 'public'
+
     def test_falls_back_to_older_visibilities(self, helpers):
         model = recipes.model.make()
         v1 = helpers.add_version(model, visibility='public', cache=False)

@@ -15,16 +15,16 @@ function metadataEditor(file, div)
     this.modelDiv = $('<div></div>', {id: 'editmeta_modelvars_div'}).text('loading model...');
     this.ontoDiv = $('<div></div>', {id: 'editmeta_ontoterms_div'});
     otherContent = '<div class="clearer">\n'
-        + '<p><label for="versionname">Version:</label>\n'
-        + '<input type="text" name="versionname" id="versionname" placeholder="Version Identifier"/>\n'
+        + '<p><label for="id_tag">Version:</label>\n'
+        + '<input type="text" name="tag" id="id_tag" placeholder="Optional short label for this version"/></p>\n'
+        + '<p><label for="id_commit_message">Description of this version:</label>\n'
         + '<a class="pointer" id="dateinserter"><small>use current date</small></a>\n'
-        + '<span id="versionaction"></span></p>\n'
-        + '<p><label for="commitMsg">Commit Message:</label><br/>\n'
-        + '<textarea cols="70" rows="3" name="commitMsg" id="commitMsg" placeholder="optional message to describe this commit"></textarea>\n'
+        + '<span id="versionaction"></span><br/>\n'
+        + '<textarea cols="70" rows="3" name="commit_message" id="id_commit_message"></textarea>\n'
         + '<span id="commitmsgaction"></span></p>\n'
-        + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
-        + '<label for="reRunExperiments">rerun experiments involving previous versions of this model</label>\n'
-        + '<small>(this might take some time)</small></p>\n'
+        // + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
+        // + '<label for="reRunExperiments">rerun experiments involving previous versions of this model</label>\n'
+        // + '<small>(this might take some time)</small></p>\n'
         + '<p><button id="savebutton">Save model annotations</button><span id="saveaction"></span></p>';
     this.dragDiv = $('<div></div>', {'class': 'editmeta_annotation', 'style': 'position: fixed;'});
     // Set up annotation filtering divs
@@ -42,7 +42,7 @@ function metadataEditor(file, div)
  */
 metadataEditor.prototype.verifyNewEntity = function (jsonObject, actionElem)
 {
-    actionElem.html("<img src='"+contextPath+"/res/img/loading2-new.gif' alt='loading' />");
+    actionElem.html("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
     $.post(contextPath + '/model/createnew', JSON.stringify(jsonObject))
         .done(function (json) {
             displayNotifications(json);
@@ -50,13 +50,13 @@ metadataEditor.prototype.verifyNewEntity = function (jsonObject, actionElem)
             {
                 var msg = json.versionName.responseText;
                 if (json.versionName.response)
-                    actionElem.html("<img src='"+contextPath+"/res/img/check.png' alt='valid' /> " + msg);
+                    actionElem.html("<img src='"+staticPath+"img/check.png' alt='valid' /> " + msg);
                 else
-                    actionElem.html("<img src='"+contextPath+"/res/img/failed.png' alt='invalid' /> " + msg);
+                    actionElem.html("<img src='"+staticPath+"img/failed.png' alt='invalid' /> " + msg);
             }
         })
         .fail (function () {
-            actionElem.html("<img src='"+contextPath+"/res/img/failed.png' alt='error' /> sorry, serverside error occurred.");
+            actionElem.html("<img src='"+staticPath+"img/failed.png' alt='error' /> sorry, serverside error occurred.");
         });
 }
 
@@ -492,7 +492,7 @@ metadataEditor.prototype.saveNewVersion = function ()
     var self = this,
         $div = $(this.div),
         actionElem = $('#saveaction');
-    actionElem.html("<img src='"+contextPath+"/res/img/loading2-new.gif' alt='loading' />");
+    actionElem.html("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
 
     // Remove original RDF from model
     $(this.model.getElementsByTagNameNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "RDF")).remove();
@@ -526,7 +526,7 @@ metadataEditor.prototype.saveNewVersion = function ()
                 $div.empty();
                 var vers_href = contextPath + "/model/id/" + resp.entityId + "/version/" + resp.versionId,
                     expt_href = contextPath + "/batch/model/newVersion/" + resp.versionId;
-                $div.append('<h1><img src="' + contextPath + '/res/img/check.png" alt="created version successfully" /> Congratulations</h1>'
+                $div.append('<h1><img src="' + staticPath + 'img/check.png" alt="created version successfully" /> Congratulations</h1>'
                            +'<p>You\'ve just created a <a href="' + vers_href + '">new version of this model</a>!'
                            +(resp.expCreation ? '<p>Also, ' + resp.expCreation + '.</p>' : '')
                            +'<p><a href="' + expt_href + '">Run experiments</a> using this model.</p>'
@@ -536,11 +536,11 @@ metadataEditor.prototype.saveNewVersion = function ()
             }
             else
             {
-                actionElem.html("<img src='"+contextPath+"/res/img/failed.png' alt='invalid' /> " + msg);
+                actionElem.html("<img src='"+staticPath+"img/failed.png' alt='invalid' /> " + msg);
             }
         })
         .fail (function () {
-            actionElem.html("<img src='"+contextPath+"/res/img/failed.png' alt='error' /> sorry, serverside error occurred.");
+            actionElem.html("<img src='"+staticPath+"img/failed.png' alt='error' /> sorry, serverside error occurred.");
         });
 }
 
@@ -571,19 +571,19 @@ metadataEditor.prototype.show = function ()
         */
 
     // Initialise some event handlers
-    $('#versionname').blur(function() {
-        self.verifyNewEntity({
-            task: "verifyNewEntity",
-            entityName: $('#entityname span').text(),
-            versionName: this.value
-        }, $('#versionaction'));
-    });
+    // $('#versionname').blur(function() {
+    //     self.verifyNewEntity({
+    //         task: "verifyNewEntity",
+    //         entityName: $('#entityname span').text(),
+    //         versionName: this.value
+    //     }, $('#versionaction'));
+    // });
     $('#dateinserter').click(function() {
-        $('#versionname').focus().val("Annotated on " + getYMDHMS(new Date())).blur();
+        $('#id_commit_message').focus().val("Annotated on " + utils.getYMDHMS(new Date())).blur();
     });
     $('#savebutton').click(function() {
-        if (!$('#versionname').val())
-            alert("You need to give the new model version a name.");
+        if (!$('#id_commit_message').val())
+            alert("You need to provide a description for the new model version.");
         else
             self.saveNewVersion();
     });

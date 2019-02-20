@@ -14,6 +14,7 @@ from guardian.shortcuts import assign_perm
 
 from core import recipes
 from entities.models import AnalysisTask, Entity, ModelEntity, ProtocolEntity
+from repocache.models import ProtocolInterface
 
 
 @pytest.fixture
@@ -330,6 +331,89 @@ class TestEntityVersionJsonView:
         assert file_['size'] == 15
         assert (file_['url'] ==
                 '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, version.hexsha))
+
+
+@pytest.mark.django_db
+class TestGetProtocolInterfacesJsonView:
+    def add_version_with_interface(self, helpers, protocol, req, opt, vis='public'):
+        """Helper method to add a new version and give it an interface in one go."""
+        version = helpers.add_fake_version(protocol, vis)
+        # Give it an interface
+        terms = [
+            ProtocolInterface(protocol_version=version, term=t, optional=False) for t in req
+        ] + [
+            ProtocolInterface(protocol_version=version, term=t, optional=True) for t in opt
+        ]
+        ProtocolInterface.objects.bulk_create(terms)
+
+    def test_single_public_protocol(self, client, helpers):
+        # Make a public protocol version
+        protocol = recipes.protocol.make()
+        req = ['r1', 'r2']
+        opt = ['o1']
+        self.add_version_with_interface(helpers, protocol, req, opt)
+
+        response = client.get('/entities/protocols/get_interfaces')
+
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        interfaces = data['interfaces']
+
+        assert len(interfaces) == 1
+        iface = interfaces[0]
+        assert iface['name'] == protocol.name
+        assert set(iface['required']) == set(req)
+        assert set(iface['optional']) == set(opt)
+
+    def test_complex_visibilities(self, client, logged_in_user, other_user, helpers):
+        # Models shouldn't appear at all
+        model1 = recipes.model.make()
+        helpers.add_fake_version(model1, 'public')
+        model2 = recipes.model.make(author=logged_in_user)
+        helpers.add_fake_version(model2, 'private')
+        model3 = recipes.model.make(author=other_user)
+        helpers.add_fake_version(model3, 'public')
+        helpers.add_fake_version(model3, 'private')
+        # One public protocol with 2 versions, each with a different interface
+        protocol1 = recipes.protocol.make()
+        self.add_version_with_interface(helpers, protocol1, ['p1r1'], ['p1o1'], vis='public')
+        self.add_version_with_interface(helpers, protocol1, ['p1r2'], ['p1o2'], vis='public')
+
+        # A private protocol owned by logged_in_user, with 2 versions, each with a different interface
+        protocol2 = recipes.protocol.make(author=logged_in_user)
+        self.add_version_with_interface(helpers, protocol2, ['p2r1'], ['p2o1'], vis='private')
+        self.add_version_with_interface(helpers, protocol2, ['p2r2'], ['p2o2'], vis='private')
+
+        # A private protocol owned by other_user, with 2 versions, each with a different interface, first one public
+        protocol3 = recipes.protocol.make(author=other_user)
+        self.add_version_with_interface(helpers, protocol3, ['p3r1'], ['p3o1'], vis='public')
+        self.add_version_with_interface(helpers, protocol3, ['p3r2'], ['p3o2'], vis='private')
+
+        # A private protocol owned by other_user but shared with logged_in_user,
+        # with 3 versions, each with a different interface, middle one public
+        protocol4 = recipes.protocol.make(author=other_user)
+        assign_perm('edit_entity', logged_in_user, protocol4)
+        self.add_version_with_interface(helpers, protocol4, ['p4r1'], ['p4o1'], vis='private')
+        self.add_version_with_interface(helpers, protocol4, ['p4r2'], ['p4o2'], vis='public')
+        self.add_version_with_interface(helpers, protocol4, ['p4r3'], ['p4o3'], vis='private')
+
+        # Get all interfaces visible to logged_in_user
+        response = client.get('/entities/protocols/get_interfaces')
+        assert response.status_code == 200
+        interfaces = json.loads(response.content.decode())['interfaces']
+        assert len(interfaces) == 4
+
+        expected = {
+            'myprotocol1': {'required': ['p1r2'], 'optional': ['p1o2']},
+            'myprotocol2': {'required': ['p2r2'], 'optional': ['p2o2']},
+            'myprotocol3': {'required': ['p3r1'], 'optional': ['p3o1']},
+            'myprotocol4': {'required': ['p4r3'], 'optional': ['p4o3']},
+        }
+        for iface in interfaces:
+            assert iface['name'] in expected
+            assert iface['required'] == expected[iface['name']]['required']
+            assert iface['optional'] == expected[iface['name']]['optional']
 
 
 @pytest.mark.django_db
@@ -1230,7 +1314,6 @@ class TestEntityArchiveView:
         model = queued_experiment.experiment.model
         queued_experiment.experiment.model.set_version_visibility('latest', 'public')
 
-        import uuid
         response = client.get(
             '/entities/models/%d/versions/latest/archive' % model.pk,
             HTTP_AUTHORIZATION='Token {}'.format(uuid.uuid4())
