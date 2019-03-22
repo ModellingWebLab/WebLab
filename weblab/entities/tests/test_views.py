@@ -1264,6 +1264,30 @@ class TestAlterFileView:
         assert not detail['response']
         assert 'failed to tag' in detail['responseText']
 
+    def test_without_rerun(self, client, logged_in_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        first_commit = helpers.add_version(model, tag_name='v1', contents='initial file 1')
+
+        response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
+            'parent_hexsha': first_commit.hexsha,
+            'file_name': 'file1.txt',
+            'file_contents': 'new file 1',
+            'visibility': 'private',
+            'tag': '',
+            'commit_message': 'edit',
+            'rerun_expts': False,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        new_commit = model.repo.latest_commit
+        assert new_commit != first_commit
+        with (model.repo_abs_path / 'file1.txt').open() as f:
+            assert f.read() == 'new file 1'
+        detail = json.loads(response.content.decode())['updateEntityFile']
+        assert detail['response']
+        assert detail['url'] == '/entities/models/%d/versions/%s' % (
+            model.id, new_commit.hexsha)
+
 
 @pytest.mark.django_db
 class TestCheckProtocolCallbackView:
