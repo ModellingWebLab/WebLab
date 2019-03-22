@@ -1309,6 +1309,7 @@ class TestAlterFileView:
         assert detail['response']
         assert detail['url'] == '/entities/models/%d/versions/%s' % (
             model.id, new_commit.hexsha)
+        assert 0 == PlannedExperiment.objects.count()
 
 
 @pytest.mark.django_db
