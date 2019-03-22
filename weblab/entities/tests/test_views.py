@@ -10,6 +10,7 @@ import pytest
 import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.dateparse import parse_datetime
+from git import GitCommandError
 from guardian.shortcuts import assign_perm
 
 from core import recipes
@@ -696,26 +697,24 @@ class TestTagging:
         assert tags[commit.hexsha][0].name == 'tag'
 
     def test_nasty_tag_chars(self, helpers):
-        import git
         model = recipes.model.make()
         helpers.add_version(model)
 
-        with pytest.raises(git.exc.GitCommandError):
+        with pytest.raises(GitCommandError):
             model.repo.tag('tag/')
 
         model.repo.tag('my/tag')
         assert model.repo.tag_dict[model.repo.latest_commit.hexsha][0].name == 'my/tag'
 
-        with pytest.raises(git.exc.GitCommandError):
+        with pytest.raises(GitCommandError):
             model.repo.tag('tag with spaces')
 
     def test_cant_use_same_tag_twice(self, helpers):
-        import git
         model = recipes.model.make()
         helpers.add_version(model)
         model.repo.tag('tag')
         helpers.add_version(model)
-        with pytest.raises(git.exc.GitCommandError):
+        with pytest.raises(GitCommandError):
             model.repo.tag('tag')
 
     def test_user_can_add_tag(self, logged_in_user, client, helpers):
@@ -1241,6 +1240,29 @@ class TestAlterFileView:
         detail = json.loads(response.content.decode())['updateEntityFile']
         assert not detail['response']
         assert 'identical to parent' in detail['responseText']
+
+    def test_resets_on_add_error(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        first_commit = helpers.add_version(model, tag_name='v1', contents='initial file 1')
+
+        with patch('entities.repository.Repository.add_file', side_effect=GitCommandError('add', 1, 'error')):
+            response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
+                'parent_hexsha': first_commit.hexsha,
+                'file_name': 'file1.txt',
+                'file_contents': 'new file 1',
+                'visibility': 'private',
+                'tag': '',
+                'commit_message': 'edit',
+                'rerun_expts': False,
+            }), content_type='application/json')
+        assert response.status_code == 200
+        assert model.repo.latest_commit == first_commit
+        with (model.repo_abs_path / 'file1.txt').open() as f:
+            assert f.read() == 'initial file 1'
+        detail = json.loads(response.content.decode())['updateEntityFile']
+        assert not detail['response']
+        assert 'failed to add new file version' in detail['responseText']
 
     def test_rolls_back_on_tag_error(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
