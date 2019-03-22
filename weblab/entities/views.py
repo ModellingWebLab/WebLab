@@ -542,8 +542,6 @@ class EntityNewVersionView(
                     entity.add_tag(tag, commit.hexsha)
                 except GitCommandError as e:
                     entity.repo.rollback()
-                    for f in entity.repo.untracked_files:
-                        os.remove(str(entity.repo_abs_path / f))
                     return self.fail_with_git_errors([e.stderr])
 
             # Temporary upload files have been safely committed, so can be deleted

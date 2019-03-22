@@ -104,9 +104,11 @@ class Repository:
 
     def rollback(self):
         """
-        Roll back repository to previous commit
+        Roll back repository to previous commit, removing untracked files
         """
-        self._repo.head.reset('HEAD~')
+        self._repo.head.reset('HEAD~', working_tree=True)
+        for f in self.untracked_files:
+            os.remove(os.path.join(self._root, f))
 
     @property
     def tag_dict(self):
