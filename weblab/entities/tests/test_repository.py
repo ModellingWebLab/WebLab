@@ -109,8 +109,13 @@ class TestRepository:
         repo.add_file(repo_file)
         commit2 = repo.commit('commit 2', author)
         assert repo.latest_commit == commit2
+        untracked_file = Path(repo._root) / 'untracked.txt'
+        untracked_file.open('w').write('contents')
+        assert untracked_file.exists()
         repo.rollback()
         assert repo.latest_commit == commit1
+        assert repo_file.open().read() == 'file contents'
+        assert not untracked_file.exists()
 
     def test_hard_reset(self, repo, repo_file):
         repo.add_file(repo_file)
