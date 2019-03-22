@@ -1070,7 +1070,8 @@ class TestVersionCreation:
         assert model.repo.latest_commit == first_commit
         assert not (model.repo_abs_path / 'model.txt').exists()
 
-    def test_rerun_experiments(self, logged_in_user, other_user, client, helpers):
+    @pytest.mark.parametrize("route", ['main_form', 'edit_file'])
+    def test_rerun_experiments(self, logged_in_user, other_user, client, helpers, route):
         # Set up previous experiments
         model = recipes.model.make(author=logged_in_user)
         model_commit = helpers.add_version(model, visibility='private')
@@ -1106,25 +1107,44 @@ class TestVersionCreation:
 
         # Create a new version of our model, re-running experiments
         helpers.add_permission(logged_in_user, 'create_model')
-        recipes.model_file.make(
-            entity=model,
-            upload=SimpleUploadedFile('file2.txt', b'file 2'),
-            original_name='file2.txt',
-        )
-        response = client.post(
-            '/entities/models/%d/versions/new' % model.pk,
-            data={
-                'filename[]': ['uploads/file2.txt'],
-                'mainEntry': ['file2.txt'],
-                'commit_message': 'new',
+        if route == 'main_form':
+            recipes.model_file.make(
+                entity=model,
+                upload=SimpleUploadedFile('file2.txt', b'file 2'),
+                original_name='file2.txt',
+            )
+            response = client.post(
+                '/entities/models/%d/versions/new' % model.pk,
+                data={
+                    'filename[]': ['uploads/file2.txt'],
+                    'mainEntry': ['file2.txt'],
+                    'commit_message': 'new',
+                    'visibility': 'private',
+                    'tag': '',
+                    'rerun_expts': '1',
+                },
+            )
+            assert response.status_code == 302
+            new_commit = model.repo.latest_commit
+            assert response.url == '/entities/models/%d/versions/%s' % (model.id, new_commit.hexsha)
+        else:
+            assert route == 'edit_file'
+            response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
+                'parent_hexsha': model_commit.hexsha,
+                'file_name': 'file1.txt',
+                'file_contents': 'new file 1',
                 'visibility': 'private',
                 'tag': '',
-                'rerun_expts': '1',
-            },
-        )
-        assert response.status_code == 302
-        new_commit = model.repo.latest_commit
-        assert response.url == '/entities/models/%d/versions/%s' % (model.id, new_commit.hexsha)
+                'commit_message': 'edit',
+                'rerun_expts': True,
+            }), content_type='application/json')
+            assert response.status_code == 200
+            detail = json.loads(response.content.decode())
+            assert 'updateEntityFile' in detail
+            assert detail['updateEntityFile']['response']
+            new_commit = model.repo.latest_commit
+            assert detail['updateEntityFile']['url'] == '/entities/models/%d/versions/%s' % (
+                model.id, new_commit.hexsha)
 
         # Test that planned experiments have been added correctly
         expected_proto_versions = set([
@@ -1137,6 +1157,112 @@ class TestVersionCreation:
             assert planned_experiment.model == model
             assert planned_experiment.model_version == new_commit.hexsha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
+
+
+@pytest.mark.django_db
+class TestAlterFileView:
+    def test_requires_login(self, client):
+        model = recipes.model.make()
+        response = client.post('/entities/models/%d/versions/edit' % model.pk, {})
+        assert response.status_code == 302
+        assert '/login/' in response.url
+
+    def test_cannot_alter_as_non_owner(self, logged_in_user, client):
+        model = recipes.model.make()
+        response = client.post('/entities/models/%d/versions/edit' % model.pk, {})
+        assert response.status_code == 302
+        assert '/login/' in response.url
+
+    def test_error_if_bad_args(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        first_commit = helpers.add_version(model, tag_name='v1')
+
+        # Bad parent SHA
+        response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
+            'parent_hexsha': '',
+            'file_name': 'file1.txt',
+            'file_contents': 'new file 1',
+            'visibility': 'private',
+            'tag': '',
+            'commit_message': 'edit',
+            'rerun_expts': False,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        assert model.repo.latest_commit == first_commit
+        detail = json.loads(response.content.decode())['updateEntityFile']
+        assert not detail['response']
+        assert 'newer version' in detail['responseText']
+
+        # Wrong file name
+        response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
+            'parent_hexsha': first_commit.hexsha,
+            'file_name': 'file2.txt',
+            'file_contents': 'new file 1',
+            'visibility': 'private',
+            'tag': '',
+            'commit_message': 'edit',
+            'rerun_expts': False,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        assert model.repo.latest_commit == first_commit
+        detail = json.loads(response.content.decode())['updateEntityFile']
+        assert not detail['response']
+        assert 'file name provided does not exist' in detail['responseText']
+
+        # Missing arg
+        response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
+            'parent_hexsha': first_commit.hexsha,
+            'file_name': 'file1.txt',
+            'tag': '',
+        }), content_type='application/json')
+        assert response.status_code == 200
+        assert model.repo.latest_commit == first_commit
+        detail = json.loads(response.content.decode())['updateEntityFile']
+        assert not detail['response']
+        assert 'missing required argument' in detail['responseText']
+
+    def test_errors_if_no_change(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        first_commit = helpers.add_version(model, tag_name='v1', contents='initial file 1')
+
+        response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
+            'parent_hexsha': first_commit.hexsha,
+            'file_name': 'file1.txt',
+            'file_contents': 'initial file 1',
+            'visibility': 'private',
+            'tag': 'v1',
+            'commit_message': 'edit',
+            'rerun_expts': False,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        assert model.repo.latest_commit == first_commit
+        detail = json.loads(response.content.decode())['updateEntityFile']
+        assert not detail['response']
+        assert 'identical to parent' in detail['responseText']
+
+    def test_rolls_back_on_tag_error(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        first_commit = helpers.add_version(model, tag_name='v1', contents='initial file 1')
+
+        response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
+            'parent_hexsha': first_commit.hexsha,
+            'file_name': 'file1.txt',
+            'file_contents': 'new file 1',
+            'visibility': 'private',
+            'tag': 'v1',
+            'commit_message': 'edit',
+            'rerun_expts': False,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        assert model.repo.latest_commit == first_commit
+        with (model.repo_abs_path / 'file1.txt').open() as f:
+            assert f.read() == 'initial file 1'
+        detail = json.loads(response.content.decode())['updateEntityFile']
+        assert not detail['response']
+        assert 'failed to tag' in detail['responseText']
 
 
 @pytest.mark.django_db

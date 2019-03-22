@@ -455,6 +455,91 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
         return reverse('entities:list', args=[self.kwargs['entity_type']])
 
 
+class EntityAlterFileView(
+        EntityTypeMixin, LoginRequiredMixin, EntityCollaboratorRequiredMixin, SingleObjectMixin, View):
+    """
+    Create a new version of an entity by changing one file through a REST API call.
+
+    The entity type and id are provided in the URL path.
+
+    The post body should be a JSON object with fields:
+    * parent_hexsha: string giving the SHA for the commit expected to be the HEAD,
+      to guard against simultaneous edits
+    * file_name: name of the file to edit
+    * file_contents: the new contents of the file
+    * visibility: the visibility string for the new version
+    * tag: optional short label for the new version
+    * commit_message: commit message for the new version
+    * rerun_expts: bool saying whether to re-run experiments involving the parent
+      commit using the new version
+    """
+
+    RESPONSE_OBJECT = 'updateEntityFile'  # The name of our JSON response object
+
+    def json_error(self, message):
+        """Return a JSON error response."""
+        return JsonResponse({
+            self.RESPONSE_OBJECT: {
+                'response': False,
+                'responseText': message,
+            }
+        })
+
+    def post(self, request, *args, **kwargs):
+        entity = self.object = self.get_object()
+        params = json.loads(request.body.decode())
+
+        # Error checking
+        parent = entity.repo.latest_commit
+        if parent.hexsha != params.get('parent_hexsha'):
+            return self.json_error('someone has saved a newer version since you started editing')
+        if params.get('file_name') not in parent.filenames:
+            return self.json_error('file name provided does not exist in the parent version')
+        for arg in ['file_contents', 'visibility', 'commit_message', 'rerun_expts']:
+            if arg not in params:
+                return self.json_error('missing required argument ' + arg)
+
+        # Store the file and add to index
+        path = str(entity.repo_abs_path / params['file_name'])
+        with open(path, 'w') as f:
+            f.write(params['file_contents'])
+        try:
+            entity.repo.add_file(path)
+        except GitCommandError as e:
+            # Reset index & working tree so resubmission works as expected
+            entity.repo.hard_reset()
+            return self.json_error('failed to add new file version: ' + e.stderr)
+
+        if not entity.repo.has_changes:
+            return self.json_error('new version is identical to parent!')
+
+        # Commit and optionally tag the repo
+        commit = entity.repo.commit(params['commit_message'], request.user)
+        entity.set_visibility_in_repo(commit, params['visibility'])
+        entity.repocache.add_version(commit.hexsha)
+
+        tag = params.get('tag', '')
+        if tag:
+            try:
+                entity.add_tag(tag, commit.hexsha)
+            except GitCommandError as e:
+                entity.repo.rollback()
+                return self.json_error('failed to tag version: ' + e.stderr)
+
+        # Trigger entity analysis & experiment runs, if required
+        entity.analyse_new_version(commit)
+        if params['rerun_expts']:
+            record_experiments_to_run(request.user, entity, commit)
+
+        # Show the user the new version
+        return JsonResponse({
+            self.RESPONSE_OBJECT: {
+                'response': True,
+                'url': reverse('entities:version', args=[entity.entity_type, entity.id, commit.hexsha]),
+            }
+        })
+
+
 class EntityNewVersionView(
     EntityTypeMixin, LoginRequiredMixin, EntityCollaboratorRequiredMixin, FormMixin, DetailView
 ):
