@@ -15,16 +15,16 @@ function metadataEditor(file, div)
     this.modelDiv = $('<div></div>', {id: 'editmeta_modelvars_div'}).text('loading model...');
     this.ontoDiv = $('<div></div>', {id: 'editmeta_ontoterms_div'});
     otherContent = '<div class="clearer">\n'
-        + '<p><label for="id_tag">Version:</label>\n'
+        + '<p><label for="id_tag">Tag:</label>\n'
         + '<input type="text" name="tag" id="id_tag" placeholder="Optional short label for this version"/></p>\n'
         + '<p><label for="id_commit_message">Description of this version:</label>\n'
         + '<a class="pointer" id="dateinserter"><small>use current date</small></a>\n'
         + '<span id="versionaction"></span><br/>\n'
         + '<textarea cols="70" rows="3" name="commit_message" id="id_commit_message"></textarea>\n'
         + '<span id="commitmsgaction"></span></p>\n'
-        // + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
-        // + '<label for="reRunExperiments">rerun experiments involving previous versions of this model</label>\n'
-        // + '<small>(this might take some time)</small></p>\n'
+        + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
+        + '<label for="reRunExperiments">Re-run experiments involving the previous version of this model</label>\n'
+        + '</p>\n'
         + '<p><button id="savebutton">Save model annotations</button><span id="saveaction"></span></p>';
     this.dragDiv = $('<div></div>', {'class': 'editmeta_annotation', 'style': 'position: fixed;'});
     // Set up annotation filtering divs
@@ -366,7 +366,7 @@ metadataEditor.prototype.ontologyLoaded = function (data, status, jqXHR)
 /**
  * Callback function for when the filter data has been fetched from the server.
  */
-metadataEditor.prototype.filtersLoaded = function (data, status, jqXHR)
+metadataEditor.prototype.filtersLoaded = function (data)
 {
     console.log("Interfaces loaded");
 	this.filterDiv.empty();
@@ -465,7 +465,7 @@ metadataEditor.prototype.filtersLoaded = function (data, status, jqXHR)
  */
 metadataEditor.prototype.saveNewVersion = function ()
 {
-    console.log('Save new version named "' + $('#versionname').val() + '"');
+    console.log('Save new version tagged "' + $('#id_tag').val() + '"');
     var self = this,
         $div = $(this.div),
         actionElem = $('#saveaction');
@@ -481,18 +481,16 @@ metadataEditor.prototype.saveNewVersion = function ()
 
     // Post the updated model file to the server; any other files comprising the model will be added
     // to the new version at that end.
-    var data = {task: "updateEntityFile",
-                entityId: entityId,
-                entityName: $('#entityname span').text(),
-                baseVersionId: curVersion.id,
-                versionName: $('#versionname').val(),
-                commitMsg: document.getElementById('commitMsg').value,
-                rerunExperiments: document.getElementById('reRunExperiments').checked,
-                fileName: this.file.name,
-                fileContents: model_str
+    var data = {parent_hexsha: curVersion.id, // TODO: curVersion not defined in this scope
+                visibility: curVersion.visibility,
+                tag: $('#id_tag').val(),
+                commit_message: document.getElementById('commitMsg').value,
+                rerun_expts: document.getElementById('reRunExperiments').checked,
+                file_name: this.file.name,
+                file_contents: model_str
                };
-//    console.log(data);
-    $.post(contextPath + '/model/createnew', JSON.stringify(data))
+    console.log(data);
+    $.post($('#entityversion').data('alter-file-href'), JSON.stringify(data))
         .done(function (json) {
             displayNotifications(json);
             var resp = json.updateEntityFile,
@@ -501,15 +499,7 @@ metadataEditor.prototype.saveNewVersion = function ()
             {
                 clearNotifications("error"); // Get rid of any leftover errors from failed creation attempts
                 $div.empty();
-                var vers_href = contextPath + "/model/id/" + resp.entityId + "/version/" + resp.versionId,
-                    expt_href = contextPath + "/batch/model/newVersion/" + resp.versionId;
-                $div.append('<h1><img src="' + staticPath + 'img/check.png" alt="created version successfully" /> Congratulations</h1>'
-                           +'<p>You\'ve just created a <a href="' + vers_href + '">new version of this model</a>!'
-                           +(resp.expCreation ? '<p>Also, ' + resp.expCreation + '.</p>' : '')
-                           +'<p><a href="' + expt_href + '">Run experiments</a> using this model.</p>'
-                           );
-                // Update the list of available versions with the newly created one, but don't change the display
-				addNewVersion(resp.versionId, vers_href);
+                console.log(resp); // TODO: redirect to resp.url
             }
             else
             {
@@ -537,15 +527,8 @@ metadataEditor.prototype.show = function ()
                 success: function(d,s,j) {self.ontologyLoaded(d,s,j);}
                });
 	if (!this.loadedFilters)
-    /* TODO
-		$.ajax(contextPath + '/protocol/get_interfaces',
-				{method: 'post',
-				 contentType : 'application/json; charset=utf-8',
-				 data: JSON.stringify({task: 'getInterface'}),
-				 dataType: 'json',
-				 success: function(d,s,j) {self.filtersLoaded(d,s,j);}
-				});
-        */
+		$.getJSON($('#entityversion').data('get-proto-interfaces-href'), '',
+                  function(data) {self.filtersLoaded(data);});
 
     // Initialise some event handlers
     $('#dateinserter').click(function() {
