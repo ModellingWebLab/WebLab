@@ -60,7 +60,7 @@ urlpatterns = [
     url(
         r'^%s/(?P<pk>\d+)/versions/edit$' % _ENTITY_TYPE,
         views.EntityAlterFileView.as_view(),
-        name='editfile',
+        name='alter_file',
     ),
 
     url(

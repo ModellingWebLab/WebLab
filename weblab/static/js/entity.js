@@ -761,7 +761,7 @@ function init() {
    */
   function triggerExperimentSubmission(plannedExperiments, submitNow)
   {
-    if (plannedExperiments && submitNow)
+    if (plannedExperiments.length > 0 && submitNow)
     {
       // Submit the first planned experiment to the queue
       var exptSpec = plannedExperiments.pop();

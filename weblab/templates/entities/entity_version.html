@@ -11,7 +11,9 @@
   <div id="entitydetails">
   </div>
 
-  <div id="entityversion" data-entity-type="{{ entity.type }}"
+  <div id="entityversion" data-entity-type="{{ entity.entity_type }}"
+       data-alter-file-href="{% url 'entities:alter_file' entity.entity_type entity.id %}"
+       data-get-proto-interfaces-href="{% url 'entities:get_protocol_interfaces' %}"
        data-version-json-href="{{ entity|url_version_json:version }}">
     <div class="closebtn">
       <small>
