@@ -38,29 +38,6 @@ function metadataEditor(file, div)
 };
 
 /**
- * Check with the server whether properties of the new model version are OK.
- */
-metadataEditor.prototype.verifyNewEntity = function (jsonObject, actionElem)
-{
-    actionElem.html("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
-    $.post(contextPath + '/model/createnew', JSON.stringify(jsonObject))
-        .done(function (json) {
-            displayNotifications(json);
-            if (json.versionName)
-            {
-                var msg = json.versionName.responseText;
-                if (json.versionName.response)
-                    actionElem.html("<img src='"+staticPath+"img/check.png' alt='valid' /> " + msg);
-                else
-                    actionElem.html("<img src='"+staticPath+"img/failed.png' alt='invalid' /> " + msg);
-            }
-        })
-        .fail (function () {
-            actionElem.html("<img src='"+staticPath+"img/failed.png' alt='error' /> sorry, serverside error occurred.");
-        });
-}
-
-/**
  * If our required libraries are not yet present, wait until they are then call the callback.
  * Returns true iff a wait is needed.
  */
@@ -571,13 +548,6 @@ metadataEditor.prototype.show = function ()
         */
 
     // Initialise some event handlers
-    // $('#versionname').blur(function() {
-    //     self.verifyNewEntity({
-    //         task: "verifyNewEntity",
-    //         entityName: $('#entityname span').text(),
-    //         versionName: this.value
-    //     }, $('#versionaction'));
-    // });
     $('#dateinserter').click(function() {
         $('#id_commit_message').focus().val("Annotated on " + utils.getYMDHMS(new Date())).blur();
     });
