@@ -1,6 +1,7 @@
 -r base.in
 -r test.in
 
+appnope; sys_platform=='darwin'
 ipdb
 pip-tools==1.9.0
 flake8==3.4.1
