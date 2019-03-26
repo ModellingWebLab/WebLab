@@ -211,7 +211,7 @@ function init() {
         }
       }
     };
-    getFileContent (file, goForIt);
+    utils.getFileContent (file, goForIt);
     
     return null;
   }
@@ -235,7 +235,7 @@ function init() {
         }
       }
     };
-    getFileContent (file, goForIt);
+    utils.getFileContent (file, goForIt);
     
     return null;
   }
@@ -256,7 +256,7 @@ function init() {
           }
         }
     };
-    getFileContent (file, goForIt);
+    utils.getFileContent (file, goForIt);
     
     return null;
   }
@@ -536,40 +536,6 @@ function init() {
     });
   }
 
-  function getFileContent (file, succ)
-  {
-    // TODO: loading indicator.. so the user knows that we are doing something
-      
-    var xmlhttp = null;
-      // !IE
-      if (window.XMLHttpRequest)
-      {
-          xmlhttp = new XMLHttpRequest();
-      }
-      // IE -- microsoft, we really hate you. every single day.
-      else if (window.ActiveXObject)
-      {
-          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      
-      xmlhttp.open("GET", file.url, true);
-
-      xmlhttp.onreadystatechange = function()
-      {
-          if(xmlhttp.readyState != 4)
-            return;
-        
-          if(xmlhttp.status == 200)
-          {
-            file.contents = xmlhttp.responseText;
-            succ.getContentsCallback (true);
-          }
-          else
-            succ.getContentsCallback (false);
-      };
-      xmlhttp.send(null);
-  }
-
   function updateFile (rf, v)
   {
     var f = files[rf.id];
@@ -595,10 +561,10 @@ function init() {
       if (!f.contents)
       {
         //console.log ("missing file contents. calling for: " + f.id);
-        getFileContent (f, callBack);
+        utils.getFileContent (f, callBack);
       }
       else
-        getFileContent (f, callBack);
+        utils.getFileContent (f, callBack);
     };
   }
 
