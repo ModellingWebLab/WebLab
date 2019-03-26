@@ -563,6 +563,8 @@ function editMetadata()
  */
 editMetadata.prototype.canRead = function (file)
 {
+    if (!$('#entityversion').data('can-edit'))
+        return false;
     if (file.type == 'CellML')
         return true;
     var ext = file.name.split('.').pop();
