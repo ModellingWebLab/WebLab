@@ -234,6 +234,10 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
             for f in commit.files
             if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
+        if request.user.has_perm('experiments.create_experiment'):
+            planned_experiments = self._planned_experiments()
+        else:
+            planned_experiments = []
         return JsonResponse({
             'version': {
                 'id': commit.hexsha,
@@ -245,7 +249,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
                 'version': obj.repo.get_name_for_commit(commit.hexsha),
                 'files': files,
                 'numFiles': len(files),
-                'planned_experiments': self._planned_experiments(),
+                'planned_experiments': planned_experiments,
                 'url': reverse(
                     'entities:version',
                     args=[obj.entity_type, obj.id, commit.hexsha]
