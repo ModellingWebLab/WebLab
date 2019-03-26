@@ -14,7 +14,7 @@ from guardian.shortcuts import assign_perm
 
 from core import recipes
 from entities.models import AnalysisTask, Entity, ModelEntity, ProtocolEntity
-from experiments.models import PlannedExperiment
+from experiments.models import Experiment, PlannedExperiment
 from repocache.models import ProtocolInterface
 
 
@@ -288,7 +288,10 @@ class TestEntityVersionChangeVisibilityView:
 
 @pytest.mark.django_db
 class TestEntityVersionJsonView:
-    def test_version_json(self, client, logged_in_user, helpers):
+    @pytest.mark.parametrize("can_create_expt", [True, False])
+    def test_version_json(self, client, logged_in_user, helpers, can_create_expt):
+        if can_create_expt:
+            helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
         model = recipes.model.make(name='mymodel', author__full_name='model author')
         version = helpers.add_version(model)
         model.set_version_visibility(version.hexsha, 'public')
@@ -329,12 +332,15 @@ class TestEntityVersionJsonView:
         assert (file_['url'] ==
                 '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, version.hexsha))
 
-        assert len(ver['planned_experiments']) == 1
-        planned = ver['planned_experiments'][0]
-        assert planned['model'] == model.pk
-        assert planned['model_version'] == version.hexsha
-        assert planned['protocol'] == planned_expt.protocol.pk
-        assert planned['protocol_version'] == str(planned_expt.protocol_version)
+        if can_create_expt:
+            assert len(ver['planned_experiments']) == 1
+            planned = ver['planned_experiments'][0]
+            assert planned['model'] == model.pk
+            assert planned['model_version'] == version.hexsha
+            assert planned['protocol'] == planned_expt.protocol.pk
+            assert planned['protocol_version'] == str(planned_expt.protocol_version)
+        else:
+            assert len(ver['planned_experiments']) == 0
 
 
 @pytest.mark.django_db
@@ -677,7 +683,7 @@ class TestEntityComparisonJsonView:
     def test_no_valid_versions(self, client, logged_in_user):
         model = recipes.model.make()
         response = client.get(
-            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk+1, model.pk)
+            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk + 1, model.pk)
         )
 
         assert response.status_code == 200
