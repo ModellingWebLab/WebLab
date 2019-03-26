@@ -1,4 +1,5 @@
 var utils = require('../../lib/utils.js');
+var notifications = require('../../lib/notifications.js');
 
 /**
  * Create the 'visualiser' portion of the plugin, responsible for displaying content within the div for this file.
@@ -481,25 +482,25 @@ metadataEditor.prototype.saveNewVersion = function ()
 
     // Post the updated model file to the server; any other files comprising the model will be added
     // to the new version at that end.
-    var data = {parent_hexsha: curVersion.id, // TODO: curVersion not defined in this scope
+    var curVersion = $('#entityversion').data('version-json'),
+        data = {parent_hexsha: curVersion.id,
                 visibility: curVersion.visibility,
                 tag: $('#id_tag').val(),
-                commit_message: document.getElementById('commitMsg').value,
+                commit_message: document.getElementById('id_commit_message').value,
                 rerun_expts: document.getElementById('reRunExperiments').checked,
                 file_name: this.file.name,
                 file_contents: model_str
                };
-    console.log(data);
     $.post($('#entityversion').data('alter-file-href'), JSON.stringify(data))
         .done(function (json) {
-            displayNotifications(json);
+            notifications.display(json);
             var resp = json.updateEntityFile,
                 msg = resp.responseText;
             if (resp.response)
             {
-                clearNotifications("error"); // Get rid of any leftover errors from failed creation attempts
+                notifications.clear("error"); // Get rid of any leftover errors from failed creation attempts
                 $div.empty();
-                console.log(resp); // TODO: redirect to resp.url
+                window.location.href = resp.url;
             }
             else
             {

@@ -742,6 +742,7 @@ function init() {
         notifications.display(data);
         if (data.version) {
           curVersion = data.version;
+          $('#entityversion').data('version-json', curVersion);
           triggerExperimentSubmission(curVersion.planned_experiments, false);
           updateVersion(curVersion);
           displayVersion(curVersion.id, !(fileName && pluginName));
