@@ -74,9 +74,9 @@ class Helpers:
         ))
 
     @staticmethod
-    def add_permission(user, perm):
+    def add_permission(user, perm, model=Entity):
         """Add permission to a user"""
-        content_type = ContentType.objects.get_for_model(Entity)
+        content_type = ContentType.objects.get_for_model(model)
         permission = Permission.objects.get(
             codename=perm,
             content_type=content_type,
@@ -164,7 +164,6 @@ def experiment_with_result(model_with_version, protocol_with_version):
     with (version.abs_path / 'result.txt').open('w') as f:
         f.write('experiment results')
     return version
-
 
 
 @pytest.fixture

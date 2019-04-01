@@ -21,7 +21,7 @@ from core.visibility import VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
 
 from .forms import ExperimentSimulateCallbackForm
-from .models import Experiment, ExperimentVersion
+from .models import Experiment, ExperimentVersion, PlannedExperiment
 from .processing import process_callback, submit_experiment
 
 
@@ -188,6 +188,12 @@ class NewExperimentView(PermissionRequiredMixin, View):
 
         version = submit_experiment(model, model_version, protocol, protocol_version, request.user)
         success = version.status == ExperimentVersion.STATUS_QUEUED
+        if version.status != ExperimentVersion.STATUS_FAILED:
+            # Remove from planned experiments
+            PlannedExperiment.objects.filter(
+                model=model, model_version=model_version,
+                protocol=protocol, protocol_version=protocol_version
+            ).delete()
 
         return JsonResponse({
             'newExperiment': {

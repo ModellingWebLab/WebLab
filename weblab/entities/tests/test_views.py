@@ -14,6 +14,7 @@ from guardian.shortcuts import assign_perm
 
 from core import recipes
 from entities.models import AnalysisTask, Entity, ModelEntity, ProtocolEntity
+from experiments.models import Experiment, PlannedExperiment
 from repocache.models import ProtocolInterface
 
 
@@ -287,11 +288,19 @@ class TestEntityVersionChangeVisibilityView:
 
 @pytest.mark.django_db
 class TestEntityVersionJsonView:
-    def test_version_json(self, client, logged_in_user, helpers):
+    @pytest.mark.parametrize("can_create_expt", [True, False])
+    def test_version_json(self, client, logged_in_user, helpers, can_create_expt):
+        if can_create_expt:
+            helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
         model = recipes.model.make(name='mymodel', author__full_name='model author')
         version = helpers.add_version(model)
         model.set_version_visibility(version.hexsha, 'public')
         model.repo.tag('v1')
+        planned_expt = PlannedExperiment(
+            model=model, model_version=version.hexsha,
+            protocol=recipes.protocol.make(), protocol_version=uuid.uuid4(),
+        )
+        planned_expt.save()
 
         response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
 
@@ -314,23 +323,24 @@ class TestEntityVersionJsonView:
         assert ver['url'] == '/entities/models/%d/versions/%s' % (model.pk, version.hexsha)
         assert (ver['download_url'] ==
                 '/entities/models/%d/versions/%s/archive' % (model.pk, version.hexsha))
+        assert 'change_url' in ver
 
-    def test_file_json(self, client, helpers):
-        model = recipes.model.make()
-        version = helpers.add_version(model, visibility='public')
-        model.repo.tag('v1')
-
-        response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
-
-        assert response.status_code == 200
-
-        data = json.loads(response.content.decode())
-        file_ = data['version']['files'][0]
+        file_ = ver['files'][0]
         assert file_['id'] == file_['name'] == 'file1.txt'
         assert file_['filetype'] == 'TXTPROTOCOL'
         assert file_['size'] == 15
         assert (file_['url'] ==
                 '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, version.hexsha))
+
+        if can_create_expt:
+            assert len(ver['planned_experiments']) == 1
+            planned = ver['planned_experiments'][0]
+            assert planned['model'] == model.pk
+            assert planned['model_version'] == version.hexsha
+            assert planned['protocol'] == planned_expt.protocol.pk
+            assert planned['protocol_version'] == str(planned_expt.protocol_version)
+        else:
+            assert len(ver['planned_experiments']) == 0
 
 
 @pytest.mark.django_db
@@ -673,7 +683,7 @@ class TestEntityComparisonJsonView:
     def test_no_valid_versions(self, client, logged_in_user):
         model = recipes.model.make()
         response = client.get(
-            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk+1, model.pk)
+            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk + 1, model.pk)
         )
 
         assert response.status_code == 200
@@ -843,14 +853,16 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
+        latest = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
         assert 'v1' in model.repo._repo.tags
 
-        latest = model.repo.latest_commit
         assert latest.message == 'files'
         assert 'file1.txt' in latest.filenames
         assert 'file2.txt' in latest.filenames
         assert latest.master_filename == 'file1.txt'
+
+        assert 0 == PlannedExperiment.objects.count()
 
     def test_delete_file(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -869,14 +881,16 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
+        latest = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
         assert 'delete-file' in model.repo._repo.tags
 
-        latest = model.repo.latest_commit
         assert latest.message == 'delete file1'
         assert len(list(latest.files)) == 2
         assert 'file2.txt' in latest.filenames
         assert not (model.repo_abs_path / 'file1.txt').exists()
+
+        assert 0 == PlannedExperiment.objects.count()
 
     def test_delete_multiple_files(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -896,15 +910,17 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
+        latest = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
         assert 'delete-files' in model.repo._repo.tags
 
-        latest = model.repo.latest_commit
         assert latest.message == 'delete files'
         assert len(list(latest.files)) == 2
         assert 'file3.txt' in latest.filenames
         assert not (model.repo_abs_path / 'file1.txt').exists()
         assert not (model.repo_abs_path / 'file2.txt').exists()
+
+        assert 0 == PlannedExperiment.objects.count()
 
     def test_delete_nonexistent_file(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -941,7 +957,10 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/models/%d' % model.id
+        commit = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, commit.hexsha)
+
+        assert 0 == PlannedExperiment.objects.count()
 
     def test_cannot_create_model_version_as_non_owner(self, logged_in_user, client):
         model = recipes.model.make()
@@ -973,15 +992,17 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/protocols/%d' % protocol.id
-        # Check documentation parsing
         commit = protocol.repo.latest_commit
+        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.hexsha)
+        # Check documentation parsing
         assert ProtocolEntity.README_NAME in commit.filenames
         readme = commit.get_blob(ProtocolEntity.README_NAME)
         assert readme.data_stream.read() == doc
         # Check new version analysis "happened"
         assert mock_check.called
         mock_check.assert_called_once_with(protocol, commit.hexsha)
+
+        assert 0 == PlannedExperiment.objects.count()
 
     @patch('requests.post', side_effect=requests.exceptions.ConnectionError)
     def test_protocol_analysis_errors(self, mock_post, client, logged_in_user, helpers):
@@ -1004,9 +1025,9 @@ class TestVersionCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/protocols/%d' % protocol.id
-        # Check documentation parsing
         commit = protocol.repo.latest_commit
+        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.hexsha)
+        # Check documentation parsing
         assert ProtocolEntity.README_NAME in commit.filenames
         readme = commit.get_blob(ProtocolEntity.README_NAME)
         assert readme.data_stream.read() == doc
@@ -1054,6 +1075,74 @@ class TestVersionCreation:
         assert response.status_code == 200
         assert model.repo.latest_commit == first_commit
         assert not (model.repo_abs_path / 'model.txt').exists()
+
+    def test_rerun_experiments(self, logged_in_user, other_user, client, helpers):
+        # Set up previous experiments
+        model = recipes.model.make(author=logged_in_user)
+        model_commit = helpers.add_version(model, visibility='private')
+        other_model = recipes.model.make(author=other_user)
+        other_model_commit = helpers.add_version(other_model, visibility='public')
+
+        def _add_experiment(proto_author, proto_vis, shared=False, both=False):
+            proto = recipes.protocol.make(author=proto_author)
+            proto_commit = helpers.add_version(proto, visibility=proto_vis)
+            recipes.experiment_version.make(
+                status='SUCCESS',
+                experiment__model=model,
+                experiment__model_version=model_commit.hexsha,
+                experiment__protocol=proto,
+                experiment__protocol_version=proto_commit.hexsha,
+            )
+            if shared:
+                assign_perm('edit_entity', logged_in_user, proto)
+            if both:
+                recipes.experiment_version.make(
+                    status='SUCCESS',
+                    experiment__model=other_model,
+                    experiment__model_version=other_model_commit.hexsha,
+                    experiment__protocol=proto,
+                    experiment__protocol_version=proto_commit.hexsha,
+                )
+            return proto
+
+        my_private_protocol = _add_experiment(logged_in_user, 'private')
+        public_protocol = _add_experiment(other_user, 'public', both=True)
+        _add_experiment(other_user, 'private')
+        visible_protocol = _add_experiment(other_user, 'private', shared=True)
+
+        # Create a new version of our model, re-running experiments
+        helpers.add_permission(logged_in_user, 'create_model')
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('file2.txt', b'file 2'),
+            original_name='file2.txt',
+        )
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': ['uploads/file2.txt'],
+                'mainEntry': ['file2.txt'],
+                'commit_message': 'new',
+                'visibility': 'private',
+                'tag': '',
+                'rerun_expts': '1',
+            },
+        )
+        assert response.status_code == 302
+        new_commit = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, new_commit.hexsha)
+
+        # Test that planned experiments have been added correctly
+        expected_proto_versions = set([
+            (my_private_protocol, my_private_protocol.repo.latest_commit.hexsha),
+            (public_protocol, public_protocol.repo.latest_commit.hexsha),
+            (visible_protocol, visible_protocol.repo.latest_commit.hexsha),
+        ])
+        assert len(expected_proto_versions) == PlannedExperiment.objects.count()
+        for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.model == model
+            assert planned_experiment.model_version == new_commit.hexsha
+            assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
 
 
 @pytest.mark.django_db

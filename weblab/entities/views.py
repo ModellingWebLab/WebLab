@@ -38,9 +38,9 @@ from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import (
-    Visibility, VisibilityMixin, visibility_check
+    Visibility, VisibilityMixin
 )
-from experiments.models import Experiment
+from experiments.models import Experiment, PlannedExperiment
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedEntityVersion
 
@@ -54,7 +54,7 @@ from .forms import (
     ProtocolEntityForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity
-from .processing import process_check_protocol_callback
+from .processing import process_check_protocol_callback, record_experiments_to_run
 
 
 class EntityTypeMixin:
@@ -64,7 +64,7 @@ class EntityTypeMixin:
     @property
     def model(self):
         return next(
-            et 
+            et
             for et in (ModelEntity, ProtocolEntity)
             if et.entity_type == self.kwargs['entity_type']
         )
@@ -129,6 +129,7 @@ class EntityCollaboratorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.get_object().is_editable_by(self.request.user)
 
+
 class EntityCreateView(
     LoginRequiredMixin, PermissionRequiredMixin, EntityTypeMixin,
     UserFormKwargsMixin, CreateView
@@ -183,7 +184,6 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
         return super().get_context_data(**kwargs)
 
 
-
 def get_file_type(filename):
     _, ext = os.path.splitext(filename)
 
@@ -215,6 +215,16 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
             ),
         }
 
+    def _planned_experiments(self):
+        obj = self._get_object()
+        commit = self.get_commit()
+        kwargs = {
+            obj.entity_type: obj,
+            obj.entity_type + '_version': commit.hexsha
+        }
+        return list(PlannedExperiment.objects.filter(**kwargs).values(
+            'model', 'protocol', 'model_version', 'protocol_version'))
+
     def get(self, request, *args, **kwargs):
         obj = self._get_object()
         commit = self.get_commit()
@@ -224,6 +234,10 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
             for f in commit.files
             if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
+        if request.user.has_perm('experiments.create_experiment'):
+            planned_experiments = self._planned_experiments()
+        else:
+            planned_experiments = []
         return JsonResponse({
             'version': {
                 'id': commit.hexsha,
@@ -235,6 +249,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
                 'version': obj.repo.get_name_for_commit(commit.hexsha),
                 'files': files,
                 'numFiles': len(files),
+                'planned_experiments': planned_experiments,
                 'url': reverse(
                     'entities:version',
                     args=[obj.entity_type, obj.id, commit.hexsha]
@@ -249,7 +264,6 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
                 ),
             }
         })
-
 
 
 class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailView):
@@ -463,6 +477,12 @@ class EntityNewVersionView(
         initial['visibility'] = self.get_object().visibility
         return initial
 
+    def get_form_kwargs(self):
+        """Build the kwargs required to instantiate an EntityVersionForm."""
+        kwargs = super().get_form_kwargs()
+        kwargs['entity_type'] = self.object.entity_type
+        return kwargs
+
     def get_context_data(self, **kwargs):
         entity = self.object
         latest = entity.repo.latest_commit
@@ -533,9 +553,15 @@ class EntityNewVersionView(
             # Temporary upload files have been safely committed, so can be deleted
             for filename in files_to_delete:
                 os.remove(filename)
+
+            # Trigger entity analysis & experiment runs, if required
             entity.analyse_new_version(commit)
+            if request.POST.get('rerun_expts'):
+                record_experiments_to_run(request.user, entity, commit)
+
+            # Show the user the new version
             return HttpResponseRedirect(
-                reverse('entities:detail', args=[entity.entity_type, entity.id]))
+                reverse('entities:version', args=[entity.entity_type, entity.id, commit.hexsha]))
         else:
             # Nothing changed, so inform the user and do nothing else.
             form = self.get_form()
@@ -571,7 +597,6 @@ class EntityVersionListView(EntityTypeMixin, VisibilityMixin, DetailView):
             )
         })
         return super().get_context_data(**kwargs)
-
 
 
 class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
