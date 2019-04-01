@@ -754,7 +754,7 @@ function init() {
 
   function deleteVersionCallback()
   {
-    if (confirm("Are you sure to delete this version? (including all files and experiments associated to it)"))
+    if (confirm("Are you sure you want to delete this version? (including all files and experiments associated to it)"))
     {
       deleteEntity({
         task: "deleteVersion",
