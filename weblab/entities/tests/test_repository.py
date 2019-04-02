@@ -222,8 +222,13 @@ class TestCommit:
         repo.add_file(repo_file)
         commit2 = repo.commit('commit 2', author)
 
-        assert list(commit2.parents) == [commit1]
-        assert list(commit2.self_and_parents) == [commit2, commit1]
+        open(str(repo_file), 'w').write('third contents')
+        repo.add_file(repo_file)
+        commit3 = repo.commit('commit 3', author)
+
+        assert list(commit3.parents) == [commit2]
+        assert list(commit3.ancestors) == [commit2, commit1]
+        assert list(commit3.self_and_ancestors) == [commit3, commit2, commit1]
 
     def test_add_and_get_ephemeral_file(self, repo, author):
         repo.create()

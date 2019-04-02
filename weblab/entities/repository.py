@@ -416,12 +416,19 @@ class Commit:
 
     @property
     def parents(self):
+        """Iterable over immediate parents of this commit."""
+        return (Commit(self._repo, parent) for parent in self._commit.parents)
+
+    @property
+    def ancestors(self):
+        """Iterable over all ancestors of this commit."""
         return (
             Commit(self._repo, parent)
             for parent in self._commit.iter_parents()
         )
 
     @property
-    def self_and_parents(self):
+    def self_and_ancestors(self):
+        """Iterable over this commit, followed by its ancestors."""
         yield self
-        yield from self.parents
+        yield from self.ancestors
