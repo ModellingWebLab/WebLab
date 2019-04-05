@@ -114,6 +114,22 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
     return version
 
 
+def cancel_experiment(task_id):
+    """Cancel the Celery task for an experiment.
+
+    @param task_id  the Celery task id of the experiment to cancel
+    """
+    body = {
+        'cancelTask': task_id,
+        'password': settings.CHASTE_PASSWORD,
+    }
+
+    try:
+        requests.post(settings.CHASTE_URL, body)
+    except requests.exceptions.ConnectionError:
+        logger.exception("Unable to cancel experiment")
+
+
 def process_callback(data, files):
     signature = data.get('signature')
     if not signature:

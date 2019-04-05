@@ -8,3 +8,12 @@ def experiment_version_deleted(sender, instance, **kwargs):
     Ensure the experiment data directory is also deleted.
     """
     rmtree(str(instance.abs_path))
+
+
+def running_experiment_deleted(sender, instance, **kwargs):
+    """Signal handler for deleting a queued or running experiment.
+
+    Will cancel the associated celery task to free up resources.
+    """
+    from .processing import cancel_experiment
+    cancel_experiment(instance.task_id)
