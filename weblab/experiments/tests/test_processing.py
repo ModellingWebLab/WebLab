@@ -43,7 +43,7 @@ class TestSubmitExperiment:
         model_version = model.repo.latest_commit.hexsha
         protocol_version = protocol.repo.latest_commit.hexsha
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
         assert version.experiment.model == model
         assert version.experiment.protocol == protocol
@@ -62,7 +62,7 @@ class TestSubmitExperiment:
         experiment = recipes.experiment.make(model=model, model_version=model_version,
                                              protocol=protocol, protocol_version=protocol_version)
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
         assert version.experiment == experiment
 
@@ -76,7 +76,7 @@ class TestSubmitExperiment:
         recipes.experiment.make(model=model, model_version=model_version,
                                 protocol=protocol, protocol_version=protocol_version)
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
         assert version.running.count() == 1
         assert RunningExperiment.objects.count() == 1
@@ -88,7 +88,7 @@ class TestSubmitExperiment:
         model_version = model.repo.latest_commit.hexsha
         protocol_version = protocol.repo.latest_commit.hexsha
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
         model_url = '/entities/models/%d/versions/%s/archive' % (model.pk, model_version)
         protocol_url = (
@@ -119,7 +119,7 @@ class TestSubmitExperiment:
 
         mock_post.side_effect = generate_response('something %s')
         with pytest.raises(ProcessingException):
-            submit_experiment(model, model_version, protocol, protocol_version, user)
+            submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
         # There should be no running experiment
         assert RunningExperiment.objects.count() == 0
@@ -142,7 +142,7 @@ class TestSubmitExperiment:
 
         mock_post.side_effect = generate_response('%s an error occurred')
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
         assert version.status == ExperimentVersion.STATUS_FAILED
         assert version.return_text == 'an error occurred'
@@ -157,7 +157,7 @@ class TestSubmitExperiment:
 
         mock_post.side_effect = generate_response('%s inapplicable')
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user)
+        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
         assert version.status == ExperimentVersion.STATUS_INAPPLICABLE
         assert RunningExperiment.objects.count() == 0

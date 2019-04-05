@@ -37,7 +37,13 @@ class ProcessingException(Exception):
     pass
 
 
-def submit_experiment(model, model_version, protocol, protocol_version, user):
+def submit_experiment(model, model_version, protocol, protocol_version, user, rerun_ok):
+    """Submit a Celery task to run an experiment.
+
+    @param rerun_ok  if False and an ExperimentVersion already exists, will just return that.
+        Otherwise will create a new version of the experiment.
+    @return the ExperimentVersion for the run
+    """
     experiment, _ = Experiment.objects.get_or_create(
         model=model,
         protocol=protocol,
@@ -48,10 +54,19 @@ def submit_experiment(model, model_version, protocol, protocol_version, user):
         }
     )
 
-    version = ExperimentVersion.objects.create(
-        experiment=experiment,
-        author=user,
-    )
+    # Check there isn't an existing version if we're not allowed to re-run
+    if not rerun_ok:
+        version, created = ExperimentVersion.objects.get_or_create(
+            experiment=experiment,
+            author=user,
+        )
+        if not created:
+            return version
+    else:
+        version = ExperimentVersion.objects.create(
+            experiment=experiment,
+            author=user,
+        )
 
     run = RunningExperiment.objects.create(experiment_version=version)
     signature = version.signature
