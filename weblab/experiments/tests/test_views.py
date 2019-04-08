@@ -177,6 +177,33 @@ class TestExperimentMatrix:
 
         assert len(data['getMatrix']['experiments']) == 0
 
+    def test_view_public_experiments(self, client, logged_in_user, helpers, experiment_version):
+        my_model = recipes.model.make(author=logged_in_user)
+        my_model_version = helpers.add_version(my_model)
+        my_model_public_version = helpers.add_version(my_model, visibility='public')
+        my_protocol = recipes.protocol.make(author=logged_in_user)
+        my_protocol_version = helpers.add_version(my_protocol)
+        my_protocol_public_version = helpers.add_version(my_protocol, visibility='public')
+        version = recipes.experiment_version.make(
+            experiment__model=my_model,
+            experiment__model_version=my_model_version.hexsha,
+            experiment__protocol=my_protocol,
+            experiment__protocol_version=my_protocol_version.hexsha,
+        )
+        public_version = recipes.experiment_version.make(
+            experiment__model=my_model,
+            experiment__model_version=my_model_public_version.hexsha,
+            experiment__protocol=my_protocol,
+            experiment__protocol_version=my_protocol_public_version.hexsha,
+        )
+
+        response = client.get('/experiments/matrix?subset=public')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = data['getMatrix']['experiments']
+        assert str(public_version.experiment.pk) in experiment_ids
+        assert str(version.experiment.pk) not in experiment_ids
+
     def test_submatrix(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         other_model = recipes.model.make()

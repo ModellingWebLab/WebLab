@@ -19,6 +19,7 @@ from django.views.generic.edit import FormMixin
 
 from core.visibility import VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
+from repocache.entities import get_public_entity_ids
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, PlannedExperiment
@@ -90,6 +91,8 @@ class ExperimentMatrixJsonView(View):
             entity_ids = visible_entity_ids(request.user)
         elif subset == 'mine' and request.user.is_authenticated:
             entity_ids = request.user.entity_set.values_list('id', flat=True)
+        elif subset == 'public':
+            entity_ids = get_public_entity_ids()
         else:
             entity_ids = []
 
