@@ -228,3 +228,8 @@ def logged_in_admin(client, admin_user):
 def model_creator(user, helpers):
     helpers.add_permission(user, 'create_model')
     return user
+
+@pytest.fixture
+def moderator(user, helpers):
+    helpers.add_permission(user, 'moderator')
+    return user
