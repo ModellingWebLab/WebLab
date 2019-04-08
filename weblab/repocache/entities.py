@@ -14,7 +14,25 @@ def get_public_entity_ids():
             latest_ts=Max('entity__versions__timestamp')
         ).filter(
             timestamp=F('latest_ts'),
-            visibility='public',
+            visibility__in=['public', 'moderated'],
+        ).values_list(
+            'entity__entity_id', flat=True
+        )
+    )
+
+
+def get_moderated_entity_ids():
+    """
+    Get IDs of all moderated entities
+
+    :return: set of entity IDs
+    """
+    return set(
+        CachedEntityVersion.objects.annotate(
+            latest_ts=Max('entity__versions__timestamp')
+        ).filter(
+            timestamp=F('latest_ts'),
+            visibility='moderated',
         ).values_list(
             'entity__entity_id', flat=True
         )
