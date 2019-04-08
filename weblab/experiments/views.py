@@ -84,9 +84,17 @@ class ExperimentMatrixJsonView(View):
         }
 
     def get(self, request, *args, **kwargs):
-        visible_ids = visible_entity_ids(request.user)
-        q_models = ModelEntity.objects.filter(id__in=visible_ids)
-        q_protocols = ProtocolEntity.objects.filter(id__in=visible_ids)
+        subset = request.GET.get('subset', 'visible')
+
+        if subset == 'visible':
+            entity_ids = visible_entity_ids(request.user)
+        elif subset == 'mine' and request.user.is_authenticated:
+            entity_ids = request.user.entity_set.values_list('id', flat=True)
+        else:
+            entity_ids = []
+
+        q_models = ModelEntity.objects.filter(id__in=entity_ids)
+        q_protocols = ProtocolEntity.objects.filter(id__in=entity_ids)
 
         model_pks = list(map(int, request.GET.getlist('modelIds[]')))
         protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
