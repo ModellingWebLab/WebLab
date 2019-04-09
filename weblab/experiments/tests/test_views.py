@@ -167,15 +167,58 @@ class TestExperimentMatrix:
         response = client.get('/experiments/matrix?subset=mine')
         data = json.loads(response.content.decode())
 
-        experiment_ids = data['getMatrix']['experiments']
-        assert str(my_version.experiment.pk) in experiment_ids
-        assert str(experiment_version.experiment.pk) not in experiment_ids
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(my_version.experiment.pk)
+        }
+
+    def test_view_my_experiments_with_moderated(self, client, helpers, logged_in_user,
+                                                experiment_version, moderated_experiment_version):
+        my_model = recipes.model.make(author=logged_in_user)
+        my_model_version = helpers.add_version(my_model)
+        my_protocol = recipes.protocol.make(author=logged_in_user)
+        my_protocol_version = helpers.add_version(my_protocol)
+        my_version = recipes.experiment_version.make(
+            experiment__model=my_model,
+            experiment__model_version=my_model_version.hexsha,
+            experiment__protocol=my_protocol,
+            experiment__protocol_version=my_protocol_version.hexsha,
+        )
+
+        response = client.get('/experiments/matrix?subset=mine&showmoderated=true')
+        data = json.loads(response.content.decode())
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(my_version.experiment.pk),
+            str(moderated_experiment_version.experiment.pk)
+        }
+
+    def test_view_my_experiments_without_moderated(self, client, helpers, logged_in_user,
+                                                experiment_version, moderated_experiment_version):
+        my_model = recipes.model.make(author=logged_in_user)
+        my_model_version = helpers.add_version(my_model)
+        my_protocol = recipes.protocol.make(author=logged_in_user)
+        my_protocol_version = helpers.add_version(my_protocol)
+        my_version = recipes.experiment_version.make(
+            experiment__model=my_model,
+            experiment__model_version=my_model_version.hexsha,
+            experiment__protocol=my_protocol,
+            experiment__protocol_version=my_protocol_version.hexsha,
+        )
+
+        response = client.get('/experiments/matrix?subset=mine&showmoderated=false')
+        data = json.loads(response.content.decode())
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(my_version.experiment.pk),
+        }
 
     def test_view_my_experiments_empty_for_anonymous(self, client, helpers, experiment_version):
         response = client.get('/experiments/matrix?subset=mine')
         data = json.loads(response.content.decode())
 
         assert len(data['getMatrix']['experiments']) == 0
+
 
     def test_view_public_experiments(self, client, logged_in_user, helpers, experiment_version):
         my_model = recipes.model.make(author=logged_in_user)

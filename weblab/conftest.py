@@ -141,6 +141,19 @@ def public_protocol(helpers):
     helpers.add_version(protocol, visibility='public')
     return protocol
 
+@pytest.fixture
+def moderated_model(helpers):
+    model = recipes.model.make()
+    helpers.add_version(model, visibility='moderated')
+    return model
+
+
+@pytest.fixture
+def moderated_protocol(helpers):
+    protocol = recipes.protocol.make()
+    helpers.add_version(protocol, visibility='moderated')
+    return protocol
+
 
 @pytest.fixture
 def queued_experiment(model_with_version, protocol_with_version):
@@ -174,6 +187,17 @@ def experiment_version(public_model, public_protocol):
         experiment__model_version=public_model.repo.latest_commit.hexsha,
         experiment__protocol=public_protocol,
         experiment__protocol_version=public_protocol.repo.latest_commit.hexsha,
+    )
+
+
+@pytest.fixture
+def moderated_experiment_version(moderated_model, moderated_protocol):
+    return recipes.experiment_version.make(
+        status='SUCCESS',
+        experiment__model=moderated_model,
+        experiment__model_version=moderated_model.repo.latest_commit.hexsha,
+        experiment__protocol=moderated_protocol,
+        experiment__protocol_version=moderated_protocol.repo.latest_commit.hexsha,
     )
 
 
