@@ -88,6 +88,9 @@ def planned_experiments(model_with_version, protocol_with_version):
 class TestExperimentsView:
     @pytest.mark.parametrize("url", [
         '/experiments/',
+        '/experiments/mine',
+        '/experiments/public/models/1/2',
+        '/experiments/moderated/protocols/1/2',
         '/experiments/models/1/2',
         '/experiments/models/1/2/protocols/3/4',
         '/experiments/protocols/1/2',
