@@ -8,7 +8,7 @@ from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core import recipes
-from experiments.models import ExperimentVersion, RunningExperiment
+from experiments.models import Experiment, ExperimentVersion, RunningExperiment
 from experiments.processing import (
     ProcessingException,
     process_callback,
@@ -36,60 +36,30 @@ def archive_upload(archive_file_path):
 @patch('requests.post', side_effect=generate_response())
 @pytest.mark.django_db
 class TestSubmitExperiment:
-    def test_creates_new_experiment(self, mock_post,
-                                    user, model_with_version, protocol_with_version):
+    def test_creates_new_experiment_and_side_effects(
+            self, mock_post,
+            user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
         model_version = model.repo.latest_commit.hexsha
         protocol_version = protocol.repo.latest_commit.hexsha
 
+        assert Experiment.objects.count() == 0
+        assert RunningExperiment.objects.count() == 0
+
         version = submit_experiment(model, model_version, protocol, protocol_version, user)
 
+        # Check properties of the new experiment & version
+        assert Experiment.objects.count() == 1
         assert version.experiment.model == model
         assert version.experiment.protocol == protocol
         assert version.author == user
         assert version.experiment.model_version == model_version
         assert version.experiment.protocol_version == protocol_version
         assert version.experiment.author == user
+        assert version.status == ExperimentVersion.STATUS_QUEUED
 
-    def test_uses_existing_experiment(self, mock_post,
-                                      user, model_with_version, protocol_with_version):
-        model = model_with_version
-        protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
-
-        experiment = recipes.experiment.make(model=model, model_version=model_version,
-                                             protocol=protocol, protocol_version=protocol_version)
-
-        version = submit_experiment(model, model_version, protocol, protocol_version, user)
-
-        assert version.experiment == experiment
-
-    def test_creates_running_experiment_record(self, mock_post,
-                                               user, model_with_version, protocol_with_version):
-        model = model_with_version
-        protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
-
-        recipes.experiment.make(model=model, model_version=model_version,
-                                protocol=protocol, protocol_version=protocol_version)
-
-        version = submit_experiment(model, model_version, protocol, protocol_version, user)
-
-        assert version.running.count() == 1
-        assert RunningExperiment.objects.count() == 1
-
-    def test_submits_to_webservice(self, mock_post,
-                                   user, model_with_version, protocol_with_version):
-        model = model_with_version
-        protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
-
-        version = submit_experiment(model, model_version, protocol, protocol_version, user)
-
+        # Check it did submit to the webservice
         model_url = '/entities/models/%d/versions/%s/archive' % (model.pk, model_version)
         protocol_url = (
             '/entities/protocols/%d/versions/%s/archive' %
@@ -107,8 +77,24 @@ class TestSubmitExperiment:
             'password': settings.CHASTE_PASSWORD,
         }
 
-        assert version.status == ExperimentVersion.STATUS_QUEUED
+        # Check running experiment record
+        assert RunningExperiment.objects.count() == 1
+        assert version.running.count() == 1
         assert version.running.first().task_id == 'celery-task-id'
+
+    def test_uses_existing_experiment(self, mock_post,
+                                      user, model_with_version, protocol_with_version):
+        model = model_with_version
+        protocol = protocol_with_version
+        model_version = model.repo.latest_commit.hexsha
+        protocol_version = protocol.repo.latest_commit.hexsha
+
+        experiment = recipes.experiment.make(model=model, model_version=model_version,
+                                             protocol=protocol, protocol_version=protocol_version)
+
+        version = submit_experiment(model, model_version, protocol, protocol_version, user)
+
+        assert version.experiment == experiment
 
     def test_raises_exception_on_webservice_error(self, mock_post,
                                                   user, model_with_version, protocol_with_version):
