@@ -15,5 +15,6 @@ def running_experiment_deleted(sender, instance, **kwargs):
 
     Will cancel the associated celery task to free up resources.
     """
-    from .processing import cancel_experiment
-    cancel_experiment(instance.task_id)
+    if instance.task_id:
+        from .processing import cancel_experiment
+        cancel_experiment(instance.task_id)
