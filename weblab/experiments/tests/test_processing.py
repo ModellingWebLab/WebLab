@@ -16,9 +16,9 @@ from experiments.processing import (
 )
 
 
-def generate_response(template='%s succ celery-task-id'):
+def generate_response(template='%s succ celery-task-id', field='signature'):
     def mock_submit(url, body):
-        return Mock(content=(template % body['signature']).encode())
+        return Mock(content=(template % body[field]).encode())
     return mock_submit
 
 
@@ -81,6 +81,20 @@ class TestSubmitExperiment:
         assert RunningExperiment.objects.count() == 1
         assert version.running.count() == 1
         assert version.running.first().task_id == 'celery-task-id'
+
+        # Check the run is cancelled when we delete the experiment version
+        # We check indirect deletion - this should cascade to everything
+        mock_post.side_effect = generate_response(field='cancelTask')
+        model.delete()
+        assert Experiment.objects.count() == 0
+        assert ExperimentVersion.objects.count() == 0
+        assert RunningExperiment.objects.count() == 0
+        assert mock_post.call_count == 2
+        assert mock_post.call_args[0][0] == settings.CHASTE_URL
+        assert mock_post.call_args[0][1] == {
+            'cancelTask': 'celery-task-id',
+            'password': settings.CHASTE_PASSWORD,
+        }
 
     def test_uses_existing_experiment(self, mock_post,
                                       user, model_with_version, protocol_with_version):
