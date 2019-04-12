@@ -288,9 +288,18 @@ function init() {
     //if (entityType == 'experiment')
     //{
     if (v.status == 'RUNNING' || v.status == 'QUEUED')
+    {
       dv.exptRunningNote.style.display = "block";
+      $('#return-text').hide();
+    }
     else
+    {
       dv.exptRunningNote.style.display = "none";
+      if (v.status == 'SUCCESS')
+        $('#return-text').hide();
+      else
+        $('#return-text').show();
+    }
     dv.exptStatus.innerHTML = "Status: " + v.status + ".";
     //}
 

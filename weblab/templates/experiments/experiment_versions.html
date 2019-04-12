@@ -50,7 +50,7 @@
           {% endwith %}
         </span><br />
         <span class="suppl">
-          {{ version.return_text|linebreaksbr }}
+          {{ version.return_text|linebreaksbr|safe }}
         </span>
       </p>
     </li>

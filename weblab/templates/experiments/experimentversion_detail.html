@@ -60,6 +60,10 @@
       </small>
     </div>
 
+    <p id="return-text" class="experiment-{{ version.status }}" style="display:none;">
+      {{ version.return_text|linebreaksbr|safe }}
+    </p>
+
     <div id="running-experiment-note" style="display:none;">
       <p>
         This experiment has not yet finished running, and so no result files are available.
