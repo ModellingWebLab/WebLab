@@ -25,11 +25,6 @@
 
   <h2>Versions</h2>
 
-  {% comment %}
-    <!-- TODO: Needs some JS code to make this work -->
-    <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/>Re-run experiment</a> <span id="rerunExperimentAction"></span>
-  {% endcomment %}
-
   <div id="entityversionlist_content">
     <ul>
     {% for version in experiment.versions.all|dictsortreversed:"created_at" %}
