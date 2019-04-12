@@ -61,7 +61,7 @@
     </div>
 
     <p id="return-text" class="experiment-{{ version.status }}" style="display:none;">
-      {{ version.return_text|linebreaksbr|safe }}
+      {{ version.return_text|safe|linebreaksbr }}
     </p>
 
     <div id="running-experiment-note" style="display:none;">
