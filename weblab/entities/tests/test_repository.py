@@ -109,8 +109,13 @@ class TestRepository:
         repo.add_file(repo_file)
         commit2 = repo.commit('commit 2', author)
         assert repo.latest_commit == commit2
+        untracked_file = Path(repo._root) / 'untracked.txt'
+        untracked_file.open('w').write('contents')
+        assert untracked_file.exists()
         repo.rollback()
         assert repo.latest_commit == commit1
+        assert repo_file.open().read() == 'file contents'
+        assert not untracked_file.exists()
 
     def test_hard_reset(self, repo, repo_file):
         repo.add_file(repo_file)
@@ -217,8 +222,13 @@ class TestCommit:
         repo.add_file(repo_file)
         commit2 = repo.commit('commit 2', author)
 
-        assert list(commit2.parents) == [commit1]
-        assert list(commit2.self_and_parents) == [commit2, commit1]
+        open(str(repo_file), 'w').write('third contents')
+        repo.add_file(repo_file)
+        commit3 = repo.commit('commit 3', author)
+
+        assert list(commit3.parents) == [commit2]
+        assert list(commit3.ancestors) == [commit2, commit1]
+        assert list(commit3.self_and_ancestors) == [commit3, commit2, commit1]
 
     def test_add_and_get_ephemeral_file(self, repo, author):
         repo.create()

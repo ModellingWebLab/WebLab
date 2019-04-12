@@ -118,7 +118,6 @@ def url_version(entity, commit):
     a tag, or the tag contains a /, or the tag is one of our reserved
     names (new, latest), we fall back to the SHA1.
     """
-    url_name = 'entities:version'
     last_tag = _url_friendly_label(entity, commit)
     args = [entity.entity_type, entity.id, last_tag]
     return reverse('entities:version', args=args)
@@ -193,6 +192,7 @@ def can_create_entity(context, entity_type):
 def can_delete_entity(context, entity):
     user = context['user']
     return entity.is_deletable_by(user)
+
 
 @register.simple_tag(takes_context=True)
 def can_manage_entity(context, entity):

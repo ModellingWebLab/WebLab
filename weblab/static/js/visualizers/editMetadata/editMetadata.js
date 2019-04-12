@@ -1,4 +1,5 @@
 var utils = require('../../lib/utils.js');
+var notifications = require('../../lib/notifications.js');
 
 /**
  * Create the 'visualiser' portion of the plugin, responsible for displaying content within the div for this file.
@@ -15,16 +16,16 @@ function metadataEditor(file, div)
     this.modelDiv = $('<div></div>', {id: 'editmeta_modelvars_div'}).text('loading model...');
     this.ontoDiv = $('<div></div>', {id: 'editmeta_ontoterms_div'});
     otherContent = '<div class="clearer">\n'
-        + '<p><label for="id_tag">Version:</label>\n'
+        + '<p><label for="id_tag">Tag:</label>\n'
         + '<input type="text" name="tag" id="id_tag" placeholder="Optional short label for this version"/></p>\n'
         + '<p><label for="id_commit_message">Description of this version:</label>\n'
         + '<a class="pointer" id="dateinserter"><small>use current date</small></a>\n'
         + '<span id="versionaction"></span><br/>\n'
         + '<textarea cols="70" rows="3" name="commit_message" id="id_commit_message"></textarea>\n'
         + '<span id="commitmsgaction"></span></p>\n'
-        // + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
-        // + '<label for="reRunExperiments">rerun experiments involving previous versions of this model</label>\n'
-        // + '<small>(this might take some time)</small></p>\n'
+        + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
+        + '<label for="reRunExperiments">Re-run experiments involving the previous version of this model</label>\n'
+        + '</p>\n'
         + '<p><button id="savebutton">Save model annotations</button><span id="saveaction"></span></p>';
     this.dragDiv = $('<div></div>', {'class': 'editmeta_annotation', 'style': 'position: fixed;'});
     // Set up annotation filtering divs
@@ -36,29 +37,6 @@ function metadataEditor(file, div)
 	$(div).append(this.modelDiv, this.ontoDiv, otherContent, this.dragDiv);
 	this.initRdf();
 };
-
-/**
- * Check with the server whether properties of the new model version are OK.
- */
-metadataEditor.prototype.verifyNewEntity = function (jsonObject, actionElem)
-{
-    actionElem.html("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
-    $.post(contextPath + '/model/createnew', JSON.stringify(jsonObject))
-        .done(function (json) {
-            displayNotifications(json);
-            if (json.versionName)
-            {
-                var msg = json.versionName.responseText;
-                if (json.versionName.response)
-                    actionElem.html("<img src='"+staticPath+"img/check.png' alt='valid' /> " + msg);
-                else
-                    actionElem.html("<img src='"+staticPath+"img/failed.png' alt='invalid' /> " + msg);
-            }
-        })
-        .fail (function () {
-            actionElem.html("<img src='"+staticPath+"img/failed.png' alt='error' /> sorry, serverside error occurred.");
-        });
-}
 
 /**
  * If our required libraries are not yet present, wait until they are then call the callback.
@@ -389,7 +367,7 @@ metadataEditor.prototype.ontologyLoaded = function (data, status, jqXHR)
 /**
  * Callback function for when the filter data has been fetched from the server.
  */
-metadataEditor.prototype.filtersLoaded = function (data, status, jqXHR)
+metadataEditor.prototype.filtersLoaded = function (data)
 {
     console.log("Interfaces loaded");
 	this.filterDiv.empty();
@@ -488,7 +466,7 @@ metadataEditor.prototype.filtersLoaded = function (data, status, jqXHR)
  */
 metadataEditor.prototype.saveNewVersion = function ()
 {
-    console.log('Save new version named "' + $('#versionname').val() + '"');
+    console.log('Save new version tagged "' + $('#id_tag').val() + '"');
     var self = this,
         $div = $(this.div),
         actionElem = $('#saveaction');
@@ -504,35 +482,25 @@ metadataEditor.prototype.saveNewVersion = function ()
 
     // Post the updated model file to the server; any other files comprising the model will be added
     // to the new version at that end.
-    var data = {task: "updateEntityFile",
-                entityId: entityId,
-                entityName: $('#entityname span').text(),
-                baseVersionId: curVersion.id,
-                versionName: $('#versionname').val(),
-                commitMsg: document.getElementById('commitMsg').value,
-                rerunExperiments: document.getElementById('reRunExperiments').checked,
-                fileName: this.file.name,
-                fileContents: model_str
+    var curVersion = $('#entityversion').data('version-json'),
+        data = {parent_hexsha: curVersion.id,
+                visibility: curVersion.visibility,
+                tag: $('#id_tag').val(),
+                commit_message: document.getElementById('id_commit_message').value,
+                rerun_expts: document.getElementById('reRunExperiments').checked,
+                file_name: this.file.name,
+                file_contents: model_str
                };
-//    console.log(data);
-    $.post(contextPath + '/model/createnew', JSON.stringify(data))
+    $.post($('#entityversion').data('alter-file-href'), JSON.stringify(data))
         .done(function (json) {
-            displayNotifications(json);
+            notifications.display(json);
             var resp = json.updateEntityFile,
                 msg = resp.responseText;
             if (resp.response)
             {
-                clearNotifications("error"); // Get rid of any leftover errors from failed creation attempts
+                notifications.clear("error"); // Get rid of any leftover errors from failed creation attempts
                 $div.empty();
-                var vers_href = contextPath + "/model/id/" + resp.entityId + "/version/" + resp.versionId,
-                    expt_href = contextPath + "/batch/model/newVersion/" + resp.versionId;
-                $div.append('<h1><img src="' + staticPath + 'img/check.png" alt="created version successfully" /> Congratulations</h1>'
-                           +'<p>You\'ve just created a <a href="' + vers_href + '">new version of this model</a>!'
-                           +(resp.expCreation ? '<p>Also, ' + resp.expCreation + '.</p>' : '')
-                           +'<p><a href="' + expt_href + '">Run experiments</a> using this model.</p>'
-                           );
-                // Update the list of available versions with the newly created one, but don't change the display
-				addNewVersion(resp.versionId, vers_href);
+                window.location.href = resp.url;
             }
             else
             {
@@ -560,24 +528,10 @@ metadataEditor.prototype.show = function ()
                 success: function(d,s,j) {self.ontologyLoaded(d,s,j);}
                });
 	if (!this.loadedFilters)
-    /* TODO
-		$.ajax(contextPath + '/protocol/get_interfaces',
-				{method: 'post',
-				 contentType : 'application/json; charset=utf-8',
-				 data: JSON.stringify({task: 'getInterface'}),
-				 dataType: 'json',
-				 success: function(d,s,j) {self.filtersLoaded(d,s,j);}
-				});
-        */
+		$.getJSON($('#entityversion').data('get-proto-interfaces-href'), '',
+                  function(data) {self.filtersLoaded(data);});
 
     // Initialise some event handlers
-    // $('#versionname').blur(function() {
-    //     self.verifyNewEntity({
-    //         task: "verifyNewEntity",
-    //         entityName: $('#entityname span').text(),
-    //         versionName: this.value
-    //     }, $('#versionaction'));
-    // });
     $('#dateinserter').click(function() {
         $('#id_commit_message').focus().val("Annotated on " + utils.getYMDHMS(new Date())).blur();
     });
@@ -609,6 +563,8 @@ function editMetadata()
  */
 editMetadata.prototype.canRead = function (file)
 {
+    if (!$('#entityversion').data('can-edit'))
+        return false;
     if (file.type == 'CellML')
         return true;
     var ext = file.name.split('.').pop();
