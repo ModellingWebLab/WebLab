@@ -4,24 +4,7 @@
 {% block title %}Experiment versions - {% endblock title %}
 
 {% block content %}
-  <h1 id="entityname">
-    <small>Experiment: </small><span>{{ experiment.name }}</span>
-  </h1>
-
-  <div class="suppl">
-    <small>Created <time>{{experiment.created_at}}</time> by <em>{{experiment.author.full_name}}</em>.
-      {% comment %}
-      {% if can_delete %}
-        Delete {{ type }}:
-        <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">
-          <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
-              title="delete all versions of this {{type}}"/></a>
-      {% endif %}
-      {% endcomment %}
-      <br>
-      Visibility: {{ experiment.visibility }}
-    </small>
-  </div>
+  {% include "./includes/experiment_header.html" %}
 
   <h2>Versions</h2>
 

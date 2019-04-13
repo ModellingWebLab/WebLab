@@ -1,0 +1,10 @@
+{% load staticfiles %}
+
+<h1 id="entityname">
+  <small>Experiment: </small><span>{{ experiment.name }}</span>
+</h1>
+
+<div class="suppl">
+  <small>Created <time>{{experiment.created_at}}</time> by <em>{{experiment.author.full_name}}</em>.
+  </small>
+</div>
