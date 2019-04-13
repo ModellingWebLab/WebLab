@@ -5,7 +5,7 @@ import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -15,7 +15,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import FormMixin
+from django.views.generic.edit import DeleteView, FormMixin
 
 from core.visibility import VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
@@ -229,6 +229,22 @@ class ExperimentVersionListView(VisibilityMixin, DetailView):
     model = Experiment
     context_object_name = 'experiment'
     template_name = 'experiments/experiment_versions.html'
+
+
+class ExperimentDeleteView(UserPassesTestMixin, DeleteView):
+    """
+    Delete all versions of an experiment
+    """
+    model = Experiment
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have delete permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('experiments:list')
 
 
 class ExperimentComparisonView(TemplateView):

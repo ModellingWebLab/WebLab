@@ -45,6 +45,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^(?P<pk>\d+)/delete$',
+        views.ExperimentDeleteView.as_view(),
+        name='delete',
+    ),
+
+    url(
         r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)(?:/%s)?$' % _FILEVIEW,
         views.ExperimentVersionView.as_view(),
         name='version',

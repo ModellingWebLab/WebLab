@@ -1,4 +1,5 @@
 {% load staticfiles %}
+{% load experiments %}
 
 <h1 id="entityname">
   <small>Experiment: </small><span>{{ experiment.name }}</span>
@@ -6,5 +7,12 @@
 
 <div class="suppl">
   <small>Created <time>{{experiment.created_at}}</time> by <em>{{experiment.author.full_name}}</em>.
+    {% can_delete_entity experiment as can_delete %}
+    {% if can_delete %}
+      Delete experiment:
+      <a title="delete all versions of this experiment" href="{% url 'experiments:delete' experiment.id %}">
+        <img src="{% static 'img/delete.png' %}" alt="delete all versions of this experiment"
+            title="delete all versions of this experiment"/></a>
+    {% endif %}
   </small>
 </div>
