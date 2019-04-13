@@ -247,6 +247,22 @@ class ExperimentDeleteView(UserPassesTestMixin, DeleteView):
         return reverse('experiments:list')
 
 
+class ExperimentVersionDeleteView(UserPassesTestMixin, DeleteView):
+    """
+    Delete a single version of an experiment
+    """
+    model = ExperimentVersion
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have delete permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('experiments:versions', args=[self.get_object().experiment.id])
+
+
 class ExperimentComparisonView(TemplateView):
     """
     Compare multiple experiment versions

@@ -604,7 +604,7 @@ class TestExperimentDeletion:
         assert not exp_ver_path.exists()
 
     @pytest.mark.usefixtures('logged_in_user')
-    def test_non_owner_cannot_delete_entity(
+    def test_non_owner_cannot_delete_experiment(
         self, other_user, client, experiment_with_result
     ):
         experiment = experiment_with_result.experiment
@@ -615,6 +615,39 @@ class TestExperimentDeletion:
         response = client.post('/experiments/%d/delete' % experiment.pk)
 
         assert response.status_code == 403
+        assert Experiment.objects.filter(pk=experiment.pk).exists()
+        assert exp_ver_path.exists()
+
+    def test_owner_can_delete_experiment_version(
+        self, logged_in_user, client, experiment_with_result
+    ):
+        experiment = experiment_with_result.experiment
+        experiment_with_result.author = logged_in_user
+        experiment_with_result.save()
+        exp_ver_path = experiment_with_result.abs_path
+
+        response = client.post('/experiments/%d/versions/%d/delete' % (experiment.pk, experiment_with_result.pk))
+
+        assert response.status_code == 302
+        assert response.url == '/experiments/%d/versions/' % experiment.pk
+
+        assert not ExperimentVersion.objects.filter(pk=experiment_with_result.pk).exists()
+        assert not exp_ver_path.exists()
+        assert Experiment.objects.filter(pk=experiment.pk).exists()
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_non_owner_cannot_delete_experiment_version(
+        self, other_user, client, experiment_with_result
+    ):
+        experiment = experiment_with_result.experiment
+        experiment_with_result.author = other_user
+        experiment_with_result.save()
+        exp_ver_path = experiment_with_result.abs_path
+
+        response = client.post('/experiments/%d/versions/%d/delete' % (experiment.pk, experiment_with_result.pk))
+
+        assert response.status_code == 403
+        assert ExperimentVersion.objects.filter(pk=experiment_with_result.pk).exists()
         assert Experiment.objects.filter(pk=experiment.pk).exists()
         assert exp_ver_path.exists()
 
