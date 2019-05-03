@@ -525,21 +525,22 @@ function parseLocation ()
           result[item[0]] = decodeURIComponent(item[1]);
         });
       }
-      else if (items[0] == "moderated")
-      {
-        $('#showModeratedExpts').addClass("selected");
-        ret.subset = "moderated";
-      }
-      else
+      else if (items[0] == "all")
       {
         $('#showAllExpts').addClass("selected");
         ret.subset = "visible";
+      }
+      else
+      {
+        $('#showModeratedExpts').addClass("selected");
+        ret.subset = "moderated";
       }
     }
   }
   else
   {
     $('#showModeratedExpts').addClass("selected");
+    ret.subset = "moderated";
   }
   return ret;
 }

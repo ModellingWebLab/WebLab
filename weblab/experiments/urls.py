@@ -10,7 +10,7 @@ _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 urlpatterns = [
     url(
         '^'
-        '(?P<subset>mine|public|moderated)?'
+        '(?P<subset>mine|public|all)?'
         '/?'
         '(?:models(?P<model_pks>(/\d+)+)'
         '(?:/versions(?P<model_versions>(/%s)+))?)?'

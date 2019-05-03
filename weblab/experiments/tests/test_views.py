@@ -90,7 +90,7 @@ class TestExperimentsView:
         '/experiments/',
         '/experiments/mine',
         '/experiments/public/models/1/2',
-        '/experiments/moderated/protocols/1/2',
+        '/experiments/all/protocols/1/2',
         '/experiments/models/1/2',
         '/experiments/models/1/2/protocols/3/4',
         '/experiments/protocols/1/2',
@@ -117,7 +117,7 @@ class TestExperimentMatrix:
     def test_matrix(self, client, experiment_version):
         exp = experiment_version.experiment
 
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
@@ -129,7 +129,7 @@ class TestExperimentMatrix:
     def test_experiment_json(self, client, experiment_version):
         exp = experiment_version.experiment
 
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
 
         exp_data = data['getMatrix']['experiments'][str(exp.pk)]
@@ -139,7 +139,7 @@ class TestExperimentMatrix:
         assert '/experiments/%d/versions/%d' % (exp.id, experiment_version.id) in exp_data['url']
 
     def test_anonymous_can_see_public_data(self, client, experiment_version):
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert str(experiment_version.experiment.pk) in data['getMatrix']['experiments']
@@ -148,7 +148,7 @@ class TestExperimentMatrix:
         model = experiment_version.experiment.model
         model.set_version_visibility('latest', 'private')
 
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert len(data['getMatrix']['models']) == 0
@@ -359,7 +359,7 @@ class TestExperimentMatrix:
             experiment__protocol_version=other_protocol_moderated_version.hexsha,
         )
 
-        response = client.get('/experiments/matrix?subset=moderated')
+        response = client.get('/experiments/matrix')
         data = json.loads(response.content.decode())
 
         experiment_ids = set(data['getMatrix']['experiments'])
@@ -385,6 +385,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'modelIds[]': [exp.model.pk, non_existent_pk],
                 'protoIds[]': [exp.protocol.pk, non_existent_pk],
             }
@@ -419,6 +420,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'modelIds[]': [exp.model.pk],
                 'modelVersions[]': [v1, v2],
             }
@@ -447,6 +449,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'modelIds[]': [exp.model.pk],
                 'modelVersions[]': '*',
             }
@@ -465,6 +468,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'modelIds[]': [experiment_version.experiment.model.pk, model.pk],
                 'modelVersions[]': '*',
             }
@@ -490,6 +494,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'protoIds[]': [exp.protocol.pk],
                 'protoVersions[]': [v1, v2],
             }
@@ -518,6 +523,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'protoIds[]': [exp.protocol.pk],
                 'protoVersions[]': '*',
             }
@@ -536,6 +542,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'protoIds[]': [experiment_version.experiment.protocol.pk, protocol.pk],
                 'protoVersions[]': '*',
             }
@@ -555,7 +562,7 @@ class TestExperimentMatrix:
             protocol_version=public_protocol.repo.latest_commit.hexsha,
         )
 
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert len(data['getMatrix']['protocols']) == 1
@@ -566,7 +573,7 @@ class TestExperimentMatrix:
         new_version = helpers.add_version(public_model, filename='file2.txt')
 
         # We should now see this version in the matrix, but no experiments
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert str(new_version.hexsha) in data['getMatrix']['models']
