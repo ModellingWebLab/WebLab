@@ -248,59 +248,124 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['experiments']) == 0
 
 
-    def test_view_public_experiments(self, client, logged_in_user, helpers, experiment_version):
-        my_model = recipes.model.make(author=logged_in_user)
-        my_model_version = helpers.add_version(my_model)
-        my_model_public_version = helpers.add_version(my_model, visibility='public')
-        my_protocol = recipes.protocol.make(author=logged_in_user)
-        my_protocol_version = helpers.add_version(my_protocol)
-        my_protocol_public_version = helpers.add_version(my_protocol, visibility='public')
-        version = recipes.experiment_version.make(
-            experiment__model=my_model,
-            experiment__model_version=my_model_version.hexsha,
-            experiment__protocol=my_protocol,
-            experiment__protocol_version=my_protocol_version.hexsha,
+    def test_view_public_experiments(self, client, logged_in_user, other_user, helpers):
+        # My moderated model with my private protocol: should not be visible
+        my_model_moderated = recipes.model.make(author=logged_in_user)
+        my_model_moderated_version = helpers.add_version(my_model_moderated, visibility='moderated')
+
+        my_protocol_private = recipes.protocol.make(author=logged_in_user)
+        my_protocol_private_version = helpers.add_version(my_protocol_private, visibility='private')
+
+        exp1 = recipes.experiment_version.make(
+            experiment__model=my_model_moderated,
+            experiment__model_version=my_model_moderated_version.hexsha,
+            experiment__protocol=my_protocol_private,
+            experiment__protocol_version=my_protocol_private_version.hexsha,
         )
-        public_version = recipes.experiment_version.make(
-            experiment__model=my_model,
-            experiment__model_version=my_model_public_version.hexsha,
-            experiment__protocol=my_protocol,
+
+        # Someone else's public model with my public protocol: should be visible
+        other_model_public = recipes.model.make(author=other_user)
+        other_model_public_version = helpers.add_version(other_model_public, visibility='public')
+
+        my_protocol_public = recipes.protocol.make(author=logged_in_user)
+        my_protocol_public_version = helpers.add_version(my_protocol_public, visibility='public')
+
+        exp2 = recipes.experiment_version.make(
+            experiment__model=other_model_public,
+            experiment__model_version=other_model_public_version.hexsha,
+            experiment__protocol=my_protocol_public,
+            experiment__protocol_version=my_protocol_public_version.hexsha,
+        )
+
+        # Someone else's public model and moderated protocol: should be visible
+        other_protocol_moderated = recipes.protocol.make(author=other_user)
+        other_protocol_moderated_version = helpers.add_version(other_protocol_moderated, visibility='moderated')
+
+        exp3 = recipes.experiment_version.make(
+            experiment__model=other_model_public,
+            experiment__model_version=other_model_public_version.hexsha,
+            experiment__protocol=other_protocol_moderated,
+            experiment__protocol_version=other_protocol_moderated_version.hexsha,
+        )
+
+        # Other's private model, my public protocol: should not be visible
+        other_model_private = recipes.model.make(author=other_user)
+        other_model_private_version = helpers.add_version(other_model_private, visibility='private')
+
+        my_protocol_public = recipes.protocol.make(author=logged_in_user)
+        my_protocol_public_version = helpers.add_version(my_protocol_public, visibility='public')
+
+        exp4 = recipes.experiment_version.make(
+            experiment__model=other_model_private,
+            experiment__model_version=other_model_private_version.hexsha,
+            experiment__protocol=my_protocol_public,
             experiment__protocol_version=my_protocol_public_version.hexsha,
         )
 
         response = client.get('/experiments/matrix?subset=public')
         data = json.loads(response.content.decode())
 
-        experiment_ids = data['getMatrix']['experiments']
-        assert str(public_version.experiment.pk) in experiment_ids
-        assert str(version.experiment.pk) not in experiment_ids
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp2.experiment.pk),
+            str(exp3.experiment.pk),
+        }
 
-    def test_view_moderated_experiments(self, client, logged_in_user, helpers, experiment_version):
-        my_model = recipes.model.make(author=logged_in_user)
-        my_model_public_version = helpers.add_version(my_model, visibility='public')
-        my_model_moderated_version = helpers.add_version(my_model, visibility='moderated')
-        my_protocol = recipes.protocol.make(author=logged_in_user)
-        my_protocol_public_version = helpers.add_version(my_protocol, visibility='public')
-        my_protocol_moderated_version = helpers.add_version(my_protocol, visibility='moderated')
-        moderated_version = recipes.experiment_version.make(
-            experiment__model=my_model,
-            experiment__model_version=my_model_moderated_version.hexsha,
-            experiment__protocol=my_protocol,
-            experiment__protocol_version=my_protocol_moderated_version.hexsha,
-        )
-        public_version = recipes.experiment_version.make(
-            experiment__model=my_model,
+    def test_view_moderated_experiments(self, client, logged_in_user, other_user, helpers):
+        # My public model with somebody else's public protocol: should not be visible
+        my_model_public = recipes.model.make(author=logged_in_user)
+        my_model_public_version = helpers.add_version(my_model_public, visibility='public')
+
+        other_protocol_public = recipes.protocol.make(author=other_user)
+        other_protocol_public_version = helpers.add_version(other_protocol_public, visibility='public')
+
+        exp1 = recipes.experiment_version.make(
+            experiment__model=my_model_public,
             experiment__model_version=my_model_public_version.hexsha,
-            experiment__protocol=my_protocol,
-            experiment__protocol_version=my_protocol_public_version.hexsha,
+            experiment__protocol=other_protocol_public,
+            experiment__protocol_version=other_protocol_public_version.hexsha,
+        )
+
+        # My public model with somebody else's moderated protocol: should not be visible
+        other_protocol_moderated = recipes.protocol.make(author=other_user)
+        other_protocol_moderated_version = helpers.add_version(other_protocol_moderated, visibility='moderated')
+
+        exp2 = recipes.experiment_version.make(
+            experiment__model=my_model_public,
+            experiment__model_version=my_model_public_version.hexsha,
+            experiment__protocol=other_protocol_moderated,
+            experiment__protocol_version=other_protocol_moderated_version.hexsha,
+        )
+
+        # Someone else's moderated model and public protocol: should not be visible
+        other_model_moderated = recipes.model.make(author=other_user)
+        other_model_moderated_version = helpers.add_version(other_model_moderated, visibility='moderated')
+
+        other_protocol_public = recipes.protocol.make(author=other_user)
+        other_protocol_public_version = helpers.add_version(other_protocol_public, visibility='public')
+
+        exp3 = recipes.experiment_version.make(
+            experiment__model=other_model_moderated,
+            experiment__model_version=other_model_moderated_version.hexsha,
+            experiment__protocol=other_protocol_public,
+            experiment__protocol_version=other_protocol_public_version.hexsha,
+        )
+
+        # Someone else's moderated model and moderated protocol: should be visible
+        exp4 = recipes.experiment_version.make(
+            experiment__model=other_model_moderated,
+            experiment__model_version=other_model_moderated_version.hexsha,
+            experiment__protocol=other_protocol_moderated,
+            experiment__protocol_version=other_protocol_moderated_version.hexsha,
         )
 
         response = client.get('/experiments/matrix?subset=moderated')
         data = json.loads(response.content.decode())
 
-        experiment_ids = data['getMatrix']['experiments']
-        assert str(moderated_version.experiment.pk) in experiment_ids
-        assert str(public_version.experiment.pk) not in experiment_ids
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp4.experiment.pk),
+        }
 
     def test_submatrix(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
