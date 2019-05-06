@@ -91,10 +91,19 @@ class ExperimentMatrixJsonView(View):
             entity_ids = get_moderated_entity_ids()
         elif subset == 'mine' and request.user.is_authenticated:
             entity_ids = set(request.user.entity_set.values_list('id', flat=True))
+
+            moderated_model_ids = get_moderated_entity_ids('model')
             if request.GET.get('moderated-models', 'true') == 'true':
-                entity_ids |= get_moderated_entity_ids('model')
+                entity_ids |= moderated_model_ids
+            else:
+                entity_ids -= moderated_model_ids
+
+            moderated_protocol_ids = get_moderated_entity_ids('protocol')
             if request.GET.get('moderated-protocols', 'true') == 'true':
-                entity_ids |= get_moderated_entity_ids('protocol')
+                entity_ids |= moderated_protocol_ids
+            else:
+                entity_ids -= moderated_protocol_ids
+
         elif subset == 'public':
             entity_ids = get_public_entity_ids()
         elif subset == 'all':
