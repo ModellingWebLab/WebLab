@@ -200,7 +200,7 @@ class TestExperimentMatrix:
             experiment__protocol_version=my_moderated_protocol.repo.latest_commit.hexsha,
         )
 
-        # All moderated
+        # All my experiments
         response = client.get('/experiments/matrix?subset=mine')
         data = json.loads(response.content.decode())
         experiment_ids = set(data['getMatrix']['experiments'])
@@ -213,7 +213,7 @@ class TestExperimentMatrix:
             str(with_my_moderated_protocol.experiment.pk),
         }
 
-        # Just show moderated models
+        # Exclude those involving moderated protocols
         response = client.get('/experiments/matrix?subset=mine&moderated-protocols=false')
         data = json.loads(response.content.decode())
         experiment_ids = set(data['getMatrix']['experiments'])
@@ -223,7 +223,7 @@ class TestExperimentMatrix:
             str(with_my_moderated_model.experiment.pk),
         }
 
-        # Just show moderated protocols
+        # Exclude those involving moderated models
         response = client.get('/experiments/matrix?subset=mine&moderated-models=false')
         data = json.loads(response.content.decode())
         experiment_ids = set(data['getMatrix']['experiments'])
