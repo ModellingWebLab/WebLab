@@ -19,6 +19,7 @@ from django.views.generic.edit import FormMixin
 
 from core.visibility import VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
+from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, PlannedExperiment
@@ -84,9 +85,34 @@ class ExperimentMatrixJsonView(View):
         }
 
     def get(self, request, *args, **kwargs):
-        visible_ids = visible_entity_ids(request.user)
-        q_models = ModelEntity.objects.filter(id__in=visible_ids)
-        q_protocols = ProtocolEntity.objects.filter(id__in=visible_ids)
+        subset = request.GET.get('subset', 'moderated')
+
+        if subset == 'moderated':
+            entity_ids = get_moderated_entity_ids()
+        elif subset == 'mine' and request.user.is_authenticated:
+            entity_ids = set(request.user.entity_set.values_list('id', flat=True))
+
+            moderated_model_ids = get_moderated_entity_ids('model')
+            if request.GET.get('moderated-models', 'true') == 'true':
+                entity_ids |= moderated_model_ids
+            else:
+                entity_ids -= moderated_model_ids
+
+            moderated_protocol_ids = get_moderated_entity_ids('protocol')
+            if request.GET.get('moderated-protocols', 'true') == 'true':
+                entity_ids |= moderated_protocol_ids
+            else:
+                entity_ids -= moderated_protocol_ids
+
+        elif subset == 'public':
+            entity_ids = get_public_entity_ids()
+        elif subset == 'all':
+            entity_ids = visible_entity_ids(request.user)
+        else:
+            entity_ids = set()
+
+        q_models = ModelEntity.objects.filter(id__in=entity_ids)
+        q_protocols = ProtocolEntity.objects.filter(id__in=entity_ids)
 
         model_pks = list(map(int, request.GET.getlist('modelIds[]')))
         protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))

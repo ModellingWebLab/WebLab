@@ -45,6 +45,7 @@ class Entity(UserCreatedModelMixin, models.Model):
             ('create_protocol', 'Can create protocols'),
             # Edit entity is used as an object-level permission
             ('edit_entity', 'Can edit entity'),
+            ('moderator', 'Can promote public entity versions to moderated'),
         )
 
     def __str__(self):

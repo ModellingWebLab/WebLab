@@ -88,6 +88,9 @@ def planned_experiments(model_with_version, protocol_with_version):
 class TestExperimentsView:
     @pytest.mark.parametrize("url", [
         '/experiments/',
+        '/experiments/mine',
+        '/experiments/public/models/1/2',
+        '/experiments/all/protocols/1/2',
         '/experiments/models/1/2',
         '/experiments/models/1/2/protocols/3/4',
         '/experiments/protocols/1/2',
@@ -114,7 +117,7 @@ class TestExperimentMatrix:
     def test_matrix(self, client, experiment_version):
         exp = experiment_version.experiment
 
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
@@ -126,7 +129,7 @@ class TestExperimentMatrix:
     def test_experiment_json(self, client, experiment_version):
         exp = experiment_version.experiment
 
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
 
         exp_data = data['getMatrix']['experiments'][str(exp.pk)]
@@ -136,7 +139,7 @@ class TestExperimentMatrix:
         assert '/experiments/%d/versions/%d' % (exp.id, experiment_version.id) in exp_data['url']
 
     def test_anonymous_can_see_public_data(self, client, experiment_version):
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert str(experiment_version.experiment.pk) in data['getMatrix']['experiments']
@@ -145,12 +148,240 @@ class TestExperimentMatrix:
         model = experiment_version.experiment.model
         model.set_version_visibility('latest', 'private')
 
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert len(data['getMatrix']['models']) == 0
         assert len(data['getMatrix']['protocols']) == 1
         assert len(data['getMatrix']['experiments']) == 0
+
+    def test_view_my_experiments_with_moderated_flags(
+        self, client, helpers, logged_in_user, experiment_version,
+        moderated_model, moderated_protocol, moderated_experiment_version
+    ):
+        my_model = recipes.model.make(author=logged_in_user)
+        my_model_version = helpers.add_version(my_model)
+        my_protocol = recipes.protocol.make(author=logged_in_user)
+        my_protocol_version = helpers.add_version(my_protocol)
+
+        my_moderated_model = recipes.model.make(author=logged_in_user)
+        helpers.add_version(my_moderated_model, visibility='moderated')
+        my_moderated_protocol = recipes.protocol.make(author=logged_in_user)
+        helpers.add_version(my_moderated_protocol, visibility='moderated')
+
+        my_version = recipes.experiment_version.make(
+            experiment__model=my_model,
+            experiment__model_version=my_model_version.hexsha,
+            experiment__protocol=my_protocol,
+            experiment__protocol_version=my_protocol_version.hexsha,
+        )
+        with_moderated_model = recipes.experiment_version.make(
+            experiment__model=moderated_model,
+            experiment__model_version=moderated_model.repo.latest_commit.hexsha,
+            experiment__protocol=my_protocol,
+            experiment__protocol_version=my_protocol_version.hexsha,
+        )
+        with_moderated_protocol = recipes.experiment_version.make(
+            experiment__model=my_model,
+            experiment__model_version=my_model_version.hexsha,
+            experiment__protocol=moderated_protocol,
+            experiment__protocol_version=moderated_protocol.repo.latest_commit.hexsha,
+        )
+        with_my_moderated_model = recipes.experiment_version.make(
+            experiment__model=my_moderated_model,
+            experiment__model_version=my_moderated_model.repo.latest_commit.hexsha,
+            experiment__protocol=my_protocol,
+            experiment__protocol_version=my_protocol_version.hexsha,
+        )
+        with_my_moderated_protocol = recipes.experiment_version.make(
+            experiment__model=my_model,
+            experiment__model_version=my_model_version.hexsha,
+            experiment__protocol=my_moderated_protocol,
+            experiment__protocol_version=my_moderated_protocol.repo.latest_commit.hexsha,
+        )
+
+        # All my experiments
+        response = client.get('/experiments/matrix?subset=mine')
+        data = json.loads(response.content.decode())
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(my_version.experiment.pk),
+            str(with_moderated_model.experiment.pk),
+            str(with_moderated_protocol.experiment.pk),
+            str(moderated_experiment_version.experiment.pk),
+            str(with_my_moderated_model.experiment.pk),
+            str(with_my_moderated_protocol.experiment.pk),
+        }
+
+        # Exclude those involving moderated protocols
+        response = client.get('/experiments/matrix?subset=mine&moderated-protocols=false')
+        data = json.loads(response.content.decode())
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(my_version.experiment.pk),
+            str(with_moderated_model.experiment.pk),
+            str(with_my_moderated_model.experiment.pk),
+        }
+
+        # Exclude those involving moderated models
+        response = client.get('/experiments/matrix?subset=mine&moderated-models=false')
+        data = json.loads(response.content.decode())
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(my_version.experiment.pk),
+            str(with_moderated_protocol.experiment.pk),
+            str(with_my_moderated_protocol.experiment.pk),
+        }
+
+        # Don't show anything moderated
+        response = client.get('/experiments/matrix?subset=mine&moderated-models=false&moderated-protocols=false')
+        data = json.loads(response.content.decode())
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(my_version.experiment.pk),
+        }
+
+    def test_view_my_experiments_empty_for_anonymous(self, client, helpers, experiment_version):
+        response = client.get('/experiments/matrix?subset=mine')
+        data = json.loads(response.content.decode())
+
+        assert len(data['getMatrix']['experiments']) == 0
+
+    def test_view_public_experiments(self, client, logged_in_user, other_user, helpers):
+        # My moderated model with my private protocol: should not be visible
+        my_model_moderated = recipes.model.make(author=logged_in_user)
+        my_model_moderated_version = helpers.add_version(my_model_moderated, visibility='moderated')
+
+        my_protocol_private = recipes.protocol.make(author=logged_in_user)
+        my_protocol_private_version = helpers.add_version(my_protocol_private, visibility='private')
+
+        exp1 = recipes.experiment_version.make(
+            experiment__model=my_model_moderated,
+            experiment__model_version=my_model_moderated_version.hexsha,
+            experiment__protocol=my_protocol_private,
+            experiment__protocol_version=my_protocol_private_version.hexsha,
+        )
+
+        # Someone else's public model with my public protocol: should be visible
+        other_model_public = recipes.model.make(author=other_user)
+        other_model_public_version = helpers.add_version(other_model_public, visibility='public')
+
+        my_protocol_public = recipes.protocol.make(author=logged_in_user)
+        my_protocol_public_version = helpers.add_version(my_protocol_public, visibility='public')
+
+        exp2 = recipes.experiment_version.make(
+            experiment__model=other_model_public,
+            experiment__model_version=other_model_public_version.hexsha,
+            experiment__protocol=my_protocol_public,
+            experiment__protocol_version=my_protocol_public_version.hexsha,
+        )
+
+        # Someone else's public model and moderated protocol: should be visible
+        other_protocol_moderated = recipes.protocol.make(author=other_user)
+        other_protocol_moderated_version = helpers.add_version(other_protocol_moderated, visibility='moderated')
+
+        exp3 = recipes.experiment_version.make(
+            experiment__model=other_model_public,
+            experiment__model_version=other_model_public_version.hexsha,
+            experiment__protocol=other_protocol_moderated,
+            experiment__protocol_version=other_protocol_moderated_version.hexsha,
+        )
+
+        # Other's private model, my public protocol: should not be visible
+        other_model_private = recipes.model.make(author=other_user)
+        other_model_private_version = helpers.add_version(other_model_private, visibility='private')
+
+        exp4 = recipes.experiment_version.make(  # noqa: F841
+            experiment__model=other_model_private,
+            experiment__model_version=other_model_private_version.hexsha,
+            experiment__protocol=my_protocol_public,
+            experiment__protocol_version=my_protocol_public_version.hexsha,
+        )
+
+        response = client.get('/experiments/matrix?subset=public')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp2.experiment.pk),
+            str(exp3.experiment.pk),
+        }
+
+        # If however I ask for what I can see, I get more returned
+        response = client.get('/experiments/matrix?subset=all')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp1.experiment.pk),
+            str(exp2.experiment.pk),
+            str(exp3.experiment.pk),
+        }
+
+    def test_view_moderated_experiments(self, client, logged_in_user, other_user, helpers):
+        # My public model with somebody else's public protocol: should not be visible
+        my_model_public = recipes.model.make(author=logged_in_user)
+        my_model_public_version = helpers.add_version(my_model_public, visibility='public')
+
+        other_protocol_public = recipes.protocol.make(author=other_user)
+        other_protocol_public_version = helpers.add_version(other_protocol_public, visibility='public')
+
+        exp1 = recipes.experiment_version.make(
+            experiment__model=my_model_public,
+            experiment__model_version=my_model_public_version.hexsha,
+            experiment__protocol=other_protocol_public,
+            experiment__protocol_version=other_protocol_public_version.hexsha,
+        )
+
+        # My public model with somebody else's moderated protocol: should not be visible
+        other_protocol_moderated = recipes.protocol.make(author=other_user)
+        other_protocol_moderated_version = helpers.add_version(other_protocol_moderated, visibility='moderated')
+
+        exp2 = recipes.experiment_version.make(
+            experiment__model=my_model_public,
+            experiment__model_version=my_model_public_version.hexsha,
+            experiment__protocol=other_protocol_moderated,
+            experiment__protocol_version=other_protocol_moderated_version.hexsha,
+        )
+
+        # Someone else's moderated model and public protocol: should not be visible
+        other_model_moderated = recipes.model.make(author=other_user)
+        other_model_moderated_version = helpers.add_version(other_model_moderated, visibility='moderated')
+
+        exp3 = recipes.experiment_version.make(
+            experiment__model=other_model_moderated,
+            experiment__model_version=other_model_moderated_version.hexsha,
+            experiment__protocol=other_protocol_public,
+            experiment__protocol_version=other_protocol_public_version.hexsha,
+        )
+
+        # Someone else's moderated model and moderated protocol: should be visible
+        exp4 = recipes.experiment_version.make(
+            experiment__model=other_model_moderated,
+            experiment__model_version=other_model_moderated_version.hexsha,
+            experiment__protocol=other_protocol_moderated,
+            experiment__protocol_version=other_protocol_moderated_version.hexsha,
+        )
+
+        response = client.get('/experiments/matrix')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp4.experiment.pk),
+        }
+
+        # If however I ask for what I can see, I get everything because they're all public
+        response = client.get('/experiments/matrix?subset=all')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp1.experiment.pk),
+            str(exp2.experiment.pk),
+            str(exp3.experiment.pk),
+            str(exp4.experiment.pk),
+        }
 
     def test_submatrix(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
@@ -170,6 +401,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'modelIds[]': [exp.model.pk, non_existent_pk],
                 'protoIds[]': [exp.protocol.pk, non_existent_pk],
             }
@@ -204,6 +436,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'modelIds[]': [exp.model.pk],
                 'modelVersions[]': [v1, v2],
             }
@@ -232,6 +465,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'modelIds[]': [exp.model.pk],
                 'modelVersions[]': '*',
             }
@@ -250,6 +484,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'modelIds[]': [experiment_version.experiment.model.pk, model.pk],
                 'modelVersions[]': '*',
             }
@@ -275,6 +510,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'protoIds[]': [exp.protocol.pk],
                 'protoVersions[]': [v1, v2],
             }
@@ -303,6 +539,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'protoIds[]': [exp.protocol.pk],
                 'protoVersions[]': '*',
             }
@@ -321,6 +558,7 @@ class TestExperimentMatrix:
         response = client.get(
             '/experiments/matrix',
             {
+                'subset': 'all',
                 'protoIds[]': [experiment_version.experiment.protocol.pk, protocol.pk],
                 'protoVersions[]': '*',
             }
@@ -340,7 +578,7 @@ class TestExperimentMatrix:
             protocol_version=public_protocol.repo.latest_commit.hexsha,
         )
 
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert len(data['getMatrix']['protocols']) == 1
@@ -351,7 +589,7 @@ class TestExperimentMatrix:
         new_version = helpers.add_version(public_model, filename='file2.txt')
 
         # We should now see this version in the matrix, but no experiments
-        response = client.get('/experiments/matrix')
+        response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert str(new_version.hexsha) in data['getMatrix']['models']
