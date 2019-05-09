@@ -20,6 +20,7 @@ from django.views.generic.edit import FormMixin
 from core.visibility import VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
+from repocache.exceptions import RepoCacheMiss
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, PlannedExperiment
@@ -43,8 +44,10 @@ class ExperimentMatrixJsonView(View):
     @classmethod
     def entity_json(cls, entity, version=None):
         if version is None:
-            commit = entity.repo.latest_commit
-            version = commit.hexsha if commit else ''
+            try:
+                version = entity.repocache.get_version('latest').sha
+            except RepoCacheMiss:
+                version = ''
             name = entity.name
         else:
             name = '%s @ %s' % (entity.name, version)
@@ -139,7 +142,7 @@ class ExperimentMatrixJsonView(View):
         if model_versions:
             model = q_models.first()
             if model_versions[0] == '*':
-                model_versions = [commit.hexsha for commit in model.repo.commits]
+                model_versions = [version.sha for version in model.repocache.versions.all()]
 
             model_versions = [self.entity_json(model, version)
                               for version in model_versions]
@@ -154,7 +157,7 @@ class ExperimentMatrixJsonView(View):
         if protocol_versions:
             protocol = q_protocols.first()
             if protocol_versions[0] == '*':
-                protocol_versions = [commit.hexsha for commit in protocol.repo.commits]
+                protocol_versions = [version.sha for version in protocol.repocache.versions.all()]
 
             protocol_versions = [self.entity_json(protocol, version)
                                  for version in protocol_versions]
