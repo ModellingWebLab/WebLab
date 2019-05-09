@@ -55,5 +55,5 @@ smmap2==2.0.5             # via gitdb2
 social-auth-app-django==1.2.0
 social-auth-core==3.1.0   # via social-auth-app-django
 traitlets==4.3.2          # via ipython
-urllib3==1.24.1           # via requests
+urllib3==1.24.2           # via requests
 wcwidth==0.1.7            # via prompt-toolkit
