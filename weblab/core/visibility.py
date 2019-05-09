@@ -5,7 +5,7 @@ from django.http import Http404
 class Visibility:
     PRIVATE = 'private'
     PUBLIC = 'public'
-    MODERATED =  'moderated'
+    MODERATED = 'moderated'
 
 
 HELP_TEXT = (
@@ -19,21 +19,36 @@ CHOICES = (
     (Visibility.MODERATED, 'Moderated'),
 )
 
+# Ordered by most conservative first
+LEVELS = [
+    Visibility.PRIVATE,
+    Visibility.PUBLIC,
+    Visibility.MODERATED,
+]
+
 
 def get_joint_visibility(*visibilities):
     """
     :return: joint visibility of a set of visibilities
     """
-    # Ordered by most conservative first
-    levels = [
-        Visibility.PRIVATE, Visibility.PUBLIC, Visibility.MODERATED,
-    ]
-
     # Use the most conservative of the two entities' visibilities
-    return levels[min(
-        levels.index(vis)
+    return LEVELS[min(
+        LEVELS.index(vis)
         for vis in visibilities
     )]
+
+
+def visibility_meets_threshold(visibility, threshold):
+    """Test whether a given visibility is at least at the threshold.
+
+    For instance if the threshold is 'public' then 'moderated' is also OK.
+
+    :param visibility: the visibility to test
+    :param threshold: the minimum visibility allowed, or None if anything goes
+    """
+    if threshold is None:
+        threshold = Visibility.PRIVATE
+    return LEVELS.index(visibility) >= LEVELS.index(threshold)
 
 
 def visible_entity_ids(user):
