@@ -2,7 +2,11 @@
 <nav>
   <ul class="navbar">
     <li><a href="{% url 'home' %}">Home</a></li>
-    <li><a href="{% url 'experiments:list' %}">Experiments</a></li>
+    {% if user.is_authenticated %}
+      <li><a href="{% url 'experiments:list' 'mine' %}">Experiments</a></li>
+    {% else %}
+      <li><a href="{% url 'experiments:list' %}">Experiments</a></li>
+    {% endif %}
     <li><a href="{% url 'contact' %}">Contact/Team</a></li>
     <li><a href="{% url 'about' %}">About</a></li>
     <li><a href="{% url 'privacy' %}">Privacy</a></li>
