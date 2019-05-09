@@ -113,3 +113,6 @@ weblab/data/
 
 # media directory
 weblab/media/
+
+#PyCharm files
+weblab/.idea/
