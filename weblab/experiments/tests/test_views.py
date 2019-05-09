@@ -255,7 +255,7 @@ class TestExperimentMatrix:
         my_protocol_private = recipes.protocol.make(author=logged_in_user)
         my_protocol_private_version = helpers.add_version(my_protocol_private, visibility='private')
 
-        exp1 = recipes.experiment_version.make(  # noqa: F841
+        exp1 = recipes.experiment_version.make(
             experiment__model=my_model_moderated,
             experiment__model_version=my_model_moderated_version.hexsha,
             experiment__protocol=my_protocol_private,
@@ -307,6 +307,17 @@ class TestExperimentMatrix:
             str(exp3.experiment.pk),
         }
 
+        # If however I ask for what I can see, I get more returned
+        response = client.get('/experiments/matrix?subset=all')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp1.experiment.pk),
+            str(exp2.experiment.pk),
+            str(exp3.experiment.pk),
+        }
+
     def test_view_moderated_experiments(self, client, logged_in_user, other_user, helpers):
         # My public model with somebody else's public protocol: should not be visible
         my_model_public = recipes.model.make(author=logged_in_user)
@@ -315,7 +326,7 @@ class TestExperimentMatrix:
         other_protocol_public = recipes.protocol.make(author=other_user)
         other_protocol_public_version = helpers.add_version(other_protocol_public, visibility='public')
 
-        exp1 = recipes.experiment_version.make(  # noqa: F841
+        exp1 = recipes.experiment_version.make(
             experiment__model=my_model_public,
             experiment__model_version=my_model_public_version.hexsha,
             experiment__protocol=other_protocol_public,
@@ -326,7 +337,7 @@ class TestExperimentMatrix:
         other_protocol_moderated = recipes.protocol.make(author=other_user)
         other_protocol_moderated_version = helpers.add_version(other_protocol_moderated, visibility='moderated')
 
-        exp2 = recipes.experiment_version.make(  # noqa: F841
+        exp2 = recipes.experiment_version.make(
             experiment__model=my_model_public,
             experiment__model_version=my_model_public_version.hexsha,
             experiment__protocol=other_protocol_moderated,
@@ -337,7 +348,7 @@ class TestExperimentMatrix:
         other_model_moderated = recipes.model.make(author=other_user)
         other_model_moderated_version = helpers.add_version(other_model_moderated, visibility='moderated')
 
-        exp3 = recipes.experiment_version.make(  # noqa: F841
+        exp3 = recipes.experiment_version.make(
             experiment__model=other_model_moderated,
             experiment__model_version=other_model_moderated_version.hexsha,
             experiment__protocol=other_protocol_public,
@@ -357,6 +368,18 @@ class TestExperimentMatrix:
 
         experiment_ids = set(data['getMatrix']['experiments'])
         assert experiment_ids == {
+            str(exp4.experiment.pk),
+        }
+
+        # If however I ask for what I can see, I get everything because they're all public
+        response = client.get('/experiments/matrix?subset=all')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp1.experiment.pk),
+            str(exp2.experiment.pk),
+            str(exp3.experiment.pk),
             str(exp4.experiment.pk),
         }
 
