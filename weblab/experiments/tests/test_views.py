@@ -185,9 +185,9 @@ class TestExperimentMatrix:
         my_protocol_version = helpers.add_version(my_protocol)
 
         my_moderated_model = recipes.model.make(author=logged_in_user)
-        my_moderated_model_version = helpers.add_version(my_moderated_model, visibility='moderated')
+        helpers.add_version(my_moderated_model, visibility='moderated')
         my_moderated_protocol = recipes.protocol.make(author=logged_in_user)
-        my_moderated_protocol_version = helpers.add_version(my_moderated_protocol, visibility='moderated')
+        helpers.add_version(my_moderated_protocol, visibility='moderated')
 
         my_version = recipes.experiment_version.make(
             experiment__model=my_model,
@@ -267,7 +267,6 @@ class TestExperimentMatrix:
 
         assert len(data['getMatrix']['experiments']) == 0
 
-
     def test_view_public_experiments(self, client, logged_in_user, other_user, helpers):
         # My moderated model with my private protocol: should not be visible
         my_model_moderated = recipes.model.make(author=logged_in_user)
@@ -276,7 +275,7 @@ class TestExperimentMatrix:
         my_protocol_private = recipes.protocol.make(author=logged_in_user)
         my_protocol_private_version = helpers.add_version(my_protocol_private, visibility='private')
 
-        exp1 = recipes.experiment_version.make(
+        exp1 = recipes.experiment_version.make(  # noqa: F841
             experiment__model=my_model_moderated,
             experiment__model_version=my_model_moderated_version.hexsha,
             experiment__protocol=my_protocol_private,
@@ -312,7 +311,7 @@ class TestExperimentMatrix:
         other_model_private = recipes.model.make(author=other_user)
         other_model_private_version = helpers.add_version(other_model_private, visibility='private')
 
-        exp4 = recipes.experiment_version.make(
+        exp4 = recipes.experiment_version.make(  # noqa: F841
             experiment__model=other_model_private,
             experiment__model_version=other_model_private_version.hexsha,
             experiment__protocol=my_protocol_public,
@@ -336,7 +335,7 @@ class TestExperimentMatrix:
         other_protocol_public = recipes.protocol.make(author=other_user)
         other_protocol_public_version = helpers.add_version(other_protocol_public, visibility='public')
 
-        exp1 = recipes.experiment_version.make(
+        exp1 = recipes.experiment_version.make(  # noqa: F841
             experiment__model=my_model_public,
             experiment__model_version=my_model_public_version.hexsha,
             experiment__protocol=other_protocol_public,
@@ -347,7 +346,7 @@ class TestExperimentMatrix:
         other_protocol_moderated = recipes.protocol.make(author=other_user)
         other_protocol_moderated_version = helpers.add_version(other_protocol_moderated, visibility='moderated')
 
-        exp2 = recipes.experiment_version.make(
+        exp2 = recipes.experiment_version.make(  # noqa: F841
             experiment__model=my_model_public,
             experiment__model_version=my_model_public_version.hexsha,
             experiment__protocol=other_protocol_moderated,
@@ -358,7 +357,7 @@ class TestExperimentMatrix:
         other_model_moderated = recipes.model.make(author=other_user)
         other_model_moderated_version = helpers.add_version(other_model_moderated, visibility='moderated')
 
-        exp3 = recipes.experiment_version.make(
+        exp3 = recipes.experiment_version.make(  # noqa: F841
             experiment__model=other_model_moderated,
             experiment__model_version=other_model_moderated_version.hexsha,
             experiment__protocol=other_protocol_public,
