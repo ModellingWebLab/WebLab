@@ -1,4 +1,4 @@
-from django.db.models import F, Max, Q
+from django.db.models import Q
 
 from .models import CachedEntityVersion
 
