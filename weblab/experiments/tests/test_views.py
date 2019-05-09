@@ -155,26 +155,6 @@ class TestExperimentMatrix:
         assert len(data['getMatrix']['protocols']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
-    def test_view_my_experiments(self, client, helpers, logged_in_user, experiment_version):
-        my_model = recipes.model.make(author=logged_in_user)
-        my_model_version = helpers.add_version(my_model)
-        my_protocol = recipes.protocol.make(author=logged_in_user)
-        my_protocol_version = helpers.add_version(my_protocol)
-        my_version = recipes.experiment_version.make(
-            experiment__model=my_model,
-            experiment__model_version=my_model_version.hexsha,
-            experiment__protocol=my_protocol,
-            experiment__protocol_version=my_protocol_version.hexsha,
-        )
-
-        response = client.get('/experiments/matrix?subset=mine')
-        data = json.loads(response.content.decode())
-
-        experiment_ids = set(data['getMatrix']['experiments'])
-        assert experiment_ids == {
-            str(my_version.experiment.pk)
-        }
-
     def test_view_my_experiments_with_moderated_flags(
         self, client, helpers, logged_in_user, experiment_version,
         moderated_model, moderated_protocol, moderated_experiment_version
