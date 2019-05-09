@@ -17,10 +17,9 @@ from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
 
-from core.visibility import VisibilityMixin, visible_entity_ids
+from core.visibility import VisibilityMixin, visibility_meets_threshold, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
-from repocache.exceptions import RepoCacheMiss
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, PlannedExperiment
@@ -42,11 +41,14 @@ class ExperimentMatrixJsonView(View):
     Serve up JSON for experiment matrix
     """
     @classmethod
-    def entity_json(cls, entity, version=None):
+    def entity_json(cls, entity, version=None, req_visibility=None, user=None):
         if version is None:
-            try:
-                version = entity.repocache.get_version('latest').sha
-            except RepoCacheMiss:
+            for cached_version in entity.repocache.versions.all():
+                if visibility_meets_threshold(cached_version.visibility, req_visibility):
+                    if user and entity.is_version_visible_to_user(cached_version.sha, user):
+                        version = cached_version.sha
+                        break
+            else:
                 version = ''
             name = entity.name
         else:
@@ -89,9 +91,11 @@ class ExperimentMatrixJsonView(View):
 
     def get(self, request, *args, **kwargs):
         subset = request.GET.get('subset', 'moderated')
+        req_visibility = None
 
         if subset == 'moderated':
             entity_ids = get_moderated_entity_ids()
+            req_visibility = 'moderated'
         elif subset == 'mine' and request.user.is_authenticated:
             entity_ids = set(request.user.entity_set.values_list('id', flat=True))
 
@@ -109,6 +113,7 @@ class ExperimentMatrixJsonView(View):
 
         elif subset == 'public':
             entity_ids = get_public_entity_ids()
+            req_visibility = 'public'
         elif subset == 'all':
             entity_ids = visible_entity_ids(request.user)
         else:
@@ -147,7 +152,8 @@ class ExperimentMatrixJsonView(View):
             model_versions = [self.entity_json(model, version)
                               for version in model_versions]
         else:
-            model_versions = [self.entity_json(model) for model in q_models]
+            model_versions = [self.entity_json(model, req_visibility=req_visibility, user=request.user)
+                              for model in q_models]
 
         model_versions = {ver['id']: ver for ver in model_versions}
 
@@ -162,7 +168,8 @@ class ExperimentMatrixJsonView(View):
             protocol_versions = [self.entity_json(protocol, version)
                                  for version in protocol_versions]
         else:
-            protocol_versions = [self.entity_json(protocol) for protocol in q_protocols]
+            protocol_versions = [self.entity_json(protocol, req_visibility=req_visibility, user=request.user)
+                                 for protocol in q_protocols]
 
         protocol_versions = {ver['id']: ver for ver in protocol_versions}
 
