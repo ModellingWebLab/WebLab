@@ -312,9 +312,6 @@ class TestExperimentMatrix:
         other_model_private = recipes.model.make(author=other_user)
         other_model_private_version = helpers.add_version(other_model_private, visibility='private')
 
-        my_protocol_public = recipes.protocol.make(author=logged_in_user)
-        my_protocol_public_version = helpers.add_version(my_protocol_public, visibility='public')
-
         exp4 = recipes.experiment_version.make(
             experiment__model=other_model_private,
             experiment__model_version=other_model_private_version.hexsha,
@@ -360,9 +357,6 @@ class TestExperimentMatrix:
         # Someone else's moderated model and public protocol: should not be visible
         other_model_moderated = recipes.model.make(author=other_user)
         other_model_moderated_version = helpers.add_version(other_model_moderated, visibility='moderated')
-
-        other_protocol_public = recipes.protocol.make(author=other_user)
-        other_protocol_public_version = helpers.add_version(other_protocol_public, visibility='public')
 
         exp3 = recipes.experiment_version.make(
             experiment__model=other_model_moderated,
