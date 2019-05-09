@@ -7,16 +7,19 @@
 
 {% block content %}
   {% include "./includes/entity_header.html" %}
+  {% can_create_version entity as permission %}
 
   <div id="entitydetails">
   </div>
 
-  <div id="entityversion" data-entity-type="{{ entity.type }}"
+  <div id="entityversion" data-entity-type="{{ entity.entity_type }}"
+       data-can-edit="{% if permission %}true{% else %}false{% endif %}"
+       data-alter-file-href="{% url 'entities:alter_file' entity.entity_type entity.id %}"
+       data-get-proto-interfaces-href="{% url 'entities:get_protocol_interfaces' %}"
        data-version-json-href="{{ entity|url_version_json:version }}">
     <div class="closebtn">
       <small>
         <a href="{{ entity|url_versions }}">list all versions</a>
-        {% can_create_version entity as permission %}
         {% if permission %}
           | <a href="{{ entity|url_newversion }}">add new version</a>
         {% endif %}
@@ -33,7 +36,6 @@
         Created <time id="entityversiontime">{{ version.committed_at }}</time>
         by <em id="entityversionauthor">{{ version.author }}</em>.
         <div id="versionVisibility" data-change-href="{{ entity|url_change_version_visibility:version }}">
-          {% can_create_version entity as permission %}
           {% if permission %}
             <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
             <form method="POST" action="">
