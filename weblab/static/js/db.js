@@ -640,7 +640,7 @@ function prepareMatrix ()
 	// The my/public/moderated view buttons
 	$("#showModeratedExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = getBaseUrl() + '/moderated';
+			document.location.href = getBaseUrl();
 	});
 	$("#showPublicExpts").click(function () {
 		if (!$(this).hasClass("selected"))
@@ -648,7 +648,7 @@ function prepareMatrix ()
 	});
 	$("#showAllExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = getBaseUrl();
+			document.location.href = getBaseUrl() + '/all';
 	});
 	$("#showMyExpts").click(function () {
 		if (!$(this).hasClass("selected"))
