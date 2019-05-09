@@ -528,7 +528,7 @@ function parseLocation ()
       else if (items[0] == "all")
       {
         $('#showAllExpts').addClass("selected");
-        ret.subset = "visible";
+        ret.subset = "all";
       }
       else
       {
