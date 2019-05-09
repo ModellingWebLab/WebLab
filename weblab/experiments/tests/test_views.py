@@ -639,6 +639,27 @@ class TestNewExperimentView:
             protocol=protocol, protocol_version=protocol_version
         ).count() == 0
 
+        # Check a subsequent submit gives the same experiment version back
+        response = client.post(
+            '/experiments/new',
+            {
+                'model': model.pk,
+                'protocol': protocol.pk,
+                'model_version': model_version,
+                'protocol_version': protocol_version,
+            }
+        )
+
+        assert mock_post.call_count == 1
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+
+        assert 'newExperiment' in data
+        assert data['newExperiment']['response']
+        assert data['newExperiment']['expId'] == version.experiment.id
+        assert data['newExperiment']['versionId'] == version.id
+        assert data['newExperiment']['expName'] == version.experiment.name
+
     @pytest.mark.usefixtures('logged_in_user')
     def test_submit_experiment_requires_permissions(self, mock_post, client, logged_in_user):
         response = client.post('/experiments/new', {})
