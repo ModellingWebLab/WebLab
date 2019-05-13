@@ -5,7 +5,7 @@ import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -15,10 +15,11 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import FormMixin
+from django.views.generic.edit import DeleteView, FormMixin
 
 from core.visibility import VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
+from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, PlannedExperiment
@@ -84,9 +85,34 @@ class ExperimentMatrixJsonView(View):
         }
 
     def get(self, request, *args, **kwargs):
-        visible_ids = visible_entity_ids(request.user)
-        q_models = ModelEntity.objects.filter(id__in=visible_ids)
-        q_protocols = ProtocolEntity.objects.filter(id__in=visible_ids)
+        subset = request.GET.get('subset', 'moderated')
+
+        if subset == 'moderated':
+            entity_ids = get_moderated_entity_ids()
+        elif subset == 'mine' and request.user.is_authenticated:
+            entity_ids = set(request.user.entity_set.values_list('id', flat=True))
+
+            moderated_model_ids = get_moderated_entity_ids('model')
+            if request.GET.get('moderated-models', 'true') == 'true':
+                entity_ids |= moderated_model_ids
+            else:
+                entity_ids -= moderated_model_ids
+
+            moderated_protocol_ids = get_moderated_entity_ids('protocol')
+            if request.GET.get('moderated-protocols', 'true') == 'true':
+                entity_ids |= moderated_protocol_ids
+            else:
+                entity_ids -= moderated_protocol_ids
+
+        elif subset == 'public':
+            entity_ids = get_public_entity_ids()
+        elif subset == 'all':
+            entity_ids = visible_entity_ids(request.user)
+        else:
+            entity_ids = set()
+
+        q_models = ModelEntity.objects.filter(id__in=entity_ids)
+        q_protocols = ProtocolEntity.objects.filter(id__in=entity_ids)
 
         model_pks = list(map(int, request.GET.getlist('modelIds[]')))
         protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
@@ -186,7 +212,8 @@ class NewExperimentView(PermissionRequiredMixin, View):
             model_version = request.POST['model_version']
             protocol_version = request.POST['protocol_version']
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, request.user)
+        version = submit_experiment(model, model_version, protocol, protocol_version,
+                                    request.user, 'rerun' in request.POST)
         success = version.status == ExperimentVersion.STATUS_QUEUED
         if version.status != ExperimentVersion.STATUS_FAILED:
             # Remove from planned experiments
@@ -229,6 +256,38 @@ class ExperimentVersionListView(VisibilityMixin, DetailView):
     model = Experiment
     context_object_name = 'experiment'
     template_name = 'experiments/experiment_versions.html'
+
+
+class ExperimentDeleteView(UserPassesTestMixin, DeleteView):
+    """
+    Delete all versions of an experiment
+    """
+    model = Experiment
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have delete permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('experiments:list')
+
+
+class ExperimentVersionDeleteView(UserPassesTestMixin, DeleteView):
+    """
+    Delete a single version of an experiment
+    """
+    model = ExperimentVersion
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have delete permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('experiments:versions', args=[self.get_object().experiment.id])
 
 
 class ExperimentComparisonView(TemplateView):

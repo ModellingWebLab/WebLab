@@ -10,6 +10,8 @@ _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 urlpatterns = [
     url(
         '^'
+        '(?P<subset>mine|public|all)?'
+        '/?'
         '(?:models(?P<model_pks>(/\d+)+)'
         '(?:/versions(?P<model_versions>(/%s)+))?)?'
         '/?'
@@ -42,6 +44,18 @@ urlpatterns = [
         r'^(?P<pk>\d+)/versions/$',
         views.ExperimentVersionListView.as_view(),
         name='versions',
+    ),
+
+    url(
+        r'^(?P<pk>\d+)/delete$',
+        views.ExperimentDeleteView.as_view(),
+        name='delete',
+    ),
+
+    url(
+        r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/delete$',
+        views.ExperimentVersionDeleteView.as_view(),
+        name='delete_version',
     ),
 
     url(

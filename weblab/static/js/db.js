@@ -499,48 +499,48 @@ function parseLocation ()
       if (items[0] == "public")
       {
         $('#showPublicExpts').addClass("selected");
-        ret.publicOnly = "1";
+        ret.subset = "public";
       }
-      else if (items[0].substr(0,4) == "mine")
+      else if (items[0] == "mine")
       {
         $('#showMyExpts').addClass("selected");
         $('.showMyButton').show();
-        ret.mineOnly = "1";
-        if (items[0].indexOf("-m") != -1)
-        {
-          ret.includeModeratedModels = "0";
-          console.log('Show model');
+        ret.subset = "mine";
+
+        $('#showMyExptsModels').text("Hide moderated models");
+        $('#showMyExptsProtocols').text("Hide moderated protocols");
+
+        var query = location.search.substr(1);
+        var result = {};
+        query.split("&").forEach(function(part) {
+          var item = part.split("=");
+          if (item[0] == 'moderated-models' && item[1] == 'false') {
+            ret["moderated-models"] = "false";
           $('#showMyExptsModels').text("Show moderated models");
-        }
-        else
-        {
-          $('#showMyExptsModels').text("Hide moderated models");
-        }
-        if (items[0].indexOf("-p") != -1)
-        {
-          ret.includeModeratedProtocols = "0";
-          console.log('Show proto');
-          $('#showMyExptsProtocols').text("Show moderated protocols");
-        }
-        else
-        {
-          $('#showMyExptsProtocols').text("Hide moderated protocols");
-        }
+          }
+          if (item[0] == 'moderated-protocols' && item[1] == 'false') {
+            ret["moderated-protocols"] = "false";
+            $('#showMyExptsProtocols').text("Show moderated protocols");
+          }
+          result[item[0]] = decodeURIComponent(item[1]);
+        });
       }
       else if (items[0] == "all")
       {
         $('#showAllExpts').addClass("selected");
-        ret.showAll = "1";
+        ret.subset = "all";
       }
       else
       {
         $('#showModeratedExpts').addClass("selected");
+        ret.subset = "moderated";
       }
     }
   }
   else
   {
     $('#showModeratedExpts').addClass("selected");
+    ret.subset = "moderated";
   }
   return ret;
 }
@@ -621,37 +621,48 @@ function prepareMatrix ()
   });
 	$("#comparisonLink").hide();
 	$("#comparisonMatrix").hide();
-	
+
+  function getBaseUrl() {
+    var url = $(div).data('base-href');
+    if (url.substr(-1) === '/') {
+      url = url.slice(0, -1);
+    }
+    return url;
+  }
+
+  function hideModeratedParams(hideModels, hideProtocols) {
+    var params = {};
+    if (hideModels) params['moderated-models'] = false;
+    if (hideProtocols) params['moderated-protocols'] = false;
+    return params
+  }
+
 	// The my/public/moderated view buttons
 	$("#showModeratedExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = contextPath + "/db";
+			document.location.href = getBaseUrl();
 	});
 	$("#showPublicExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = contextPath + "/db/public";
+			document.location.href = getBaseUrl() + '/public';
 	});
 	$("#showAllExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = contextPath + "/db/all";
+			document.location.href = getBaseUrl() + '/all';
 	});
 	$("#showMyExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = contextPath + "/db/mine";
+			document.location.href = getBaseUrl() + '/mine';
 	});
 	$("#showMyExptsModels").click(function () {
 		var hideModels = hiddenToggle($(this)),
 			hideProtocols = $("#showMyExptsProtocols").text().substr(0,4) == 'Show';
-		console.log('M.click ' + hideModels + ' ' + hideProtocols);
-		document.location.href = contextPath + "/db/mine"
-			+ (hideModels ? "-m" : "") + (hideProtocols ? "-p" : "");
+			document.location.href = getBaseUrl() + '/mine?' + $.param(hideModeratedParams(hideModels, hideProtocols));
 	});
 	$("#showMyExptsProtocols").click(function () {
-		var hideModels = $("#showMyExptsModels").text().substr(0,4) == 'Show',
-			hideProtocols = hiddenToggle($(this));
-		console.log('P.click ' + hideModels + ' ' + hideProtocols);
-		document.location.href = contextPath + "/db/mine"
-			+ (hideModels ? "-m" : "") + (hideProtocols ? "-p" : "");
+		var hideProtocols = hiddenToggle($(this)),
+			hideModels = $("#showMyExptsModels").text().substr(0,4) == 'Show';
+			document.location.href = getBaseUrl() + '/mine?' + $.param(hideModeratedParams(hideModels, hideProtocols));
 	});
 }
 

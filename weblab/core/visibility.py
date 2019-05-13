@@ -5,6 +5,7 @@ from django.http import Http404
 class Visibility:
     PRIVATE = 'private'
     PUBLIC = 'public'
+    MODERATED =  'moderated'
 
 
 HELP_TEXT = (
@@ -14,7 +15,8 @@ HELP_TEXT = (
 
 CHOICES = (
     (Visibility.PRIVATE, 'Private'),
-    (Visibility.PUBLIC, 'Public')
+    (Visibility.PUBLIC, 'Public'),
+    (Visibility.MODERATED, 'Moderated'),
 )
 
 
@@ -24,7 +26,7 @@ def get_joint_visibility(*visibilities):
     """
     # Ordered by most conservative first
     levels = [
-        Visibility.PRIVATE, Visibility.PUBLIC,
+        Visibility.PRIVATE, Visibility.PUBLIC, Visibility.MODERATED,
     ]
 
     # Use the most conservative of the two entities' visibilities
@@ -68,8 +70,8 @@ def visibility_check(visibility, allowed_users, user):
 
     :returns: True if the user has permission to view, False otherwise
     """
-    if visibility == Visibility.PUBLIC:
-        # Public is visible to everybody
+    if visibility in [Visibility.PUBLIC, Visibility.MODERATED]:
+        # Public and moderated are visible to everybody
         return True
 
     elif user.is_authenticated:
@@ -87,7 +89,7 @@ class VisibilityMixin(AccessMixin):
     """
     View mixin implementing visiblity restrictions
 
-    Public objects can be seen by all.
+    Public and moderated objects can be seen by all.
     Private objects can be seen only by their owner.
 
     If an object is not visible to a logged in user, we generate a 404

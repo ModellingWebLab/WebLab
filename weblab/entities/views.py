@@ -178,9 +178,11 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
     def get_context_data(self, **kwargs):
         entity = self._get_object()
         visibility = entity.get_version_visibility(self.get_commit().hexsha)
-        kwargs['form'] = EntityChangeVisibilityForm(initial={
-            'visibility': visibility,
-        })
+        kwargs['form'] = EntityChangeVisibilityForm(
+            user=self.request.user,
+            initial={
+                'visibility': visibility,
+            })
         return super().get_context_data(**kwargs)
 
 
@@ -766,7 +768,7 @@ class ChangeVisibilityView(UserPassesTestMixin, EntityVersionMixin, DetailView):
 
         Called by Django when a form is submitted.
         """
-        form = EntityChangeVisibilityForm(self.request.POST)
+        form = EntityChangeVisibilityForm(self.request.POST, user=self.request.user)
         if form.is_valid():
             obj = self._get_object()
             sha = self.kwargs['sha']

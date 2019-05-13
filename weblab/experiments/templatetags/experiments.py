@@ -43,3 +43,9 @@ def url_version_comparison_matrix(entity):
         kwargs['protocol_versions'] = '/*'
 
     return reverse('experiments:list', kwargs=kwargs)
+
+
+@register.simple_tag(takes_context=True)
+def can_delete_entity(context, entity):
+    user = context['user']
+    return entity.is_deletable_by(user)

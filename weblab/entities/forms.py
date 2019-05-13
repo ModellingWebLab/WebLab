@@ -68,11 +68,20 @@ class EntityVersionForm(forms.Form):
         self.fields['rerun_expts'].help_text = self.fields['rerun_expts'].help_text % entity_type
 
 
-class EntityChangeVisibilityForm(forms.Form):
+class EntityChangeVisibilityForm(UserKwargModelFormMixin, forms.Form):
     visibility = forms.ChoiceField(
         choices=visibility.CHOICES,
         help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        user = kwargs.pop('user')
+
+        if not user.has_perm('entities.moderator'):
+            self.fields['visibility'].choices.remove((
+                visibility.Visibility.MODERATED, 'Moderated')
+            )
 
 
 class EntityTagVersionForm(forms.Form):

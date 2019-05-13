@@ -2,7 +2,7 @@ import pytest
 from django import forms
 from guardian.shortcuts import assign_perm
 
-from entities.forms import EntityCollaboratorForm
+from entities.forms import EntityChangeVisibilityForm, EntityCollaboratorForm
 
 
 @pytest.mark.django_db
@@ -48,3 +48,16 @@ class TestEntityCollaboratorFormSet:
         assert form.is_valid()
         form.remove_collaborator()
         assert not model_creator.has_perm('edit_entity', public_model)
+
+
+@pytest.mark.django_db
+class TestEntityVisibilityForm:
+    def test_shows_public_and_private_for_regular_user(self, user):
+        form = EntityChangeVisibilityForm(user=user)
+        assert form.fields['visibility'].valid_value('public')
+        assert form.fields['visibility'].valid_value('private')
+        assert not form.fields['visibility'].valid_value('moderated')
+
+    def test_shows_moderated_option_for_moderator(self, moderator):
+        form = EntityChangeVisibilityForm(user=moderator)
+        assert form.fields['visibility'].valid_value('moderated')
