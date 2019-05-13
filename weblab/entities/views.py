@@ -1020,7 +1020,7 @@ class ModelRunExperimentView(EntityTypeMixin, VisibilityMixin, DetailView):
     Base class for listing versions of an entity
     """
     context_object_name = 'entity'
-    template_name = 'entities/model_runexperiments.html'
+    template_name = 'entities/entity_runexperiments.html'
 
     def get_context_data(self, **kwargs):
         entity = self.object
