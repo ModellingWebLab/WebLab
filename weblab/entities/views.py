@@ -1015,7 +1015,7 @@ class EntityDiffView(View):
         })
 
 
-class ModelRunExperimentView(EntityTypeMixin, VisibilityMixin, DetailView):
+class EntityRunExperimentView(EntityTypeMixin, VisibilityMixin, DetailView):
     """
     Base class for listing versions of an entity
     """
