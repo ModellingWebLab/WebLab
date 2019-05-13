@@ -1013,3 +1013,29 @@ class EntityDiffView(View):
         return JsonResponse({
             task: result
         })
+
+
+class ModelRunExperimentView(EntityTypeMixin, VisibilityMixin, DetailView):
+    """
+    Base class for listing versions of an entity
+    """
+    context_object_name = 'entity'
+    template_name = 'entities/model_runexperiments.html'
+
+    def get_context_data(self, **kwargs):
+        entity = self.object
+
+        # versions = entity.cachedentity.versions
+        # if self.request.user not in entity.viewers:
+        #     versions = versions.filter(visibility=Visibility.PUBLIC)
+        #
+        # kwargs.update(**{
+        #     'versions': list(
+        #         (list(version.tags.values_list('tag', flat=True)),
+        #          entity.repo.get_commit(version.sha))
+        #         for version in versions.prefetch_related('tags')
+        #     )
+        # })
+        return super().get_context_data(**kwargs)
+
+

@@ -135,4 +135,10 @@ urlpatterns = [
         views.EntityDiffView.as_view(),
         name='diff',
     ),
+
+    url(
+        r'^%s/(?P<pk>\d+)/runexperiments/$' % _ENTITY_TYPE,
+        views.ModelRunExperimentView.as_view(),
+        name='runexperiments',
+    ),
 ]

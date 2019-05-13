@@ -198,3 +198,8 @@ def can_delete_entity(context, entity):
 def can_manage_entity(context, entity):
     user = context['user']
     return entity.is_managed_by(user)
+
+
+@register.filter
+def url_runexperiments(entity):
+    return reverse('entities:runexperiments', args=[entity.entity_type, entity.id])
