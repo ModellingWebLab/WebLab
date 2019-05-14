@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -16,10 +17,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
+from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import VisibilityMixin, visibility_meets_threshold, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
+from repocache.models import CachedEntityVersion
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, PlannedExperiment
@@ -89,43 +92,47 @@ class ExperimentMatrixJsonView(View):
             ),
         }
 
-    def get(self, request, *args, **kwargs):
-        subset = request.GET.get('subset', 'moderated')
-        req_visibility = None
-
-        if subset == 'moderated':
-            entity_ids = get_moderated_entity_ids()
-            req_visibility = 'moderated'
-        elif subset == 'mine' and request.user.is_authenticated:
-            entity_ids = set(request.user.entity_set.values_list('id', flat=True))
-
-            moderated_model_ids = get_moderated_entity_ids('model')
-            if request.GET.get('moderated-models', 'true') == 'true':
-                entity_ids |= moderated_model_ids
+    def versions_query(self, entity_type, requested_versions, entity_query, visibility_where):
+        """Get the query expression for selecting entity versions to display."""
+        if requested_versions:
+            if requested_versions[0] == '*':
+                q_entity_versions = CachedEntityVersion.objects.filter(
+                    entity__entity__entity_type=entity_type,
+                    entity__entity__in=entity_query,
+                )
             else:
-                entity_ids -= moderated_model_ids
-
-            moderated_protocol_ids = get_moderated_entity_ids('protocol')
-            if request.GET.get('moderated-protocols', 'true') == 'true':
-                entity_ids |= moderated_protocol_ids
-            else:
-                entity_ids -= moderated_protocol_ids
-
-        elif subset == 'public':
-            entity_ids = get_public_entity_ids()
-            req_visibility = 'public'
-        elif subset == 'all':
-            entity_ids = visible_entity_ids(request.user)
+                q_entity_versions = CachedEntityVersion.objects.filter(
+                    entity__entity__entity_type=entity_type,
+                    entity__entity__in=entity_query,
+                    sha__in=requested_versions,
+                )
         else:
-            entity_ids = set()
+            where = visibility_where & Q(entity__entity__entity_type=entity_type) & Q(entity__entity__in=entity_query)
+            q_entity_versions = CachedEntityVersion.objects.filter(
+                where,
+            ).order_by(
+                'entity__id',
+                '-timestamp',
+                '-pk',
+            ).distinct(
+                'entity__id',
+            )
+        q_entity_versions = q_entity_versions.select_related(
+            'entity',
+            'entity__entity',
+            'entity__entity__author',  # TODO: Actually just the author.name is needed so could use .annotate?
+        )
+        print('version query:', entity_type, entity_query, q_entity_versions)
+        return q_entity_versions
 
-        q_models = ModelEntity.objects.filter(id__in=entity_ids)
-        q_protocols = ProtocolEntity.objects.filter(id__in=entity_ids)
-
+    def get(self, request, *args, **kwargs):
+        # Extract and sanity-check call arguments
+        subset = request.GET.get('subset', 'moderated')
         model_pks = list(map(int, request.GET.getlist('modelIds[]')))
         protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
         model_versions = request.GET.getlist('modelVersions[]')
         protocol_versions = request.GET.getlist('protoVersions[]')
+        print('args', subset, model_pks, protocol_pks, model_versions, protocol_versions)
 
         if model_versions and len(model_pks) > 1:
             return JsonResponse({
@@ -141,43 +148,83 @@ class ExperimentMatrixJsonView(View):
                 }
             })
 
-        if model_pks:
-            q_models = q_models.filter(pk__in=model_pks)
+        # Figure out which entity versions will be listed on the axes
+        # 1. If specific versions have been requested, show at most those
+        # (filtering out any this user can't see)
 
-        if model_versions:
-            model = q_models.first()
-            if model_versions[0] == '*':
-                model_versions = [version.sha for version in model.repocache.versions.all()]
+        # 2. Otherwise we look at which subset has been requested: moderated, mine, all (visible), public
 
-            model_versions = [self.entity_json(model, version)
-                              for version in model_versions]
+        # Base visibility: don't show private versions...
+        visibility_where = ~Q(visibility='private')
+
+        user = request.user
+        if subset == 'moderated':
+            entity_ids = get_moderated_entity_ids()
+            visibility_where = Q(visibility='moderated')
+        elif subset == 'mine' and user.is_authenticated:
+            entity_ids = set(user.entity_set.values_list('id', flat=True))
+
+            moderated_model_ids = get_moderated_entity_ids('model')
+            if request.GET.get('moderated-models', 'true') == 'true':
+                entity_ids |= moderated_model_ids
+            else:
+                entity_ids -= moderated_model_ids
+
+            moderated_protocol_ids = get_moderated_entity_ids('protocol')
+            if request.GET.get('moderated-protocols', 'true') == 'true':
+                entity_ids |= moderated_protocol_ids
+            else:
+                entity_ids -= moderated_protocol_ids
+
+        elif subset == 'public':
+            entity_ids = get_public_entity_ids()
+        elif subset == 'all':
+            entity_ids = visible_entity_ids(request.user)
         else:
-            model_versions = [self.entity_json(model, req_visibility=req_visibility, user=request.user)
-                              for model in q_models]
+            entity_ids = set()
+        print('entity_ids=', entity_ids)
 
-        model_versions = {ver['id']: ver for ver in model_versions}
+        if user.is_authenticated and subset not in ['moderated', 'public']:
+            # Also include versions the user has explicit permission to see
+            visible_entities = user.entity_set.union(
+                get_objects_for_user(user, 'entities.edit_entity')
+            ).values_list(
+                'id', flat=True
+            )
+            print('visible entities=', visible_entities)
+            visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
+
+        if model_pks:
+            # TODO: This is wrong at present, as entity_ids may be too restrictive depending on subset
+            q_models = ModelEntity.objects.filter(pk__in=set(model_pks) & entity_ids)
+        else:
+            q_models = ModelEntity.objects.filter(id__in=entity_ids)
+        q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
 
         if protocol_pks:
-            q_protocols = q_protocols.filter(pk__in=protocol_pks)
-
-        if protocol_versions:
-            protocol = q_protocols.first()
-            if protocol_versions[0] == '*':
-                protocol_versions = [version.sha for version in protocol.repocache.versions.all()]
-
-            protocol_versions = [self.entity_json(protocol, version)
-                                 for version in protocol_versions]
+            q_protocols = ProtocolEntity.objects.filter(pk__in=set(protocol_pks) & entity_ids)
         else:
-            protocol_versions = [self.entity_json(protocol, req_visibility=req_visibility, user=request.user)
-                                 for protocol in q_protocols]
+            q_protocols = ProtocolEntity.objects.filter(id__in=entity_ids)
+        q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols, visibility_where)
 
+        # Get the JSON data needed to display the matrix axes
+        model_versions = [self.entity_json(version.entity.entity, version.sha)
+                          for version in q_model_versions]
+        model_versions = {ver['id']: ver for ver in model_versions}
+        print('model versions:', list(model_versions.keys()))
+
+        protocol_versions = [self.entity_json(version.entity.entity, version.sha)
+                             for version in q_protocol_versions]
         protocol_versions = {ver['id']: ver for ver in protocol_versions}
+        print('protocol versions:', list(protocol_versions.keys()))
 
         # Only give info on experiments involving the correct entity versions
         experiments = {}
         q_experiments = Experiment.objects.filter(
             model__in=q_models,
+            model_version__in=model_versions.keys(),
             protocol__in=q_protocols,
+            protocol_version__in=protocol_versions.keys(),
         ).select_related(
             'protocol', 'model', 'protocol__author', 'model__author'
         )
