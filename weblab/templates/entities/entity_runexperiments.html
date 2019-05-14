@@ -1,16 +1,41 @@
 {% extends "base.html" %}
 {% load staticfiles %}
+{% load entities %}
 
-{% block title %}Experiment run specific - {% endblock title %}
+{% block title %}Experiment: run specific combinations - {% endblock title %}
 
 {% block body_id %}experiment-run{% endblock %}
 
 {% block content %}
-<!--{% with version.experiment as experiment %}
--->
   <h1 id="entityname">Run experiments using <span>{{ entity.name }}</span></h1>
-    <button id="checkAll">check all</button>
+    <!-- SK TO DO add Force overwrite checkbox -->
+  <form method="POST" action="">
+    {% csrf_token %}
+
+    {{ form.as_p }}
+
+    <!-- SK TO DO: make these work -->
+       <input class="overrideCheckBox" type="checkbox" value="True">
 
 
-<!--{% endwith %} -->
+    <!-- SK TO DO: make these work -->
+    <p>
+    <button id="checkallbutton">check all</button>
+    <button id="checklatestbutton">check latest</button>
+    <button id="uncheckallbutton">uncheck all</button>
+    <button id="runexperimentsbutton">run experiments</button>
+    </p>
+  </form>
+  <p>You may run this {{  type }} {{ preposition }} the following {{ other_type }}s.</p>
+
+  <h2> Your {{ other_type }}s</h2>
+     {% for entity in object_list %}
+         <li>
+        <strong>{{ entity.name }}</strong>
+         </li>
+     {% endfor %}
+
+  <h2> Other {{ other_type }}s</h2>
+
+
 {% endblock %}

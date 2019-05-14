@@ -1958,3 +1958,27 @@ class TestEntityVisibility:
     def test_nonexistent_entity_generates_404_for_user(self, client, logged_in_user, helpers, recipe, url):
         response = client.get(url % 10000)
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestEntityRunExperiment:
+    def test_view_run_experiment(self, client, helpers, logged_in_user):
+        models = recipes.model.make(_quantity=2, author=logged_in_user)
+        protocols = recipes.protocol.make(_quantity=2, author=logged_in_user)
+        # model/1
+        response = client.get('/entities/models/1/runexperiments/')
+        assert response.status_code == 200
+        assert list(response.context['object_list']) == protocols
+        # model/2
+        response = client.get('/entities/models/2/runexperiments/')
+        assert response.status_code == 200
+        assert list(response.context['object_list']) == protocols
+        # protocol/3
+        response = client.get('/entities/protocols/3/runexperiments/')
+        assert response.status_code == 200
+        assert list(response.context['object_list']) == models
+        # protocol/4
+        response = client.get('/entities/protocols/4/runexperiments/')
+        assert response.status_code == 200
+        assert list(response.context['object_list']) == models
+

@@ -1015,9 +1015,9 @@ class EntityDiffView(View):
         })
 
 
-class EntityRunExperimentView(EntityTypeMixin, VisibilityMixin, DetailView):
+class EntityRunExperimentView(LoginRequiredMixin, EntityTypeMixin, DetailView):
     """
-    Base class for listing versions of an entity
+    Class for listing the possible experiment combinations
     """
     context_object_name = 'entity'
     template_name = 'entities/entity_runexperiments.html'
@@ -1025,17 +1025,14 @@ class EntityRunExperimentView(EntityTypeMixin, VisibilityMixin, DetailView):
     def get_context_data(self, **kwargs):
         entity = self.object
 
-        # versions = entity.cachedentity.versions
-        # if self.request.user not in entity.viewers:
-        #     versions = versions.filter(visibility=Visibility.PUBLIC)
-        #
-        # kwargs.update(**{
-        #     'versions': list(
-        #         (list(version.tags.values_list('tag', flat=True)),
-        #          entity.repo.get_commit(version.sha))
-        #         for version in versions.prefetch_related('tags')
-        #     )
-        # })
-        return super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
+
+        # preposition to use in sentence You may run this entity on/under the following entities
+        context['preposition'] = 'under'
+        if entity.entity_type == 'protocol':
+            context['preposition'] = 'on'
+        context['object_list'] = Entity.objects.filter(entity_type=entity.other_type)
+
+        return context
 
 
