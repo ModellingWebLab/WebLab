@@ -1962,23 +1962,16 @@ class TestEntityVisibility:
 
 @pytest.mark.django_db
 class TestEntityRunExperiment:
-    def test_view_run_experiment(self, client, helpers, logged_in_user):
-        models = recipes.model.make(_quantity=2, author=logged_in_user)
+    def test_view_run_experiment_model(self, client, helpers, logged_in_user):
+        model = recipes.model.make(author=logged_in_user)
         protocols = recipes.protocol.make(_quantity=2, author=logged_in_user)
-        # model/1
-        response = client.get('/entities/models/1/runexperiments/')
+        response = client.get('/entities/models/%d/runexperiments/' % model.pk)
         assert response.status_code == 200
         assert list(response.context['object_list']) == protocols
-        # model/2
-        response = client.get('/entities/models/2/runexperiments/')
-        assert response.status_code == 200
-        assert list(response.context['object_list']) == protocols
-        # protocol/3
-        response = client.get('/entities/protocols/3/runexperiments/')
-        assert response.status_code == 200
-        assert list(response.context['object_list']) == models
-        # protocol/4
-        response = client.get('/entities/protocols/4/runexperiments/')
-        assert response.status_code == 200
-        assert list(response.context['object_list']) == models
 
+    def test_view_run_experiment_protocol(self, client, helpers, logged_in_user):
+        models = recipes.model.make(_quantity=2, author=logged_in_user)
+        protocol = recipes.protocol.make(author=logged_in_user)
+        response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
+        assert response.status_code == 200
+        assert list(response.context['object_list']) == models
