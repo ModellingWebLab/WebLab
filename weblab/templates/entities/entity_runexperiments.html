@@ -8,15 +8,15 @@
 
 {% block content %}
   <h1 id="entityname">Run experiments using <span>{{ entity.name }}</span></h1>
-    <!-- SK TO DO add Force overwrite checkbox -->
+    <!-- SK TO DO: make these work -->
+     <p>
+         <input class="overrideCheckBox" type="checkbox" value="True">
+          Force overwrite of existing experiments
+     </p>
   <form method="POST" action="">
     {% csrf_token %}
 
     {{ form.as_p }}
-
-    <!-- SK TO DO: make these work -->
-       <input class="overrideCheckBox" type="checkbox" value="True">
-
 
     <!-- SK TO DO: make these work -->
     <p>
@@ -36,6 +36,7 @@
       <strong>{{ entity_object.id }}</strong>
 
       {% for entity_version in entity_object.versions %}
+          <ul>
           <li>
               <p>
                   <input class="experimentCheckBox" type="checkbox" value="true">
@@ -57,6 +58,7 @@
                   </span>
               </p>
           </li>
+          </ul>
       {% endfor %}
   {%  endfor %}
 
