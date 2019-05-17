@@ -10,6 +10,7 @@ var experiment = require('./experiment.js');
 var notifications = require('./lib/notifications.js');
 require('./compare.js');
 require('./entity_version_list.js');
+require('./run_experiment.js');
 require('django-formset');
 
 
