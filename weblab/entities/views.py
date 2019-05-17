@@ -1027,12 +1027,24 @@ class EntityRunExperimentView(LoginRequiredMixin, EntityTypeMixin, DetailView):
 
         context = super().get_context_data(**kwargs)
 
-        # preposition to use in sentence You may run this entity on/under the following entities
+        # preposition to use in sentence: You may run this entity on/under the following entities
         context['preposition'] = 'under'
         if entity.entity_type == 'protocol':
             context['preposition'] = 'on'
-        context['object_list'] = Entity.objects.filter(entity_type=entity.other_type)
 
+        # ended up using a nested dict as nessed lists caused django's unpacking in forloops to
+        # mess things up slightly
+        other_entities = Entity.objects.filter(entity_type=entity.other_type)
+        context['object_list'] = []
+        for item in other_entities:
+            versions = item.cachedentity.versions
+            version_info = []
+            for version in versions.prefetch_related('tags'):
+                tag_list = list(version.tags.values_list('tag', flat=True))
+                commit = item.repo.get_commit(version.sha)
+                version_info.append({'commit': commit, 'tags': tag_list})
+            context['object_list'].append({'id': item.name, 'versions': version_info})
         return context
+
 
 

@@ -1964,14 +1964,30 @@ class TestEntityVisibility:
 class TestEntityRunExperiment:
     def test_view_run_experiment_model(self, client, helpers, logged_in_user):
         model = recipes.model.make(author=logged_in_user)
-        protocols = recipes.protocol.make(_quantity=2, author=logged_in_user)
+        protocol = recipes.protocol.make(author=logged_in_user)
+        commit1 = helpers.add_version(protocol, visibility='public')
+        commit2 = helpers.add_version(protocol, visibility='public')
+        protocol.add_tag('v1', commit2.hexsha)
+
         response = client.get('/entities/models/%d/runexperiments/' % model.pk)
         assert response.status_code == 200
-        assert list(response.context['object_list']) == protocols
+        assert response.context['object_list'] == [{'id': 'myprotocol1',
+                                                    'versions': [{'commit': commit2, 'tags': ['v1']},
+                                                                 {'commit': commit1, 'tags': []}]},
+                                                   ]
+        assert response.context['preposition'] == 'under'
 
     def test_view_run_experiment_protocol(self, client, helpers, logged_in_user):
-        models = recipes.model.make(_quantity=2, author=logged_in_user)
+        model = recipes.model.make(author=logged_in_user)
+        commit1 = helpers.add_version(model, visibility='public')
+        commit2 = helpers.add_version(model, visibility='public')
+        model.add_tag('v1', commit2.hexsha)
         protocol = recipes.protocol.make(author=logged_in_user)
         response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
         assert response.status_code == 200
-        assert list(response.context['object_list']) == models
+        assert response.context['object_list'] == [{'id': 'mymodel1',
+                                                    'versions': [{'commit': commit2, 'tags': ['v1']},
+                                                                 {'commit': commit1, 'tags': []}]},
+                                                   ]
+        assert response.context['preposition'] == 'on'
+

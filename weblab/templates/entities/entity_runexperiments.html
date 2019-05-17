@@ -29,11 +29,36 @@
   <p>You may run this {{  type }} {{ preposition }} the following {{ other_type }}s.</p>
 
   <h2> Your {{ other_type }}s</h2>
-     {% for entity in object_list %}
-         <li>
-        <strong>{{ entity.name }}</strong>
-         </li>
-     {% endfor %}
+
+    <!-- list each entity and all versions of that entity -->
+  {% for entity_object in object_list %}
+
+      <strong>{{ entity_object.id }}</strong>
+
+      {% for entity_version in entity_object.versions %}
+          <li>
+              <p>
+                  <input class="experimentCheckBox" type="checkbox" value="true">
+                  <strong>
+                      <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
+                          {% include "./includes/version_name.html" with tags=entity_version.tags version=entity_version.commit only %}
+                      </a>
+                  </strong>
+                  by <em>{{ entity_version.commit.author }}</em><br />
+                  <span class="suppl">
+                      <small>created </small> <time>{{ entity_version.commit.committed_at }}</time>
+                      {% with entity_version.commit.filenames|length as numfiles %}
+                          <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize}}
+                      {% endwith %}
+                  </span>
+                  <br />
+                  <span class="suppl">
+                      {{ entity_version.commit.message|linebreaksbr }}
+                  </span>
+              </p>
+          </li>
+      {% endfor %}
+  {%  endfor %}
 
   <h2> Other {{ other_type }}s</h2>
 
