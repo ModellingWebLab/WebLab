@@ -4,20 +4,41 @@ var RunExperiment = function() {};
 RunExperiment.prototype = {
   init: function() {
     $("#checkallbutton").click (function () {
-       $(".latestexperimentCheckBox").prop('checked', true);
-       $(".experimentCheckBox").prop('checked', true);
-      });
+        $(".latestexperimentCheckBox").each (function () {
+            if (!$(this).prop('checked')) {
+                $(this).prop('checked') == 'true'
+            }
+        });
+        $(".experimentCheckBox").each (function () {
+            if (!$(this).prop('checked')) {
+                $(this).prop('checked') == 'true'
+            }
+        });
+    });
     $("#uncheckallbutton").click (function () {
-       $(".latestexperimentCheckBox").prop('checked', false);
-       $(".experimentCheckBox").prop('checked', false);
+        $(".latestexperimentCheckBox").each (function () {
+            if ($(this).prop('checked')) {
+                $(this).prop('checked') == 'false'
+            }
+        });
+        $(".experimentCheckBox").each (function () {
+            if ($(this).prop('checked')) {
+                $(this).prop('checked') == 'false'
+            }
+        });
     });
     $("#checklatestbutton").click (function () {
-       $(".latestexperimentCheckBox").prop('checked', true);
-       $(".experimentCheckBox").prop('checked', false);
-      });
-    $("#runexperimentsbutton").click (function () {
-      // do something
-      });
+        $(".latestexperimentCheckBox").each (function () {
+            if (!$(this).prop('checked')) {
+                $(this).prop('checked') == 'true'
+            }
+        });
+        $(".experimentCheckBox").each (function () {
+            if ($(this).prop('checked')) {
+                $(this).prop('checked') == 'false'
+            }
+        });
+    });
   }
 };
 
