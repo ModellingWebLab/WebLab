@@ -44,20 +44,11 @@ class ExperimentMatrixJsonView(View):
     Serve up JSON for experiment matrix
     """
     @classmethod
-    def entity_json(cls, entity, version=None, req_visibility=None, user=None):
-        if version is None:
-            for cached_version in entity.repocache.versions.all():
-                if visibility_meets_threshold(cached_version.visibility, req_visibility):
-                    if user and entity.is_version_visible_to_user(cached_version.sha, user):
-                        version = cached_version.sha
-                        break
-            else:
-                version = ''
-            name = entity.name
-        else:
+    def entity_json(cls, entity, version, extend_name):
+        if extend_name:
             name = '%s @ %s' % (entity.name, version)
-
-        friendly_version = version if version else ''
+        else:
+            name = entity.name
 
         _json = {
             'id': version,
@@ -68,7 +59,7 @@ class ExperimentMatrixJsonView(View):
             'name': name,
             'url': reverse(
                 'entities:version',
-                args=[entity.entity_type, entity.id, friendly_version]
+                args=[entity.entity_type, entity.id, version]
             ),
         }
 
@@ -81,10 +72,10 @@ class ExperimentMatrixJsonView(View):
             'entity_id': version.experiment.id,
             'latestResult': version.status,
             'protocol': cls.entity_json(
-                version.experiment.protocol, version.experiment.protocol_version
+                version.experiment.protocol, version.experiment.protocol_version, extend_name=True
             ),
             'model': cls.entity_json(
-                version.experiment.model, version.experiment.model_version
+                version.experiment.model, version.experiment.model_version, extend_name=True
             ),
             'url': reverse(
                 'experiments:version',
@@ -208,12 +199,12 @@ class ExperimentMatrixJsonView(View):
         q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols, visibility_where)
 
         # Get the JSON data needed to display the matrix axes
-        model_versions = [self.entity_json(version.entity.entity, version.sha)
+        model_versions = [self.entity_json(version.entity.entity, version.sha, extend_name=bool(model_versions))
                           for version in q_model_versions]
         model_versions = {ver['id']: ver for ver in model_versions}
         print('model versions:', list(model_versions.keys()))
 
-        protocol_versions = [self.entity_json(version.entity.entity, version.sha)
+        protocol_versions = [self.entity_json(version.entity.entity, version.sha, extend_name=bool(protocol_versions))
                              for version in q_protocol_versions]
         protocol_versions = {ver['id']: ver for ver in protocol_versions}
         print('protocol versions:', list(protocol_versions.keys()))
