@@ -1972,8 +1972,8 @@ class TestEntityRunExperiment:
         response = client.get('/entities/models/%d/runexperiments/' % model.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': 'myprotocol1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1']},
-                                                                 {'commit': commit1, 'tags': []}]},
+                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['preposition'] == 'under'
 
@@ -1986,8 +1986,8 @@ class TestEntityRunExperiment:
         response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': 'mymodel1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1']},
-                                                                 {'commit': commit1, 'tags': []}]},
+                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['preposition'] == 'on'
 
