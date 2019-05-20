@@ -3,16 +3,22 @@ var RunExperiment = function() {};
 
 RunExperiment.prototype = {
   init: function() {
-    // Comparing entity versions click events
     $("#checkallbutton").click (function () {
-      $(".experimentCheckBox").each (function () {
-        $(this).prop('checked', true)
+       $(".latestexperimentCheckBox").prop('checked', true);
+       $(".experimentCheckBox").prop('checked', true);
       });
-    });
     $("#uncheckallbutton").click (function () {
+       $(".latestexperimentCheckBox").prop('checked', false);
       $(".experimentCheckBox").prop('checked', false);
     });
-  }	
+    $("#checklatestbutton").click (function () {
+       $(".latestexperimentCheckBox").prop('checked', true);
+       $(".experimentCheckBox").prop('checked', false);
+      });
+    $("#runexperimentsbutton").click (function () {
+      // do something
+      });
+  }
 };
 
 

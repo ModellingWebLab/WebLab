@@ -1042,9 +1042,14 @@ class EntityRunExperimentView(LoginRequiredMixin, EntityTypeMixin, DetailView):
             for version in versions.prefetch_related('tags'):
                 tag_list = list(version.tags.values_list('tag', flat=True))
                 commit = item.repo.get_commit(version.sha)
-                version_info.append({'commit': commit, 'tags': tag_list})
+                latest = item.repo.latest_commit
+                version_info.append({'commit': commit, 'tags': tag_list, 'latest': latest == commit})
             context['object_list'].append({'id': item.name, 'versions': version_info})
         return context
 
+    def post(self, request, *args, **kwargs):
+        # record_experiments_to_run(request.user, entity, commit)
+        return HttpResponseRedirect(
+            reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest']))
 
 

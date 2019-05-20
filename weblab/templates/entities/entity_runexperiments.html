@@ -10,18 +10,22 @@
   <h1 id="entityname">Run experiments using <span>{{ entity.name }}</span></h1>
     <!-- SK TO DO: make these work -->
      <p>
-         <input class="overrideCheckBox" type="checkbox" value="override">
+         <input class="overrideCheckBox" type="checkbox" value="false"/>
           Force overwrite of existing experiments
      </p>
   <div id="runexperiment">
 
 
     <!-- SK TO DO: make these work -->
-    <p>
-    <button id="checkallbutton">check all</button>
+     <button id="checkallbutton">check all</button>
     <button id="checklatestbutton">check latest</button>
     <button id="uncheckallbutton">uncheck all</button>
-    <button id="runexperimentsbutton">run experiments</button>
+   <p>
+        <form action="" method="post">
+      {% csrf_token %}
+       <button id="savebutton">run experiments</button>
+
+  </form>
     </p>
   <p>You may run this {{  type }} {{ preposition }} the following {{ other_type }}s.</p>
 
@@ -36,7 +40,12 @@
           <ul>
           <li>
               <p>
-                  <input class="experimentCheckBox" type="checkbox" value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}">
+                {% if entity_version.latest %}
+
+                  <input class="latestexperimentCheckBox" type="checkbox" value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}" checked />
+                {%  else  %}
+                   <input class="experimentCheckBox" type="checkbox" value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}"/>
+                {% endif %}
                   <strong>
                       <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
                           {% include "./includes/version_name.html" with tags=entity_version.tags version=entity_version.commit only %}
