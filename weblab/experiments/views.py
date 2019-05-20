@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
-from django.db.models import Q
+from django.db.models import F, Prefetch, Q, Subquery, OuterRef, ForeignKey
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -19,7 +19,7 @@ from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
 from guardian.shortcuts import get_objects_for_user
 
-from core.visibility import VisibilityMixin, visibility_meets_threshold, visible_entity_ids
+from core.visibility import VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
 from repocache.models import CachedEntityVersion
@@ -44,7 +44,7 @@ class ExperimentMatrixJsonView(View):
     Serve up JSON for experiment matrix
     """
     @classmethod
-    def entity_json(cls, entity, version, extend_name):
+    def entity_json(cls, entity, version, extend_name, visibility=None):
         if extend_name:
             name = '%s @ %s' % (entity.name, version)
         else:
@@ -54,7 +54,7 @@ class ExperimentMatrixJsonView(View):
             'id': version,
             'entityId': entity.id,
             'author': str(entity.author.full_name),
-            'visibility': entity.get_version_visibility(version, default=entity.DEFAULT_VISIBILITY),
+            'visibility': visibility or entity.get_version_visibility(version, default=entity.DEFAULT_VISIBILITY),
             'created': entity.created_at,
             'name': name,
             'url': reverse(
@@ -72,10 +72,12 @@ class ExperimentMatrixJsonView(View):
             'entity_id': version.experiment.id,
             'latestResult': version.status,
             'protocol': cls.entity_json(
-                version.experiment.protocol, version.experiment.protocol_version, extend_name=True
+                version.experiment.protocol, version.experiment.protocol_version,
+                extend_name=True, visibility=version.protocol_visibility,
             ),
             'model': cls.entity_json(
-                version.experiment.model, version.experiment.model_version, extend_name=True
+                version.experiment.model, version.experiment.model_version,
+                extend_name=True, visibility=version.model_visibility,
             ),
             'url': reverse(
                 'experiments:version',
@@ -113,7 +115,7 @@ class ExperimentMatrixJsonView(View):
             'entity__entity',
             'entity__entity__author',  # TODO: Actually just the author.name is needed so could use .annotate?
         )
-        print('version query:', entity_type, entity_query, q_entity_versions)
+        # print('version query:', entity_type, entity_query, q_entity_versions)
         return q_entity_versions
 
     def get(self, request, *args, **kwargs):
@@ -123,7 +125,7 @@ class ExperimentMatrixJsonView(View):
         protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
         model_versions = request.GET.getlist('modelVersions[]')
         protocol_versions = request.GET.getlist('protoVersions[]')
-        print('args', subset, model_pks, protocol_pks, model_versions, protocol_versions)
+        # print('args', subset, model_pks, protocol_pks, model_versions, protocol_versions)
 
         if model_versions and len(model_pks) > 1:
             return JsonResponse({
@@ -173,7 +175,8 @@ class ExperimentMatrixJsonView(View):
             entity_ids = visible_entity_ids(request.user)
         else:
             entity_ids = set()
-        print('entity_ids=', entity_ids)
+        # print('entity_ids=', entity_ids)
+        print('Done entity_ids')
 
         if user.is_authenticated and subset not in ['moderated', 'public']:
             # Also include versions the user has explicit permission to see
@@ -182,8 +185,9 @@ class ExperimentMatrixJsonView(View):
             ).values_list(
                 'id', flat=True
             )
-            print('visible entities=', visible_entities)
+            # print('visible entities=', visible_entities)
             visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
+        print('Done is_authenticated')
 
         if model_pks:
             # TODO: This is wrong at present, as entity_ids may be too restrictive depending on subset
@@ -191,23 +195,31 @@ class ExperimentMatrixJsonView(View):
         else:
             q_models = ModelEntity.objects.filter(id__in=entity_ids)
         q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
+        print('Done q_model_versions')
 
         if protocol_pks:
             q_protocols = ProtocolEntity.objects.filter(pk__in=set(protocol_pks) & entity_ids)
         else:
             q_protocols = ProtocolEntity.objects.filter(id__in=entity_ids)
         q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols, visibility_where)
+        print('Done q_protocol_versions')
 
         # Get the JSON data needed to display the matrix axes
-        model_versions = [self.entity_json(version.entity.entity, version.sha, extend_name=bool(model_versions))
+        model_versions = [self.entity_json(version.entity.entity, version.sha,
+                                           extend_name=bool(model_versions),
+                                           visibility=version.visibility)
                           for version in q_model_versions]
         model_versions = {ver['id']: ver for ver in model_versions}
-        print('model versions:', list(model_versions.keys()))
+        # print('model versions:', list(model_versions.keys()))
+        print('Done model_versions')
 
-        protocol_versions = [self.entity_json(version.entity.entity, version.sha, extend_name=bool(protocol_versions))
+        protocol_versions = [self.entity_json(version.entity.entity, version.sha,
+                                              extend_name=bool(protocol_versions),
+                                              visibility=version.visibility)
                              for version in q_protocol_versions]
         protocol_versions = {ver['id']: ver for ver in protocol_versions}
-        print('protocol versions:', list(protocol_versions.keys()))
+        # print('protocol versions:', list(protocol_versions.keys()))
+        print('Done protocol_versions')
 
         # Only give info on experiments involving the correct entity versions
         experiments = {}
@@ -216,15 +228,36 @@ class ExperimentMatrixJsonView(View):
             model_version__in=model_versions.keys(),
             protocol__in=q_protocols,
             protocol_version__in=protocol_versions.keys(),
-        ).select_related(
-            'protocol', 'model', 'protocol__author', 'model__author'
         )
-        for exp in q_experiments:
-            if (exp.model_version in model_versions and exp.protocol_version in protocol_versions):
-                try:
-                    experiments[exp.pk] = self.experiment_version_json(exp.latest_version)
-                except ExperimentVersion.DoesNotExist:
-                    pass
+        print('Done q_experiments')
+        q_cached_protocol = CachedEntityVersion.objects.filter(
+            entity__entity=OuterRef('experiment__protocol'),
+            sha=OuterRef('experiment__protocol_version'),
+        )
+        q_cached_model = CachedEntityVersion.objects.filter(
+            entity__entity=OuterRef('experiment__model'),
+            sha=OuterRef('experiment__model_version'),
+        )
+        q_experiment_versions = ExperimentVersion.objects.filter(
+            experiment__in=q_experiments,
+        ).order_by(
+            'experiment__id',
+            '-created_at',
+        ).distinct(
+            'experiment__id'
+        ).select_related(
+            'experiment',
+            'experiment__protocol', 'experiment__model',
+            'experiment__protocol__author', 'experiment__model__author',
+            'experiment__protocol__cachedentity', 'experiment__model__cachedentity',
+        ).annotate(
+            # TODO: Annotate author full name instead of using select_related for it above
+            protocol_visibility=Subquery(q_cached_protocol.values('visibility')[:1]),
+            model_visibility=Subquery(q_cached_model.values('visibility')[:1]),
+        )
+        print('Done q_experiment_versions')
+        for exp_ver in q_experiment_versions:
+            experiments[exp_ver.experiment.pk] = self.experiment_version_json(exp_ver)
 
         return JsonResponse({
             'getMatrix': {
