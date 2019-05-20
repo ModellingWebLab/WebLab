@@ -42,7 +42,7 @@
               <p>
                 {% if entity_version.latest %}
 
-                  <input class="latestexperimentCheckBox" type="checkbox" value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}" checked />
+                  <input class="latestexperimentCheckBox" type="checkbox" value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}"/>
                 {%  else  %}
                    <input class="experimentCheckBox" type="checkbox" value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}"/>
                 {% endif %}

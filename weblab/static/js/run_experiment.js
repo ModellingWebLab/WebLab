@@ -9,7 +9,7 @@ RunExperiment.prototype = {
       });
     $("#uncheckallbutton").click (function () {
        $(".latestexperimentCheckBox").prop('checked', false);
-      $(".experimentCheckBox").prop('checked', false);
+       $(".experimentCheckBox").prop('checked', false);
     });
     $("#checklatestbutton").click (function () {
        $(".latestexperimentCheckBox").prop('checked', true);
