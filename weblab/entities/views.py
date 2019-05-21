@@ -1015,10 +1015,11 @@ class EntityDiffView(View):
         })
 
 
-class EntityRunExperimentView(LoginRequiredMixin, EntityTypeMixin, DetailView):
+class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, EntityTypeMixin, DetailView):
     """
     Class for listing the possible experiment combinations
     """
+    permission_required = 'experiments.create_experiment'
     context_object_name = 'entity'
     template_name = 'entities/entity_runexperiments.html'
 
