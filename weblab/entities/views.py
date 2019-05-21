@@ -1032,7 +1032,7 @@ class EntityRunExperimentView(LoginRequiredMixin, EntityTypeMixin, DetailView):
         if entity.entity_type == 'protocol':
             context['preposition'] = 'on'
 
-        # ended up using a nested dict as nessed lists caused django's unpacking in forloops to
+        # ended up using a nested dict as nested lists caused django's unpacking in forloops to
         # mess things up slightly
         other_entities = Entity.objects.filter(entity_type=entity.other_type)
         context['object_list'] = []
