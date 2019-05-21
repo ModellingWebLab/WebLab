@@ -5,38 +5,26 @@ RunExperiment.prototype = {
   init: function() {
     $("#checkallbutton").click (function () {
         $(".latestexperimentCheckBox").each (function () {
-            if (!$(this).prop('checked')) {
-                $(this).prop('checked') == 'true'
-            }
+            $(this).prop('checked', true)
         });
         $(".experimentCheckBox").each (function () {
-            if (!$(this).prop('checked')) {
-                $(this).prop('checked') == 'true'
-            }
+            $(this).prop('checked', true)
         });
     });
     $("#uncheckallbutton").click (function () {
         $(".latestexperimentCheckBox").each (function () {
-            if ($(this).prop('checked')) {
-                $(this).prop('checked') == 'false'
-            }
+            $(this).prop('checked', false)
         });
         $(".experimentCheckBox").each (function () {
-            if ($(this).prop('checked')) {
-                $(this).prop('checked') == 'false'
-            }
+            $(this).prop('checked', false)
         });
     });
     $("#checklatestbutton").click (function () {
         $(".latestexperimentCheckBox").each (function () {
-            if (!$(this).prop('checked')) {
-                $(this).prop('checked') == 'true'
-            }
+            $(this).prop('checked', true)
         });
         $(".experimentCheckBox").each (function () {
-            if ($(this).prop('checked')) {
-                $(this).prop('checked') == 'false'
-            }
+            $(this).prop('checked', false)
         });
     });
   }
