@@ -1970,7 +1970,8 @@ class TestEntityRunExperiment:
         protocol.add_tag('v1', commit2.hexsha)
 
         response = client.get('/entities/models/%d/runexperiments/' % model.pk)
-        assert response.status_code == 200
+        assert response.status_code == 302
+        assert '/login/' in response.url
         assert response.context['object_list'] == [{'id': 'myprotocol1',
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
@@ -1984,7 +1985,8 @@ class TestEntityRunExperiment:
         model.add_tag('v1', commit2.hexsha)
         protocol = recipes.protocol.make(author=logged_in_user)
         response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
-        assert response.status_code == 200
+        assert response.status_code == 302
+        assert '/login/' in response.url
         assert response.context['object_list'] == [{'id': 'mymodel1',
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
