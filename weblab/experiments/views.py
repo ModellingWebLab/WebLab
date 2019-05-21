@@ -115,7 +115,6 @@ class ExperimentMatrixJsonView(View):
             'entity__entity',
             'entity__entity__author',  # TODO: Actually just the author.name is needed so could use .annotate?
         )
-        # print('version query:', entity_type, entity_query, q_entity_versions)
         return q_entity_versions
 
     def get(self, request, *args, **kwargs):
@@ -126,7 +125,6 @@ class ExperimentMatrixJsonView(View):
         model_versions = request.GET.getlist('modelVersions[]')
         protocol_versions = request.GET.getlist('protoVersions[]')
         subset = request.GET.get('subset', 'all' if model_pks or protocol_pks else 'moderated')
-        # print('args', subset, model_pks, protocol_pks, model_versions, protocol_versions)
 
         if model_versions and len(model_pks) > 1:
             return JsonResponse({
@@ -185,13 +183,9 @@ class ExperimentMatrixJsonView(View):
                 entity_ids = visible_entity_ids(request.user)
             else:
                 entity_ids = set()
-            # print('entity_ids=', entity_ids)
-            print('Done entity_ids')
 
         if subset not in ['moderated', 'public']:
-            # print('visible entities=', visible_entities)
             visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
-        print('Done is_authenticated')
 
         if model_pks:
             model_visibility_where = ~Q(visibility='private') | Q(entity__entity__in=visible_entities)
@@ -202,7 +196,6 @@ class ExperimentMatrixJsonView(View):
 
         q_models = ModelEntity.objects.filter(id__in=model_ids)
         q_model_versions = self.versions_query('model', model_versions, q_models, model_visibility_where)
-        print('Done q_model_versions')
 
         if protocol_pks:
             protocol_visibility_where = ~Q(visibility='private') | Q(entity__entity__in=visible_entities)
@@ -213,7 +206,6 @@ class ExperimentMatrixJsonView(View):
 
         q_protocols = ProtocolEntity.objects.filter(id__in=protocol_ids)
         q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols, protocol_visibility_where)
-        print('Done q_protocol_versions')
 
         # Get the JSON data needed to display the matrix axes
         model_versions = [self.entity_json(version.entity.entity, version.sha,
@@ -221,16 +213,12 @@ class ExperimentMatrixJsonView(View):
                                            visibility=version.visibility)
                           for version in q_model_versions]
         model_versions = {ver['id']: ver for ver in model_versions}
-        # print('model versions:', list(model_versions.keys()))
-        print('Done model_versions')
 
         protocol_versions = [self.entity_json(version.entity.entity, version.sha,
                                               extend_name=bool(protocol_versions),
                                               visibility=version.visibility)
                              for version in q_protocol_versions]
         protocol_versions = {ver['id']: ver for ver in protocol_versions}
-        # print('protocol versions:', list(protocol_versions.keys()))
-        print('Done protocol_versions')
 
         # Only give info on experiments involving the correct entity versions
         experiments = {}
@@ -240,7 +228,6 @@ class ExperimentMatrixJsonView(View):
             protocol__in=q_protocols,
             protocol_version__in=protocol_versions.keys(),
         )
-        print('Done q_experiments')
         q_cached_protocol = CachedEntityVersion.objects.filter(
             entity__entity=OuterRef('experiment__protocol'),
             sha=OuterRef('experiment__protocol_version'),
@@ -266,7 +253,6 @@ class ExperimentMatrixJsonView(View):
             protocol_visibility=Subquery(q_cached_protocol.values('visibility')[:1]),
             model_visibility=Subquery(q_cached_model.values('visibility')[:1]),
         )
-        print('Done q_experiment_versions')
         for exp_ver in q_experiment_versions:
             experiments[exp_ver.experiment.pk] = self.experiment_version_json(exp_ver)
 
