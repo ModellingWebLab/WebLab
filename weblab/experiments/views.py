@@ -213,7 +213,7 @@ class NewExperimentView(PermissionRequiredMixin, View):
             protocol_version = request.POST['protocol_version']
 
         version, is_new = submit_experiment(model, model_version, protocol, protocol_version,
-                                            request.user, 'rerun' in request.POST)
+                                            request.user, 'rerun' in request.POST or 'planned' in request.POST)
         queued = version.status == ExperimentVersion.STATUS_QUEUED
         if is_new and version.status != ExperimentVersion.STATUS_FAILED:
             # Remove from planned experiments
