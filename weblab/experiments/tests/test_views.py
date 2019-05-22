@@ -732,6 +732,7 @@ class TestNewExperimentView:
         assert data['newExperiment']['expId'] == version.experiment.id
         assert data['newExperiment']['versionId'] == version.id
         assert data['newExperiment']['expName'] == version.experiment.name
+        assert version.status == ExperimentVersion.STATUS_FAILED
 
         # Check this hasn't been removed from the list of planned experiments
         assert PlannedExperiment.objects.count() == planned_experiments
