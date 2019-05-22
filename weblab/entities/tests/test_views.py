@@ -1963,7 +1963,7 @@ class TestEntityVisibility:
 @pytest.mark.django_db
 class TestEntityRunExperiment:
     def test_view_run_experiment_model(self, client, helpers, logged_in_user):
-        helpers.add_permission(logged_in_user, 'create_experiment')
+        helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
         model = recipes.model.make(author=logged_in_user)
         protocol = recipes.protocol.make(author=logged_in_user)
         commit1 = helpers.add_version(protocol, visibility='public')
@@ -1971,8 +1971,7 @@ class TestEntityRunExperiment:
         protocol.add_tag('v1', commit2.hexsha)
 
         response = client.get('/entities/models/%d/runexperiments/' % model.pk)
-#        assert response.status_code == 302
-#        assert '/login/' in response.url
+        assert response.status_code == 200
         assert response.context['object_list'] == [{'id': 'myprotocol1',
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
@@ -1980,15 +1979,14 @@ class TestEntityRunExperiment:
         assert response.context['preposition'] == 'under'
 
     def test_view_run_experiment_protocol(self, client, helpers, logged_in_user):
-        helpers.add_permission(logged_in_user, 'create_experiment')
+        helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
         model = recipes.model.make(author=logged_in_user)
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='public')
         model.add_tag('v1', commit2.hexsha)
         protocol = recipes.protocol.make(author=logged_in_user)
         response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
-        assert response.status_code == 302
-        assert '/login/' in response.url
+        assert response.status_code == 200
         assert response.context['object_list'] == [{'id': 'mymodel1',
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
