@@ -28,19 +28,18 @@ function submitNewExperiment(jsonObject, $td, entry)
       if (data.newExperiment.response)
       {
         notifications.add(msg, "info");
-        $td.addClass("experiment-QUEUED");
       }
       else
       {
         notifications.add(msg, "error");
-        $td.addClass("experiment-FAILED");
       }
       entry.experiment = {
         name: data.newExperiment.expName,
         id: data.newExperiment.expId,
-        latestResult: "QUEUED",
+        latestResult: data.newExperiment.status,
         url: data.newExperiment.url,
       };
+      $td.addClass("experiment-" + data.newExperiment.status);
       setExpListeners($td, entry);
   }).fail(function() {
       notifications.add("Server-side error occurred submitting experiment.", "error");

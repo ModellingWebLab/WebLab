@@ -212,10 +212,10 @@ class NewExperimentView(PermissionRequiredMixin, View):
             model_version = request.POST['model_version']
             protocol_version = request.POST['protocol_version']
 
-        version = submit_experiment(model, model_version, protocol, protocol_version,
-                                    request.user, 'rerun' in request.POST)
-        success = version.status == ExperimentVersion.STATUS_QUEUED
-        if version.status != ExperimentVersion.STATUS_FAILED:
+        version, is_new = submit_experiment(model, model_version, protocol, protocol_version,
+                                            request.user, 'rerun' in request.POST)
+        queued = version.status == ExperimentVersion.STATUS_QUEUED
+        if is_new and version.status != ExperimentVersion.STATUS_FAILED:
             # Remove from planned experiments
             PlannedExperiment.objects.filter(
                 model=model, model_version=model_version,
@@ -224,17 +224,24 @@ class NewExperimentView(PermissionRequiredMixin, View):
 
         version_url = reverse('experiments:version',
                               args=[version.experiment.id, version.id])
+        if is_new:
+            if queued:
+                msg = " submitted to the queue."
+            else:
+                msg = " could not be run: " + version.return_text
+        else:
+            msg = " was already run."
         return JsonResponse({
             'newExperiment': {
                 'expId': version.experiment.id,
                 'versionId': version.id,
                 'url': version_url,
                 'expName': version.experiment.name,
-                'response': success,
-                'responseText': (
-                    "<a href='{}'>Experiment {}</a> submitted to the queue.".format(
-                        version_url, version.experiment.name)
-                ) if success else version.return_text
+                'status': version.status,
+                'response': (not is_new) or queued,
+                'responseText': "<a href='{}'>Experiment {}</a> {}".format(
+                    version_url, version.experiment.name, msg
+                )
             }
         })
 

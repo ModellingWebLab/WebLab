@@ -681,7 +681,7 @@ class TestNewExperimentView:
         data = json.loads(response.content.decode())
 
         assert 'newExperiment' in data
-        assert not data['newExperiment']['response']  # As the status is not 'queued'!
+        assert data['newExperiment']['response']
         assert data['newExperiment']['expId'] == exp_version2.experiment.id
         assert data['newExperiment']['versionId'] == exp_version2.id
         assert data['newExperiment']['expName'] == exp_version2.experiment.name

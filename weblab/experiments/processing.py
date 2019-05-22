@@ -66,9 +66,9 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
             )
         except MultipleObjectsReturned:
             print('Multi objects')
-            return ExperimentVersion.objects.filter(experiment=experiment).latest('created_at')
+            return ExperimentVersion.objects.filter(experiment=experiment).latest('created_at'), False
         if not created:
-            return version
+            return version, False
     else:
         version = ExperimentVersion.objects.create(
             experiment=experiment,
@@ -104,7 +104,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
         version.return_text = 'Unable to connect to experiment runner service'
         version.save()
         logger.exception(version.return_text)
-        return version
+        return version, True
 
     res = response.content.decode().strip()
     logger.debug('Response from chaste backend: %s' % res)
@@ -133,7 +133,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
 
     version.save()
 
-    return version
+    return version, True
 
 
 def cancel_experiment(task_id):
