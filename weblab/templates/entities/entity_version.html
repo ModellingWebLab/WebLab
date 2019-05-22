@@ -43,11 +43,11 @@
               Change visibility: {{ form.visibility }}
               <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
               <span id="versionVisibilityAction"></span>
-              <!-- SK: put in permission -->
-              Run experiments:
-                <a title="Run experiments" href="{{ entity|url_runexperiments }}">
-                    <img src="{% static 'img/batch.png' %}" alt="Run experiments:" title="Run experiments using this model"/>
-                </a>
+                {% if perms.create_experiment %}
+                  Run experiments:
+                    <a title="Run experiments" href="{{ entity|url_runexperiments }}">
+                        <img src="{% static 'img/batch.png' %}" alt="Run experiments:" title="Run experiments using this model"/>
+                {% endif %}
            </form>
            {% else %}
             Visibility: {{ visibility }}
