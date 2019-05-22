@@ -35,9 +35,9 @@
   {% for entity_object in object_list %}
 
       <strong>{{ entity_object.id }}</strong>
-
+      <ul>
       {% for entity_version in entity_object.versions %}
-          <ul>
+
           <li>
               <p>
                 {% if entity_version.latest %}
@@ -64,8 +64,8 @@
                   </span>
               </p>
           </li>
-          </ul>
       {% endfor %}
+      </ul>
   {%  endfor %}
   </div>
 
