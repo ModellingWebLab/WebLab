@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
+from django.core.exceptions import MultipleObjectsReturned
 from django.core.urlresolvers import reverse
 
 from .emails import send_experiment_finished_email
@@ -56,10 +57,16 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
 
     # Check there isn't an existing version if we're not allowed to re-run
     if not rerun_ok:
-        version, created = ExperimentVersion.objects.get_or_create(
-            experiment=experiment,
-            author=user,
-        )
+        try:
+            version, created = ExperimentVersion.objects.get_or_create(
+                experiment=experiment,
+                defaults={
+                    'author': user,
+                }
+            )
+        except MultipleObjectsReturned:
+            print('Multi objects')
+            return ExperimentVersion.objects.filter(experiment=experiment).latest('created_at')
         if not created:
             return version
     else:
