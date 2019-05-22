@@ -1,31 +1,14 @@
 {% extends "base.html" %}
 {% load staticfiles %}
+{% load experiments %}
 
 {% block title %}Experiment details - {% endblock title %}
 
 {% block body_id %}experiment-version{% endblock %}
 
 {% block content %}
-{% with version.experiment as experiment %}
-
-<h1 id="entityname">
-  <small>Experiment: </small><span>{{ experiment.name }}</span>
-</h1>
-
-  <div class="suppl">
-    <small>Created <time>{{experiment.created_at}}</time> by <em>{{experiment.author.full_name}}</em>.
-      {% comment %}
-      {% if can_delete %}
-        Delete {{ type }}:
-        <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">
-          <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
-              title="delete all versions of this {{type}}"/></a>
-      {% endif %}
-      {% endcomment %}
-      <br>
-      Visibility: {{ version.visibility }}
-    </small>
-  </div>
+  {% with version.experiment as experiment %}
+  {% include "./includes/experiment_header.html" %}
 
   <div id="entitydetails"></div>
 
@@ -44,12 +27,20 @@
       <small>
         Created <time id="entityversiontime">{{ version.created_at }}</time>
         by <em id="entityversionauthor">{{ version.author.full_name }}</em>.
-        Visibility: {{ version.visibility }}
+        Visibility: <span title="This is derived from the corresponding model version and protocol version visibilities">{{ version.visibility }}</span>
         <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
         <span id="exptStatus"></span>
 
         {% if perms.create_experiment %}
           <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        {% endif %}
+
+        {% can_delete_entity version as can_delete %}
+        {% if can_delete %}
+          Delete experiment version:
+          <a title="delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
+            <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
+                title="delete this version of this experiment"/></a>
         {% endif %}
 
         <br/>Corresponding model:

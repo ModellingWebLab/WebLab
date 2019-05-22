@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Delete experiment version - {% endblock title %}
+
+{% block content %}
+
+<form action="" method="post">{% csrf_token %}
+    <p>Are you sure you want to delete version {{ object.name }} of experiment "{{ object.experiment }}"?</p>
+    <p><strong>This operation cannot be undone.</strong></p>
+    <button>Confirm</button>
+</form>
+
+{% endblock %}
