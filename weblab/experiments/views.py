@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.urlresolvers import reverse
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import F, OuterRef, Q, Subquery
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -44,7 +44,7 @@ class ExperimentMatrixJsonView(View):
     Serve up JSON for experiment matrix
     """
     @classmethod
-    def entity_json(cls, entity, version, extend_name, visibility=None):
+    def entity_json(cls, entity, version, extend_name, visibility=None, author=None):
         if extend_name:
             name = '%s @ %s' % (entity.name, version)
         else:
@@ -53,7 +53,7 @@ class ExperimentMatrixJsonView(View):
         _json = {
             'id': version,
             'entityId': entity.id,
-            'author': str(entity.author.full_name),
+            'author': author,
             'visibility': visibility or entity.get_version_visibility(version, default=entity.DEFAULT_VISIBILITY),
             'created': entity.created_at,
             'name': name,
@@ -73,11 +73,11 @@ class ExperimentMatrixJsonView(View):
             'latestResult': version.status,
             'protocol': cls.entity_json(
                 version.experiment.protocol, version.experiment.protocol_version,
-                extend_name=True, visibility=version.protocol_visibility,
+                extend_name=True, visibility=version.protocol_visibility, author=version.protocol_author,
             ),
             'model': cls.entity_json(
                 version.experiment.model, version.experiment.model_version,
-                extend_name=True, visibility=version.model_visibility,
+                extend_name=True, visibility=version.model_visibility, author=version.model_author,
             ),
             'url': reverse(
                 'experiments:version',
@@ -113,7 +113,8 @@ class ExperimentMatrixJsonView(View):
         q_entity_versions = q_entity_versions.select_related(
             'entity',
             'entity__entity',
-            'entity__entity__author',  # TODO: Actually just the author.name is needed so could use .annotate?
+        ).annotate(
+            author_name=F('entity__entity__author__full_name'),
         )
         return q_entity_versions
 
@@ -210,13 +211,15 @@ class ExperimentMatrixJsonView(View):
         # Get the JSON data needed to display the matrix axes
         model_versions = [self.entity_json(version.entity.entity, version.sha,
                                            extend_name=bool(model_versions),
-                                           visibility=version.visibility)
+                                           visibility=version.visibility,
+                                           author=version.author_name)
                           for version in q_model_versions]
         model_versions = {ver['id']: ver for ver in model_versions}
 
         protocol_versions = [self.entity_json(version.entity.entity, version.sha,
                                               extend_name=bool(protocol_versions),
-                                              visibility=version.visibility)
+                                              visibility=version.visibility,
+                                              author=version.author_name)
                              for version in q_protocol_versions]
         protocol_versions = {ver['id']: ver for ver in protocol_versions}
 
@@ -246,12 +249,12 @@ class ExperimentMatrixJsonView(View):
         ).select_related(
             'experiment',
             'experiment__protocol', 'experiment__model',
-            'experiment__protocol__author', 'experiment__model__author',
             'experiment__protocol__cachedentity', 'experiment__model__cachedentity',
         ).annotate(
-            # TODO: Annotate author full name instead of using select_related for it above
             protocol_visibility=Subquery(q_cached_protocol.values('visibility')[:1]),
             model_visibility=Subquery(q_cached_model.values('visibility')[:1]),
+            protocol_author=F('experiment__protocol__author__full_name'),
+            model_author=F('experiment__model__author__full_name'),
         )
         for exp_ver in q_experiment_versions:
             experiments[exp_ver.experiment.pk] = self.experiment_version_json(exp_ver)
