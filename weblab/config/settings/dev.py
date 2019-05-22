@@ -22,4 +22,4 @@ ROLLBAR = {
 # Connecting to a Vagrant dev deploy for running experiments by default
 CHASTE_URL = os.environ.get('CHASTE_URL', 'http://localhost:8089/fc_runner.py')
 CHASTE_PASSWORD = os.environ.get('CHASTE_PASSWORD', 'another secret password')
-CALLBACK_BASE_URL = os.environ.get('CALLBACK_BASE_URL', 'http://localhost:8000')
+CALLBACK_BASE_URL = os.environ.get('CALLBACK_BASE_URL', 'http://10.0.2.2:8000')
