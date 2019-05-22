@@ -222,18 +222,18 @@ class NewExperimentView(PermissionRequiredMixin, View):
                 protocol=protocol, protocol_version=protocol_version
             ).delete()
 
+        version_url = reverse('experiments:version',
+                              args=[version.experiment.id, version.id])
         return JsonResponse({
             'newExperiment': {
                 'expId': version.experiment.id,
                 'versionId': version.id,
-                'url': reverse(
-                    'experiments:version',
-                    args=[version.experiment.id, version.id],
-                ),
+                'url': version_url,
                 'expName': version.experiment.name,
                 'response': success,
                 'responseText': (
-                    "Experiment submitted to the queue."
+                    "<a href='{}'>Experiment {}</a> submitted to the queue.".format(
+                        version_url, version.experiment.name)
                 ) if success else version.return_text
             }
         })
