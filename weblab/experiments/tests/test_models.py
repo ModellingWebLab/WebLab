@@ -35,6 +35,8 @@ class TestExperiment:
         v2 = recipes.experiment_version.make(experiment=v1.experiment, created_at=date(2017, 1, 3))
 
         assert v1.experiment.latest_version == v2
+        assert not v1.is_latest
+        assert v2.is_latest
 
     def test_latest_result(self):
         ver = recipes.experiment_version.make(created_at=date(2017, 1, 2), status='FAILED')

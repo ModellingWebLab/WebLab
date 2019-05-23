@@ -166,6 +166,10 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
         return self.experiment.versions.filter(created_at__lte=self.created_at).count()
 
     @property
+    def is_latest(self):
+        return not self.experiment.versions.filter(created_at__gt=self.created_at).exists()
+
+    @property
     def visibility(self):
         return self.experiment.visibility
 
