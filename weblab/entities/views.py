@@ -579,24 +579,30 @@ class EntityNewVersionView(
         git_errors = []
         files_to_delete = set()  # Temp files to be removed if successful
 
-        # Delete files from the index
-        deletions = request.POST.getlist('delete_filename[]')
-        for filename in deletions:
-            path = str(entity.repo_abs_path / filename)
-            try:
-                entity.repo.rm_file(path)
-            except GitCommandError as e:
-                git_errors.append(e.stderr)
+        deletions = set(request.POST.getlist('delete_filename[]'))
+        additions = request.POST.getlist('filename[]')
 
         # Copy files into the index
-        additions = request.POST.getlist('filename[]')
         for upload in entity.files.filter(upload__in=additions):
             src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
             dest = str(entity.repo_abs_path / upload.original_name)
             files_to_delete.add(src)
+            if upload.original_name in deletions:
+                # They changed their mind mid-creation! So this has been uploaded,
+                # but shouldn't be included - just delete the upload
+                deletions.remove(upload.original_name)
+                continue
             shutil.copy(src, dest)
             try:
                 entity.repo.add_file(dest)
+            except GitCommandError as e:
+                git_errors.append(e.stderr)
+
+        # Delete files from the index
+        for filename in deletions:
+            path = str(entity.repo_abs_path / filename)
+            try:
+                entity.repo.rm_file(path)
             except GitCommandError as e:
                 git_errors.append(e.stderr)
 
