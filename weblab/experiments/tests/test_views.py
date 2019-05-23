@@ -665,7 +665,6 @@ class TestNewExperimentView:
             status='SUCCESS',
             experiment=version.experiment,
         )
-        print(version, exp_version2)
         response = client.post(
             '/experiments/new',
             {
