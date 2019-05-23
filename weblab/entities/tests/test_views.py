@@ -840,7 +840,7 @@ class TestVersionCreation:
         model = recipes.model.make(author=logged_in_user)
         recipes.model_file.make(
             entity=model,
-            upload=SimpleUploadedFile('file1.txt', b'file 1'),
+            upload=SimpleUploadedFile('file1.txt', b'file 1 wrong'),
             original_name='file1.txt',
         )
         recipes.model_file.make(
@@ -848,11 +848,17 @@ class TestVersionCreation:
             upload=SimpleUploadedFile('file2.txt', b'file 2'),
             original_name='file2.txt',
         )
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('file1_fixed.txt', b'file 1'),
+            original_name='file1.txt',
+        )
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
-                'filename[]': ['uploads/file1.txt', 'uploads/file2.txt'],
+                'filename[]': ['uploads/file1.txt', 'uploads/file2.txt', 'uploads/file1_fixed.txt'],
+                'delete_filename[]': ['file1.txt'],
                 'mainEntry': ['file1.txt'],
                 'commit_message': 'files',
                 'tag': 'v1',
@@ -870,6 +876,7 @@ class TestVersionCreation:
         assert latest.master_filename == 'file1.txt'
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
 
     def test_delete_file(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -898,6 +905,7 @@ class TestVersionCreation:
         assert not (model.repo_abs_path / 'file1.txt').exists()
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
 
     def test_delete_multiple_files(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -928,6 +936,50 @@ class TestVersionCreation:
         assert not (model.repo_abs_path / 'file2.txt').exists()
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
+
+    def test_replace_file(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        helpers.add_version(model, 'file1.txt')
+        helpers.add_version(model, 'file2.txt')
+        assert len(list(model.repo.latest_commit.files)) == 2
+
+        # The user changes their mind twice about a new version of file1...
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('file1_v2.txt', b'file 1 wrong'),
+            original_name='file1.txt',
+        )
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('file1_v3.txt', b'file 1 new'),
+            original_name='file1.txt',
+        )
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': ['uploads/file1_v2.txt', 'uploads/file1_v3.txt'],
+                'delete_filename[]': ['file1.txt', 'file1.txt'],
+                'commit_message': 'replace file1',
+                'tag': 'replace-file',
+                'visibility': 'public',
+            },
+        )
+        assert response.status_code == 302
+        latest = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
+        assert 'replace-file' in model.repo._repo.tags
+
+        assert latest.message == 'replace file1'
+        assert len(list(latest.files)) == 3
+        assert {'manifest.xml', 'file1.txt', 'file2.txt'} == latest.filenames
+        with (model.repo_abs_path / 'file1.txt').open() as f:
+            assert f.read() == 'file 1 new'
+
+        assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
 
     def test_delete_nonexistent_file(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -946,6 +998,7 @@ class TestVersionCreation:
         assert response.status_code == 200
         assert 'delete-file' not in model.repo._repo.tags
         assert model.repo.latest_commit.message != 'delete file2'
+        assert 0 == model.files.count()
 
     def test_create_model_version(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -968,6 +1021,7 @@ class TestVersionCreation:
         assert response.url == '/entities/models/%d/versions/%s' % (model.id, commit.hexsha)
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
 
     def test_cannot_create_model_version_as_non_owner(self, logged_in_user, client):
         model = recipes.model.make()
@@ -1010,6 +1064,7 @@ class TestVersionCreation:
         mock_check.assert_called_once_with(protocol, commit.hexsha)
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == protocol.files.count()
 
     @patch('requests.post', side_effect=requests.exceptions.ConnectionError)
     def test_protocol_analysis_errors(self, mock_post, client, logged_in_user, helpers):
