@@ -1050,6 +1050,21 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
         return context
 
     def post(self, request, *args, **kwargs):
+        rr = request.POST.get('rerun_expts')
+        print(rr)
+        experiments_to_run = request.POST.getlist('runexperimentlist[]')
+        print(experiments_to_run)
+        if request.POST.get('rerun_expts'):
+            # run all checked experiments (rerun if necessary)
+            for exper in experiments_to_run:
+                print(exper)
+#               record_experiments_to_run(request.user, entity, commit)
+        else:
+            # only run checked experiments that have not already been run
+            for exper in experiments_to_run:
+                print(exper)
+        #               record_experiments_to_run(request.user, entity, commit)
+
         # record_experiments_to_run(request.user, entity, commit)
         return HttpResponseRedirect(
             reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest']))

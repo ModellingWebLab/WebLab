@@ -10,7 +10,7 @@
   <h1 id="entityname">Run experiments using <span>{{ entity.name }}</span></h1>
     <!-- SK TO DO: make these work -->
      <p>
-         <input class="overrideCheckBox" type="checkbox" value="false"/>
+         <input class="overrideCheckBox" type="checkbox" name="rerun_expts"/>
           Create new versions of existing experiments (if unchecked, existing combinations will be skipped)
      </p>
   <div id="runexperiment">
@@ -42,9 +42,14 @@
               <p>
                 {% if entity_version.latest %}
 
-                  <input class="latestexperimentCheckBox" type="checkbox" value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}" checked/>
+                  <input class="latestexperimentCheckBox" type="checkbox"
+                         value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}"
+                         name="runexperimentlist[]"
+                         checked/>
                 {%  else  %}
-                   <input class="experimentCheckBox" type="checkbox" value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}"/>
+                   <input class="experimentCheckBox" type="checkbox"
+                          value="{{ entity_version.id }}:{{ entity_version.commit.hexsha }}"
+                          name="runexperimentlist[]"/>
                 {% endif %}
                   <strong>
                       <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
