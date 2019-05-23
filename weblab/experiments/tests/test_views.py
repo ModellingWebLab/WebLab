@@ -660,6 +660,32 @@ class TestNewExperimentView:
         assert data['newExperiment']['versionId'] == version.id
         assert data['newExperiment']['expName'] == version.experiment.name
 
+        # Check re-submit also works if there are multiple versions already
+        exp_version2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment=version.experiment,
+        )
+        print(version, exp_version2)
+        response = client.post(
+            '/experiments/new',
+            {
+                'model': model.pk,
+                'protocol': protocol.pk,
+                'model_version': model_version,
+                'protocol_version': protocol_version,
+            }
+        )
+
+        assert mock_post.call_count == 1
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+
+        assert 'newExperiment' in data
+        assert data['newExperiment']['response']
+        assert data['newExperiment']['expId'] == exp_version2.experiment.id
+        assert data['newExperiment']['versionId'] == exp_version2.id
+        assert data['newExperiment']['expName'] == exp_version2.experiment.name
+
     @pytest.mark.usefixtures('logged_in_user')
     def test_submit_experiment_requires_permissions(self, mock_post, client, logged_in_user):
         response = client.post('/experiments/new', {})
@@ -706,6 +732,7 @@ class TestNewExperimentView:
         assert data['newExperiment']['expId'] == version.experiment.id
         assert data['newExperiment']['versionId'] == version.id
         assert data['newExperiment']['expName'] == version.experiment.name
+        assert version.status == ExperimentVersion.STATUS_FAILED
 
         # Check this hasn't been removed from the list of planned experiments
         assert PlannedExperiment.objects.count() == planned_experiments
