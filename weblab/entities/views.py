@@ -1051,8 +1051,6 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
 
     def post(self, request, *args, **kwargs):
         experiments_to_run = request.POST.getlist('runexperimentlist[]')
-        if not experiments_to_run:
-            raise Http404
         for version in experiments_to_run:
             ident, sha = version.split(':')
             entity = Entity.objects.get(pk=ident)
