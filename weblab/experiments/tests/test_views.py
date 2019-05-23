@@ -11,6 +11,7 @@ import pytest
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages import get_messages
+from django.core.urlresolvers import reverse
 from django.test import Client
 from django.utils.dateparse import parse_datetime
 
@@ -1173,6 +1174,34 @@ class TestExperimentFileDownloadView:
             'attachment; filename=stdout.txt'
         )
         assert response['Content-Type'] == 'text/plain'
+
+    def test_handles_odd_characters(self, client, archive_file_path, experiment_version):
+        experiment_version.abs_path.mkdir(exist_ok=True)
+        shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
+        filename = 'oxmeta:membrane%3Avoltage - space.csv'
+
+        response = client.get(
+            reverse('experiments:file_download',
+                    args=[experiment_version.experiment.pk, experiment_version.pk, filename])
+        )
+
+        assert response.status_code == 200
+        assert response.content == b'1,1\n'
+        assert response['Content-Disposition'] == (
+            'attachment; filename=' + filename
+        )
+        assert response['Content-Type'] == 'text/csv'
+
+    def test_disallows_non_local_files(self, client, archive_file_path, experiment_version):
+        experiment_version.abs_path.mkdir(exist_ok=True)
+        shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
+
+        for filename in ['/etc/passwd', '../../../pytest.ini']:
+            response = client.get(
+                '/experiments/%d/versions/%d/download/%s' % (
+                    experiment_version.experiment.pk, experiment_version.pk, filename)
+            )
+            assert response.status_code == 404
 
 
 @pytest.mark.django_db
