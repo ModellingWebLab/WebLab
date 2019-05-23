@@ -2,7 +2,7 @@ var Upload = require('./upload.js');
 var utils = require('./lib/utils.js')
 
 var uploadedFiles = new Array ();
-var knownTypes = ["unknown", "CellML", "CSV", "HDF5", "EPS", "PNG", "XMLPROTOCOL", "TXTPROTOCOL", "COMBINE archive"];
+var knownTypes = ["unknown", "CellML", "CSV", "HDF5", "EPS", "PNG", "XMLPROTOCOL", "TXTPROTOCOL","MARKDOWN", "COMBINE archive"];
 
 
 function initNewEntity() {

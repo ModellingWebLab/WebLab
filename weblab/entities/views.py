@@ -37,6 +37,7 @@ from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
+from core.filetypes import get_file_type
 from core.visibility import (
     Visibility, VisibilityMixin
 )
@@ -184,20 +185,6 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
                 'visibility': visibility,
             })
         return super().get_context_data(**kwargs)
-
-
-def get_file_type(filename):
-    _, ext = os.path.splitext(filename)
-
-    extensions = {
-        'cellml': 'CellML',
-        'txt': 'TXTPROTOCOL',
-        'xml': 'XMLPROTOCOL',
-        'zip': 'COMBINE archive',
-        'omex': 'COMBINE archive',
-    }
-
-    return extensions.get(ext[1:], 'Unknown')
 
 
 class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):

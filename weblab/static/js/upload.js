@@ -157,6 +157,16 @@ Upload.prototype = {
         array.fileType = "CellML";
     else if (file.name.endsWith(".txt"))
         array.fileType = "TXTPROTOCOL";
+    else if (file.name.endsWith(".csv"))
+        array.fileType = "CSV";
+    else if (file.name.endsWith(".eps"))
+        array.fileType = "EPS";
+    else if (file.name.endsWith(".png"))
+        array.fileType = "PNG";
+    else if (file.name.endsWith(".h5"))
+        array.fileType = "HDF5";
+    else if (file.name.endsWith(".md"))
+        array.fileType = "MARKDOWN";
     else if (file.name.endsWith(".xml"))
         array.fileType = "XMLPROTOCOL";
     else if (file.name.endsWith(".zip") || name.endsWith(".omex"))
