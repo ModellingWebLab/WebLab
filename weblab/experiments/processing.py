@@ -65,7 +65,6 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
                 }
             )
         except MultipleObjectsReturned:
-            print('Multi objects')
             return ExperimentVersion.objects.filter(experiment=experiment).latest('created_at'), False
         if not created:
             return version, False
