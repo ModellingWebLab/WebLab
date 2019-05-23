@@ -4,12 +4,12 @@
     <li><a href="{% url 'home' %}">Home</a></li>
     {% if user.is_authenticated %}
       <li><a href="{% url 'experiments:list' 'mine' %}">Experiments</a></li>
+      <li><a href="{% url 'entities:list' 'model' %}">My models</a></li>
+      <li><a href="{% url 'entities:list' 'protocol' %}">My protocols</a></li>
     {% else %}
       <li><a href="{% url 'experiments:list' %}">Experiments</a></li>
+      <li><a href="{% url 'about' %}">About</a></li>
     {% endif %}
-    <li><a href="{% url 'contact' %}">Contact/Team</a></li>
-    <li><a href="{% url 'about' %}">About</a></li>
-    <li><a href="{% url 'privacy' %}">Privacy</a></li>
     {% if user.is_authenticated %}
         <li id="usernavbar">
           <a>{{ user.full_name }}</a>

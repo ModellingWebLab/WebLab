@@ -29,6 +29,14 @@
 
     <footer>
       Cardiac Electrophysiology Web Lab &copy; 2013-{% now 'Y' %} University of Oxford, 2016-{% now 'Y' %} University College London
+      <br />
+      <nav>
+        <ul class="footer-navbar">
+          <li><a href="{% url 'contact' %}">Contact/Team</a></li>
+          <li><a href="{% url 'about' %}">About</a></li>
+          <li><a href="{% url 'privacy' %}">Privacy</a></li>
+        </ul>
+      </nav>
     </footer>
 
     </div>
