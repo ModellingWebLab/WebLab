@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.urlresolvers import reverse
 from django.utils.dateparse import parse_datetime
 from git import GitCommandError
 from guardian.shortcuts import assign_perm
@@ -125,6 +126,12 @@ class TestEntityDeletion:
 
 @pytest.mark.django_db
 class TestEntityDetail:
+    def test_redirects_to_new_version(self, client, logged_in_user):
+        model = recipes.model.make(author=logged_in_user)
+        response = client.get('/entities/models/%d' % model.pk)
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d/versions/new' % model.pk
+
     def test_redirects_to_latest_version(self, client, logged_in_user, helpers):
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')
@@ -649,7 +656,8 @@ class TestEntityComparisonJsonView:
 
     def test_file_json(self, client, helpers):
         model = recipes.model.make()
-        v1 = helpers.add_version(model, visibility='public')
+        filename = 'oxmeta:v%3A.txt'
+        v1 = helpers.add_version(model, visibility='public', filename=filename)
 
         v1_spec = '%d:%s' % (model.pk, v1.hexsha)
         response = client.get(
@@ -662,13 +670,13 @@ class TestEntityComparisonJsonView:
         assert versions[0]['id'] == v1.hexsha
         assert versions[0]['numFiles'] == 1
         file_ = versions[0]['files'][0]
-        assert file_['id'] == 'file1.txt'
-        assert file_['name'] == 'file1.txt'
+        assert file_['id'] == filename
+        assert file_['name'] == filename
         assert file_['author'] == model.author.full_name
         assert file_['filetype'] == 'TXTPROTOCOL'
         assert file_['size'] == 15
         assert file_['url'] == (
-            '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, v1.hexsha))
+            '/entities/models/%d/versions/%s/download/%s' % (model.pk, v1.hexsha, filename.replace('%', '%25')))
 
     def test_ignores_invalid_versions(self, client, logged_in_user, helpers):
         model = recipes.model.make()
@@ -1493,6 +1501,39 @@ class TestEntityFileDownloadView:
             'attachment; filename=file1.txt'
         )
         assert response['Content-Type'] == 'text/plain'
+
+    @pytest.mark.parametrize("filename", [
+        ('oxmeta:membrane-voltage with spaces.csv'),
+        ('oxmeta%3Amembrane_voltage.csv'),
+    ])
+    def test_handles_odd_characters(self, client, helpers, filename):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public', filename=filename)
+
+        response = client.get(
+            reverse('entities:file_download', args=['model', model.pk, v1.hexsha, filename])
+        )
+
+        assert response.status_code == 200
+        assert response.content == b'entity contents'
+        assert response['Content-Disposition'] == (
+            'attachment; filename=' + filename
+        )
+        assert response['Content-Type'] == 'text/csv'
+
+    @pytest.mark.parametrize("filename", [
+        ('/etc/passwd'),
+        ('../../../../../pytest.ini'),
+    ])
+    def test_disallows_non_local_files(self, client, public_model, filename):
+        version = public_model.repo.latest_commit
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/download/%s' %
+            (public_model.pk, version.hexsha, filename)
+        )
+
+        assert response.status_code == 404
 
     @patch('mimetypes.guess_type', return_value=(None, None))
     def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, client, public_model):

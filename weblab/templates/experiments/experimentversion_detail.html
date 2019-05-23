@@ -51,6 +51,12 @@
       </small>
     </div>
 
+    {% if not version.is_latest %}
+      <p class="info">
+        Note: there is a <a href="{% url 'experiments:version' experiment.id experiment.latest_version.id %}">later version of this experiment</a>.
+      </p>
+    {% endif %}
+
     <p id="return-text" class="experiment-{{ version.status }}" style="display:none;">
       {{ version.return_text|safe|linebreaksbr }}
     </p>

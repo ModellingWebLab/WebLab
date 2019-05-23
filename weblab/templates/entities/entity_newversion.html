@@ -6,7 +6,11 @@
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
-  <h2>New version</h2>
+  {% if not latest_version %}
+  <p>This {{ type }} has no versions.</p>
+  {% endif %}
+
+  <h2>Create a new version of this {{ type }}</h2>
 
   <form method="POST" action="">
     {% include "./includes/version_files.html" with version=latest_version edit=True master=master_filename %}

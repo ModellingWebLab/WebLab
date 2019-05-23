@@ -159,11 +159,15 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
 
     @property
     def name(self):
-        return str(self.run_number)
+        return '{:%Y-%m-%d %H:%M:%S}'.format(self.created_at)
 
     @property
     def run_number(self):
         return self.experiment.versions.filter(created_at__lte=self.created_at).count()
+
+    @property
+    def is_latest(self):
+        return not self.experiment.versions.filter(created_at__gt=self.created_at).exists()
 
     @property
     def visibility(self):
