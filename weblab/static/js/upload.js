@@ -88,8 +88,8 @@ Upload.prototype = {
       error = "there is already a file with the name '" + name + "' - please remove that first.", "error";
     } else if (this.reserved_names.indexOf(name) != -1) {
       error = "the name '" + name + "' is reserved for system use; please choose another file name.", "error";
-    } else if (!/^[a-zA-Z0-9._]+$/.test(name)) {
-      error = "the name '" + name + "' contains reserved characters; only alpha-numeric characters, underscores and periods are allowed.", "error";
+    } else if (!/^[\w._: \-]+$/.test(name)) {
+      error = "the name '" + name + "' contains reserved characters; only alpha-numeric characters and a few typical punctuation characters are allowed.", "error";
     }
 
     if (error) {
@@ -157,6 +157,16 @@ Upload.prototype = {
         array.fileType = "CellML";
     else if (file.name.endsWith(".txt"))
         array.fileType = "TXTPROTOCOL";
+    else if (file.name.endsWith(".csv"))
+        array.fileType = "CSV";
+    else if (file.name.endsWith(".eps"))
+        array.fileType = "EPS";
+    else if (file.name.endsWith(".png"))
+        array.fileType = "PNG";
+    else if (file.name.endsWith(".h5"))
+        array.fileType = "HDF5";
+    else if (file.name.endsWith(".md"))
+        array.fileType = "MARKDOWN";
     else if (file.name.endsWith(".xml"))
         array.fileType = "XMLPROTOCOL";
     else if (file.name.endsWith(".zip") || name.endsWith(".omex"))

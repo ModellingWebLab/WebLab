@@ -104,6 +104,36 @@ button,
     }
 }
 
+.footer-navbar {
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  bottom: 0;
+  right: 0;
+
+  li {
+    height: auto;
+    float: left;        /* This lines up the menu items horizontally */
+    text-align: center; /* All text is placed in the center of the box */
+    list-style: none;   /* Removes the default styling (bullets) for the list */
+    padding: 2px;
+    margin-right: 20px;
+    font-size: 80%;
+
+    a::before {
+      content: '\00BB\00A0';
+    }
+
+    a, a:hover, a:active {
+      padding: 2px 0;  /* Adds a padding on the top and bottom so the text appears centered vertically */
+      text-decoration: none; /* Removes the default hyperlink styling. */
+      display: block;
+      border: none;
+      color: white;
+    }
+  }
+}
+
 
 #usernavbar {
   min-width: 100px;
@@ -260,7 +290,7 @@ input.inline+span {
 	padding: 0px 10px;
 }
 
-#info {
+#info, .info {
 	background-color: #ced5e5;
 	border: 2px solid #263e6a;
 	padding: 0px 10px;

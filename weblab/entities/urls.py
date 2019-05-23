@@ -4,7 +4,7 @@ from . import views
 
 
 _COMMIT = r'(?P<sha>[^^~:/ ]+)'
-_FILENAME = r'(?P<filename>[\w\-.]+)'
+_FILENAME = r'(?P<filename>[\w\-. \%:]+)'
 _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 _ENTITY_TYPE = '(?P<entity_type>model|protocol)s'
 

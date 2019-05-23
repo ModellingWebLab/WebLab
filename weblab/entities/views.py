@@ -37,6 +37,7 @@ from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
+from core.filetypes import get_file_type
 from core.visibility import (
     Visibility, VisibilityMixin
 )
@@ -184,20 +185,6 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
                 'visibility': visibility,
             })
         return super().get_context_data(**kwargs)
-
-
-def get_file_type(filename):
-    _, ext = os.path.splitext(filename)
-
-    extensions = {
-        'cellml': 'CellML',
-        'txt': 'TXTPROTOCOL',
-        'xml': 'XMLPROTOCOL',
-        'zip': 'COMBINE archive',
-        'omex': 'COMBINE archive',
-    }
-
-    return extensions.get(ext[1:], 'Unknown')
 
 
 class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
@@ -395,13 +382,17 @@ class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
     """
     View an entity
 
-    All this does is redirect to the latest version of the entity.
+    All this does is redirect to the latest version of the entity, if it exists.
+    Otherwise it redirects to the 'add version' page.
     """
     model = Entity
 
     def get_redirect_url(self, *args, **kwargs):
-        url_name = 'entities:version'
-        return reverse(url_name, args=[kwargs['entity_type'], kwargs['pk'], 'latest'])
+        entity = self.get_object()
+        if entity.repocache.versions.exists():
+            return reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest'])
+        else:
+            return reverse('entities:newversion', args=[kwargs['entity_type'], kwargs['pk']])
 
 
 class EntityTagVersionView(
