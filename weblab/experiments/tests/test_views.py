@@ -1145,7 +1145,8 @@ class TestExperimentArchiveView:
         )
         assert response.status_code == 200
         archive = zipfile.ZipFile(BytesIO(response.content))
-        assert set(archive.namelist()) == {'stdout.txt', 'errors.txt', 'manifest.xml'}
+        assert set(archive.namelist()) == {
+            'stdout.txt', 'errors.txt', 'manifest.xml', 'oxmeta:membrane%3Avoltage - space.csv'}
         assert response['Content-Disposition'] == (
             'attachment; filename=my_model__my_protocol.zip'
         )

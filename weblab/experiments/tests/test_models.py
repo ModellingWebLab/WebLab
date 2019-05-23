@@ -179,10 +179,11 @@ class TestExperimentVersion:
         version.abs_path.mkdir()
         shutil.copy(archive_file_path, str(version.archive_path))
 
-        assert len(version.files) == 3
+        assert len(version.files) == 4
         assert version.files[0].name == 'manifest.xml'
         assert version.files[1].name == 'stdout.txt'
         assert version.files[2].name == 'errors.txt'
+        assert version.files[3].name == 'oxmeta:membrane%3Avoltage - space.csv'
 
     def test_files_returns_empty_list_if_no_archive_path(self):
         version = recipes.experiment_version.make()
