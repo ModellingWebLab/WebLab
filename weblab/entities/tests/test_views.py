@@ -125,6 +125,12 @@ class TestEntityDeletion:
 
 @pytest.mark.django_db
 class TestEntityDetail:
+    def test_redirects_to_new_version(self, client, logged_in_user):
+        model = recipes.model.make(author=logged_in_user)
+        response = client.get('/entities/models/%d' % model.pk)
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d/versions/new' % model.pk
+
     def test_redirects_to_latest_version(self, client, logged_in_user, helpers):
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')

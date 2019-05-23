@@ -382,13 +382,17 @@ class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
     """
     View an entity
 
-    All this does is redirect to the latest version of the entity.
+    All this does is redirect to the latest version of the entity, if it exists.
+    Otherwise it redirects to the 'add version' page.
     """
     model = Entity
 
     def get_redirect_url(self, *args, **kwargs):
-        url_name = 'entities:version'
-        return reverse(url_name, args=[kwargs['entity_type'], kwargs['pk'], 'latest'])
+        entity = self.get_object()
+        if entity.repocache.versions.exists():
+            return reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest'])
+        else:
+            return reverse('entities:newversion', args=[kwargs['entity_type'], kwargs['pk']])
 
 
 class EntityTagVersionView(
