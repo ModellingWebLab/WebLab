@@ -2068,11 +2068,47 @@ class TestEntityRunExperiment:
 
         response = client.get('/entities/models/%d/runexperiments/' % model.pk)
         assert response.status_code == 200
-        assert response.context['object_list'] == [{'id': 'myprotocol1',
+        assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'name': 'myprotocol1',
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['preposition'] == 'under'
+
+    def test_view_run_experiment_model_post(self, client, helpers, logged_in_user):
+        helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
+        model = recipes.model.make(author=logged_in_user)
+        commit_model = helpers.add_version(model, visibility='public')
+
+        protocol = recipes.protocol.make(author=logged_in_user)
+        commit1 = helpers.add_version(protocol, visibility='public')
+        commit2 = helpers.add_version(protocol, visibility='public')
+        protocol.add_tag('v1', commit2.hexsha)
+
+        # Test context has correct information
+        response = client.get('/entities/models/%d/runexperiments/' % model.pk)
+        assert response.status_code == 200
+        assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'name': 'myprotocol1',
+                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                   ]
+        # Test post returns correct response
+        data = {'runexperimentlist[]': ['%d:%s' % (protocol.pk, commit2.hexsha)],
+                'entity.repo.latest_commit.hexsha': commit_model.hexsha}
+        response = client.post('/entities/models/%d/runexperiments/' % model.pk, data=data)
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d/versions/latest' % model.pk
+
+        # Test that planned experiments have been added correctly
+        expected_proto_versions = set([
+            (protocol, commit2.hexsha)
+        ])
+        assert PlannedExperiment.objects.count() == 1
+        for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.model == model
+            assert planned_experiment.model_version == commit_model.hexsha
+            assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
 
     def test_view_run_experiment_protocol(self, client, helpers, logged_in_user):
         helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
@@ -2083,9 +2119,43 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
         assert response.status_code == 200
-        assert response.context['object_list'] == [{'id': 'mymodel1',
+        assert response.context['object_list'] == [{'id': model.pk,
+                                                    'name': 'mymodel1',
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['preposition'] == 'on'
+
+    def test_view_run_experiment_protocol_post(self, client, helpers, logged_in_user):
+        helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
+        model = recipes.model.make(author=logged_in_user)
+        commit1 = helpers.add_version(model, visibility='public')
+        commit2 = helpers.add_version(model, visibility='public')
+        model.add_tag('v1', commit2.hexsha)
+        protocol = recipes.protocol.make(author=logged_in_user)
+        commit_protocol = helpers.add_version(protocol, visibility='public')
+        response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
+        assert response.status_code == 200
+        assert response.context['object_list'] == [{'id': model.pk,
+                                                    'name': 'mymodel1',
+                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                   ]
+        # Test post returns correct response
+        data = {'runexperimentlist[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
+                'entity.repo.latest_commit.hexsha': commit_protocol.hexsha}
+        response = client.post('/entities/protocols/%d/runexperiments/' % protocol.pk, data=data)
+        assert response.status_code == 302
+        assert response.url == '/entities/protocols/%d/versions/latest' % protocol.pk
+
+        # Test that planned experiments have been added correctly
+        expected_model_versions = set([
+            (model, commit2.hexsha),
+            (model, commit1.hexsha)
+        ])
+        assert PlannedExperiment.objects.count() == 2
+        for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.protocol == protocol
+            assert planned_experiment.protocol_version == commit_protocol.hexsha
+            assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
 

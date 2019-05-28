@@ -1047,29 +1047,32 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
                 commit = item.repo.get_commit(version.sha)
                 latest = item.repo.latest_commit
                 version_info.append({'commit': commit, 'tags': tag_list, 'latest': latest == commit})
-            context['object_list'].append({'id': item.name, 'versions': version_info})
+            context['object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
         return context
 
     def post(self, request, *args, **kwargs):
+        # this in not intuitive
+        # in get context self.object was the entity being worked with
+        # here we have to retrieve it
+        entity = self.get_object()
         experiments_to_run = request.POST.getlist('runexperimentlist[]')
         for version in experiments_to_run:
             ident, sha = version.split(':')
-            entity = Entity.objects.get(pk=ident)
-            commit = entity.repo.get_commit(sha)
-            record_experiments_to_run(request.user, entity, commit)
-        # if request.POST.get('rerun_expts'):
-        #     # run all checked experiments (rerun if necessary)
-        #     for exper in experiments_to_run:
-        #         entity = Entity.objects.get(exper.keys()[0])
-        #         commit = Entity.objects.get(exper.value())
-        #         record_experiments_to_run(request.user, entity, commit)
-        # else:
-        #     # only run checked experiments that have not already been run
-        #     for exper in experiments_to_run:
-        #         print(exper)
-        #               record_experiments_to_run(request.user, entity, commit)
-
-        # record_experiments_to_run(request.user, entity, commit)
+            if entity.entity_type == 'protocol':
+                exper_kwargs = {
+                    'model_id': ident,
+                    'model_version': sha,
+                    'protocol_id': entity.id,
+                    'protocol_version':  entity.repo.latest_commit.hexsha,
+                }
+            else:
+                exper_kwargs = {
+                    'model_id': entity.id,
+                    'model_version': entity.repo.latest_commit.hexsha,
+                    'protocol_id': ident,
+                    'protocol_version': sha,
+                }
+            PlannedExperiment.objects.get_or_create(**exper_kwargs)
         return HttpResponseRedirect(
             reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest']))
 

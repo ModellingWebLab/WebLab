@@ -8,73 +8,67 @@
 
 {% block content %}
   <h1 id="entityname">Run experiments using <span>{{ entity.name }}</span></h1>
-    <!-- SK TO DO: make these work -->
-     <p>
-         <input class="overrideCheckBox" type="checkbox" name="rerun_expts"/>
-          Create new versions of existing experiments (if unchecked, existing combinations will be skipped)
-     </p>
-  <div id="runexperiment">
+    <p>
+      <input class="overrideCheckBox" type="checkbox" name="rerun_expts"/>
+      Create new versions of existing experiments (if unchecked, existing combinations will be skipped)
+    </p>
 
-
-    <!-- SK TO DO: make these work -->
-     <button id="checkallbutton">check all</button>
+    <button id="checkallbutton">check all</button>
     <button id="checklatestbutton">check latest</button>
     <button id="uncheckallbutton">uncheck all</button>
-   <p>
-        <form action="" method="post">
-      {% csrf_token %}
-       <button id="savebutton">run experiments</button>
+  <form action="" method="post">
+    {% csrf_token %}
+    <button id="savebutton">run experiments</button>
 
-  </form>
-    </p>
-  <p>You may run this {{  type }} {{ preposition }} the following {{ other_type }}s.</p>
 
-  <h2> Your {{ other_type }}s</h2>
+    <p>You may run this {{ type }} {{ preposition }} the following {{ other_type }}s.</p>
+
+    <h2> Your {{ other_type }}s</h2>
 
     <!-- list each entity and all versions of that entity -->
-  {% for entity_object in object_list %}
+    {% for entity_object in object_list %}
 
-      <strong>{{ entity_object.id }}</strong>
+      <strong>{{ entity_object.name }}</strong>
       <ul>
-      {% for entity_version in entity_object.versions %}
+        {% for entity_version in entity_object.versions %}
 
           <li>
-              <p>
-                {% if entity_version.latest %}
+            <p>
+              {% if entity_version.latest %}
 
-                  <input class="latestexperimentCheckBox" type="checkbox"
-                         value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
-                         name="runexperimentlist[]"
-                         checked/>
-                {%  else  %}
-                   <input class="experimentCheckBox" type="checkbox"
-                          value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
-                          name="runexperimentlist[]"/>
-                {% endif %}
-                  <strong>
-                      <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
-                          {% include "./includes/version_name.html" with tags=entity_version.tags version=entity_version.commit only %}
-                      </a>
-                  </strong>
-                  by <em>{{ entity_version.commit.author }}</em><br />
-                  <span class="suppl">
+                <input class="latestexperimentCheckBox" type="checkbox"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       name="runexperimentlist[]"
+                       checked/>
+              {% else %}
+                <input class="experimentCheckBox" type="checkbox"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       name="runexperimentlist[]"/>
+              {% endif %}
+              <strong>
+                <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
+                  {% include "./includes/version_name.html" with tags=entity_version.tags version=entity_version.commit only %}
+                </a>
+              </strong>
+              by <em>{{ entity_version.commit.author }}</em><br/>
+              <span class="suppl">
                       <small>created </small> <time>{{ entity_version.commit.committed_at }}</time>
-                      {% with entity_version.commit.filenames|length as numfiles %}
-                          <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize}}
-                      {% endwith %}
+                {% with entity_version.commit.filenames|length as numfiles %}
+                  <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
+                {% endwith %}
                   </span>
-                  <br />
-                  <span class="suppl">
+              <br/>
+              <span class="suppl">
                       {{ entity_version.commit.message|linebreaksbr }}
                   </span>
-              </p>
+            </p>
           </li>
-      {% endfor %}
+        {% endfor %}
       </ul>
-  {%  endfor %}
-  </div>
+    {% endfor %}
 
-  <h2> Other {{ other_type }}s</h2>
+    <h2> Other {{ other_type }}s</h2>
 
+  </form>
 
 {% endblock %}
