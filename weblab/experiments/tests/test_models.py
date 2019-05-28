@@ -35,6 +35,8 @@ class TestExperiment:
         v2 = recipes.experiment_version.make(experiment=v1.experiment, created_at=date(2017, 1, 3))
 
         assert v1.experiment.latest_version == v2
+        assert not v1.is_latest
+        assert v2.is_latest
 
     def test_latest_result(self):
         ver = recipes.experiment_version.make(created_at=date(2017, 1, 2), status='FAILED')
@@ -177,10 +179,11 @@ class TestExperimentVersion:
         version.abs_path.mkdir()
         shutil.copy(archive_file_path, str(version.archive_path))
 
-        assert len(version.files) == 3
+        assert len(version.files) == 4
         assert version.files[0].name == 'manifest.xml'
         assert version.files[1].name == 'stdout.txt'
         assert version.files[2].name == 'errors.txt'
+        assert version.files[3].name == 'oxmeta:membrane%3Avoltage - space.csv'
 
     def test_files_returns_empty_list_if_no_archive_path(self):
         version = recipes.experiment_version.make()

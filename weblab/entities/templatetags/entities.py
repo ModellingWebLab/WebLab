@@ -1,8 +1,9 @@
 import math
-import os.path
 
 from django import template
 from django.core.urlresolvers import reverse
+
+from core.filetypes import get_file_type
 
 
 register = template.Library()
@@ -19,17 +20,7 @@ def human_readable_bytes(num_bytes):
 
 @register.filter
 def file_type(filename):
-    _, ext = os.path.splitext(filename)
-
-    extensions = {
-        'cellml': 'CellML',
-        'txt': 'TXTPROTOCOL',
-        'xml': 'XMLPROTOCOL',
-        'zip': 'COMBINE archive',
-        'omex': 'COMBINE archive',
-    }
-
-    return extensions.get(ext[1:], 'Unknown')
+    return get_file_type(filename)
 
 
 @register.filter

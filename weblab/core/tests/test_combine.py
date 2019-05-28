@@ -1,6 +1,5 @@
 import datetime
 import io
-import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 

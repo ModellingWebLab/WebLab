@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.urlresolvers import reverse
 from django.utils.dateparse import parse_datetime
 from git import GitCommandError
 from guardian.shortcuts import assign_perm
@@ -125,6 +126,12 @@ class TestEntityDeletion:
 
 @pytest.mark.django_db
 class TestEntityDetail:
+    def test_redirects_to_new_version(self, client, logged_in_user):
+        model = recipes.model.make(author=logged_in_user)
+        response = client.get('/entities/models/%d' % model.pk)
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d/versions/new' % model.pk
+
     def test_redirects_to_latest_version(self, client, logged_in_user, helpers):
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')
@@ -649,7 +656,8 @@ class TestEntityComparisonJsonView:
 
     def test_file_json(self, client, helpers):
         model = recipes.model.make()
-        v1 = helpers.add_version(model, visibility='public')
+        filename = 'oxmeta:v%3A.txt'
+        v1 = helpers.add_version(model, visibility='public', filename=filename)
 
         v1_spec = '%d:%s' % (model.pk, v1.hexsha)
         response = client.get(
@@ -662,13 +670,13 @@ class TestEntityComparisonJsonView:
         assert versions[0]['id'] == v1.hexsha
         assert versions[0]['numFiles'] == 1
         file_ = versions[0]['files'][0]
-        assert file_['id'] == 'file1.txt'
-        assert file_['name'] == 'file1.txt'
+        assert file_['id'] == filename
+        assert file_['name'] == filename
         assert file_['author'] == model.author.full_name
         assert file_['filetype'] == 'TXTPROTOCOL'
         assert file_['size'] == 15
         assert file_['url'] == (
-            '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, v1.hexsha))
+            '/entities/models/%d/versions/%s/download/%s' % (model.pk, v1.hexsha, filename.replace('%', '%25')))
 
     def test_ignores_invalid_versions(self, client, logged_in_user, helpers):
         model = recipes.model.make()
@@ -832,7 +840,7 @@ class TestVersionCreation:
         model = recipes.model.make(author=logged_in_user)
         recipes.model_file.make(
             entity=model,
-            upload=SimpleUploadedFile('file1.txt', b'file 1'),
+            upload=SimpleUploadedFile('file1.txt', b'file 1 wrong'),
             original_name='file1.txt',
         )
         recipes.model_file.make(
@@ -840,11 +848,17 @@ class TestVersionCreation:
             upload=SimpleUploadedFile('file2.txt', b'file 2'),
             original_name='file2.txt',
         )
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('file1_fixed.txt', b'file 1'),
+            original_name='file1.txt',
+        )
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
-                'filename[]': ['uploads/file1.txt', 'uploads/file2.txt'],
+                'filename[]': ['uploads/file1.txt', 'uploads/file2.txt', 'uploads/file1_fixed.txt'],
+                'delete_filename[]': ['file1.txt'],
                 'mainEntry': ['file1.txt'],
                 'commit_message': 'files',
                 'tag': 'v1',
@@ -862,6 +876,7 @@ class TestVersionCreation:
         assert latest.master_filename == 'file1.txt'
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
 
     def test_delete_file(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -890,6 +905,7 @@ class TestVersionCreation:
         assert not (model.repo_abs_path / 'file1.txt').exists()
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
 
     def test_delete_multiple_files(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -920,6 +936,50 @@ class TestVersionCreation:
         assert not (model.repo_abs_path / 'file2.txt').exists()
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
+
+    def test_replace_file(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        helpers.add_version(model, 'file1.txt')
+        helpers.add_version(model, 'file2.txt')
+        assert len(list(model.repo.latest_commit.files)) == 2
+
+        # The user changes their mind twice about a new version of file1...
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('file1_v2.txt', b'file 1 wrong'),
+            original_name='file1.txt',
+        )
+        recipes.model_file.make(
+            entity=model,
+            upload=SimpleUploadedFile('file1_v3.txt', b'file 1 new'),
+            original_name='file1.txt',
+        )
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': ['uploads/file1_v2.txt', 'uploads/file1_v3.txt'],
+                'delete_filename[]': ['file1.txt', 'file1.txt'],
+                'commit_message': 'replace file1',
+                'tag': 'replace-file',
+                'visibility': 'public',
+            },
+        )
+        assert response.status_code == 302
+        latest = model.repo.latest_commit
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
+        assert 'replace-file' in model.repo._repo.tags
+
+        assert latest.message == 'replace file1'
+        assert len(list(latest.files)) == 3
+        assert {'manifest.xml', 'file1.txt', 'file2.txt'} == latest.filenames
+        with (model.repo_abs_path / 'file1.txt').open() as f:
+            assert f.read() == 'file 1 new'
+
+        assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
 
     def test_delete_nonexistent_file(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -938,6 +998,7 @@ class TestVersionCreation:
         assert response.status_code == 200
         assert 'delete-file' not in model.repo._repo.tags
         assert model.repo.latest_commit.message != 'delete file2'
+        assert 0 == model.files.count()
 
     def test_create_model_version(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -960,6 +1021,7 @@ class TestVersionCreation:
         assert response.url == '/entities/models/%d/versions/%s' % (model.id, commit.hexsha)
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == model.files.count()
 
     def test_cannot_create_model_version_as_non_owner(self, logged_in_user, client):
         model = recipes.model.make()
@@ -1002,6 +1064,7 @@ class TestVersionCreation:
         mock_check.assert_called_once_with(protocol, commit.hexsha)
 
         assert 0 == PlannedExperiment.objects.count()
+        assert 0 == protocol.files.count()
 
     @patch('requests.post', side_effect=requests.exceptions.ConnectionError)
     def test_protocol_analysis_errors(self, mock_post, client, logged_in_user, helpers):
@@ -1493,6 +1556,39 @@ class TestEntityFileDownloadView:
             'attachment; filename=file1.txt'
         )
         assert response['Content-Type'] == 'text/plain'
+
+    @pytest.mark.parametrize("filename", [
+        ('oxmeta:membrane-voltage with spaces.csv'),
+        ('oxmeta%3Amembrane_voltage.csv'),
+    ])
+    def test_handles_odd_characters(self, client, helpers, filename):
+        model = recipes.model.make()
+        v1 = helpers.add_version(model, visibility='public', filename=filename)
+
+        response = client.get(
+            reverse('entities:file_download', args=['model', model.pk, v1.hexsha, filename])
+        )
+
+        assert response.status_code == 200
+        assert response.content == b'entity contents'
+        assert response['Content-Disposition'] == (
+            'attachment; filename=' + filename
+        )
+        assert response['Content-Type'] == 'text/csv'
+
+    @pytest.mark.parametrize("filename", [
+        ('/etc/passwd'),
+        ('../../../../../pytest.ini'),
+    ])
+    def test_disallows_non_local_files(self, client, public_model, filename):
+        version = public_model.repo.latest_commit
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/download/%s' %
+            (public_model.pk, version.hexsha, filename)
+        )
+
+        assert response.status_code == 404
 
     @patch('mimetypes.guess_type', return_value=(None, None))
     def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, client, public_model):
