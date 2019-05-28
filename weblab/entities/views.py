@@ -579,24 +579,32 @@ class EntityNewVersionView(
         git_errors = []
         files_to_delete = set()  # Temp files to be removed if successful
 
+        deletions = set(request.POST.getlist('delete_filename[]'))
+        additions = request.POST.getlist('filename[]')
+
+        # Copy files into the index
+        for upload in entity.files.filter(upload__in=additions).order_by('pk'):
+            src = upload.upload.path
+            dest = str(entity.repo_abs_path / upload.original_name)
+            files_to_delete.add(src)
+            if upload.original_name in deletions:
+                # This is either (i) replacing an existing file, or (ii) a file the user uploaded
+                # then decided they didn't want. In either case, don't remove from the repo.
+                deletions.remove(upload.original_name)
+                if not os.path.exists(dest):
+                    # It's the second case (ii), so don't add the file
+                    continue
+            shutil.copy(src, dest)
+            try:
+                entity.repo.add_file(dest)
+            except GitCommandError as e:
+                git_errors.append(e.stderr)
+
         # Delete files from the index
-        deletions = request.POST.getlist('delete_filename[]')
         for filename in deletions:
             path = str(entity.repo_abs_path / filename)
             try:
                 entity.repo.rm_file(path)
-            except GitCommandError as e:
-                git_errors.append(e.stderr)
-
-        # Copy files into the index
-        additions = request.POST.getlist('filename[]')
-        for upload in entity.files.filter(upload__in=additions):
-            src = os.path.join(settings.MEDIA_ROOT, upload.upload.name)
-            dest = str(entity.repo_abs_path / upload.original_name)
-            files_to_delete.add(src)
-            shutil.copy(src, dest)
-            try:
-                entity.repo.add_file(dest)
             except GitCommandError as e:
                 git_errors.append(e.stderr)
 
@@ -627,8 +635,10 @@ class EntityNewVersionView(
                     return self.fail_with_git_errors([e.stderr])
 
             # Temporary upload files have been safely committed, so can be deleted
-            for filename in files_to_delete:
-                os.remove(filename)
+            for filepath in files_to_delete:
+                os.remove(filepath)
+            # Remove records from the EntityFile table too
+            entity.files.all().delete()
 
             # Trigger entity analysis & experiment runs, if required
             entity.analyse_new_version(commit)
