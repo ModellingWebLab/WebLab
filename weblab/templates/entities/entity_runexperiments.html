@@ -69,6 +69,48 @@
 
     <h2> Other {{ other_type }}s</h2>
 
+    <!-- list each entity and all versions of that entity -->
+    {% for entity_object in other_object_list %}
+
+      <strong>{{ entity_object.name }}</strong>
+      <ul>
+        {% for entity_version in entity_object.versions %}
+
+          <li>
+            <p>
+              {% if entity_version.latest %}
+
+                <input class="latestexperimentCheckBox" type="checkbox"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       name="runexperimentlist[]"
+                       checked/>
+              {% else %}
+                <input class="experimentCheckBox" type="checkbox"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       name="runexperimentlist[]"/>
+              {% endif %}
+              <strong>
+                <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
+                  {% include "./includes/version_name.html" with tags=entity_version.tags version=entity_version.commit only %}
+                </a>
+              </strong>
+              by <em>{{ entity_version.commit.author }}</em><br/>
+              <span class="suppl">
+                      <small>created </small> <time>{{ entity_version.commit.committed_at }}</time>
+                {% with entity_version.commit.filenames|length as numfiles %}
+                  <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
+                {% endwith %}
+                  </span>
+              <br/>
+              <span class="suppl">
+                      {{ entity_version.commit.message|linebreaksbr }}
+                  </span>
+            </p>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+
   </form>
 
 {% endblock %}

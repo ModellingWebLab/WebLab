@@ -1039,6 +1039,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
         other_entities = Entity.objects.filter(entity_type=entity.other_type)\
             .select_related('cachedentity').prefetch_related('cachedentity__versions', 'cachedentity__versions__tags')
         context['object_list'] = []
+        context['other_object_list'] = []
         for item in other_entities:
             versions = item.cachedentity.versions
             version_info = []
@@ -1047,7 +1048,10 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
                 commit = item.repo.get_commit(version.sha)
                 latest = item.repo.latest_commit
                 version_info.append({'commit': commit, 'tags': tag_list, 'latest': latest == commit})
-            context['object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
+            if item.author == self.request.user:
+                context['object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
+            else:
+                context['other_object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
         return context
 
     def post(self, request, *args, **kwargs):
