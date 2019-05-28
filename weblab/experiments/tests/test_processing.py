@@ -47,7 +47,8 @@ class TestSubmitExperiment:
         assert Experiment.objects.count() == 0
         assert RunningExperiment.objects.count() == 0
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
+        version, is_new = submit_experiment(model, model_version, protocol, protocol_version, user, False)
+        assert is_new
 
         # Check properties of the new experiment & version
         assert Experiment.objects.count() == 1
@@ -106,8 +107,9 @@ class TestSubmitExperiment:
         experiment = recipes.experiment.make(model=model, model_version=model_version,
                                              protocol=protocol, protocol_version=protocol_version)
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
+        version, is_new = submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
+        assert is_new
         assert version.experiment == experiment
 
     def test_raises_exception_on_webservice_error(self, mock_post,
@@ -142,8 +144,9 @@ class TestSubmitExperiment:
 
         mock_post.side_effect = generate_response('%s an error occurred')
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
+        version, is_new = submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
+        assert is_new
         assert version.status == ExperimentVersion.STATUS_FAILED
         assert version.return_text == 'an error occurred'
         assert RunningExperiment.objects.count() == 0
@@ -157,8 +160,9 @@ class TestSubmitExperiment:
 
         mock_post.side_effect = generate_response('%s inapplicable')
 
-        version = submit_experiment(model, model_version, protocol, protocol_version, user, False)
+        version, is_new = submit_experiment(model, model_version, protocol, protocol_version, user, False)
 
+        assert is_new
         assert version.status == ExperimentVersion.STATUS_INAPPLICABLE
         assert RunningExperiment.objects.count() == 0
 
