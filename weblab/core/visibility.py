@@ -26,6 +26,8 @@ LEVELS = [
     Visibility.MODERATED,
 ]
 
+VISIBILITY_LEVEL_MAP = {vis: LEVELS.index(vis) for vis in LEVELS}
+
 
 def get_joint_visibility(*visibilities):
     """
@@ -33,7 +35,7 @@ def get_joint_visibility(*visibilities):
     """
     # Use the most conservative of the two entities' visibilities
     return LEVELS[min(
-        LEVELS.index(vis)
+        VISIBILITY_LEVEL_MAP[vis]
         for vis in visibilities
     )]
 
@@ -48,7 +50,7 @@ def visibility_meets_threshold(visibility, threshold):
     """
     if threshold is None:
         threshold = Visibility.PRIVATE
-    return LEVELS.index(visibility) >= LEVELS.index(threshold)
+    return VISIBILITY_LEVEL_MAP[visibility] >= VISIBILITY_LEVEL_MAP[threshold]
 
 
 def visible_entity_ids(user):
