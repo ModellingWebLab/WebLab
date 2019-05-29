@@ -673,7 +673,7 @@ class EntityVersionListView(EntityTypeMixin, VisibilityMixin, DetailView):
 
         versions = entity.cachedentity.versions
         if self.request.user not in entity.viewers:
-            versions = versions.filter(visibility=Visibility.PUBLIC)
+            versions = versions.filter(~Q(visibility=Visibility.PRIVATE))
 
         kwargs.update(**{
             'versions': list(
