@@ -51,6 +51,18 @@ from .forms import (
     FileUploadForm,
 )
 
+class ExperimentalDatasetMixin:
+    """
+    Mixin for including in pages about `Entity` objects
+    """
+    @property
+    def model(self):
+        return ExperimentalDataset
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**kwargs)
+
+
 class ExperimentalDatasetCreateView(
     LoginRequiredMixin, PermissionRequiredMixin,
     UserFormKwargsMixin, CreateView
@@ -73,7 +85,7 @@ class ExperimentalDatasetCreateView(
                        args=[self.object.pk])
 
 
-class ExperimentalDatasetListView(LoginRequiredMixin, ListView):
+class ExperimentalDatasetListView(LoginRequiredMixin, ListView, ExperimentalDatasetMixin):
     """
     List all user's datasets
     """
