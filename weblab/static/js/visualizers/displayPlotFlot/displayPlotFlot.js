@@ -62,7 +62,7 @@ function createAppendSelectToggler(parentDiv) {
     selectTogglerEl.id = selectTogglerId;
     selectTogglerEl.type = 'checkbox';
     parentDiv.appendChild (selectTogglerEl);
-    
+
     var label = document.createElement('label');
     label.setAttribute('for', selectTogglerId);
     label.innerHTML = 'select all';
@@ -123,6 +123,20 @@ function plotAccordingToChoices(plotProperties, selectedCoords) {
     if (styleLinespointsOrPoints)
         settings.points = { show: true, radius: 2 };
 
+    if (plotProperties.histogram)
+    {
+        settings.points = {show: false};
+        settings.lines = {show: false};
+        for (var i=0; i<data.length; i++)
+        {
+            data[i].bars = {
+                show : true,
+                barWidth : data[i].data[1][0] - data[i].data[0][0],
+                align : 'left'
+            };
+        }
+    }
+
     plottedGraph = $.plot("#" + flotPlotDivId, data, settings);
 };
 
@@ -138,7 +152,7 @@ function retrieveCurrentPlotCoords(plottedGraph) {
 /* Retrieve generic plot settings */
 function retrieveGenericSettings(legendContainer) {
   var genericSettings = {
-      xaxis: { tickDecimals: 0,
+      xaxis: { //tickDecimals: 0,
                position: 'bottom',
                axisLabelPadding: 10,
                axisLabelUseCanvas: true },
@@ -156,7 +170,7 @@ function retrieveGenericSettings(legendContainer) {
 
 /**
  * Attach the click, select, hover, etc listeners to the plot
- * 
+ *
  * @param plotProperties Assembly of various plot properties.
  * @param moreThanOneDataset True if more than one dataset being plotted.
  */
@@ -213,8 +227,8 @@ function setListeners(plotProperties, moreThanOneDataset) {
             var x = item.datapoint[0];
             var y = item.datapoint[1];
 
-            var content = '[' + item.series.label + '] : ' + 
-                          plotProperties.x_label + ' \'' + x + '\' : ' + 
+            var content = '[' + item.series.label + '] : ' +
+                          plotProperties.x_label + ' \'' + x + '\' : ' +
                           plotProperties.y_label + ' \'' + y + '\'';
             show_tooltip(item.pageX, item.pageY, content);
           }
@@ -303,8 +317,8 @@ function setTogglerTitle(toggler) {
 }
 
 /**
- * Pop up a tooltip current x and y axis values. 
- * 
+ * Pop up a tooltip current x and y axis values.
+ *
  * @param x X-axis coordinate.
  * @param y Y-axis coordinate.
  * @param content Content of tooltip.
@@ -415,7 +429,7 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
         var choicesContainer = $('#' + choicesDivId);
         var onlyOneDataset = (datasetNumber == 1);
 
-        /* insert checkboxes - note that colours will be applied to spans after plotting */ 
+        /* insert checkboxes - note that colours will be applied to spans after plotting */
         $.each(datasets, function(key, val) {
             var thisDatasetNumber = val.color;
             var colouredSpan = $('<span />').attr('id', colouredSpanIdPrefix + thisDatasetNumber)
@@ -443,6 +457,7 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
           'choicesContainer': choicesContainer,
           'datasets': datasets,
           'styleLinespointsOrPoints': styleLinespointsOrPoints,
+          'histogram': thisFile.linestyle == 'hist',
           'flotPlotDivId': flotPlotDivId,
           'x_label': x_label,
           'y_label': y_label
@@ -568,7 +583,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
         createAppendChoicesDiv(thisDiv);
         createAppendLegendDiv(thisDiv);
 
-        // insert checkboxes 
+        // insert checkboxes
         var choicesContainer = $('#' + choicesDivId);
 
         var datasets = {};
@@ -626,6 +641,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
             'choicesContainer': choicesContainer,
             'datasets': datasets,
             'styleLinespointsOrPoints': styleLinespointsOrPoints,
+            'histogram': thisFile.linestyle == 'hist',
             'flotPlotDivId': flotPlotDivId,
             'x_label': x_label,
             'y_label': y_label
@@ -635,7 +651,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
         /* legend generated when graph plotted, so this must follow the plot creation! */
         transferLegendColours(datasets);
         setListeners(plotProperties, true);
-        
+
         // Save data for export if user requests it
         common.allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
     }
