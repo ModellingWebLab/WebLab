@@ -779,7 +779,7 @@ class TestEntityVersionList:
     def test_view_entity_version_list(self, client, helpers):
         model = recipes.model.make()
         commit1 = helpers.add_version(model, visibility='public')
-        commit2 = helpers.add_version(model, visibility='public')
+        commit2 = helpers.add_version(model, visibility='moderated')
         model.add_tag('v1', commit2.hexsha)
 
         response = client.get('/entities/models/%d/versions/' % model.pk)
@@ -793,6 +793,7 @@ class TestEntityVersionList:
         model = recipes.model.make()
         helpers.add_version(model, visibility='private')
         commit2 = helpers.add_version(model, visibility='public')
+        helpers.add_version(model, visibility='private')
 
         response = client.get('/entities/models/%d/versions/' % model.pk)
         assert response.status_code == 200
