@@ -192,5 +192,5 @@ def can_manage_entity(context, entity):
 
 
 @register.filter
-def url_runexperiments(entity):
+def url_run_experiments(entity):
     return reverse('entities:runexperiments', args=[entity.entity_type, entity.id])
