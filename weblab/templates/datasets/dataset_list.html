@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load datasets %}
+
+{% block title %}Your datasets - {% endblock title %}
+
+{% block content %}
+
+
+    {% can_create_dataset as permission %}
+    {% if permission %}
+    <small><a href="{{ type|url_new }}" id="add{{ type }}link" class="pointer">Create a new dataset</a></small>
+    {% else %}
+    <small>Your account doesn't have the authority to upload {{ type }}s; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
+    {% endif %}
+
+    <ul>
+      {% for entity in object_list %}
+        <li title="{{ entity.name }}">
+          <strong><a href="{{ entity|url_entity }}">{{ entity.name }}</a></strong>
+
+          {% can_create_version entity as permission %}
+          {% if permission %}
+          <small>(<a href="{{ entity|url_newversion }}">add new version</a>)</small>
+          {% endif %}
+        </li>
+      {% endfor %}
+  </ul>
+{% endblock content %}
