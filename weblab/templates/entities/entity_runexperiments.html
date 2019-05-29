@@ -8,10 +8,6 @@
 
 {% block content %}
   <h1 id="entityname">Run experiments using <span>{{ entity.name }}</span></h1>
-    <p>
-      <input class="overrideCheckBox" type="checkbox" name="rerun_expts"/>
-      Create new versions of existing experiments (if unchecked, existing combinations will be skipped)
-    </p>
 
     <button id="checkallbutton">check all</button>
     <button id="checklatestbutton">check latest</button>
@@ -19,6 +15,10 @@
   <form action="" method="post">
     {% csrf_token %}
     <button id="savebutton">run experiments</button>
+    <p>
+      <input class="overrideCheckBox" type="checkbox" name="rerun_expts"/>
+      Create new versions of existing experiments (if unchecked, existing combinations will be skipped)
+    </p>
 
 
     <p>You may run this {{ type }} {{ preposition }} the following {{ other_type }}s.</p>

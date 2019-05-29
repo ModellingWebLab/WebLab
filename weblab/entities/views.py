@@ -1058,25 +1058,28 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
         # this in not intuitive
         # in get context self.object was the entity being worked with
         # here we have to retrieve it
-        entity = self.get_object()
+        this_entity = self.get_object()
+
+        rerun = request.POST.get('rerun_expts')
+        exclude_existing = False
+        # look for 'None' string as this seems to be what test data passes for a NoneType
+        if not rerun or rerun == 'None':
+            exclude_existing = True
         experiments_to_run = request.POST.getlist('runexperimentlist[]')
         for version in experiments_to_run:
             ident, sha = version.split(':')
-            if entity.entity_type == 'protocol':
-                exper_kwargs = {
-                    'model_id': ident,
-                    'model_version': sha,
-                    'protocol_id': entity.id,
-                    'protocol_version':  entity.repo.latest_commit.hexsha,
-                }
-            else:
-                exper_kwargs = {
-                    'model_id': entity.id,
-                    'model_version': entity.repo.latest_commit.hexsha,
-                    'protocol_id': ident,
-                    'protocol_version': sha,
-                }
+            exper_kwargs = {
+                this_entity.other_type + '_id': ident,
+                this_entity.other_type + '_version': sha,
+                this_entity.entity_type + '_id': this_entity.id,
+                this_entity.entity_type + '_version':  this_entity.repo.latest_commit.hexsha,
+            }
+            if exclude_existing:
+                existing = Experiment.objects.filter(**exper_kwargs)
+                if existing:
+                    continue
             PlannedExperiment.objects.get_or_create(**exper_kwargs)
+        # return to entity page
         return HttpResponseRedirect(
             reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest']))
 
