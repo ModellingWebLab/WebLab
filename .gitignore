@@ -113,3 +113,5 @@ weblab/data/
 
 # media directory
 weblab/media/
+
+weblab/\.idea/
