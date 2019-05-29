@@ -264,17 +264,32 @@ class TestExperimentMatrix:
         )
 
         # Someone else's public model with my public protocol: should be visible
+        # But experiments with newer private versions should not be
         other_model_public = recipes.model.make(author=other_user)
         other_model_public_version = helpers.add_version(other_model_public, visibility='public')
+        other_model_second_private_version = helpers.add_version(other_model_public, visibility='private')
 
         my_protocol_public = recipes.protocol.make(author=logged_in_user)
         my_protocol_public_version = helpers.add_version(my_protocol_public, visibility='public')
+        my_protocol_second_private_version = helpers.add_version(my_protocol_public, visibility='private')
 
         exp2 = recipes.experiment_version.make(
             experiment__model=other_model_public,
             experiment__model_version=other_model_public_version.hexsha,
             experiment__protocol=my_protocol_public,
             experiment__protocol_version=my_protocol_public_version.hexsha,
+        )
+        exp2_model_private = recipes.experiment_version.make(  # noqa: F841
+            experiment__model=other_model_public,
+            experiment__model_version=other_model_second_private_version.hexsha,
+            experiment__protocol=my_protocol_public,
+            experiment__protocol_version=my_protocol_public_version.hexsha,
+        )
+        exp2_protocol_private = recipes.experiment_version.make(
+            experiment__model=other_model_public,
+            experiment__model_version=other_model_public_version.hexsha,
+            experiment__protocol=my_protocol_public,
+            experiment__protocol_version=my_protocol_second_private_version.hexsha,
         )
 
         # Someone else's public model and moderated protocol: should be visible
@@ -315,7 +330,7 @@ class TestExperimentMatrix:
         experiment_ids = set(data['getMatrix']['experiments'])
         assert experiment_ids == {
             str(exp1.experiment.pk),
-            str(exp2.experiment.pk),
+            str(exp2_protocol_private.experiment.pk),
             str(exp3.experiment.pk),
         }
 
@@ -349,7 +364,7 @@ class TestExperimentMatrix:
         other_model_moderated = recipes.model.make(author=other_user)
         other_model_moderated_version = helpers.add_version(other_model_moderated, visibility='moderated')
 
-        exp3 = recipes.experiment_version.make(
+        exp3 = recipes.experiment_version.make(  # noqa: F841
             experiment__model=other_model_moderated,
             experiment__model_version=other_model_moderated_version.hexsha,
             experiment__protocol=other_protocol_public,
@@ -364,6 +379,15 @@ class TestExperimentMatrix:
             experiment__protocol_version=other_protocol_moderated_version.hexsha,
         )
 
+        # A later public version shouldn't show up
+        other_model_second_public_version = helpers.add_version(other_model_moderated, visibility='public')
+        exp4_public = recipes.experiment_version.make(
+            experiment__model=other_model_moderated,
+            experiment__model_version=other_model_second_public_version.hexsha,
+            experiment__protocol=other_protocol_moderated,
+            experiment__protocol_version=other_protocol_moderated_version.hexsha,
+        )
+
         response = client.get('/experiments/matrix')
         data = json.loads(response.content.decode())
 
@@ -372,7 +396,7 @@ class TestExperimentMatrix:
             str(exp4.experiment.pk),
         }
 
-        # If however I ask for what I can see, I get everything because they're all public
+        # If however I ask for what I can see, I get experiments with later public versions
         response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
 
@@ -380,8 +404,7 @@ class TestExperimentMatrix:
         assert experiment_ids == {
             str(exp1.experiment.pk),
             str(exp2.experiment.pk),
-            str(exp3.experiment.pk),
-            str(exp4.experiment.pk),
+            str(exp4_public.experiment.pk),
         }
 
     def test_submatrix(self, client, helpers, experiment_version):

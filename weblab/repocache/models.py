@@ -81,6 +81,10 @@ class CachedEntityVersion(VisibilityModelMixin):
         get_latest_by = 'timestamp'
         ordering = ['-timestamp', '-pk']
 
+    def __str__(self):
+        """Return handy representation for debugging."""
+        return self.entity.entity.name + '@' + self.sha
+
     def set_visibility(self, visibility):
         """
         Set the visibility of this version, if it exists

@@ -1,20 +1,23 @@
-from django.db.models import F, Max, Q
+from django.db.models import Q
 
 from .models import CachedEntityVersion
 
 
 def get_public_entity_ids():
     """
-    Get IDs of all publicly visible entities
+    Get IDs of all entities with at least one publicly visible version
 
     :return: set of entity IDs
     """
     return set(
-        CachedEntityVersion.objects.annotate(
-            latest_ts=Max('entity__versions__timestamp')
-        ).filter(
-            timestamp=F('latest_ts'),
+        CachedEntityVersion.objects.filter(
             visibility__in=['public', 'moderated'],
+        ).order_by(
+            'entity__id',
+            '-timestamp',
+            '-pk',
+        ).distinct(
+            'entity__id',
         ).values_list(
             'entity__entity_id', flat=True
         )
@@ -23,13 +26,12 @@ def get_public_entity_ids():
 
 def get_moderated_entity_ids(entity_type=None):
     """
-    Get IDs of all moderated entities
+    Get IDs of all entities with at least one moderated version
 
     :return: set of entity IDs
     """
 
     entity_filter = Q(
-        timestamp=F('latest_ts'),
         visibility='moderated',
     )
 
@@ -37,10 +39,14 @@ def get_moderated_entity_ids(entity_type=None):
         entity_filter &= Q(entity__entity__entity_type=entity_type)
 
     return set(
-        CachedEntityVersion.objects.annotate(
-            latest_ts=Max('entity__versions__timestamp')
-        ).filter(
+        CachedEntityVersion.objects.filter(
             entity_filter,
+        ).order_by(
+            'entity__id',
+            '-timestamp',
+            '-pk',
+        ).distinct(
+            'entity__id',
         ).values_list(
             'entity__entity_id', flat=True
         )
