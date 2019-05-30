@@ -2,6 +2,7 @@ import uuid
 from pathlib import Path
 
 from django.conf import settings
+from django.core.validators import MinLengthValidator
 from django.db import models
 
 from core.combine import ArchiveReader
@@ -10,16 +11,21 @@ from core.visibility import get_joint_visibility, Visibility, visibility_check
 from core.models import VisibilityModelMixin
 from entities.models import ModelEntity, ProtocolEntity
 
+
 class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
     """Prototyping class for experimental datasets
     """
+    name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
+
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experimental_datasets')
 
     class Meta:
+        ordering = ['name']
+        unique_together = ('name', 'author')
         verbose_name_plural = 'ExperimentalDatasets'
 
         permissions = (
-            ('create_dataset', 'Can create experiment datasets'),
+            ('create_dataset', 'Can create experimental datasets'),
         )
 
     def __str__(self):
