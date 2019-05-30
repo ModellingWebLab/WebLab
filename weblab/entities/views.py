@@ -892,7 +892,7 @@ class GetProtocolInterfacesJsonView(View):
             visible_protocols = user.entity_set.filter(
                 entity_type='protocol'
             ).union(
-                get_objects_for_user(user, 'entities.edit_entity'),
+                get_objects_for_user(user, 'entities.edit_entity', with_superuser=False),
             ).values_list(
                 'id', flat=True
             )
