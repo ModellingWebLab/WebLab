@@ -137,7 +137,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^%s/(?P<pk>\d+)/runexperiments/$' % _ENTITY_TYPE,
+        r'^%s/(?P<pk>\d+)/runexperiments$' % _ENTITY_TYPE,
         views.EntityRunExperimentView.as_view(),
         name='runexperiments',
     ),

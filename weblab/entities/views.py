@@ -1018,7 +1018,7 @@ class EntityDiffView(View):
 
 class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, EntityTypeMixin, DetailView):
     """
-    Class for listing the possible experiment combinations
+    A view allowing users to set up a batch-run of experiments involving a single entity.
     """
     permission_required = 'experiments.create_experiment'
     context_object_name = 'entity'
@@ -1036,8 +1036,14 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
 
         # ended up using a nested dict as nested lists caused django's unpacking in forloops to
         # mess things up slightly
-        other_entities = Entity.objects.filter(entity_type=entity.other_type)\
-            .select_related('cachedentity').prefetch_related('cachedentity__versions', 'cachedentity__versions__tags')
+        other_entities = Entity.objects.filter(
+            entity_type=entity.other_type
+        ).select_related(
+            'cachedentity'
+        ).prefetch_related(
+            'cachedentity__versions',
+            'cachedentity__versions__tags'
+        )
         context['object_list'] = []
         context['other_object_list'] = []
         for item in other_entities:

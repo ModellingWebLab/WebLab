@@ -129,8 +129,8 @@ def test_url_friendly_label(model_with_version, helpers):
 def test_url_runexperiments(model_with_version, protocol_with_version):
     model = model_with_version
     assert (entity_tags.url_run_experiments(model) ==
-            '/entities/models/%d/runexperiments/' % model.pk)
+            '/entities/models/%d/runexperiments' % model.pk)
 
     protocol = protocol_with_version
     assert (entity_tags.url_run_experiments(protocol) ==
-            '/entities/protocols/%d/runexperiments/' % protocol.pk)
+            '/entities/protocols/%d/runexperiments' % protocol.pk)

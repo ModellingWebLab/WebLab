@@ -2066,7 +2066,7 @@ class TestEntityRunExperiment:
         commit2 = helpers.add_version(protocol, visibility='public')
         protocol.add_tag('v1', commit2.hexsha)
 
-        response = client.get('/entities/models/%d/runexperiments/' % model.pk)
+        response = client.get('/entities/models/%d/runexperiments' % model.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2088,7 +2088,7 @@ class TestEntityRunExperiment:
         other_commit1 = helpers.add_version(other_protocol, visibility='public')
         other_commit2 = helpers.add_version(other_protocol, visibility='public')
         other_protocol.add_tag('v1', other_commit2.hexsha)
-        response = client.get('/entities/models/%d/runexperiments/' % model.pk)
+        response = client.get('/entities/models/%d/runexperiments' % model.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2113,7 +2113,7 @@ class TestEntityRunExperiment:
         protocol.add_tag('v1', commit2.hexsha)
 
         # Test context has correct information
-        response = client.get('/entities/models/%d/runexperiments/' % model.pk)
+        response = client.get('/entities/models/%d/runexperiments' % model.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2124,7 +2124,7 @@ class TestEntityRunExperiment:
         data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_model.hexsha,
                 'rerun_expts': 'on'}
-        response = client.post('/entities/models/%d/runexperiments/' % model.pk, data=data)
+        response = client.post('/entities/models/%d/runexperiments' % model.pk, data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
 
@@ -2156,7 +2156,7 @@ class TestEntityRunExperiment:
             experiment__protocol_version=commit1.hexsha)
 
         # Test context has correct information
-        response = client.get('/entities/models/%d/runexperiments/' % model.pk)
+        response = client.get('/entities/models/%d/runexperiments' % model.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2168,7 +2168,7 @@ class TestEntityRunExperiment:
                                         '%d:%s' % (protocol.pk, commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_model.hexsha,
                 'rerun_expts': None}
-        response = client.post('/entities/models/%d/runexperiments/' % model.pk, data=data)
+        response = client.post('/entities/models/%d/runexperiments' % model.pk, data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
 
@@ -2198,7 +2198,7 @@ class TestEntityRunExperiment:
         other_protocol.add_tag('v1', other_commit2.hexsha)
 
         # check context
-        response = client.get('/entities/models/%d/runexperiments/' % model.pk)
+        response = client.get('/entities/models/%d/runexperiments' % model.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2216,7 +2216,7 @@ class TestEntityRunExperiment:
                                         '%d:%s' % (other_protocol.pk, other_commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_model.hexsha,
                 'rerun_expts': 'on'}
-        response = client.post('/entities/models/%d/runexperiments/' % model.pk, data=data)
+        response = client.post('/entities/models/%d/runexperiments' % model.pk, data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
 
@@ -2240,7 +2240,7 @@ class TestEntityRunExperiment:
         commit2 = helpers.add_version(model, visibility='public')
         model.add_tag('v1', commit2.hexsha)
         protocol = recipes.protocol.make(author=logged_in_user)
-        response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
+        response = client.get('/entities/protocols/%d/runexperiments' % protocol.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
@@ -2263,7 +2263,7 @@ class TestEntityRunExperiment:
 
         protocol = recipes.protocol.make(author=logged_in_user)
 
-        response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
+        response = client.get('/entities/protocols/%d/runexperiments' % protocol.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
@@ -2285,7 +2285,7 @@ class TestEntityRunExperiment:
         model.add_tag('v1', commit2.hexsha)
         protocol = recipes.protocol.make(author=logged_in_user)
         commit_protocol = helpers.add_version(protocol, visibility='public')
-        response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
+        response = client.get('/entities/protocols/%d/runexperiments' % protocol.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
@@ -2296,7 +2296,7 @@ class TestEntityRunExperiment:
         data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_protocol.hexsha,
                 'rerun_expts': 'on'}
-        response = client.post('/entities/protocols/%d/runexperiments/' % protocol.pk, data=data)
+        response = client.post('/entities/protocols/%d/runexperiments' % protocol.pk, data=data)
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d/versions/latest' % protocol.pk
 
@@ -2328,7 +2328,7 @@ class TestEntityRunExperiment:
             experiment__protocol_version=commit_protocol.hexsha)
 
         # Test context has correct information
-        response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
+        response = client.get('/entities/protocols/%d/runexperiments' % protocol.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
@@ -2339,7 +2339,7 @@ class TestEntityRunExperiment:
         data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_protocol.hexsha,
                 'rerun_expts': None}
-        response = client.post('/entities/protocols/%d/runexperiments/' % protocol.pk, data=data)
+        response = client.post('/entities/protocols/%d/runexperiments' % protocol.pk, data=data)
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d/versions/latest' % protocol.pk
 
@@ -2367,7 +2367,7 @@ class TestEntityRunExperiment:
         other_commit2 = helpers.add_version(other_model, visibility='public')
         other_model.add_tag('v1', other_commit2.hexsha)
 
-        response = client.get('/entities/protocols/%d/runexperiments/' % protocol.pk)
+        response = client.get('/entities/protocols/%d/runexperiments' % protocol.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
@@ -2385,7 +2385,7 @@ class TestEntityRunExperiment:
                                         '%d:%s' % (other_model.pk, other_commit1.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_protocol.hexsha,
                 'rerun_expts': 'on'}
-        response = client.post('/entities/protocols/%d/runexperiments/' % protocol.pk, data=data)
+        response = client.post('/entities/protocols/%d/runexperiments' % protocol.pk, data=data)
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d/versions/latest' % protocol.pk
 
@@ -2412,7 +2412,7 @@ class TestEntityRunExperiment:
         protocol.add_tag('v1', commit2.hexsha)
 
         # Test context has correct information
-        response = client.get('/entities/models/%d/runexperiments/' % model.pk)
+        response = client.get('/entities/models/%d/runexperiments' % model.pk)
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2423,7 +2423,7 @@ class TestEntityRunExperiment:
         data = {'model_protocol_list[]': [],
                 'entity.repo.latest_commit.hexsha': commit_model.hexsha,
                 'rerun_expts': 'on'}
-        response = client.post('/entities/models/%d/runexperiments/' % model.pk, data=data)
+        response = client.post('/entities/models/%d/runexperiments' % model.pk, data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
 
@@ -2433,7 +2433,7 @@ class TestEntityRunExperiment:
         data = {'model_protocol_list[]': [],
                 'entity.repo.latest_commit.hexsha': commit_model.hexsha,
                 'rerun_expts': None}
-        response = client.post('/entities/models/%d/runexperiments/' % model.pk, data=data)
+        response = client.post('/entities/models/%d/runexperiments' % model.pk, data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
 
