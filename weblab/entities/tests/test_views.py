@@ -2121,7 +2121,7 @@ class TestEntityRunExperiment:
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
-        data = {'runexperimentlist[]': ['%d:%s' % (protocol.pk, commit2.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_model.hexsha,
                 'rerun_expts': 'on'}
         response = client.post('/entities/models/%d/runexperiments/' % model.pk, data=data)
@@ -2164,7 +2164,7 @@ class TestEntityRunExperiment:
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
-        data = {'runexperimentlist[]': ['%d:%s' % (protocol.pk, commit1.hexsha),
+        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit1.hexsha),
                                         '%d:%s' % (protocol.pk, commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_model.hexsha,
                 'rerun_expts': None}
@@ -2211,7 +2211,7 @@ class TestEntityRunExperiment:
                                                                        {'commit': other_commit1, 'tags': [], 'latest': False}]},
                                                          ]
         # Test post returns correct response
-        data = {'runexperimentlist[]': ['%d:%s' % (protocol.pk, commit2.hexsha),
+        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.hexsha),
                                         '%d:%s' % (other_protocol.pk, other_commit1.hexsha),
                                         '%d:%s' % (other_protocol.pk, other_commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_model.hexsha,
@@ -2293,7 +2293,7 @@ class TestEntityRunExperiment:
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
-        data = {'runexperimentlist[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_protocol.hexsha,
                 'rerun_expts': 'on'}
         response = client.post('/entities/protocols/%d/runexperiments/' % protocol.pk, data=data)
@@ -2336,7 +2336,7 @@ class TestEntityRunExperiment:
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
-        data = {'runexperimentlist[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_protocol.hexsha,
                 'rerun_expts': None}
         response = client.post('/entities/protocols/%d/runexperiments/' % protocol.pk, data=data)
@@ -2380,7 +2380,7 @@ class TestEntityRunExperiment:
                                                                        {'commit': other_commit1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
-        data = {'runexperimentlist[]': ['%d:%s' % (model.pk, commit1.hexsha),
+        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha),
                                         '%d:%s' % (model.pk, commit2.hexsha),
                                         '%d:%s' % (other_model.pk, other_commit1.hexsha)],
                 'entity.repo.latest_commit.hexsha': commit_protocol.hexsha,
@@ -2401,4 +2401,42 @@ class TestEntityRunExperiment:
             assert planned_experiment.protocol_version == commit_protocol.hexsha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
 
+    def test_view_run_experiment_none_checked(self, client, helpers, logged_in_user):
+        helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
+        model = recipes.model.make(author=logged_in_user)
+        commit_model = helpers.add_version(model, visibility='public')
+
+        protocol = recipes.protocol.make(author=logged_in_user)
+        commit1 = helpers.add_version(protocol, visibility='public')
+        commit2 = helpers.add_version(protocol, visibility='public')
+        protocol.add_tag('v1', commit2.hexsha)
+
+        # Test context has correct information
+        response = client.get('/entities/models/%d/runexperiments/' % model.pk)
+        assert response.status_code == 200
+        assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'name': 'myprotocol1',
+                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                   ]
+        # Test post returns correct response
+        data = {'model_protocol_list[]': [],
+                'entity.repo.latest_commit.hexsha': commit_model.hexsha,
+                'rerun_expts': 'on'}
+        response = client.post('/entities/models/%d/runexperiments/' % model.pk, data=data)
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d/versions/latest' % model.pk
+
+        # Test that no planned experiments have been added
+        assert PlannedExperiment.objects.count() == 0
+
+        data = {'model_protocol_list[]': [],
+                'entity.repo.latest_commit.hexsha': commit_model.hexsha,
+                'rerun_expts': None}
+        response = client.post('/entities/models/%d/runexperiments/' % model.pk, data=data)
+        assert response.status_code == 302
+        assert response.url == '/entities/models/%d/versions/latest' % model.pk
+
+        # Test that no planned experiments have been added
+        assert PlannedExperiment.objects.count() == 0
 

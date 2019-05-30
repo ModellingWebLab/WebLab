@@ -38,12 +38,12 @@
 
                 <input class="latestexperimentCheckBox" type="checkbox"
                        value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
-                       name="runexperimentlist[]"
+                       name="model_protocol_list[]"
                        checked/>
               {% else %}
                 <input class="experimentCheckBox" type="checkbox"
                        value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
-                       name="runexperimentlist[]"/>
+                       name="model_protocol_list[]"/>
               {% endif %}
               <strong>
                 <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
@@ -82,12 +82,12 @@
 
                 <input class="latestexperimentCheckBox" type="checkbox"
                        value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
-                       name="runexperimentlist[]"
+                       name="model_protocol_list[]"
                        checked/>
               {% else %}
                 <input class="experimentCheckBox" type="checkbox"
                        value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
-                       name="runexperimentlist[]"/>
+                       name="model_protocol_list[]"/>
               {% endif %}
               <strong>
                 <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">

@@ -1065,7 +1065,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
         # look for 'None' string as this seems to be what test data passes for a NoneType
         if not rerun or rerun == 'None':
             exclude_existing = True
-        experiments_to_run = request.POST.getlist('runexperimentlist[]')
+        experiments_to_run = request.POST.getlist('model_protocol_list[]')
         for version in experiments_to_run:
             ident, sha = version.split(':')
             exper_kwargs = {
