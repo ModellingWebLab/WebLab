@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from accounts.models import User
 from core import visibility
 
-from .models import ExperimentalDataset, DatasetFile
+from .models import ExperimentalDataset
 
 
 class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -37,5 +37,5 @@ class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
 
 class FileUploadForm(forms.ModelForm):
     class Meta:
-        model = DatasetFile
+#        model = DatasetFile
         fields = ['upload']

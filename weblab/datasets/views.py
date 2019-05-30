@@ -71,10 +71,7 @@ class ExperimentalDatasetCreateView(
     Create new ExperimentalDataset
     """
     template_name = 'datasets/dataset_form.html'
-
-    @property
-    def permission_required(self):
-        datasets.create_dataset_experiment
+    permission_required='datasets.create_dataset'
 
     @property
     def form_class(self):
@@ -99,8 +96,6 @@ class ExperimentalDatasetListView(LoginRequiredMixin, ListView, ExperimentalData
 #     """
 #     View an ExperimentalDataset
 #
-#     All this does is redirect to the latest version of the entity, if it exists.
-#     Otherwise it redirects to the 'add version' page.
 #     """
 #     model = ExperimentalDataset
 #

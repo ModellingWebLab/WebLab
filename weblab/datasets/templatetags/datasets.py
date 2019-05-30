@@ -9,3 +9,10 @@ register = template.Library()
 def can_create_dataset(context):
     user = context['user']
     return user.has_perm('datasets.create_dataset_experiment')
+
+@register.filter
+def url_dataset(dataset):
+    url_name = 'datasets:detail'
+    return reverse(url_name, args=[dataset.id])
+
+
