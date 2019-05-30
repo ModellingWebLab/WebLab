@@ -6,11 +6,16 @@ from django.core.exceptions import ValidationError
 from accounts.models import User
 from core import visibility
 
-from .models import ExperimentalDataset
+from .models import ExperimentalDataset, DatasetFile
 
 
 class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating an entirely new ExperimentalDataset."""
+    # class Meta:
+    #     model = ExperimentalDataset
+    #     fields = ['name']
+    #
+
     def clean_name(self):
         name = self.cleaned_data['name']
         if self._meta.model.objects.filter(name=name).exists():
@@ -20,12 +25,11 @@ class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
         return name
 
     def save(self, **kwargs):
-        entity = super().save(commit=False)
-        entity.author = self.user
-        entity.entity_type = self.entity_type
-        entity.save()
+        dataset = super().save(commit=False)
+        dataset.author = self.user
+        dataset.save()
         self.save_m2m()
-        return entity
+        return dataset
 
 
 # EntityCollaboratorFormSet = formset_factory(
@@ -37,5 +41,5 @@ class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
 
 class FileUploadForm(forms.ModelForm):
     class Meta:
-#        model = DatasetFile
+        model = DatasetFile
         fields = ['upload']

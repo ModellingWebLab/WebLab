@@ -36,3 +36,13 @@ class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Mo
         return visibility_check(self.visibility, self.viewers, user)
 
 
+class DatasetFile(models.Model):
+    dataset = models.ForeignKey(ExperimentalDataset, related_name='files')
+    upload = models.FileField(upload_to='uploads')
+    original_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.original_name
+
+
+

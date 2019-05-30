@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% load datasets %}
 
-{% block title %}Your datasets - {% endblock title %}
+{% block title %}Your datasets {% endblock title %}
 
 {% block content %}
 
+  <section id="datasetlist">
+    <h2>Your datasets</h2>
 
     {% can_create_dataset as permission %}
     {% if permission %}
@@ -20,4 +22,5 @@
         </li>
       {% endfor %}
   </ul>
+  </section>
 {% endblock content %}

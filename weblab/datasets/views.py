@@ -78,7 +78,7 @@ class ExperimentalDatasetCreateView(
         return FormMixin
 
     def get_success_url(self):
-        return reverse('datasets:newversion',
+        return reverse('datasets:new',
                        args=[self.object.pk])
 
 
