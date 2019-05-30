@@ -569,6 +569,8 @@ class EntityNewVersionView(
                 'latest_version': latest,
                 'master_filename': latest.master_filename,
             })
+        else:
+            kwargs['latest_version'] = kwargs['master_filename'] = None
 
         kwargs['delete_file'] = self.request.GET.get('deletefile')
         return super().get_context_data(**kwargs)

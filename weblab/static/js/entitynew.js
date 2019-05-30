@@ -19,6 +19,11 @@ function initNewEntity() {
     }
   });
 
+  // Hide re-run button if no previous version
+  if ($('#entityversionfilestable').data('version-sha') === undefined) {
+    $('#id_rerun_expts').parent().hide();
+  }
+
   var upload = new Upload();
   upload.init(knownTypes);
 }
