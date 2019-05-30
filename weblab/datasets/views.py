@@ -50,6 +50,7 @@ from .models import ExperimentalDataset
 from .forms import (
     ExperimentalDatasetForm,
     FileUploadForm,
+    ExperimentalDatasetVersionForm,
 )
 
 
@@ -66,8 +67,8 @@ class ExperimentalDatasetCreateView(
     form_class = ExperimentalDatasetForm
 
     def get_success_url(self):
-        return reverse('datasets:list')
-                       # args=[self.object.pk])
+#        print(reverse('datasets:newversion'))
+        return reverse('datasets:newversion', args=[self.object.pk])
 
 
 class ExperimentalDatasetListView(LoginRequiredMixin, ListView):
@@ -81,17 +82,57 @@ class ExperimentalDatasetListView(LoginRequiredMixin, ListView):
         return ExperimentalDataset.objects.filter(author=self.request.user)
 
 
-# class ExperimentalDatasetView(VisibilityMixin, SingleObjectMixin, RedirectView):
-#     """
-#     View an ExperimentalDataset
-#
-#     """
-#     model = ExperimentalDataset
-#
-#     def get_redirect_url(self, *args, **kwargs):
-#         return reverse('datasets:newversion', args=[kwargs['pk']])
-#
-#
+class ExperimentalDatasetView(VisibilityMixin, SingleObjectMixin, RedirectView):
+    """
+    View an ExperimentalDataset
+
+    """
+    model = ExperimentalDataset
+
+    def get_redirect_url(self, *args, **kwargs):
+        return reverse('datasets:newversion', args=[kwargs['pk']])
+
+
+class ExperimentalDatasetNewVersionView(
+    LoginRequiredMixin, FormMixin, DetailView
+):
+    """
+    Create a new version of an ExperimentalDataset.
+    """
+    context_object_name = 'ExperimentalDataset'
+    template_name = 'dataset/dataset_newversion.html'
+    form_class = ExperimentalDatasetVersionForm
+    model = ExperimentalDataset
+
+    def get_initial(self):
+        initial = super().get_initial()
+        return initial
+
+    def get_form_kwargs(self):
+        """Build the kwargs required to instantiate an ExperimentalDatasetVersionForm."""
+        kwargs = super().get_form_kwargs()
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        dataset = self.object = self.get_object()
+        return super().get_context_data(**kwargs)
+
+    def post(self, request, *args, **kwargs):
+        dataset = self.object = self.get_object()
+
+        # TO DO need to copy files but where ??
+
+        # Copy files into the index
+#         for upload in ExperimentalDataset.files.filte.order_by('pk'):
+#             src = upload.upload.path
+#             dest = str(ExperimentalDataset.repo_abs_path / upload.original_name)
+#             shutil.copy(src, dest)
+#             try:
+# #                ExperimentalDataset.repo.add_file(dest)
+#             except GitCommandError as e:
+# #                git_errors.append(e.stderr)
+
+
 # class ExperimentalDatasetDeleteView(UserPassesTestMixin, DeleteView):
 #     """
 #     Delete an ExperimentalDataset
@@ -118,7 +159,7 @@ class FileUploadView(View):
         form = FileUploadForm(self.request.POST, self.request.FILES)
         if form.is_valid():
             uploaded_file = request.FILES['upload']
-            form.instance.entity_id = self.kwargs['pk']
+            form.instance.dataset_id = self.kwargs['pk']
             form.instance.original_name = uploaded_file.name
             data = form.save()
             upload = data.upload

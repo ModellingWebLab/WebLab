@@ -1,0 +1,27 @@
+{% load staticfiles %}
+{% load datasets %}
+
+<h1 id="entityname">
+{#  <a href="{{ datasets:url }}"><small>{{ type|capfirst }}: </small><span>{{ dataset.name }}</span></a>#}
+</h1>
+
+<div class="suppl">
+  <small>Created <time>{{dataset.created_at}}</time> by <em>{{dataset.author.full_name}}</em>.
+{#    {% can_delete_entity dataset as can_delete %}#}
+{#    {% if can_delete %}#}
+{#      Delete {{ type }}:#}
+{#      <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">#}
+{#        <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"#}
+{#             title="delete all versions of this {{type}}"/></a>#}
+{#    {% endif %}#}
+{#    {% can_manage_entity entity as can_manage %}#}
+{#    {% if can_manage %}#}
+{#      &nbsp;#}
+{#      <a title="manage collaborators for this {{ type }}" href="{{ entity|url_collaborators }}">#}
+{#        Manage collaborators#}
+{#      </a>#}
+{#    {% endif %}#}
+    <br>
+
+  </small>
+</div>

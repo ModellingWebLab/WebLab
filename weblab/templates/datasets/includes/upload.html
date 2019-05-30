@@ -1,0 +1,14 @@
+
+{% csrf_token %}
+
+<span id="uploadaction"></span>
+  <br/>
+
+  <div id="dropbox">
+    Drop Files Here<br /> <a>Open Dialog</a>
+    <input type="file" name="upload" id="fileupload"
+        data-url="{% url 'datasets:upload_file' dataset.id %}"
+        data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'>
+  </div>
+
+  {{ form.as_p }}

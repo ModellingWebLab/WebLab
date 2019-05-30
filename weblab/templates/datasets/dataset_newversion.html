@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load datasets %}
+
+{% block title %}New dataset version - {% endblock title %}
+
+{% block content %}
+  {% include "./includes/dataset_header.html" %}
+
+  <h2>Create a new dataset</h2>
+
+  <form method="POST" action="">
+
+    {% include "./includes/upload.html" %}
+
+    <p>
+      <button id="savebutton">Create Dataset</button>
+    </p>
+  </form>
+
+{% endblock content %}

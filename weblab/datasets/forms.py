@@ -30,6 +30,21 @@ class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
         return dataset
 
 
+class ExperimentalDatasetVersionForm(forms.Form):
+    """Used to create a version of a dataset.
+    Note this is called by first version creation
+    """
+    tag = forms.CharField(
+        help_text='Optional short label for this dataset',
+        required=False)
+    commit_message = forms.CharField(
+        label='Description of this dataset',
+        widget=forms.Textarea)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 # EntityCollaboratorFormSet = formset_factory(
 #     EntityCollaboratorForm,
 #     BaseEntityCollaboratorFormSet,

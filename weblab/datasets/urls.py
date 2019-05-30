@@ -21,21 +21,23 @@ urlpatterns = [
         name='new',
     ),
 
-    # url(
-    #     r'^(?P<pk>\d+)$',
-    #     views.ExperimentalDatasetView.as_view(),
-    #     name='detail',
-    # ),
-    #
+    url(
+        r'^(?P<pk>\d+)$',
+        views.ExperimentalDatasetView.as_view(),
+        name='detail',
+    ),
+
     # url(
     #     r'^(?P<pk>\d+)/delete$',
     #     views.ExperimentalDatasetDeleteView.as_view(),
     #     name='delete',
     # ),
     #
-    # url(
-    #     r'^(?P<pk>\d+)/upload-file$',
-    #     views.FileUploadView.as_view(),
-    #     name='upload_file',
-    # ),
+
+    url(
+        r'^(?P<pk>\d+)/new$',
+        views.ExperimentalDatasetNewVersionView.as_view(),
+        name='newversion',
+    ),
+
 ]
