@@ -41,7 +41,7 @@ from core.filetypes import get_file_type
 from core.visibility import (
     Visibility, VisibilityMixin
 )
-from experiments.models import Experiment, PlannedExperiment
+from experiments.models import Experiment, PlannedExperiment, ExperimentVersion
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedEntityVersion
 
@@ -1065,12 +1065,9 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
         # in get context self.object was the entity being worked with
         # here we have to retrieve it
         this_entity = self.get_object()
+        this_version = this_entity.repo.latest_commit.hexsha
 
-        rerun = request.POST.get('rerun_expts')
-        exclude_existing = False
-        # look for 'None' string as this seems to be what test data passes for a NoneType
-        if not rerun or rerun == 'None':
-            exclude_existing = True
+        exclude_existing = 'rerun_expts' not in request.POST
         experiments_to_run = request.POST.getlist('model_protocol_list[]')
         for version in experiments_to_run:
             ident, sha = version.split(':')
@@ -1081,8 +1078,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
                 this_entity.entity_type + '_version':  this_entity.repo.latest_commit.hexsha,
             }
             if exclude_existing:
-                existing = Experiment.objects.filter(**exper_kwargs)
-                if existing:
+                if Experiment.objects.filter(**exper_kwargs).exists():
                     continue
             PlannedExperiment.objects.get_or_create(**exper_kwargs)
         # return to entity page
