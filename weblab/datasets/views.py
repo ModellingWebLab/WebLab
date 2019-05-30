@@ -89,7 +89,7 @@ class ExperimentalDatasetListView(LoginRequiredMixin, ListView, ExperimentalData
     template_name = 'datasets/dataset_list.html'
 
     def get_queryset(self):
-        return self.model.objects.filter(author=self.request.user)
+        return ExperimentalDataset.objects.filter(author=self.request.user)
 
 
 # class ExperimentalDatasetView(VisibilityMixin, SingleObjectMixin, RedirectView):

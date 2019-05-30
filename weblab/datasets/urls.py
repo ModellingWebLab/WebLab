@@ -8,7 +8,9 @@ _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 
 urlpatterns = [
     url(
-        r'^/$',
+        '^'
+        '(?P<subset>mine|public|all)?'
+        '$',
         views.ExperimentalDatasetListView.as_view(),
         name='list',
     ),
