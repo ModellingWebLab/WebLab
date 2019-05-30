@@ -11,17 +11,15 @@ from .models import ExperimentalDataset, DatasetFile
 
 class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating an entirely new ExperimentalDataset."""
-    # class Meta:
-    #     model = ExperimentalDataset
-    #     fields = ['name']
-    #
+    class Meta:
+        model = ExperimentalDataset
+        fields = ['name', 'visibility']
 
     def clean_name(self):
         name = self.cleaned_data['name']
         if self._meta.model.objects.filter(name=name).exists():
             raise ValidationError(
                 'You already have a dataset named "%s"' % (name))
-
         return name
 
     def save(self, **kwargs):

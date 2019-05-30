@@ -48,19 +48,9 @@ from repocache.models import CachedEntityVersion
 from .models import ExperimentalDataset
 
 from .forms import (
+    ExperimentalDatasetForm,
     FileUploadForm,
 )
-
-class ExperimentalDatasetMixin:
-    """
-    Mixin for including in pages about `Entity` objects
-    """
-    @property
-    def model(self):
-        return ExperimentalDataset
-
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**kwargs)
 
 
 class ExperimentalDatasetCreateView(
@@ -70,22 +60,21 @@ class ExperimentalDatasetCreateView(
     """
     Create new ExperimentalDataset
     """
+    model = ExperimentalDataset
     template_name = 'datasets/dataset_form.html'
-    permission_required='datasets.create_dataset'
-
-    @property
-    def form_class(self):
-        return FormMixin
+    permission_required = 'datasets.create_dataset'
+    form_class = ExperimentalDatasetForm
 
     def get_success_url(self):
-        return reverse('datasets:new',
-                       args=[self.object.pk])
+        return reverse('datasets:list')
+                       # args=[self.object.pk])
 
 
-class ExperimentalDatasetListView(LoginRequiredMixin, ListView, ExperimentalDatasetMixin):
+class ExperimentalDatasetListView(LoginRequiredMixin, ListView):
     """
     List all user's datasets
     """
+    model = ExperimentalDataset
     template_name = 'datasets/dataset_list.html'
 
     def get_queryset(self):
