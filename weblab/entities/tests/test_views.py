@@ -833,7 +833,7 @@ class TestVersionCreation:
         model = recipes.model.make(author=logged_in_user)
         response = client.get('/entities/models/%d/versions/new' % model.pk)
         assert response.status_code == 200
-        assert 'latest_version' not in response.context
+        assert response.context['latest_version'] is None
         assert b'option value="private" selected' in response.content
 
     def test_add_multiple_files(self, logged_in_user, client, helpers):
