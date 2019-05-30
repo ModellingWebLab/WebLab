@@ -13,7 +13,7 @@ class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating an entirely new ExperimentalDataset."""
     class Meta:
         model = ExperimentalDataset
-        fields = ['name', 'visibility']
+        fields = ['name', 'visibility', 'protocol']
 
     def clean_name(self):
         name = self.cleaned_data['name']
