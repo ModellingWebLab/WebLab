@@ -1075,7 +1075,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
                 this_entity.other_type + '_id': ident,
                 this_entity.other_type + '_version': sha,
                 this_entity.entity_type + '_id': this_entity.id,
-                this_entity.entity_type + '_version':  this_entity.repo.latest_commit.hexsha,
+                this_entity.entity_type + '_version':  this_version,
             }
             if exclude_existing:
                 if Experiment.objects.filter(**exper_kwargs).exists():
