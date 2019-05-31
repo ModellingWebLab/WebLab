@@ -15,6 +15,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='entity',
             name='is_fitting_spec',
+            field=models.BooleanField(
+                default=models.Q(name__startswith='Fit '),
+                help_text='This protocol is a parameter fitting specification'),
+        ),
+        migrations.AlterField(
+            model_name='entity',
+            name='is_fitting_spec',
             field=models.BooleanField(default=False, help_text='This protocol is a parameter fitting specification'),
         ),
     ]
