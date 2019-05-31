@@ -17,6 +17,8 @@ class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Mo
     """
     name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
 
+    description = models.TextField(validators=[MinLengthValidator(2)])
+
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experimental_datasets')
 
     class Meta:
@@ -49,6 +51,3 @@ class DatasetFile(models.Model):
 
     def __str__(self):
         return self.original_name
-
-
-
