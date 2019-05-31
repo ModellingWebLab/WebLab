@@ -13,5 +13,8 @@ def can_create_dataset(context):
 
 @register.filter
 def url_dataset(dataset):
-    url_name = 'datasets:detail'
+    if dataset.archive_path.exists():
+        url_name = 'datasets:detail'
+    else:
+        url_name = 'datasets:addfiles'
     return reverse(url_name, args=[dataset.id])
