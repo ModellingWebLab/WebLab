@@ -22,6 +22,18 @@ urlpatterns = [
     ),
 
     url(
+        r'^(?P<pk>\d+)/addfiles$',
+        views.ExperimentalDatasetAddFilesView.as_view(),
+        name='addfiles',
+    ),
+
+    url(
+        r'^(?P<pk>\d+)/upload-file$',
+        views.FileUploadView.as_view(),
+        name='upload_file',
+    ),
+
+    url(
         r'^(?P<pk>\d+)$',
         views.ExperimentalDatasetView.as_view(),
         name='detail',
@@ -33,11 +45,4 @@ urlpatterns = [
     #     name='delete',
     # ),
     #
-
-    url(
-        r'^(?P<pk>\d+)/new$',
-        views.ExperimentalDatasetNewVersionView.as_view(),
-        name='newversion',
-    ),
-
 ]

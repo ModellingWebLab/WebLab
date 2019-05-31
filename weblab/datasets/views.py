@@ -50,7 +50,7 @@ from .models import ExperimentalDataset
 from .forms import (
     ExperimentalDatasetForm,
     FileUploadForm,
-    ExperimentalDatasetVersionForm,
+    ExperimentalDatasetAddFilesForm,
 )
 
 
@@ -67,8 +67,7 @@ class ExperimentalDatasetCreateView(
     form_class = ExperimentalDatasetForm
 
     def get_success_url(self):
-#        print(reverse('datasets:newversion'))
-        return reverse('datasets:newversion', args=[self.object.pk])
+        return reverse('datasets:addfiles', args=[self.object.pk])
 
 
 class ExperimentalDatasetListView(LoginRequiredMixin, ListView):
@@ -90,32 +89,19 @@ class ExperimentalDatasetView(VisibilityMixin, SingleObjectMixin, RedirectView):
     model = ExperimentalDataset
 
     def get_redirect_url(self, *args, **kwargs):
-        return reverse('datasets:newversion', args=[kwargs['pk']])
+        return reverse('datasets:addfiles', args=[kwargs['pk']])
 
 
-class ExperimentalDatasetNewVersionView(
+class ExperimentalDatasetAddFilesView(
     LoginRequiredMixin, FormMixin, DetailView
 ):
     """
-    Create a new version of an ExperimentalDataset.
+    Add files to a new ExperimentalDataset.
     """
-    context_object_name = 'ExperimentalDataset'
-    template_name = 'dataset/dataset_newversion.html'
-    form_class = ExperimentalDatasetVersionForm
+    context_object_name = 'dataset'
+    template_name = 'datasets/dataset_newversion.html'
+    form_class = ExperimentalDatasetAddFilesForm
     model = ExperimentalDataset
-
-    def get_initial(self):
-        initial = super().get_initial()
-        return initial
-
-    def get_form_kwargs(self):
-        """Build the kwargs required to instantiate an ExperimentalDatasetVersionForm."""
-        kwargs = super().get_form_kwargs()
-        return kwargs
-
-    def get_context_data(self, **kwargs):
-        dataset = self.object = self.get_object()
-        return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
         dataset = self.object = self.get_object()
