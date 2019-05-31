@@ -5,6 +5,7 @@ import shutil
 import subprocess
 from itertools import groupby
 from tempfile import NamedTemporaryFile
+from zipfile import ZipFile
 
 import requests
 from braces.views import UserFormKwargsMixin
@@ -37,6 +38,7 @@ from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
+from core.combine import ManifestWriter
 from core.filetypes import get_file_type
 from core.visibility import (
     Visibility, VisibilityMixin
@@ -106,17 +108,47 @@ class ExperimentalDatasetAddFilesView(
     def post(self, request, *args, **kwargs):
         dataset = self.object = self.get_object()
 
-        # TO DO need to copy files but where ??
+        additions = request.POST.getlist('filename[]')
+        if not dataset.files.filter(upload__in=additions).exists():
+            form = self.get_form()
+            form.add_error(None, 'No files were added to this dataset')
+            return self.form_invalid(form)
 
-        # Copy files into the index
-#         for upload in ExperimentalDataset.files.filte.order_by('pk'):
-#             src = upload.upload.path
-#             dest = str(ExperimentalDataset.repo_abs_path / upload.original_name)
-#             shutil.copy(src, dest)
-#             try:
-# #                ExperimentalDataset.repo.add_file(dest)
-#             except GitCommandError as e:
-# #                git_errors.append(e.stderr)
+        files_to_delete = set()  # Temp files to be removed if successful
+
+        archive_name = get_valid_filename(dataset.name + '.zip')
+        archive_path = dataset.abs_path / archive_name
+        if archive_path.exists():
+            form = self.get_form()
+            form.add_error(None, 'Changing files in an existing dataset is not supported')
+            return self.form_invalid(form)
+
+        # We're only creating datasets so don't need to handle replacing files
+        with ZipFile(str(archive_path), mode='w') as archive:
+            manifest_writer = ManifestWriter()
+            # Copy new files into the archive
+            for upload in dataset.files.filter(upload__in=additions).order_by('-pk'):
+                src = upload.upload.path
+                files_to_delete.add(src)
+                if upload.original_name not in archive.namelist():
+                    # Avoid duplicates if user changed their mind about a file and replaced it
+                    # TODO: Also handling if user changed their mind but did't replace!
+                    archive.write(src, upload.original_name)
+                    manifest_writer.add_file(upload.original_name)
+
+            # Create a COMBINE manifest in the archive
+            import xml.etree.ElementTree as ET
+            archive.writestr('manifest.xml', ET.tostring(manifest_writer.xml_doc.getroot()))
+
+        # Temporary upload files have been safely written, so can be deleted
+        for filepath in files_to_delete:
+            os.remove(filepath)
+        # Remove records from the DatasetFile table too
+        dataset.files.all().delete()
+
+        # Show the user the dataset
+        return HttpResponseRedirect(
+            reverse('datasets:detail', args=[dataset.id]))
 
 
 # class ExperimentalDatasetDeleteView(UserPassesTestMixin, DeleteView):
@@ -133,7 +165,7 @@ class ExperimentalDatasetAddFilesView(
 #
 #     def get_success_url(self, *args, **kwargs):
 #         return reverse('datasets:list')
-#
+
 
 class FileUploadView(View):
     """
