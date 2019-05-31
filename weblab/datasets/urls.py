@@ -34,7 +34,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^(?P<pk>\d+)$',
+        r'^(?P<pk>\d+)(?:/%s)?$' % _FILEVIEW,
         views.ExperimentalDatasetView.as_view(),
         name='detail',
     ),
@@ -44,6 +44,18 @@ urlpatterns = [
         views.DatasetJsonView.as_view(),
         name='version_json',
     ),
+
+    url(
+        r'^(?P<pk>\d+)/download/%s$' % _FILENAME,
+        views.DatasetFileDownloadView.as_view(),
+        name='file_download',
+    ),
+
+    # url(
+    #     r'^(?P<pk>\d+)/archive$',
+    #     views.DatasetArchiveView.as_view(),
+    #     name='archive',
+    # ),
 
     # url(
     #     r'^(?P<pk>\d+)/delete$',

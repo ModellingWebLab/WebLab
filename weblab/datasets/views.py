@@ -212,10 +212,10 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
             'filetype': archive_file.fmt,
             'masterFile': archive_file.is_master,
             'size': archive_file.size,
-            # 'url': reverse(
-            #     'datasets:file_download',
-            #     args=[dataset.id, urllib.parse.quote(archive_file.name)]
-            # )
+            'url': reverse(
+                'datasets:file_download',
+                args=[dataset.id, urllib.parse.quote(archive_file.name)]
+            )
         }
 
     def get(self, request, *args, **kwargs):
@@ -244,3 +244,25 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
                 # ),
             }
         })
+
+
+class DatasetFileDownloadView(VisibilityMixin, SingleObjectMixin, View):
+    """
+    Download an individual file from a dataset
+    """
+    model = ExperimentalDataset
+
+    def get(self, request, *args, **kwargs):
+        filename = self.kwargs['filename']
+        dataset = self.get_object()
+
+        content_type, _ = mimetypes.guess_type(filename)
+        if content_type is None:
+            content_type = 'application/octet-stream'
+
+        with dataset.open_file(filename) as file_:
+            response = HttpResponse(content_type=content_type)
+            response['Content-Disposition'] = 'attachment; filename=%s' % filename
+            response.write(file_.read())
+
+        return response

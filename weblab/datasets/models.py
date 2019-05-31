@@ -53,6 +53,9 @@ class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Mo
         else:
             return []
 
+    def open_file(self, name):
+        return ArchiveReader(str(self.archive_path)).open_file(name)
+
     def is_visible_to_user(self, user):
         """
         Can the user view the dataset?
