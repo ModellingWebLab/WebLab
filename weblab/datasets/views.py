@@ -28,6 +28,7 @@ from django.http import (
 from django.core.exceptions import PermissionDenied
 from django.db.models import F, Q
 from django.utils.decorators import method_decorator
+from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
@@ -239,9 +240,9 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
                 # 'version': version.id,
                 'files': files,
                 'numFiles': len(files),
-                # 'download_url': reverse(
-                #     'datasets:archive', args=[dataset.id]
-                # ),
+                'download_url': reverse(
+                     'datasets:archive', args=[dataset.id]
+                ),
             }
         })
 
@@ -264,5 +265,30 @@ class DatasetFileDownloadView(VisibilityMixin, SingleObjectMixin, View):
             response = HttpResponse(content_type=content_type)
             response['Content-Disposition'] = 'attachment; filename=%s' % filename
             response.write(file_.read())
+
+        return response
+
+
+class DatasetArchiveView(VisibilityMixin, SingleObjectMixin, View):
+    """
+    Download an archive of the dataset files
+    """
+    model = ExperimentalDataset
+
+    def get(self, request, *args, **kwargs):
+        dataset = self.get_object()
+        path = dataset.archive_path
+
+        if not path.exists():
+            raise Http404
+
+        zipfile_name = os.path.join(
+            get_valid_filename('%s.zip' % dataset.name)
+        )
+
+        with path.open('rb') as archive:
+            response = HttpResponse(content_type='application/zip')
+            response['Content-Disposition'] = 'attachment; filename=%s' % zipfile_name
+            response.write(archive.read())
 
         return response

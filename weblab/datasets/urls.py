@@ -51,11 +51,11 @@ urlpatterns = [
         name='file_download',
     ),
 
-    # url(
-    #     r'^(?P<pk>\d+)/archive$',
-    #     views.DatasetArchiveView.as_view(),
-    #     name='archive',
-    # ),
+    url(
+        r'^(?P<pk>\d+)/archive$',
+        views.DatasetArchiveView.as_view(),
+        name='archive',
+    ),
 
     # url(
     #     r'^(?P<pk>\d+)/delete$',
