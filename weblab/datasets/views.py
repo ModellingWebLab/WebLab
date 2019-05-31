@@ -3,6 +3,7 @@ import mimetypes
 import os.path
 import shutil
 import subprocess
+import urllib
 from itertools import groupby
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile
@@ -27,7 +28,6 @@ from django.http import (
 from django.core.exceptions import PermissionDenied
 from django.db.models import F, Q
 from django.utils.decorators import method_decorator
-from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
@@ -83,15 +83,14 @@ class ExperimentalDatasetListView(LoginRequiredMixin, ListView):
         return ExperimentalDataset.objects.filter(author=self.request.user)
 
 
-class ExperimentalDatasetView(VisibilityMixin, SingleObjectMixin, RedirectView):
+class ExperimentalDatasetView(VisibilityMixin, DetailView):
     """
     View an ExperimentalDataset
 
     """
     model = ExperimentalDataset
-
-    def get_redirect_url(self, *args, **kwargs):
-        return reverse('datasets:addfiles', args=[kwargs['pk']])
+    context_object_name = 'dataset'
+    template_name = 'datasets/dataset_detail.html'
 
 
 class ExperimentalDatasetAddFilesView(
@@ -109,15 +108,14 @@ class ExperimentalDatasetAddFilesView(
         dataset = self.object = self.get_object()
 
         additions = request.POST.getlist('filename[]')
-        if not dataset.files.filter(upload__in=additions).exists():
+        if not dataset.file_uploads.filter(upload__in=additions).exists():
             form = self.get_form()
             form.add_error(None, 'No files were added to this dataset')
             return self.form_invalid(form)
 
         files_to_delete = set()  # Temp files to be removed if successful
 
-        archive_name = get_valid_filename(dataset.name + '.zip')
-        archive_path = dataset.abs_path / archive_name
+        archive_path = dataset.archive_path
         if archive_path.exists():
             form = self.get_form()
             form.add_error(None, 'Changing files in an existing dataset is not supported')
@@ -127,7 +125,7 @@ class ExperimentalDatasetAddFilesView(
         with ZipFile(str(archive_path), mode='w') as archive:
             manifest_writer = ManifestWriter()
             # Copy new files into the archive
-            for upload in dataset.files.filter(upload__in=additions).order_by('-pk'):
+            for upload in dataset.file_uploads.filter(upload__in=additions).order_by('-pk'):
                 src = upload.upload.path
                 files_to_delete.add(src)
                 if upload.original_name not in archive.namelist():
@@ -144,7 +142,7 @@ class ExperimentalDatasetAddFilesView(
         for filepath in files_to_delete:
             os.remove(filepath)
         # Remove records from the DatasetFile table too
-        dataset.files.all().delete()
+        dataset.file_uploads.all().delete()
 
         # Show the user the dataset
         return HttpResponseRedirect(
@@ -196,3 +194,53 @@ class FileUploadView(View):
 
         else:
             return HttpResponseBadRequest(form.errors)
+
+
+class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
+    """
+    Serve up json view of files in a dataset
+    """
+    model = ExperimentalDataset
+
+    def _file_json(self, archive_file):
+        dataset = self.object
+        return {
+            'id': archive_file.name,
+            'author': dataset.author.full_name,
+            'created': dataset.created_at,
+            'name': archive_file.name,
+            'filetype': archive_file.fmt,
+            'masterFile': archive_file.is_master,
+            'size': archive_file.size,
+            # 'url': reverse(
+            #     'datasets:file_download',
+            #     args=[dataset.id, urllib.parse.quote(archive_file.name)]
+            # )
+        }
+
+    def get(self, request, *args, **kwargs):
+        dataset = self.object = self.get_object()
+        files = [
+            self._file_json(f)
+            for f in dataset.files
+            if f.name not in ['manifest.xml', 'metadata.rdf']
+        ]
+
+        return JsonResponse({
+            'version': {
+                'id': dataset.id,
+                'author': dataset.author.full_name,
+                # 'status': version.status,
+                'parsedOk': False,
+                'visibility': dataset.visibility,
+                'created': dataset.created_at,
+                'name': dataset.name,
+                # 'experimentId': version.experiment.id,
+                # 'version': version.id,
+                'files': files,
+                'numFiles': len(files),
+                # 'download_url': reverse(
+                #     'datasets:archive', args=[dataset.id]
+                # ),
+            }
+        })

@@ -4,6 +4,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
+from django.utils.text import get_valid_filename
 
 from core.combine import ArchiveReader
 from core.models import UserCreatedModelMixin
@@ -37,6 +38,21 @@ class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Mo
     def abs_path(self):
         return Path(settings.DATASETS_BASE, str(self.author.id), str(self.id))
 
+    @property
+    def archive_name(self):
+        return get_valid_filename(self.name + '.zip')
+
+    @property
+    def archive_path(self):
+        return self.abs_path / self.archive_name
+
+    @property
+    def files(self):
+        if self.archive_path.exists():
+            return ArchiveReader(str(self.archive_path)).files
+        else:
+            return []
+
     def is_visible_to_user(self, user):
         """
         Can the user view the dataset?
@@ -49,7 +65,7 @@ class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Mo
 
 
 class DatasetFile(models.Model):
-    dataset = models.ForeignKey(ExperimentalDataset, related_name='files')
+    dataset = models.ForeignKey(ExperimentalDataset, related_name='file_uploads')
     upload = models.FileField(upload_to='uploads')
     original_name = models.CharField(max_length=255)
 

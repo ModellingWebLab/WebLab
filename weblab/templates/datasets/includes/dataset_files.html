@@ -1,0 +1,40 @@
+{% load entities %}
+{% load static %}
+
+<h3>Associated files</h3>
+<table id="entityversionfilestable">
+  <thead>
+    <tr>
+      <th>Main File</th>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Size</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+
+  <tbody>
+  {% if dataset %}
+    {% for file in dataset.file_uploads.all %}
+      {% if file.original_name != 'manifest.xml' %}
+      <tr>
+        <td>
+          <input type="radio" name="mainEntry" value="{{ file.original_name }}" {% if file.original_name == master_filename %}checked="checked"{% endif %}>
+        </td>
+        <td class="filename">
+          {{ file.original_name }}
+          {% if file.original_name == delete_file %}
+            <input type="hidden" name="delete_filename[]" value="{{ file.original_name }}" />
+          {% endif %}
+        </td>
+        <td class="type">{{ file.original_name|file_type }}</td>
+        <td class="size">{{ file.upload.size|human_readable_bytes }}</td>
+        <td class="action">
+          <a class="delete-file" title="delete this file"><img src="{% static 'img/delete.png' %}" alt="delete this file" title="delete this file"/></a>
+        </td>
+      </tr>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  </tbody>
+</table>

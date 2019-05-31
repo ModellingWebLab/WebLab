@@ -39,6 +39,12 @@ urlpatterns = [
         name='detail',
     ),
 
+    url(
+        r'^(?P<pk>\d+)/files.json$',
+        views.DatasetJsonView.as_view(),
+        name='version_json',
+    ),
+
     # url(
     #     r'^(?P<pk>\d+)/delete$',
     #     views.ExperimentalDatasetDeleteView.as_view(),
