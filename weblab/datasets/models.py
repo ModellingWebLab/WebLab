@@ -33,6 +33,10 @@ class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Mo
     def __str__(self):
         return self.name
 
+    @property
+    def abs_path(self):
+        return Path(settings.DATASETS_BASE, str(self.author.id), str(self.id))
+
     def is_visible_to_user(self, user):
         """
         Can the user view the dataset?

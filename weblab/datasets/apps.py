@@ -1,15 +1,13 @@
 from django.apps import AppConfig
 from django.db.models.signals import post_save, pre_delete
 
-#from .signals import entity_created, entity_deleted
-
-# not yet used by may be needed when we have signals working
+from .signals import dataset_created, dataset_deleted
 
 
 class DatasetsConfig(AppConfig):
     name = 'datasets'
 
     def ready(self):
-        return
-#        from .models import ExperimentalDataset
-
+        from .models import ExperimentalDataset
+        post_save.connect(dataset_created, ExperimentalDataset)
+        pre_delete.connect(dataset_deleted, ExperimentalDataset)

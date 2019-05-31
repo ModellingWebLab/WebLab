@@ -1,14 +1,17 @@
+from shutil import rmtree
+
 
 def dataset_created(sender, instance, created, **kwargs):
     """
-    Signal callback when an dataset has been created.
+    Signal callback when a dataset has been created.
     """
     if created:
-        instance.repo.create()
+        instance.abs_path.mkdir(exist_ok=True, parents=True)
 
 
 def dataset_deleted(sender, instance, **kwargs):
     """
-    Signal callback when an dataset is about to be deleted.
+    Signal callback when a dataset is about to be deleted.
     """
-    instance.repo.delete()
+    if instance.abs_path.is_dir():
+        rmtree(str(instance.abs_path))
