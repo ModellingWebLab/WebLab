@@ -686,7 +686,7 @@ function flotContent ()
 
 flotContent.prototype.canRead = function (file)
 {
-    return file.name.endsWith("plot_data.csv");
+    return file.name.endsWith(".csv");
 };
 
 flotContent.prototype.getName = function ()

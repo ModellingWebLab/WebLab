@@ -289,7 +289,7 @@ function HCPlot ()
 
 HCPlot.prototype.canRead = function (file)
 {
-    return file.name.endsWith("plot_data.csv");
+    return file.name.endsWith(".csv");
 };
 
 HCPlot.prototype.getName = function ()
