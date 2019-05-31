@@ -158,6 +158,18 @@ function parseCSVContent (file)
     utils.parseCsvRaw(file);
     var csv = file.csv;
 
+    // Check for a header row
+    if (csv.length > 0 && csv[0].length > 1 && isNaN(csv[0][0]) && !isNaN(csv[1][0]))
+    {
+        file.header = csv[0];
+        console.log('Header', csv.length);
+        console.log(file.header);
+        file.csv.shift();
+        csv = file.csv;
+        console.log(csv.length);
+    }
+
+    // Transpose to get column-oriented data
     file.columns = [];
     var dropDist = [];
     for (var i = 0; i < csv[0].length; i++)
@@ -172,13 +184,15 @@ function parseCSVContent (file)
                 if (isNaN(csv[j][i]))
                     file.columns[i][j] = csv[j][i];
                 else
-                    file.columns[i][j] = Number(csv[j][i]);
-                if (i > 0)
                 {
-                    if (max < file.columns[i][j])
-                        max = file.columns[i][j];
-                    if (min > file.columns[i][j])
-                        min = file.columns[i][j];
+                    file.columns[i][j] = Number(csv[j][i]);
+                    if (i > 0)
+                    {
+                        if (max < file.columns[i][j])
+                            max = file.columns[i][j];
+                        if (min > file.columns[i][j])
+                            min = file.columns[i][j];
+                    }
                 }
             }
         dropDist.push ( (max - min) / 500.0 );
