@@ -447,11 +447,10 @@ function parseLocation ()
   $('.showButton').removeClass("selected");
   $('.showMyButton').hide();
   if (queryParams.has('show_fits')) {
-    console.log('show fits');
+    ret.show_fits = true;
     $('#showFittingExpts').addClass("selected");
     $('#showPredictionExpts').removeClass("selected");
   } else {
-    console.log('no fits');
     $('#showPredictionExpts').addClass("selected");
     $('#showFittingExpts').removeClass("selected");
   }

@@ -126,6 +126,7 @@ class ExperimentMatrixJsonView(View):
         model_versions = request.GET.getlist('modelVersions[]')
         protocol_versions = request.GET.getlist('protoVersions[]')
         subset = request.GET.get('subset', 'all' if model_pks or protocol_pks else 'moderated')
+        show_fits = 'show_fits' in request.GET
 
         if model_versions and len(model_pks) > 1:
             return JsonResponse({
@@ -202,7 +203,10 @@ class ExperimentMatrixJsonView(View):
             protocol_visibility_where = ~Q(visibility='private') | Q(entity__entity__in=visible_entities)
             protocol_ids = set(protocol_pks)
         else:
-            protocol_visibility_where = visibility_where
+            if show_fits:
+                protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=True)
+            else:
+                protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=False)
             protocol_ids = entity_ids
 
         q_protocols = ProtocolEntity.objects.filter(id__in=protocol_ids)
