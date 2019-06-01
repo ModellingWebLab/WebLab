@@ -147,7 +147,7 @@ class ExperimentMatrixJsonView(View):
         if user.is_authenticated:
             # Can also include versions the user has explicit permission to see
             visible_entities = user.entity_set.union(
-                get_objects_for_user(user, 'entities.edit_entity')
+                get_objects_for_user(user, 'entities.edit_entity', with_superuser=False)
             ).values_list(
                 'id', flat=True
             )
