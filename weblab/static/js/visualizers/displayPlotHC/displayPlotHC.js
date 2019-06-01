@@ -88,7 +88,15 @@ HCPlotter.prototype.getContentsCallback = function (succ)
             thisFile.keyFile.getContents (this);
             return;
         }
+        this.setUp = true;
+        this.drawPlot();
+    }
+};
 
+HCPlotter.prototype.drawPlot = function ()
+{
+    var thisFile = this.file;
+    $(this.div).empty();
 		var csvData = (thisFile.linestyle == "linespoints" || thisFile.linestyle == "points") ? common.getCSVColumnsNonDownsampled (thisFile) : common.getCSVColumnsDownsampled (thisFile);
 		var keyVals = common.getKeyValues(thisFile, csvData.length);
 		
@@ -109,14 +117,18 @@ HCPlotter.prototype.getContentsCallback = function (succ)
         }
         
         doHcPlot(id, datasets, thisFile);
-	}
-		
 };
 
 HCPlotter.prototype.show = function ()
 {
 	if (!this.setUp)
 		this.file.getContents (this);
+};
+
+HCPlotter.prototype.redraw = function ()
+{
+    if (this.setUp)
+        this.drawPlot();
 };
 
 function HCPlotterComparer (file, div)
@@ -264,6 +276,12 @@ HCPlotterComparer.prototype.show = function ()
 	}
 	else
 		this.showContents ();
+};
+
+HCPlotterComparer.prototype.redraw = function ()
+{
+    if (this.setUp)
+        this.showContents();
 };
 
 function HCPlot ()

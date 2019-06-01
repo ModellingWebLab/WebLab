@@ -27,13 +27,11 @@ function init() {
   var visualizers = {};
 
   // Handle selecting a linked dataset to overlay
-  $('#dataset-link').on('change', function () {
-    var dataset_json_url = this.value;
+  function load_linked_dataset(dataset_json_url) {
     if (dataset_json_url) {
       $.getJSON(dataset_json_url, function(json) {
         dataset_json = json.version;
         $('#dataset-link').data({json: dataset_json, file: null});
-        console.log(dataset_json);
         for (var i=0; i<dataset_json.files.length; i++)
         {
           if (dataset_json.files[i].name.endsWith('.csv'))
@@ -41,9 +39,10 @@ function init() {
             $.get(dataset_json.files[i].url, function(data) {
               dataset_file = {contents: data};
               utils.parseCsvRaw(dataset_file);
-              console.log(dataset_file);
               $('#dataset-link').data('file', dataset_file);
-              console.log($('#dataset-link').data());
+              var viz = $('#dataset-link').data("viz");
+              console.log(viz);
+              if (viz) viz.redraw();
             });
             break;
           }
@@ -53,7 +52,16 @@ function init() {
     else
     {
       $('#dataset-link').data({json: null, file: null});
+      var viz = $('#dataset-link').data("viz");
+      console.log(viz);
+      if (viz) viz.redraw();
     }
+  }
+  // Load initial dataset, if any
+  load_linked_dataset($('#dataset-link').val());
+  // Load dataset on select change
+  $('#dataset-link').on('change', function () {
+    load_linked_dataset(this.value);
   });
 
   function updateVisibility (jsonObject, actionIndicator) {
@@ -727,6 +735,8 @@ function init() {
       $(df.display).empty();
       df.display.appendChild (f.div[pluginName]);
       f.viz[pluginName].show ();
+      // Let dataset link know we've initialised a plot
+      $('#dataset-link').data("viz", f.viz[pluginName]);
 
       // Show parent div of the file display, and scroll there
       doc.version.filedetails.style.display = "block";
@@ -735,6 +745,7 @@ function init() {
     }
     else {
       doc.version.filedetails.style.display = "none";
+      $('#dataset-link').data("viz", null);
     }
   }
 

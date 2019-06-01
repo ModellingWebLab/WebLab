@@ -3,7 +3,7 @@ var common = require('../../expt_common.js');
 
 var choicesDivId = 'choices',
 	resetButtonDivId = 'flot-buttons-div',
-	colouredSpanIdPrefix = 'span',
+	colouredSpanIdPrefix = 'legend-colour-span-',
 	legendDivId = 'legend',
 	tooltipId = 'flotTooltip',
 	plottedGraph = {}, // TODO: probably safer if this is an instance property!
@@ -388,7 +388,15 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
             thisFile.keyFile.getContents (this);
             return;
         }
+        this.setUp = true;
+        this.drawPlot();
+    }
+};
 
+contentFlotPlot.prototype.drawPlot = function ()
+{
+    var thisFile = this.file, thisFileId = thisFile.id, thisDiv = this.div;
+    $(thisDiv).empty();
         var styleLinespointsOrPoints = isStyleLinespointsOrPoints(thisFile.linestyle);
         var csvData = styleLinespointsOrPoints ? common.getCSVColumnsNonDownsampled (thisFile) :
                                                  common.getCSVColumnsDownsampled (thisFile);
@@ -406,8 +414,6 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
           csvData = csvData.concat(data_cols);
           keyVals = keyVals.concat(data_key);
           console.log(keyVals);
-          // TODO: Ensure reload with select set works, not just on change
-          // TODO: Trigger re-run of this method when select changes
         }
 
         var datasets = {};
@@ -482,7 +488,6 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
 
         // Save data for export if user requests it
         common.allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
-    }
 };
 
 contentFlotPlot.prototype.show = function ()
@@ -491,6 +496,12 @@ contentFlotPlot.prototype.show = function ()
     //console.log (this.div);
     if (!this.setUp)
         this.file.getContents (this);
+};
+
+contentFlotPlot.prototype.redraw = function ()
+{
+    if (this.setUp)
+        this.drawPlot();
 };
 
 function contentFlotPlotComparer (file, div)
@@ -679,6 +690,12 @@ contentFlotPlotComparer.prototype.show = function ()
     {
         this.showContents ();
     }
+};
+
+contentFlotPlotComparer.prototype.redraw = function ()
+{
+    if (this.setUp)
+        this.showContents();
 };
 
 
