@@ -306,7 +306,7 @@ function getKeyValues(file, numTraces)
             for (var i=0; i<keyData[0].length; i++)
             {
                 if (file.keyName)
-                    keyVals.push(file.keyName + " = " + keyVals[i] + " " + file.keyUnits);
+                    keyVals.push(file.keyName + " = " + keyData[0][i] + " " + file.keyUnits);
                 else
                     keyVals.push(keyData[0][i]);
             }
