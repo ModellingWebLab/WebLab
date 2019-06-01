@@ -68,7 +68,7 @@
       </p>
     </div>
 
-    {% if experiment.protocol.protocol_experimental_datasets %}
+    {% if experiment.protocol.protocol_experimental_datasets.exists %}
     <div id="dataset-link-div">
       <span>Overlay a dataset linked to this protocol:</span>
       <select id="dataset-link">
