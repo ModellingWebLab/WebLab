@@ -94,6 +94,8 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
         'password': settings.CHASTE_PASSWORD,
         'isAdmin': user.is_staff,
     }
+    if protocol.is_fitting_spec:
+        body['dataset'] = body['fittingSpec'] = body['protocol']
 
     try:
         response = requests.post(settings.CHASTE_URL, body)
