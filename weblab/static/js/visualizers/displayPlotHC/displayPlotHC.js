@@ -99,7 +99,22 @@ HCPlotter.prototype.drawPlot = function ()
     $(this.div).empty();
 		var csvData = (thisFile.linestyle == "linespoints" || thisFile.linestyle == "points") ? common.getCSVColumnsNonDownsampled (thisFile) : common.getCSVColumnsDownsampled (thisFile);
 		var keyVals = common.getKeyValues(thisFile, csvData.length);
-		
+
+        var data_file = $('#dataset-link').data('file');
+        if (data_file)
+        {
+          // Overlay expt'l data
+          var data_cols = (thisFile.linestyle == "linespoints" || thisFile.linestyle == "points") ?
+                             common.getCSVColumnsNonDownsampled(data_file) :
+                             common.getCSVColumnsDownsampled(data_file),
+              data_key = common.getKeyValues(data_file, data_cols.length);
+          data_cols.shift(); // Remove t
+          data_key.shift();
+          csvData = csvData.concat(data_cols);
+          keyVals = keyVals.concat(data_key);
+          console.log(keyVals);
+        }
+
 		var div = document.createElement("div");
 		var id = "hcplot-" + thisFile.id.replace(/\W/g, '');
 		div.id = id;
