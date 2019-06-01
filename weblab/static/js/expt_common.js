@@ -156,32 +156,61 @@ function maxDist (val1, val2, val3)
 function parseCSVContent (file)
 {
     utils.parseCsvRaw(file);
-    var csv = file.csv;
+    var csv = file.csv, colmap = [];
 
+    // Identity column map by default
+    for (var i = 0; i < csv[0].length; i++)
+        colmap.push(i);
+
+    // Check for a header row
+    if (csv.length > 0 && csv[0].length > 1 && isNaN(csv[0][0]) && !isNaN(csv[1][0]))
+    {
+        file.header = csv[0];
+        file.csv.shift();
+        csv = file.csv;
+        for (var i = 1; i < file.header.length; i++)
+        {
+            if (file.header[i].toLowerCase() == "t" || file.header[i].toLowerCase() == "time")
+            {
+                // Swap this column to position 0
+                var t = file.header[i];
+                file.header[i] = file.header[0];
+                file.header[0] = t;
+                colmap[i] = 0;
+                colmap[0] = i;
+                break;
+            }
+        }
+    }
+    file.colmap = colmap;
+
+    // Transpose to get column-oriented data
     file.columns = [];
     var dropDist = [];
     for (var i = 0; i < csv[0].length; i++)
     {
         var min = Math.pow(2, 32);
         var max = -min;
-        file.columns[i] = [];
+        file.columns[colmap[i]] = [];
         for (var j = 0; j < csv.length; j++)
             if (csv[j][i])
             {
                 // Handle non-numeric CSVs, such as labels for graphs
                 if (isNaN(csv[j][i]))
-                    file.columns[i][j] = csv[j][i];
+                    file.columns[colmap[i]][j] = csv[j][i];
                 else
-                    file.columns[i][j] = Number(csv[j][i]);
-                if (i > 0)
                 {
-                    if (max < file.columns[i][j])
-                        max = file.columns[i][j];
-                    if (min > file.columns[i][j])
-                        min = file.columns[i][j];
+                    file.columns[colmap[i]][j] = Number(csv[j][i]);
+                    if (i > 0)
+                    {
+                        if (max < file.columns[colmap[i]][j])
+                            max = file.columns[colmap[i]][j];
+                        if (min > file.columns[colmap[i]][j])
+                            min = file.columns[colmap[i]][j];
+                    }
                 }
             }
-        dropDist.push ( (max - min) / 500.0 );
+        dropDist[colmap[i]] = ( (max - min) / 500.0 );
         //console.log( "scale for line " + i + ": " + min + ":" + dropDist[dropDist.length-1] + ":" + max);
     }
     file.nonDownsampled = [];
@@ -276,6 +305,13 @@ function getKeyValues(file, numTraces)
                 keyVals.push(keyData[0][i]);
         if (keyVals.length != numTraces)
         	console.log("Ignoring key data of wrong length (key length=" + keyVals.length + "; number of traces=" + numTraces + ")");
+    }
+    else if (file.header)
+    {
+        keyVals = file.header;
+        file.xAxes = file.xAxes || keyVals[0];
+        if (keyVals.length == 2)
+            file.yAxes = file.yAxes || keyVals[1];
     }
     return keyVals;
 }

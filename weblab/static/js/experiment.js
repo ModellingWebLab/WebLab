@@ -282,25 +282,25 @@ function init() {
 
     //console.log(v);
     var dv = doc.version;
-    dv.name.innerHTML = "<small>Version: </small>" + v.name + " ";
+    dv.name.text("<small>Version: </small>" + v.name + " ");
 
     // If an experiment, show indication of status, perhaps including a note that we don't expect any results yet!
     //if (entityType == 'experiment')
     //{
     if (v.status == 'RUNNING' || v.status == 'QUEUED')
     {
-      dv.exptRunningNote.style.display = "block";
+      $('#running-experiment-note').show();
       $('#return-text').hide();
     }
     else
     {
-      dv.exptRunningNote.style.display = "none";
+      $('#running-experiment-note').hide();
       if (v.status == 'SUCCESS')
         $('#return-text').hide();
       else
         $('#return-text').show();
     }
-    dv.exptStatus.innerHTML = "Status: " + v.status + ".";
+    $('#exptStatus').text("Status: " + v.status + ".");
     //}
 
     if (dv.visibility)
@@ -794,7 +794,7 @@ function init() {
     },
     version : {
       close : document.getElementById("entityversionclose"),
-      name : document.getElementById("entityversionname"),
+      name : $("#entityversionname"),
       time : document.getElementById("entityversiontime"),
       author : document.getElementById("entityversionauthor"),
       details : document.getElementById("entityversiondetails"),
@@ -809,8 +809,6 @@ function init() {
       visibility: document.getElementById("versionVisibility"),
       visibilityAction : document.getElementById("versionVisibilityAction"),
       deleteBtn: document.getElementById("deleteVersion"),
-      exptRunningNote: document.getElementById("running-experiment-note"),
-      exptStatus: document.getElementById("exptStatus")
     },
     file: {
       close : document.getElementById("entityversionfileclose"),
@@ -824,14 +822,14 @@ function init() {
   window.onpopstate = render;
   render ();
 
-  document.getElementById("experiment-files-switcher-exp").addEventListener("click", function (ev) {
+  $("#experiment-files-switcher-exp").click(function () {
     $("#experiment-files-switcher-exp").addClass("selected");
     $("#experiment-files-switcher-files").removeClass("selected");
     doc.version.details.style.display = "none";
     doc.version.experimentlist.style.display = "block";
   }, false);
 
-  document.getElementById("experiment-files-switcher-files").addEventListener("click", function (ev) {
+  $("#experiment-files-switcher-files").click(function () {
     $("#experiment-files-switcher-files").addClass("selected");
     $("#experiment-files-switcher-exp").removeClass("selected");
     doc.version.experimentlist.style.display = "none";
