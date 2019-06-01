@@ -1071,24 +1071,20 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
         experiments_to_run = request.POST.getlist('model_protocol_list[]')
         for version in experiments_to_run:
             ident, sha = version.split(':')
-            filter_kwargs = {
-                'experiment__' + this_entity.other_type + '_id': ident,
-                'experiment__' + this_entity.other_type + '_version': sha,
-                'experiment__' + this_entity.entity_type + '_id': this_entity.id,
-                'experiment__' + this_entity.entity_type + '_version':  this_version,
-            }
             exper_kwargs = {
                 this_entity.other_type + '_id': ident,
                 this_entity.other_type + '_version': sha,
                 this_entity.entity_type + '_id': this_entity.id,
-                this_entity.entity_type + '_version':  this_version,
+                this_entity.entity_type + '_version': this_version,
             }
             if exclude_existing:
+                filter_kwargs = {
+                    'experiment__' + name: value
+                    for (name, value) in exper_kwargs.items()
+                }
                 if ExperimentVersion.objects.filter(**filter_kwargs).exists():
                     continue
             PlannedExperiment.objects.get_or_create(**exper_kwargs)
         # return to entity page
         return HttpResponseRedirect(
             reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest']))
-
-
