@@ -113,7 +113,7 @@ function parseCsvRaw(file) {
   {
     var value;
     var matchDel = matches[1];
-    if (matchDel.length && matchDel != "'" && matchDel != "\t")
+    if (matchDel.length && matchDel != "," && matchDel != "\t")
       csv.push([]);
     if (matches[2])
       value = matches[2].replace (new RegExp ("\"\"", "g"), "\"");
