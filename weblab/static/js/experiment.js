@@ -26,6 +26,35 @@ function init() {
 
   var visualizers = {};
 
+  // Handle selecting a linked dataset to overlay
+  $('#dataset-link').on('change', function () {
+    var dataset_json_url = this.value;
+    if (dataset_json_url) {
+      $.getJSON(dataset_json_url, function(json) {
+        dataset_json = json.version;
+        $('#dataset-link').data({json: dataset_json, file: null});
+        console.log(dataset_json);
+        for (var i=0; i<dataset_json.files.length; i++)
+        {
+          if (dataset_json.files[i].name.endsWith('.csv'))
+          {
+            $.get(dataset_json.files[i].url, function(data) {
+              dataset_file = {contents: data};
+              utils.parseCsvRaw(dataset_file);
+              console.log(dataset_file);
+              $('#dataset-link').data('file', dataset_file);
+              console.log($('#dataset-link').data());
+            });
+            break;
+          }
+        }
+      });
+    }
+    else
+    {
+      $('#dataset-link').data({json: null, file: null});
+    }
+  });
 
   function updateVisibility (jsonObject, actionIndicator) {
     actionIndicator.innerHTML = "<img src='"+staticPath+"/res/img/loading2-new.gif' alt='loading' />";

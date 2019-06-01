@@ -394,6 +394,17 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
                                                  common.getCSVColumnsDownsampled (thisFile);
         var keyVals = common.getKeyValues(thisFile, csvData.length);
 
+        var data_file = $('#dataset-link').data('file');
+        if (data_file)
+        {
+          // Overlay expt'l data
+          var data_cols = styleLinespointsOrPoints ? common.getCSVColumnsNonDownsampled(data_file) :
+                                                     common.getCSVColumnsDownsampled(data_file);
+          data_cols.shift(); // Remove t
+          csvData = csvData.concat(data_cols);
+          keyVals = keyVals.concat(common.getKeyValues(data_file, data_cols.length))
+        }
+
         var datasets = {};
         for (var i = 1; i < csvData.length; i++)
         {
