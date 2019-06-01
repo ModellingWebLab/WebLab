@@ -5,6 +5,11 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 
 
+def set_initial_fitting_specs(apps, schema_editor):
+    Entity = apps.get_model('entities', 'Entity')
+    Entity.objects.update(is_fitting_spec=models.Q(name__startswith='Fit '))
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -16,12 +21,8 @@ class Migration(migrations.Migration):
             model_name='entity',
             name='is_fitting_spec',
             field=models.BooleanField(
-                default=models.Q(name__startswith='Fit '),
+                default=False,
                 help_text='This protocol is a parameter fitting specification'),
         ),
-        migrations.AlterField(
-            model_name='entity',
-            name='is_fitting_spec',
-            field=models.BooleanField(default=False, help_text='This protocol is a parameter fitting specification'),
-        ),
+        migrations.RunPython(set_initial_fitting_specs, migrations.RunPython.noop),
     ]
