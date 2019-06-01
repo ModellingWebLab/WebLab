@@ -308,6 +308,13 @@ function getKeyValues(file, numTraces)
         if (keyVals.length != numTraces)
         	console.log("Ignoring key data of wrong length (key length=" + keyVals.length + "; number of traces=" + numTraces + ")");
     }
+    else if (file.header)
+    {
+        keyVals = file.header;
+        file.xAxes = file.xAxes || keyVals[0];
+        if (keyVals.length == 2)
+            file.yAxes = file.yAxes || keyVals[1];
+    }
     return keyVals;
 }
 
