@@ -128,9 +128,11 @@ def test_url_friendly_label(model_with_version, helpers):
 @pytest.mark.django_db
 def test_url_runexperiments(model_with_version, protocol_with_version):
     model = model_with_version
-    assert (entity_tags.url_run_experiments(model) ==
-            '/entities/models/%d/runexperiments' % model.pk)
+    model_commit = model.repo.latest_commit
+    assert (entity_tags.url_run_experiments(model, model_commit) ==
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, model_commit.hexsha))
 
     protocol = protocol_with_version
-    assert (entity_tags.url_run_experiments(protocol) ==
-            '/entities/protocols/%d/runexperiments' % protocol.pk)
+    protocol_commit = protocol.repo.latest_commit
+    assert (entity_tags.url_run_experiments(protocol, protocol_commit) ==
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, protocol_commit.hexsha))
