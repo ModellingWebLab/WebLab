@@ -569,6 +569,8 @@ class EntityNewVersionView(
                 'latest_version': latest,
                 'master_filename': latest.master_filename,
             })
+        else:
+            kwargs['latest_version'] = kwargs['master_filename'] = None
 
         kwargs['delete_file'] = self.request.GET.get('deletefile')
         return super().get_context_data(**kwargs)
@@ -673,7 +675,7 @@ class EntityVersionListView(EntityTypeMixin, VisibilityMixin, DetailView):
 
         versions = entity.cachedentity.versions
         if self.request.user not in entity.viewers:
-            versions = versions.filter(visibility=Visibility.PUBLIC)
+            versions = versions.filter(~Q(visibility=Visibility.PRIVATE))
 
         kwargs.update(**{
             'versions': list(
@@ -890,7 +892,7 @@ class GetProtocolInterfacesJsonView(View):
             visible_protocols = user.entity_set.filter(
                 entity_type='protocol'
             ).union(
-                get_objects_for_user(user, 'entities.edit_entity'),
+                get_objects_for_user(user, 'entities.edit_entity', with_superuser=False),
             ).values_list(
                 'id', flat=True
             )

@@ -246,7 +246,7 @@ class EntityManager(models.Manager):
 
     def with_edit_permission(self, user):
         if user.has_perm('entities.create_%s' % self.model.entity_type):
-            return get_objects_for_user(user, 'entities.edit_entity')
+            return get_objects_for_user(user, 'entities.edit_entity', with_superuser=False)
         else:
             return self.none()
 

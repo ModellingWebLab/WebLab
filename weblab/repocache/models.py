@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from core.models import VisibilityModelMixin
+from core.visibility import Visibility
 from entities.models import Entity
 
 from .exceptions import RepoCacheMiss
@@ -19,15 +20,15 @@ class CachedEntity(models.Model):
     @property
     def visibility(self):
         """
-        Visibility of the entity (this is based on the visibility of the latest
-        version)
+        Visibility of the entity (this is based on the most visible version).
 
         :return: string representing visibility, or PRIVATE if no versions found
         """
-        try:
-            return self.latest_version.visibility
-        except ObjectDoesNotExist:
-            return Entity.DEFAULT_VISIBILITY
+        if self.versions.filter(visibility=Visibility.MODERATED).exists():
+            return Visibility.MODERATED
+        if self.versions.filter(visibility=Visibility.PUBLIC).exists():
+            return Visibility.PUBLIC
+        return Visibility.PRIVATE
 
     @property
     def latest_version(self):
@@ -80,6 +81,10 @@ class CachedEntityVersion(VisibilityModelMixin):
         unique_together = ['entity', 'sha']
         get_latest_by = 'timestamp'
         ordering = ['-timestamp', '-pk']
+
+    def __str__(self):
+        """Return handy representation for debugging."""
+        return self.entity.entity.name + '@' + self.sha
 
     def set_visibility(self, visibility):
         """

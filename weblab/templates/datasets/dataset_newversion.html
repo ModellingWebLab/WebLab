@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load datasets %}
+
+{% block title %}Add files to dataset - {% endblock title %}
+
+{% block content %}
+  {% include "./includes/dataset_header.html" %}
+
+  <h2>Add files to your new dataset</h2>
+
+  <form method="POST" action="">
+    {% include "./includes/dataset_files.html" with dataset=dataset master_filename='' %}
+
+    {% include "./includes/upload.html" %}
+
+    <p>
+      <button id="savebutton">Add files</button>
+    </p>
+  </form>
+
+{% endblock content %}

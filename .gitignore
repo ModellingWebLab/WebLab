@@ -102,6 +102,9 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# PyCharm files
+.idea/
+
 # mkdocs documentation
 /site
 
@@ -113,6 +116,3 @@ weblab/data/
 
 # media directory
 weblab/media/
-
-#PyCharm files
-weblab/.idea/
