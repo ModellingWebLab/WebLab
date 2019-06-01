@@ -107,7 +107,12 @@ HCPlotter.prototype.getContentsCallback = function (succ)
                         curData.push ([csvData[i][j].x, csvData[i][j].y]);
                 var label;
                 if (keyVals.length == csvData.length)
-                    label = thisFile.keyName + " = " + keyVals[i] + " " + thisFile.keyUnits;
+                {
+                    if (thisFile.keyName)
+                        label = thisFile.keyName + " = " + keyVals[i] + " " + thisFile.keyUnits;
+                    else
+                        label = keyVals[i];
+                }
                 else
                     label = "line " + i;
                 datasets.push ({name : label, data: curData});
