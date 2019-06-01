@@ -5,7 +5,7 @@ from .base import *  # noqa
 
 
 DEBUG = True
-LOG_DEBUG = DEBUG
+LOG_DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
