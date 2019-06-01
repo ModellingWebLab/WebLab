@@ -805,7 +805,6 @@ function init() {
       filedetails : document.getElementById("entityversionfiledetails"),
       experimentlist: document.getElementById("entityexperimentlist"),
       experimentpartners: document.getElementById("entityexperimentlistpartners"),
-      switcher: document.getElementById("experiment-files-switcher"),
       visibility: document.getElementById("versionVisibility"),
       visibilityAction : document.getElementById("versionVisibilityAction"),
       deleteBtn: document.getElementById("deleteVersion"),
