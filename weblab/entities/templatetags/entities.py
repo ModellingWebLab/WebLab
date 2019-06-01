@@ -192,5 +192,7 @@ def can_manage_entity(context, entity):
 
 
 @register.filter
-def url_run_experiments(entity):
-    return reverse('entities:runexperiments', args=[entity.entity_type, entity.id])
+def url_run_experiments(entity, commit):
+    last_tag = _url_friendly_label(entity, commit)
+    args = [entity.entity_type, entity.id, last_tag]
+    return reverse('entities:runexperiments', args=args)

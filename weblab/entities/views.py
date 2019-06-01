@@ -1016,7 +1016,8 @@ class EntityDiffView(View):
         })
 
 
-class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, EntityTypeMixin, DetailView):
+class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
+                              EntityTypeMixin, EntityVersionMixin, DetailView):
     """
     A view allowing users to set up a batch-run of experiments involving a single entity.
     """
@@ -1026,7 +1027,6 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
 
     def get_context_data(self, **kwargs):
         entity = self.object
-
         context = super().get_context_data(**kwargs)
 
         # preposition to use in sentence: You may run this entity on/under the following entities
@@ -1065,7 +1065,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin, Entit
         # in get context self.object was the entity being worked with
         # here we have to retrieve it
         this_entity = self.get_object()
-        this_version = this_entity.repo.latest_commit.hexsha
+        this_version = self.get_commit().hexsha
 
         exclude_existing = 'rerun_expts' not in request.POST
         experiments_to_run = request.POST.getlist('model_protocol_list[]')
