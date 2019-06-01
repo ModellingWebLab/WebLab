@@ -282,7 +282,7 @@ function init() {
 
     //console.log(v);
     var dv = doc.version;
-    dv.name.text("<small>Version: </small>" + v.name + " ");
+    dv.name.html("<small>Version: </small>" + v.name + " ");
 
     // If an experiment, show indication of status, perhaps including a note that we don't expect any results yet!
     //if (entityType == 'experiment')
