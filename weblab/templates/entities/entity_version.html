@@ -43,15 +43,17 @@
               Change visibility: {{ form.visibility }}
               <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
               <span id="versionVisibilityAction"></span>
-
-                  Run experiments:
-                    <a title="Run experiments" href="{{ entity|url_run_experiments }}">
-                        <img src="{% static 'img/batch.png' %}" alt="Run experiments:"
-                             title="Run experiments using this {{ entity.entity_type }}"/>
            </form>
            {% else %}
             Visibility: {{ visibility }}
             <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
+          {% endif %}
+          {% if perms.create_experiment %}
+            Run experiments:
+            <a title="Run experiments" href="{{ entity|url_run_experiments }}">
+              <img src="{% static 'img/batch.png' %}" alt="Run experiments:"
+                   title="Run experiments using this {{ entity.entity_type }}"/>
+            </a>
           {% endif %}
         </div>
       </small>
