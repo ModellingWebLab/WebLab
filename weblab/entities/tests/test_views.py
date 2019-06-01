@@ -2326,6 +2326,12 @@ class TestEntityRunExperiment:
             experiment__model_version=commit1.hexsha,
             experiment__protocol=protocol,
             experiment__protocol_version=commit_protocol.hexsha)
+        # This experiment has no versions so should not be excluded
+        recipes.experiment.make(
+            model=model,
+            model_version=commit2.hexsha,
+            protocol=protocol,
+            protocol_version=commit_protocol.hexsha)
 
         # Test context has correct information
         response = client.get('/entities/protocols/%d/runexperiments' % protocol.pk)
@@ -2439,45 +2445,3 @@ class TestEntityRunExperiment:
 
         # Test that no planned experiments have been added
         assert PlannedExperiment.objects.count() == 0
-
-    def test_view_run_experiment_no_experiment_version(self, client, helpers, logged_in_user):
-        helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
-        model = recipes.model.make(author=logged_in_user)
-        commit1 = helpers.add_version(model, visibility='public')
-        commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('v1', commit2.hexsha)
-        protocol = recipes.protocol.make(author=logged_in_user)
-        commit_protocol = helpers.add_version(protocol, visibility='public')
-
-        recipes.experiment_version.make(
-            experiment__model=model,
-            experiment__model_version=commit1.hexsha,
-            experiment__protocol=protocol,
-            experiment__protocol_version=commit_protocol.hexsha)
-
-        # Test context has correct information
-        response = client.get('/entities/protocols/%d/runexperiments' % protocol.pk)
-        assert response.status_code == 200
-        assert response.context['object_list'] == [{'id': model.pk,
-                                                    'name': 'mymodel1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
-                                                   ]
-        # Test post returns correct response
-        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
-                'entity.repo.latest_commit.hexsha': commit_protocol.hexsha,
-                }
-        response = client.post('/entities/protocols/%d/runexperiments' % protocol.pk, data=data)
-        assert response.status_code == 302
-        assert response.url == '/entities/protocols/%d/versions/latest' % protocol.pk
-
-        # Test that planned experiments have been added correctly
-        expected_model_versions = set([
-            (model, commit2.hexsha),
-        ])
-        assert PlannedExperiment.objects.count() == 1
-        for planned_experiment in PlannedExperiment.objects.all():
-            assert planned_experiment.protocol == protocol
-            assert planned_experiment.protocol_version == commit_protocol.hexsha
-            assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
-
