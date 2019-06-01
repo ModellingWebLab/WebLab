@@ -399,27 +399,24 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
         {
           // Overlay expt'l data
           var data_cols = styleLinespointsOrPoints ? common.getCSVColumnsNonDownsampled(data_file) :
-                                                     common.getCSVColumnsDownsampled(data_file);
+                                                     common.getCSVColumnsDownsampled(data_file),
+              data_key = common.getKeyValues(data_file, data_cols.length);
           data_cols.shift(); // Remove t
+          data_key.shift();
           csvData = csvData.concat(data_cols);
-          keyVals = keyVals.concat(common.getKeyValues(data_file, data_cols.length))
+          keyVals = keyVals.concat(data_key);
+          console.log(keyVals);
+          // TODO: Ensure reload with select set works, not just on change
+          // TODO: Trigger re-run of this method when select changes
         }
 
         var datasets = {};
         for (var i = 1; i < csvData.length; i++)
         {
-            var curData = [], label = "line " + i;
+            var curData = [];
             for (var j = 0; j < csvData[i].length; j++)
                 curData.push ([csvData[i][j].x, csvData[i][j].y]);
-
-            if (keyVals.length == csvData.length)
-            {
-                if (thisFile.keyName)
-                    label = thisFile.keyName + " = " + keyVals[i] + " " + thisFile.keyUnits;
-                else
-                    label = keyVals[i];
-            }
-            datasets["line" + i] = {label: label, data: curData};
+            datasets["line" + i] = {label: keyVals[i], data: curData};
         }
 
         // Some of the plots won't come from specified plots, so these are missing.
@@ -627,10 +624,8 @@ contentFlotPlotComparer.prototype.showContents = function ()
                 var plotLabelStripText = $.data(document.body, 'plotLabelStripText');
                 if (plotLabelStripText)
                     label = label.replace(plotLabelStripText, "");
-                if (keyVals.length == csvData.length)
-                    label += ", " + eachCSVData.file.keyName + " = " + keyVals[i] + " " + eachCSVData.file.keyUnits;
-                else if (csvData.length > 2)
-                    label += " line " + i;
+                if (csvData.length > 2 || keyVals[i].substr(0, 5) !== "line ")
+                    label += ", " + keyVals[i];
                 datasets[key] = {label: label, data: curData, color: curColor};
 
                 var colouredSpan = $('<span />').attr('id', colouredSpanIdPrefix + curColor)

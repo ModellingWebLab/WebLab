@@ -105,17 +105,7 @@ HCPlotter.prototype.getContentsCallback = function (succ)
                 var curData = [];
                 for (var j = 0; j < csvData[i].length; j++)
                         curData.push ([csvData[i][j].x, csvData[i][j].y]);
-                var label;
-                if (keyVals.length == csvData.length)
-                {
-                    if (thisFile.keyName)
-                        label = thisFile.keyName + " = " + keyVals[i] + " " + thisFile.keyUnits;
-                    else
-                        label = keyVals[i];
-                }
-                else
-                    label = "line " + i;
-                datasets.push ({name : label, data: curData});
+                datasets.push ({name: keyVals[i], data: curData});
         }
         
         doHcPlot(id, datasets, thisFile);
@@ -254,12 +244,10 @@ HCPlotterComparer.prototype.showContents = function ()
                 var plotLabelStripText = $.data(document.body, 'plotLabelStripText');
                 if (plotLabelStripText)
                     label = label.replace(plotLabelStripText, "");
-                if (keyVals.length == csvData.length)
-                    label += ", " + csvFile.keyName + " = " + keyVals[i] + " " + csvFile.keyUnits
-                else if (csvData.length > 2)
-                    label += " line " + i;
+                if (csvData.length > 2 || keyVals[i].substr(0, 5) !== "line ")
+                    label += ", " + keyVals[i];
 
-                datasets.push ({name : label, data: curData});
+                datasets.push({name: label, data: curData});
         	}
         }
         
