@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 def set_initial_fitting_specs(apps, schema_editor):
     Entity = apps.get_model('entities', 'Entity')
-    Entity.objects.update(is_fitting_spec=models.Q(name__startswith='Fit '))
+    Entity.objects.filter(name__startswith='Fit ').update(is_fitting_spec=True)
 
 
 class Migration(migrations.Migration):
