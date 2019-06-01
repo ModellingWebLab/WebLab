@@ -166,7 +166,6 @@ function parseCSVContent (file)
     if (csv.length > 0 && csv[0].length > 1 && isNaN(csv[0][0]) && !isNaN(csv[1][0]))
     {
         file.header = csv[0];
-        console.log('Header', file.header);
         file.csv.shift();
         csv = file.csv;
         for (var i = 1; i < file.header.length; i++)
@@ -184,7 +183,6 @@ function parseCSVContent (file)
         }
     }
     file.colmap = colmap;
-    console.log(file);
 
     // Transpose to get column-oriented data
     file.columns = [];
