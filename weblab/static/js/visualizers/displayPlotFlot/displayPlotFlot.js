@@ -397,14 +397,18 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
         var datasets = {};
         for (var i = 1; i < csvData.length; i++)
         {
-            var curData = [];
+            var curData = [], label = "line " + i;
             for (var j = 0; j < csvData[i].length; j++)
                 curData.push ([csvData[i][j].x, csvData[i][j].y]);
 
             if (keyVals.length == csvData.length)
-                datasets["line" + i] = {label: thisFile.keyName + " = " + keyVals[i] + " " + thisFile.keyUnits, data: curData};
-            else
-                datasets["line" + i] = {label : "line " + i, data: curData};
+            {
+                if (thisFile.keyName)
+                    label = thisFile.keyName + " = " + keyVals[i] + " " + thisFile.keyUnits;
+                else
+                    label = keyVals[i];
+            }
+            datasets["line" + i] = {label: label, data: curData};
         }
 
         // Some of the plots won't come from specified plots, so these are missing.
@@ -686,7 +690,7 @@ function flotContent ()
 
 flotContent.prototype.canRead = function (file)
 {
-    return file.name.endsWith("plot_data.csv");
+    return file.name.endsWith(".csv");
 };
 
 flotContent.prototype.getName = function ()

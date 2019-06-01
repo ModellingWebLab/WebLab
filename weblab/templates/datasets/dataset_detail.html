@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load datasets %}
+
+{% block title %}Dataset details - {% endblock title %}
+
+{% block body_id %}experiment-version{% endblock %}
+
+{% block content %}
+  {% include "./includes/dataset_header.html" %}
+
+  <div id="entitydetails"></div>
+
+  <div id="entityversion"
+       data-version-href="{% url 'datasets:detail' dataset.id %}"
+       data-version-json-href="{% url 'datasets:version_json' dataset.id %}">
+    <div class="closebtn">
+    </div>
+    <div class="suppl">
+      <small>
+        Created <time id="entityversiontime">{{ dataset.created_at }}</time>
+        by <em id="entityversionauthor">{{ dataset.author.full_name }}</em>.
+        Visibility: <span>{{ dataset.visibility }}</span>
+        <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
+
+{% comment %}
+        {% can_delete_entity version as can_delete %}
+        {% if can_delete %}
+          Delete experiment version:
+          <a title="delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
+            <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
+                title="delete this version of this experiment"/></a>
+        {% endif %}
+{% endcomment %}
+
+        <br/>Corresponding protocol:
+          <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
+
+      </small>
+    </div>
+
+    <p id="description">
+      {{ dataset.description }}
+    </p>
+
+    <div id="experiment-files-switcher">
+{% comment %}
+      <button style="float:left;" id="experiment-files-switcher-files" title="View files associated with this dataset">Files</button>
+      <button style="margin-left:5px; float:left;" id="experiment-files-switcher-exp" title="View &amp; compare experiments using this ${entity.type}">Compare ${otherType}s</button>
+      <br/>
+{% endcomment %}
+    </div>
+
+    <div id="entityversiondetails">
+      <div id="entityversionfiledetails">
+          <div class="closebtn"><small>
+              <a id="exportPlot" style="display: none;">export plot data |</a>
+          <a id="zoomFile">zoom |</a>
+              <a id="entityversionfileclose">&otimes; close</a>
+          </small></div>
+          <h3 id="entityversionfilename"></h3>
+          <div class="suppl"><small>Created <time id="entityversionfiletime"></time> by
+              <em id="entityversionfileauthor"></em>.</small></div>
+          <div id="entityversionfiledisplay"></div>
+      </div>
+
+        <div id="entityversionfiles">
+          <h3>Files in this dataset</h3>
+          <p id="parse_status"></p>
+          <table id="entityversionfilestable">
+          </table>
+          <a id='downloadArchive' title="Download a 'combine' format archive of all the files">
+            <img src="{% static 'img/download.png' %}" alt="Download"
+                title="Download a 'combine' format archive of all the files"/>
+                Download archive of all files
+          </a>
+          <div id="entityversionfilesreadme"></div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

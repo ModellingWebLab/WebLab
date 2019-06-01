@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load datasets %}
+
+{% block title %}Your datasets {% endblock title %}
+
+{% block content %}
+
+  <section id="datasetlist">
+    <h2>Your datasets</h2>
+
+    {% can_create_dataset as permission %}
+    {% if permission %}
+    <small><a href="{% url 'datasets:new' %}" id="add dataset link" class="pointer">Create a new dataset</a></small>
+    {% else %}
+    <small>Your account doesn't have the authority to upload {{ type }}s; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
+    {% endif %}
+
+    <ul>
+      {% for dataset in object_list %}
+        <li title="{{ dataset.name }}">
+          <strong><a href="{{ dataset|url_dataset }}">{{ dataset.name }}</a></strong>
+        </li>
+      {% endfor %}
+  </ul>
+  </section>
+{% endblock content %}

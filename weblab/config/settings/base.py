@@ -53,6 +53,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     'accounts',
+    'datasets',
     'entities',
     'experiments',
     'repocache',
@@ -208,6 +209,7 @@ BASE_URL = os.environ.get('WEBLAB_BASE_URL', 'http://127.0.0.1:8000')
 
 REPO_BASE = BASE_DIR / 'data/repositories'
 EXPERIMENT_BASE = BASE_DIR / 'data/experiments'
+DATASETS_BASE = BASE_DIR / 'data/datasets'
 
 # URL of Chaste backend
 CHASTE_URL = os.environ.get('CHASTE_URL', 'http://localhost:5000/chaste')

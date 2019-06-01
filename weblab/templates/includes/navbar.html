@@ -6,6 +6,7 @@
       <li><a href="{% url 'experiments:list' 'mine' %}">Experiments</a></li>
       <li><a href="{% url 'entities:list' 'model' %}">My models</a></li>
       <li><a href="{% url 'entities:list' 'protocol' %}">My protocols</a></li>
+      <li><a href="{% url 'datasets:list' 'mine' %}">My datasets</a></li>
     {% else %}
       <li><a href="{% url 'experiments:list' %}">Experiments</a></li>
       <li><a href="{% url 'about' %}">About</a></li>

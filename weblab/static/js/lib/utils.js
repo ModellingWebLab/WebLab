@@ -96,15 +96,14 @@ function addLink (link)
    */
 function parseCsvRaw(file) {
   var str = file.contents.replace(/\s*#.*\n/gm,"");
-  var delimiter = ",";
   var patterns = new RegExp(
       (
        // Delimiters.
-       "(\\" + delimiter + "|\\r?\\n|\\r|^)" +
+       "(,|\\t|\\r?\\n|\\r|^)" +
        // Quoted fields.
        "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
        // Standard fields.
-       "([^\"\\" + delimiter + "\\r\\n]*))"
+       "([^\",\\t\\r\\n]*))"
       ),
       "gi"
       );
@@ -114,7 +113,7 @@ function parseCsvRaw(file) {
   {
     var value;
     var matchDel = matches[1];
-    if (matchDel.length && matchDel != delimiter)
+    if (matchDel.length && matchDel != "," && matchDel != "\t")
       csv.push([]);
     if (matches[2])
       value = matches[2].replace (new RegExp ("\"\"", "g"), "\"");
