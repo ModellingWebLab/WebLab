@@ -18,7 +18,7 @@ contentTabularizer.prototype.getContentsCallback = function (succ)
 		this.div.appendChild (document.createTextNode ("failed to load the contents"));
 	else
 	{
-		var data = common.getCSV (this.file), header = this.file.header;
+		var data = common.getCSV (this.file), header = this.file.header, colmap = this.file.colmap;
 		
 		var table = document.createElement("table");
 		table.setAttribute("class", "displayContentsTable");
@@ -41,7 +41,7 @@ contentTabularizer.prototype.getContentsCallback = function (succ)
 			for (var j = 0; j < data[i].length; j++)
 			{
 				var td = document.createElement("td");
-				td.appendChild (document.createTextNode(data[i][j]));
+				td.appendChild (document.createTextNode(data[i][colmap[j]]));
 				tr.appendChild(td);
 			}
 			table.appendChild(tr);
