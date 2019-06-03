@@ -41,7 +41,7 @@ from core.filetypes import get_file_type
 from core.visibility import (
     Visibility, VisibilityMixin
 )
-from experiments.models import Experiment, PlannedExperiment
+from experiments.models import Experiment, PlannedExperiment, ExperimentVersion
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedEntityVersion
 
@@ -1016,3 +1016,77 @@ class EntityDiffView(View):
         return JsonResponse({
             task: result
         })
+
+
+class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
+                              EntityTypeMixin, EntityVersionMixin, DetailView):
+    """
+    A view allowing users to set up a batch-run of experiments involving a single entity.
+    """
+    permission_required = 'experiments.create_experiment'
+    context_object_name = 'entity'
+    template_name = 'entities/entity_runexperiments.html'
+
+    def get_context_data(self, **kwargs):
+        entity = self.object
+        context = super().get_context_data(**kwargs)
+
+        # preposition to use in sentence: You may run this entity on/under the following entities
+        context['preposition'] = 'under'
+        if entity.entity_type == 'protocol':
+            context['preposition'] = 'on'
+
+        # ended up using a nested dict as nested lists caused django's unpacking in forloops to
+        # mess things up slightly
+        other_entities = Entity.objects.filter(
+            entity_type=entity.other_type
+        ).select_related(
+            'cachedentity'
+        ).prefetch_related(
+            'cachedentity__versions',
+            'cachedentity__versions__tags'
+        )
+        context['object_list'] = []
+        context['other_object_list'] = []
+        for item in other_entities:
+            versions = item.cachedentity.versions
+            version_info = []
+            for version in versions.prefetch_related('tags'):
+                tag_list = list(version.tags.values_list('tag', flat=True))
+                commit = item.repo.get_commit(version.sha)
+                latest = item.repo.latest_commit
+                version_info.append({'commit': commit, 'tags': tag_list, 'latest': latest == commit})
+            if item.author == self.request.user:
+                context['object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
+            else:
+                context['other_object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
+        return context
+
+    def post(self, request, *args, **kwargs):
+        # this in not intuitive
+        # in get context self.object was the entity being worked with
+        # here we have to retrieve it
+        this_entity = self.get_object()
+        this_version = self.get_commit().hexsha
+
+        exclude_existing = 'rerun_expts' not in request.POST
+        experiments_to_run = request.POST.getlist('model_protocol_list[]')
+        for version in experiments_to_run:
+            ident, sha = version.split(':')
+            exper_kwargs = {
+                this_entity.other_type + '_id': ident,
+                this_entity.other_type + '_version': sha,
+                this_entity.entity_type + '_id': this_entity.id,
+                this_entity.entity_type + '_version': this_version,
+            }
+            if exclude_existing:
+                filter_kwargs = {
+                    'experiment__' + name: value
+                    for (name, value) in exper_kwargs.items()
+                }
+                if ExperimentVersion.objects.filter(**filter_kwargs).exists():
+                    continue
+            PlannedExperiment.objects.get_or_create(**exper_kwargs)
+        # return to entity page
+        return HttpResponseRedirect(
+            reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest']))

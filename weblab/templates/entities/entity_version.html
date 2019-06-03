@@ -9,6 +9,7 @@
   {% include "./includes/entity_header.html" %}
   {% can_create_version entity as permission %}
 
+
   <div id="entitydetails">
   </div>
 
@@ -40,12 +41,19 @@
             <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
             <form method="POST" action="">
               Change visibility: {{ form.visibility }}
-              <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />.
+              <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
               <span id="versionVisibilityAction"></span>
-            </form>
-          {% else %}
+           </form>
+           {% else %}
             Visibility: {{ visibility }}
-            <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />.
+            <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
+          {% endif %}
+          {% if perms.create_experiment %}
+            Run experiments:
+            <a title="Run experiments" href="{{ entity|url_run_experiments:commit }}">
+              <img src="{% static 'img/batch.png' %}" alt="Run experiments:"
+                   title="Run experiments using this {{ entity.entity_type }}"/>
+            </a>
           {% endif %}
         </div>
       </small>

@@ -189,3 +189,10 @@ def can_delete_entity(context, entity):
 def can_manage_entity(context, entity):
     user = context['user']
     return entity.is_managed_by(user)
+
+
+@register.filter
+def url_run_experiments(entity, commit):
+    last_tag = _url_friendly_label(entity, commit)
+    args = [entity.entity_type, entity.id, last_tag]
+    return reverse('entities:runexperiments', args=args)
