@@ -90,9 +90,9 @@ class ManifestWriter:
                 root,
                 '{%s}content' % MANIFEST_NS,
                 **{
-                    ('{%s}location' % MANIFEST_NS): path,
-                    ('{%s}format' % MANIFEST_NS): fmt,
-                    ('{%s}master' % MANIFEST_NS): 'true' if is_master else 'false'
+                    'location': path,
+                    'format': fmt,
+                    'master': 'true' if is_master else 'false'
                 }
             )
 
