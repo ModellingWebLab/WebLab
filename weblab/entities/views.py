@@ -230,7 +230,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
         return JsonResponse({
             'version': {
                 'id': commit.hexsha,
-                'author': obj.author.full_name,
+                'author': commit.author.name,
                 'entityId': obj.id,
                 'visibility': obj.get_version_visibility(commit.hexsha),
                 'created': commit.committed_at,
