@@ -8,6 +8,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.urlresolvers import reverse
 from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -44,9 +45,9 @@ class ExperimentMatrixJsonView(View):
     Serve up JSON for experiment matrix
     """
     @classmethod
-    def entity_json(cls, entity, version, *, extend_name, visibility, author):
+    def entity_json(cls, entity, version, *, extend_name, visibility, author, friendly_version=''):
         if extend_name:
-            name = '%s @ %s' % (entity.name, version)
+            name = '%s @ %s' % (entity.name, friendly_version or version)
         else:
             name = entity.name
 
@@ -115,6 +116,7 @@ class ExperimentMatrixJsonView(View):
             'entity__entity',
         ).annotate(
             author_name=F('entity__entity__author__full_name'),
+            friendly_name=Coalesce(F('tags__tag'), F('sha')),
         )
         return q_entity_versions
 
@@ -216,14 +218,16 @@ class ExperimentMatrixJsonView(View):
         model_versions = [self.entity_json(version.entity.entity, version.sha,
                                            extend_name=bool(model_versions),
                                            visibility=version.visibility,
-                                           author=version.author_name)
+                                           author=version.author_name,
+                                           friendly_version=version.friendly_name)
                           for version in q_model_versions]
         model_versions = {ver['id']: ver for ver in model_versions}
 
         protocol_versions = [self.entity_json(version.entity.entity, version.sha,
                                               extend_name=bool(protocol_versions),
                                               visibility=version.visibility,
-                                              author=version.author_name)
+                                              author=version.author_name,
+                                              friendly_version=version.friendly_name)
                              for version in q_protocol_versions]
         protocol_versions = {ver['id']: ver for ver in protocol_versions}
 
