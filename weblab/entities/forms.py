@@ -44,8 +44,7 @@ class ProtocolEntityForm(EntityForm):
         fields = ['name', 'is_fitting_spec']
 
     is_fitting_spec = forms.BooleanField(
-        label='',
-        help_text="This protocol is a parameter fitting specification",
+        label='This protocol is a parameter fitting specification',
         widget=forms.CheckboxInput(attrs={'class': 'inline'}),
         required=False)
 
@@ -63,15 +62,14 @@ class EntityVersionForm(forms.Form):
         label='Description of this version',
         widget=forms.Textarea)
     rerun_expts = forms.BooleanField(
-        label='',
-        help_text='Re-run experiments involving the previous version of this %s',
+        label='Re-run experiments involving the previous version of this %s',
         widget=forms.CheckboxInput(attrs={'class': 'inline'}),
         required=False)
 
     def __init__(self, *args, **kwargs):
         entity_type = kwargs.pop('entity_type')
         super().__init__(*args, **kwargs)
-        self.fields['rerun_expts'].help_text = self.fields['rerun_expts'].help_text % entity_type
+        self.fields['rerun_expts'].label = self.fields['rerun_expts'].label % entity_type
 
 
 class EntityChangeVisibilityForm(UserKwargModelFormMixin, forms.Form):
