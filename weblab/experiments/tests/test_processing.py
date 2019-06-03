@@ -1,4 +1,5 @@
 import uuid
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -6,6 +7,7 @@ import pytest
 from django.conf import settings
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils.timezone import now
 
 from core import recipes
 from experiments.models import Experiment, ExperimentVersion, RunningExperiment
@@ -250,6 +252,8 @@ class TestProcessCallback:
     ])
     def test_records_finished_status(self, returned_status, stored_status,
                                      archive_upload, queued_experiment):
+        assert not queued_experiment.is_finished
+        assert not queued_experiment.finished_at
         result = process_callback({
             'signature': queued_experiment.signature,
             'returntype': returned_status,
@@ -262,6 +266,9 @@ class TestProcessCallback:
         queued_experiment.refresh_from_db()
         assert queued_experiment.status == stored_status
         assert queued_experiment.return_text == 'finished'
+        assert queued_experiment.is_finished
+        assert queued_experiment.finished_at > queued_experiment.created_at
+        assert now() - queued_experiment.finished_at < timedelta(0, 10, 0)  # 10 secs
 
     @pytest.mark.parametrize('returned_status', [
         'success',
