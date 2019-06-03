@@ -82,9 +82,9 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
         :return: `set` of `User` objects
         """
-        if self.protocol.visibility == Visibility.PUBLIC:
+        if self.protocol.visibility != Visibility.PRIVATE:
             return self.model.viewers
-        elif self.model.visibility == Visibility.PUBLIC:
+        elif self.model.visibility != Visibility.PRIVATE:
             return self.protocol.viewers
         else:
             return self.model.viewers & self.protocol.viewers
