@@ -39,7 +39,7 @@
         <div id="versionVisibility" data-change-href="{{ entity|url_change_version_visibility:version }}">
           {% if permission %}
             <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
-            <form method="POST" action="">
+            <form method="POST" action="" style="display: inline;">
               Change visibility: {{ form.visibility }}
               <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
               <span id="versionVisibilityAction"></span>
