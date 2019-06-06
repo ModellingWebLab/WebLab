@@ -52,12 +52,11 @@
               </strong>
               by <em>{{ entity_version.commit.author }}</em><br/>
               <span class="suppl">
-                      <small>created </small> <time>{{ entity_version.commit.committed_at }}</time>
+                      <small style="display: inline;">created </small> <time>{{ entity_version.commit.committed_at }}</time>
                 {% with entity_version.commit.filenames|length as numfiles %}
-                  <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
+                  <small style="display: inline;">containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
                 {% endwith %}
-                  </span>
-              <br/>
+                  </span><br/>
               <span class="suppl">
                       {{ entity_version.commit.message|linebreaksbr }}
                   </span>
@@ -96,12 +95,11 @@
               </strong>
               by <em>{{ entity_version.commit.author }}</em><br/>
               <span class="suppl">
-                      <small>created </small> <time>{{ entity_version.commit.committed_at }}</time>
+                      <small style="display: inline;">created </small> <time>{{ entity_version.commit.committed_at }}</time>
                 {% with entity_version.commit.filenames|length as numfiles %}
-                  <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
+                  <small style="display: inline;">containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
                 {% endwith %}
-                  </span>
-              <br/>
+                  </span><br/>
               <span class="suppl">
                       {{ entity_version.commit.message|linebreaksbr }}
                   </span>
