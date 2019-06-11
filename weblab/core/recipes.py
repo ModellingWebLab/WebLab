@@ -30,3 +30,5 @@ experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experime
 cached_entity = Recipe('CachedEntity')
 cached_entity_version = Recipe('CachedEntityVersion')
 cached_entity_tag = Recipe('CachedEntityTag')
+
+dataset = Recipe('ExperimentalDataset')
