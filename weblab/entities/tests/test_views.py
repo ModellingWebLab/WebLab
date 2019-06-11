@@ -2244,6 +2244,40 @@ class TestEntityRunExperiment:
             assert planned_experiment.model_version == commit_model.hexsha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
 
+    def test_view_run_experiment_model_not_latest(self, client, helpers, logged_in_user):
+        helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
+        model = recipes.model.make(author=logged_in_user)
+        helpers.add_version(model, visibility='private')
+        model_commit1 = helpers.add_version(model, visibility='public')
+        model.add_tag('model_v1', model_commit1.hexsha)
+        model_commit2 = helpers.add_version(model, visibility='public')
+        protocol = recipes.protocol.make(author=logged_in_user)
+        commit1 = helpers.add_version(protocol, visibility='public')
+        commit2 = helpers.add_version(protocol, visibility='public')
+        protocol.add_tag('v1', commit2.hexsha)
+
+        # display page using tag
+        response = client.get(
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'model_v1'))
+        assert response.status_code == 200
+        assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'name': 'myprotocol1',
+                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                   ]
+        assert response.context['preposition'] == 'under'
+
+        #display page using sha
+        response = client.get(
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, model_commit2.hexsha))
+        assert response.status_code == 200
+        assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'name': 'myprotocol1',
+                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                   ]
+        assert response.context['preposition'] == 'under'
+
     # repeat tests with protocol as the calling entity
     def test_view_run_experiment_protocol(self, client, helpers, logged_in_user):
         helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
@@ -2472,3 +2506,37 @@ class TestEntityRunExperiment:
 
         # Test that no planned experiments have been added
         assert PlannedExperiment.objects.count() == 0
+
+    def test_view_run_experiment_protocol_not_latest(self, client, helpers, logged_in_user):
+        helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
+        model = recipes.model.make(author=logged_in_user)
+        commit1 = helpers.add_version(model, visibility='public')
+        commit2 = helpers.add_version(model, visibility='public')
+        model.add_tag('v1', commit2.hexsha)
+        protocol = recipes.protocol.make(author=logged_in_user)
+        proto_commit1 = helpers.add_version(protocol, visibility='public')
+        proto_commit2 = helpers.add_version(protocol, visibility='public')
+        protocol.add_tag('p1', proto_commit1.hexsha)
+
+        # display using tag
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, 'p1'))
+        assert response.status_code == 200
+        assert response.context['object_list'] == [{'id': model.pk,
+                                                    'name': 'mymodel1',
+                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                   ]
+        assert response.context['preposition'] == 'on'
+
+        # display using sha
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, proto_commit2.hexsha))
+        assert response.status_code == 200
+        assert response.context['object_list'] == [{'id': model.pk,
+                                                    'name': 'mymodel1',
+                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                   ]
+        assert response.context['preposition'] == 'on'
+
