@@ -1068,7 +1068,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
         # here we have to retrieve it
         this_entity = self.get_object()
         this_version = self.get_commit().hexsha
-
+        is_latest = (this_version == this_entity.repocache.latest_version.sha)
         exclude_existing = 'rerun_expts' not in request.POST
         experiments_to_run = request.POST.getlist('model_protocol_list[]')
         for version in experiments_to_run:
@@ -1088,5 +1088,8 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
                     continue
             PlannedExperiment.objects.get_or_create(**exper_kwargs)
         # return to entity page
+        version_to_use = 'latest'
+        if not is_latest:
+            version_to_use = kwargs['sha']
         return HttpResponseRedirect(
-            reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest']))
+            reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], version_to_use]))
