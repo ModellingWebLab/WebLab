@@ -6,10 +6,10 @@ from datasets.models import ExperimentalDataset
 from core import recipes
 
 
-@pytest.mark.django_db
-def test_dataset_urls_no_files(dataset_no_files):
-    dataset = dataset_no_files
-    assert dataset_tags.url_dataset(dataset) == '/datasets/%d/addfiles' % dataset.pk
+# @pytest.mark.django_db
+# def test_dataset_urls_no_files(dataset_no_files):
+#     dataset = dataset_no_files
+#     assert dataset_tags.url_dataset(dataset) == '/datasets/%d/addfiles' % dataset.pk
 
 
 # @pytest.mark.django_db
