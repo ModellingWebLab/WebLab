@@ -123,3 +123,54 @@ def test_url_friendly_label(model_with_version, helpers):
     commit3 = helpers.add_version(model_with_version)
     model_with_version.repo.tag('latest')
     assert entity_tags._url_friendly_label(model_with_version, commit3) == commit3.hexsha
+
+
+@pytest.mark.django_db
+def test_can_create_entity(anon_user, model_creator, admin_user):
+    context = {'user': anon_user}
+    assert not entity_tags.can_create_entity(context, 'model')
+
+    context = {'user': model_creator}
+    assert entity_tags.can_create_entity(context, 'model')
+
+    context = {'user': admin_user}
+    assert entity_tags.can_create_entity(context, 'model')
+
+
+@pytest.mark.django_db
+def test_can_create_version(anon_user, model_creator, admin_user, model_with_version):
+    context = {'user': anon_user}
+    assert not entity_tags.can_create_version(context, model_with_version)
+
+    context = {'user': model_creator}
+    assert not entity_tags.can_create_version(context, model_with_version)
+
+    context = {'user': admin_user}
+    assert entity_tags.can_create_version(context, model_with_version)
+
+
+@pytest.mark.django_db
+def test_can_delete_entity(anon_user, model_creator, admin_user, model_with_version):
+    context = {'user': anon_user}
+    assert not entity_tags.can_delete_entity(context, model_with_version)
+
+    context = {'user': model_creator}
+    assert not entity_tags.can_delete_entity(context, model_with_version)
+
+    context = {'user': admin_user}
+    assert entity_tags.can_delete_entity(context, model_with_version)
+
+
+@pytest.mark.django_db
+def test_can_manage_entity(anon_user, model_creator, admin_user, model_with_version):
+    context = {'user': anon_user}
+    assert not entity_tags.can_manage_entity(context, model_with_version)
+
+    context = {'user': model_creator}
+    assert not entity_tags.can_manage_entity(context, model_with_version)
+
+    context = {'user': admin_user}
+    assert entity_tags.can_manage_entity(context, model_with_version)
+
+
+
