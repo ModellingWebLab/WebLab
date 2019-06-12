@@ -119,6 +119,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/(?P<pk>\d+)/versions/%s/runexperiments$' % (_ENTITY_TYPE, _COMMIT),
+        views.EntityRunExperimentView.as_view(),
+        name='runexperiments',
+    ),
+
+    url(
         r'^(?P<pk>\d+)/upload-file$',
         views.FileUploadView.as_view(),
         name='upload_file',

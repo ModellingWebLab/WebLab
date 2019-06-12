@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load entities %}
+
+{% block title %}Experiment: run specific combinations - {% endblock title %}
+
+{% block body_id %}runexperiment{% endblock %}
+
+{% block content %}
+  <h1 id="entityname">Run experiments using <span>{{ entity.name }}</span></h1>
+
+    <button id="checkallbutton">check all</button>
+    <button id="checklatestbutton">check latest</button>
+    <button id="uncheckallbutton">uncheck all</button>
+  <form action="" method="post">
+    {% csrf_token %}
+    <button id="savebutton">run experiments</button>
+    <p>
+      <input class="overrideCheckBox" type="checkbox" name="rerun_expts"/>
+      Create new versions of existing experiments (if unchecked, existing combinations will be skipped)
+    </p>
+
+
+    <p>You may run this {{ type }} {{ preposition }} the following {{ other_type }}s.</p>
+
+    <h2> Your {{ other_type }}s</h2>
+
+    <!-- list each entity and all versions of that entity -->
+    {% for entity_object in object_list %}
+
+      <strong>{{ entity_object.name }}</strong>
+      <ul>
+        {% for entity_version in entity_object.versions %}
+
+          <li>
+            <p>
+              {% if entity_version.latest %}
+
+                <input class="latestexperimentCheckBox" type="checkbox"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       name="model_protocol_list[]"
+                       checked/>
+              {% else %}
+                <input class="experimentCheckBox" type="checkbox"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       name="model_protocol_list[]"/>
+              {% endif %}
+              <strong>
+                <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
+                  {% include "./includes/version_name.html" with tags=entity_version.tags version=entity_version.commit only %}
+                </a>
+              </strong>
+              <span class="suppl"><small style="display: inline;">by <em>{{ entity_version.commit.author }}</em>
+                created <time>{{ entity_version.commit.committed_at }}</time></small></span><br/>
+              <span class="suppl">
+                {{ entity_version.commit.message|linebreaksbr }}
+              </span>
+            </p>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+
+    <h2> Other {{ other_type }}s</h2>
+
+    <!-- list each entity and all versions of that entity -->
+    {% for entity_object in other_object_list %}
+
+      <strong>{{ entity_object.name }}</strong>
+      <ul>
+        {% for entity_version in entity_object.versions %}
+
+          <li>
+            <p>
+              {% if entity_version.latest %}
+
+                <input class="latestexperimentCheckBox" type="checkbox"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       name="model_protocol_list[]"
+                       checked/>
+              {% else %}
+                <input class="experimentCheckBox" type="checkbox"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       name="model_protocol_list[]"/>
+              {% endif %}
+              <strong>
+                <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
+                  {% include "./includes/version_name.html" with tags=entity_version.tags version=entity_version.commit only %}
+                </a>
+              </strong>
+              by <em>{{ entity_version.commit.author }}</em><br/>
+              <span class="suppl">
+                      <small style="display: inline;">created </small> <time>{{ entity_version.commit.committed_at }}</time>
+                {% with entity_version.commit.filenames|length as numfiles %}
+                  <small style="display: inline;">containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
+                {% endwith %}
+                  </span><br/>
+              <span class="suppl">
+                      {{ entity_version.commit.message|linebreaksbr }}
+                  </span>
+            </p>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+
+  </form>
+
+{% endblock %}

@@ -126,6 +126,19 @@ def test_url_friendly_label(model_with_version, helpers):
 
 
 @pytest.mark.django_db
+def test_url_runexperiments(model_with_version, protocol_with_version):
+    model = model_with_version
+    model_commit = model.repo.latest_commit
+    assert (entity_tags.url_run_experiments(model, model_commit) ==
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, model_commit.hexsha))
+
+    protocol = protocol_with_version
+    protocol_commit = protocol.repo.latest_commit
+    assert (entity_tags.url_run_experiments(protocol, protocol_commit) ==
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, protocol_commit.hexsha))
+
+
+@pytest.mark.django_db
 def test_can_create_entity(anon_user, model_creator, admin_user):
     context = {'user': anon_user}
     assert not entity_tags.can_create_entity(context, 'model')
