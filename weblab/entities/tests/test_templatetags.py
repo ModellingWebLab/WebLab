@@ -123,3 +123,16 @@ def test_url_friendly_label(model_with_version, helpers):
     commit3 = helpers.add_version(model_with_version)
     model_with_version.repo.tag('latest')
     assert entity_tags._url_friendly_label(model_with_version, commit3) == commit3.hexsha
+
+
+@pytest.mark.django_db
+def test_url_runexperiments(model_with_version, protocol_with_version):
+    model = model_with_version
+    model_commit = model.repo.latest_commit
+    assert (entity_tags.url_run_experiments(model, model_commit) ==
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, model_commit.hexsha))
+
+    protocol = protocol_with_version
+    protocol_commit = protocol.repo.latest_commit
+    assert (entity_tags.url_run_experiments(protocol, protocol_commit) ==
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, protocol_commit.hexsha))
