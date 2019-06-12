@@ -11,6 +11,7 @@ from core import recipes
 from entities.models import Entity
 from repocache.models import CachedEntityVersion
 from repocache.populate import populate_entity_cache
+from datasets.models import ExperimentalDataset
 
 
 class Helpers:
@@ -253,7 +254,37 @@ def model_creator(user, helpers):
     helpers.add_permission(user, 'create_model')
     return user
 
+
 @pytest.fixture
 def moderator(user, helpers):
     helpers.add_permission(user, 'moderator')
     return user
+
+
+@pytest.fixture
+def dataset_no_files(user):
+    protocol = recipes.protocol.make()
+    dataset = recipes.dataset.make(
+        author=user,
+        protocol=protocol
+    )
+    return dataset
+
+# TO DO
+# @pytest.fixture
+# def dataset_dummy_files(user):
+#     protocol = recipes.protocol.make()
+#     dataset = recipes.dataset.make(
+#         author=user,
+#         protocol=protocol,
+#         archive_path='dummyfiles'
+#     )
+#     return dataset
+#
+#
+@pytest.fixture
+def dataset_creator(user, helpers):
+    helpers.add_permission(user, 'create_dataset', model=ExperimentalDataset)
+    return user
+
+
