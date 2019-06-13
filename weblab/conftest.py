@@ -142,6 +142,7 @@ def public_protocol(helpers):
     helpers.add_version(protocol, visibility='public')
     return protocol
 
+
 @pytest.fixture
 def moderated_model(helpers):
     model = recipes.model.make()
@@ -262,29 +263,8 @@ def moderator(user, helpers):
 
 
 @pytest.fixture
-def dataset_no_files(user):
-    protocol = recipes.protocol.make()
-    dataset = recipes.dataset.make(
-        author=user,
-        protocol=protocol
-    )
-    return dataset
-
-# TO DO
-# @pytest.fixture
-# def dataset_dummy_files(user):
-#     protocol = recipes.protocol.make()
-#     dataset = recipes.dataset.make(
-#         author=user,
-#         protocol=protocol,
-#         archive_path='dummyfiles'
-#     )
-#     return dataset
-#
-#
-@pytest.fixture
 def dataset_creator(user, helpers):
-    helpers.add_permission(user, 'create_dataset', model=ExperimentalDataset)
+    helpers.add_permission(user, 'create_dataset', ExperimentalDataset)
     return user
 
 
