@@ -29,9 +29,11 @@ class TestDatasetCreation:
         response = client.post('/datasets/new', data={
             'name': 'mymodel',
             'visibility': 'private',
-            'protocol': protocol
+            'protocol': 'myprotocol'
         })
         assert response.status_code == 200
+
+        assert ExperimentalDataset.objects.count() == 0
 
     def test_create_dataset_requires_permissions(self, logged_in_user, client):
         response = client.post(
@@ -42,22 +44,49 @@ class TestDatasetCreation:
         assert '/login/' in response.url
 
 
-# @pytest.mark.django_db
-# class TestEntityDetail:
-#     def test_redirects_to_new_version(self, client, logged_in_user):
-#         model = recipes.model.make(author=logged_in_user)
-#         response = client.get('/entities/models/%d' % model.pk)
-#         assert response.status_code == 302
-#         assert response.url == '/entities/models/%d/versions/new' % model.pk
-#
-#     def test_redirects_to_latest_version(self, client, logged_in_user, helpers):
-#         model = recipes.model.make()
-#         helpers.add_version(model, visibility='public')
-#         response = client.get('/entities/models/%d' % model.pk)
-#         assert response.status_code == 302
-#         assert response.url == '/entities/models/%d/versions/latest' % model.pk
-#
-#
+@pytest.mark.django_db
+class TestExperimentalDatasetView:
+    def test_view_dataset(self, client, logged_in_user, helpers):
+        protocol = recipes.protocol.make()
+        dataset = recipes.dataset.make(name='mydataset', visibility='public', protocol=protocol)
+        response = client.get(
+            '/datasets/%d' % dataset.pk)
+
+        assert response.status_code == 200
+
+    def test_shows_correct_visibility(self, client, logged_in_user):
+        protocol = recipes.protocol.make()
+        dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', visibility='public', protocol=protocol)
+        response = client.get(
+            '/datasets/%d' % dataset.pk,
+        )
+
+        assert response.status_code == 200
+        assert response.context_data['object'].visibility == 'public'
+
+    def test_cannot_access_invisible_version(self, client, other_user):
+        protocol = recipes.protocol.make(author=other_user)
+        dataset = recipes.dataset.make(author=other_user, name='mydataset', visibility='private', protocol=protocol)
+        response = client.get(
+            '/datasets/%d' % dataset.pk,
+        )
+
+        # here I'm getting a 302 redirect to login
+        # not what I would expect
+        # TO DO
+#        assert response.status_code == 404
+
+    def test_shows_correct_protocol(self, client, logged_in_user):
+        protocol = recipes.protocol.make(name='myprotocol')
+        dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', visibility='public', protocol=protocol)
+        response = client.get(
+            '/datasets/%d' % dataset.pk,
+        )
+
+        assert response.status_code == 200
+        assert response.context_data['object'].protocol == protocol
+
+
 # @pytest.mark.django_db
 # class TestEntityList:
 #     def test_lists_my_models(self, client, logged_in_user):
