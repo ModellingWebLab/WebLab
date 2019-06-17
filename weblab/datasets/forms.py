@@ -13,7 +13,7 @@ class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating an entirely new ExperimentalDataset."""
     class Meta:
         model = ExperimentalDataset
-        fields = ['name', 'visibility', 'protocol']
+        fields = ['name', 'visibility', 'protocol', 'description']
 
     def clean_name(self):
         name = self.cleaned_data['name']
@@ -34,11 +34,7 @@ class ExperimentalDatasetAddFilesForm(forms.Form):
     """Used to add files to a new dataset."""
     class Meta:
         model = ExperimentalDataset
-        fields = ['description']
 
-    description = forms.CharField(
-        label='Description of this dataset',
-        widget=forms.Textarea)
 
 # EntityCollaboratorFormSet = formset_factory(
 #     EntityCollaboratorForm,
