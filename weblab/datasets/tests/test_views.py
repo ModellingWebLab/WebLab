@@ -15,25 +15,28 @@ from git import GitCommandError
 from guardian.shortcuts import assign_perm
 
 from core import recipes
-from entities.models import AnalysisTask, Entity, ModelEntity, ProtocolEntity
-from experiments.models import Experiment, PlannedExperiment
-from repocache.models import ProtocolInterface
 from datasets.models import ExperimentalDataset
 
 
 @pytest.mark.django_db
 class TestDatasetCreation:
-    def test_create_model(self, logged_in_user, client, helpers):
+    def test_create_model(self, logged_in_user, client, helpers, public_protocol):
         helpers.add_permission(logged_in_user, 'create_dataset', ExperimentalDataset)
-        protocol = recipes.protocol.make(author=logged_in_user)
         response = client.post('/datasets/new', data={
-            'name': 'mymodel',
-            'visibility': 'private',
-            'protocol': 'myprotocol'
+            'name': 'mydataset',
+            'visibility': 'public',
+            'protocol': public_protocol.pk,
+            'description': 'description'
         })
-        assert response.status_code == 200
 
-        assert ExperimentalDataset.objects.count() == 0
+        assert response.status_code == 302
+
+        assert ExperimentalDataset.objects.count() == 1
+
+        dataset = ExperimentalDataset.objects.first()
+        assert response.url == '/datasets/%d/addfiles' % dataset.id
+        assert dataset.name == 'mydataset'
+        assert dataset.author == logged_in_user
 
     def test_create_dataset_requires_permissions(self, logged_in_user, client):
         response = client.post(
@@ -64,17 +67,30 @@ class TestExperimentalDatasetView:
         assert response.status_code == 200
         assert response.context_data['object'].visibility == 'public'
 
-    def test_cannot_access_invisible_version(self, client, other_user):
-        protocol = recipes.protocol.make(author=other_user)
-        dataset = recipes.dataset.make(author=other_user, name='mydataset', visibility='private', protocol=protocol)
+        dataset_private = recipes.dataset.make(author=logged_in_user, name='mydataset1', visibility='private', protocol=protocol)
         response = client.get(
-            '/datasets/%d' % dataset.pk,
+            '/datasets/%d' % dataset_private.pk,
         )
 
-        # here I'm getting a 302 redirect to login
-        # not what I would expect
-        # TO DO
-#        assert response.status_code == 404
+        assert response.status_code == 200
+        assert response.context_data['object'].visibility == 'private'
+
+    def test_cannot_access_invisible_version(self, client, other_user, logged_in_user):
+        protocol = recipes.protocol.make(author=other_user)
+        dataset_other = recipes.dataset.make(author=other_user, name='otherdataset', visibility='private', protocol=protocol)
+        dataset_mine = recipes.dataset.make(author=logged_in_user, name='mydataset', visibility='private', protocol=protocol)
+
+        # can access mine
+        response = client.get(
+            '/datasets/%d' % dataset_mine.pk,
+        )
+        assert response.status_code == 200
+
+        # cannot access someone else's private dataset
+        response = client.get(
+            '/datasets/%d' % dataset_other.pk,
+        )
+        assert response.status_code == 404
 
     def test_shows_correct_protocol(self, client, logged_in_user):
         protocol = recipes.protocol.make(name='myprotocol')
