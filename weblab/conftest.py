@@ -268,3 +268,9 @@ def dataset_creator(user, helpers):
     return user
 
 
+@pytest.fixture
+def dataset_no_files(user, public_protocol):
+    dataset = recipes.dataset.make(author=user, name='mydataset', protocol=public_protocol)
+    return dataset
+
+
