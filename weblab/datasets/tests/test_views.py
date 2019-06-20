@@ -103,20 +103,14 @@ class TestExperimentalDatasetView:
         assert response.context_data['object'].protocol == protocol
 
 
-# @pytest.mark.django_db
-# class TestEntityList:
-#     def test_lists_my_models(self, client, logged_in_user):
-#         models = recipes.model.make(_quantity=2, author=logged_in_user)
-#         response = client.get('/entities/models/')
-#         assert response.status_code == 200
-#         assert list(response.context['object_list']) == models
-#
-#     def test_lists_my_protocols(self, client, logged_in_user):
-#         protocols = recipes.protocol.make(_quantity=2, author=logged_in_user)
-#         response = client.get('/entities/protocols/')
-#         assert response.status_code == 200
-#         assert list(response.context['object_list']) == protocols
-#
+@pytest.mark.django_db
+class TestDatasetsList:
+    def test_lists_my_datasets(self, client, logged_in_user):
+        datasets = recipes.dataset.make(_quantity=2, author=logged_in_user)
+        response = client.get('/datasets/mine')
+        assert response.status_code == 200
+        assert list(response.context['object_list']) == datasets
+
 #
 # @pytest.mark.django_db
 # class TestEntityFileDownloadView:

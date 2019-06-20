@@ -12,7 +12,7 @@
     {% if permission %}
     <small><a href="{% url 'datasets:new' %}" id="add dataset link" class="pointer">Create a new dataset</a></small>
     {% else %}
-    <small>Your account doesn't have the authority to upload {{ type }}s; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
+    <small>Your account doesn't have the authority to upload datasets; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
     {% endif %}
 
     <ul>
