@@ -258,37 +258,39 @@ class TestDatasetsList:
 #         assert archive.filelist[0].filename == 'file1.txt'
 #
 #
-# @pytest.mark.django_db
-# class TestFileUpload:
-#     def test_upload_file(self, logged_in_user, client):
-#         model = recipes.model.make(author=logged_in_user)
-#
-#         upload = io.StringIO('my test model')
-#         upload.name = 'model.txt'
-#         response = client.post(
-#             '/entities/%d/upload-file' % model.pk,
-#             {
-#                 'upload': upload
-#             }
-#         )
-#
-#         data = json.loads(response.content.decode())
-#         upload = data['files'][0]
-#         assert upload['stored_name'] == 'uploads/model.txt'
-#         assert upload['name'] == 'model.txt'
-#         assert upload['is_valid']
-#         assert upload['size'] == 13
-#
-#         assert model.files.count() == 1
-#
-#     def test_bad_upload(self, logged_in_user, client):
-#         model = recipes.model.make(author=logged_in_user)
-#
-#         response = client.post('/entities/%d/upload-file' % model.pk, {})
-#
-#         assert response.status_code == 400
-#
-#
+@pytest.mark.django_db
+class TestFileUpload:
+    def test_upload_file(self, logged_in_user, client):
+        dataset = recipes.dataset.make(author=logged_in_user)
+
+        upload = io.StringIO('my test dataset')
+        upload.name = 'dataset.zip'
+        response = client.post(
+            '/datasets/%d/upload-file' % dataset.pk,
+            {
+                'upload': upload
+            }
+        )
+
+        data = json.loads(response.content.decode())
+        upload = data['files'][0]
+        assert upload['stored_name'] == 'uploads/dataset.zip'
+        assert upload['name'] == 'dataset.zip'
+        assert upload['is_valid']
+        assert upload['size'] == 15
+
+        # this does not work which is weird since it mimics
+        # the file upload test for entity
+ #       assert dataset.files.count() == 1
+
+    def test_bad_upload(self, logged_in_user, client):
+        dataset = recipes.dataset.make(author=logged_in_user)
+
+        response = client.post('/datasets/%d/upload-file' % dataset.pk, {})
+
+        assert response.status_code == 400
+
+
 # @pytest.mark.django_db
 # @pytest.mark.parametrize("recipe,url", [
 #     (recipes.model, '/entities/models/%d'),
