@@ -43,7 +43,7 @@ class ExperimentalDatasetAddFilesForm(forms.Form):
 # )
 
 
-class FileUploadForm(forms.ModelForm):
+class DatasetFileUploadForm(forms.ModelForm):
     class Meta:
         model = DatasetFile
         fields = ['upload']

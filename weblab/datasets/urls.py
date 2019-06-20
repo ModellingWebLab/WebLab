@@ -29,7 +29,7 @@ urlpatterns = [
 
     url(
         r'^(?P<pk>\d+)/upload-file$',
-        views.FileUploadView.as_view(),
+        views.DatasetFileUploadView.as_view(),
         name='upload_file',
     ),
 

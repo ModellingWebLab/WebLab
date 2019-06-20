@@ -52,7 +52,7 @@ from .models import ExperimentalDataset
 
 from .forms import (
     ExperimentalDatasetForm,
-    FileUploadForm,
+    DatasetFileUploadForm,
     ExperimentalDatasetAddFilesForm,
 )
 
@@ -166,14 +166,14 @@ class ExperimentalDatasetAddFilesView(
 #         return reverse('datasets:list')
 
 
-class FileUploadView(View):
+class DatasetFileUploadView(View):
     """
     Upload files to an dataset
     """
-    form_class = FileUploadForm
+    form_class = DatasetFileUploadForm
 
     def post(self, request, *args, **kwargs):
-        form = FileUploadForm(self.request.POST, self.request.FILES)
+        form = DatasetFileUploadForm(self.request.POST, self.request.FILES)
         if form.is_valid():
             uploaded_file = request.FILES['upload']
             form.instance.dataset_id = self.kwargs['pk']
