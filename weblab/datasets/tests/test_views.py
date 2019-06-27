@@ -279,9 +279,7 @@ class TestFileUpload:
         assert upload['is_valid']
         assert upload['size'] == 15
 
-        # this does not work which is weird since it mimics
-        # the file upload test for entity
- #       assert dataset.files.count() == 1
+        assert dataset.file_uploads.count() == 1
 
     def test_bad_upload(self, logged_in_user, client):
         dataset = recipes.dataset.make(author=logged_in_user)
