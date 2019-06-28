@@ -48,62 +48,62 @@ from experiments.models import Experiment, PlannedExperiment
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedEntityVersion
 
-from .models import ExperimentalDataset
+from .models import Dataset
 
 from .forms import (
-    ExperimentalDatasetForm,
+    DatasetForm,
     DatasetFileUploadForm,
-    ExperimentalDatasetAddFilesForm,
+    DatasetAddFilesForm,
 )
 
 
-class ExperimentalDatasetCreateView(
+class DatasetCreateView(
     LoginRequiredMixin, PermissionRequiredMixin,
     UserFormKwargsMixin, CreateView
 ):
     """
-    Create new ExperimentalDataset
+    Create new Dataset
     """
-    model = ExperimentalDataset
+    model = Dataset
     template_name = 'datasets/dataset_form.html'
     permission_required = 'datasets.create_dataset'
-    form_class = ExperimentalDatasetForm
+    form_class = DatasetForm
 
     def get_success_url(self):
         return reverse('datasets:addfiles', args=[self.object.pk])
 
 
-class ExperimentalDatasetListView(LoginRequiredMixin, ListView):
+class DatasetListView(LoginRequiredMixin, ListView):
     """
     List all user's datasets
     """
-    model = ExperimentalDataset
+    model = Dataset
     template_name = 'datasets/dataset_list.html'
 
     def get_queryset(self):
-        return ExperimentalDataset.objects.filter(author=self.request.user)
+        return Dataset.objects.filter(author=self.request.user)
 
 
-class ExperimentalDatasetView(VisibilityMixin, DetailView):
+class DatasetView(VisibilityMixin, DetailView):
     """
-    View an ExperimentalDataset
+    View an Dataset
 
     """
-    model = ExperimentalDataset
+    model = Dataset
     context_object_name = 'dataset'
     template_name = 'datasets/dataset_detail.html'
 
 
-class ExperimentalDatasetAddFilesView(
+class DatasetAddFilesView(
     LoginRequiredMixin, FormMixin, DetailView
 ):
     """
-    Add files to a new ExperimentalDataset.
+    Add files to a new Dataset.
     """
     context_object_name = 'dataset'
     template_name = 'datasets/dataset_newversion.html'
-    form_class = ExperimentalDatasetAddFilesForm
-    model = ExperimentalDataset
+    form_class = DatasetAddFilesForm
+    model = Dataset
 
     def post(self, request, *args, **kwargs):
         dataset = self.object = self.get_object()
@@ -150,11 +150,11 @@ class ExperimentalDatasetAddFilesView(
             reverse('datasets:detail', args=[dataset.id]))
 
 
-# class ExperimentalDatasetDeleteView(UserPassesTestMixin, DeleteView):
+# class DatasetDeleteView(UserPassesTestMixin, DeleteView):
 #     """
-#     Delete an ExperimentalDataset
+#     Delete an Dataset
 #     """
-#     model = ExperimentalDataset
+#     model = Dataset
 #     # Raise a 403 error rather than redirecting to login,
 #     # if the user doesn't have delete permissions.
 #     raise_exception = True
@@ -201,7 +201,7 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
     """
     Serve up json view of files in a dataset
     """
-    model = ExperimentalDataset
+    model = Dataset
 
     def _file_json(self, archive_file):
         dataset = self.object
@@ -251,7 +251,7 @@ class DatasetFileDownloadView(VisibilityMixin, SingleObjectMixin, View):
     """
     Download an individual file from a dataset
     """
-    model = ExperimentalDataset
+    model = Dataset
 
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
@@ -273,7 +273,7 @@ class DatasetArchiveView(VisibilityMixin, SingleObjectMixin, View):
     """
     Download an archive of the dataset files
     """
-    model = ExperimentalDataset
+    model = Dataset
 
     def get(self, request, *args, **kwargs):
         dataset = self.get_object()

@@ -11,19 +11,19 @@ urlpatterns = [
         '^'
         '(?P<subset>mine|public|all)?'
         '$',
-        views.ExperimentalDatasetListView.as_view(),
+        views.DatasetListView.as_view(),
         name='list',
     ),
 
     url(
         r'^new$',
-        views.ExperimentalDatasetCreateView.as_view(),
+        views.DatasetCreateView.as_view(),
         name='new',
     ),
 
     url(
         r'^(?P<pk>\d+)/addfiles$',
-        views.ExperimentalDatasetAddFilesView.as_view(),
+        views.DatasetAddFilesView.as_view(),
         name='addfiles',
     ),
 
@@ -35,7 +35,7 @@ urlpatterns = [
 
     url(
         r'^(?P<pk>\d+)(?:/%s)?$' % _FILEVIEW,
-        views.ExperimentalDatasetView.as_view(),
+        views.DatasetView.as_view(),
         name='detail',
     ),
 
@@ -59,7 +59,7 @@ urlpatterns = [
 
     # url(
     #     r'^(?P<pk>\d+)/delete$',
-    #     views.ExperimentalDatasetDeleteView.as_view(),
+    #     views.DatasetDeleteView.as_view(),
     #     name='delete',
     # ),
     #

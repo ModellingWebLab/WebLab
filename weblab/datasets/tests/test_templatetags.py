@@ -1,7 +1,7 @@
 import pytest
 
 import datasets.templatetags.datasets as dataset_tags
-from datasets.models import ExperimentalDataset
+from datasets.models import Dataset
 
 from core import recipes
 

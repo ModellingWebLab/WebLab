@@ -31,6 +31,6 @@ cached_entity = Recipe('CachedEntity')
 cached_entity_version = Recipe('CachedEntityVersion')
 cached_entity_tag = Recipe('CachedEntityTag')
 
-dataset = Recipe('ExperimentalDataset',
+dataset = Recipe('Dataset',
                  name=seq('mydataset'),
                  protocol=foreign_key(protocol))

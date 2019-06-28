@@ -2,7 +2,7 @@ import pytest
 from django.db.utils import IntegrityError
 
 from core import recipes
-from datasets.models import ExperimentalDataset
+from datasets.models import Dataset
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedEntity
 from repocache.populate import populate_entity_cache
@@ -34,7 +34,7 @@ class TestDatasetNameUniqueness:
         recipes.dataset.make(author=user, name='mydataset')
 
         with pytest.raises(IntegrityError):
-            ExperimentalDataset.objects.create(author=user, name='mydataset')
+            Dataset.objects.create(author=user, name='mydataset')
 
     def test_different_users_can_have_same_named_model(self, user, other_user):
         recipes.dataset.make(author=user, name='mydataset')

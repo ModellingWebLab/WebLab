@@ -15,13 +15,13 @@ from git import GitCommandError
 from guardian.shortcuts import assign_perm
 
 from core import recipes
-from datasets.models import ExperimentalDataset
+from datasets.models import Dataset
 
 
 @pytest.mark.django_db
 class TestDatasetCreation:
     def test_create_model(self, logged_in_user, client, helpers, public_protocol):
-        helpers.add_permission(logged_in_user, 'create_dataset', ExperimentalDataset)
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         response = client.post('/datasets/new', data={
             'name': 'mydataset',
             'visibility': 'public',
@@ -31,9 +31,9 @@ class TestDatasetCreation:
 
         assert response.status_code == 302
 
-        assert ExperimentalDataset.objects.count() == 1
+        assert Dataset.objects.count() == 1
 
-        dataset = ExperimentalDataset.objects.first()
+        dataset = Dataset.objects.first()
         assert response.url == '/datasets/%d/addfiles' % dataset.id
         assert dataset.name == 'mydataset'
         assert dataset.author == logged_in_user
@@ -48,7 +48,7 @@ class TestDatasetCreation:
 
 
 @pytest.mark.django_db
-class TestExperimentalDatasetView:
+class TestDatasetView:
     def test_view_dataset(self, client, logged_in_user, helpers):
         protocol = recipes.protocol.make()
         dataset = recipes.dataset.make(name='mydataset', visibility='public', protocol=protocol)

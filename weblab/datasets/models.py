@@ -13,7 +13,7 @@ from core.models import VisibilityModelMixin
 from entities.models import ModelEntity, ProtocolEntity
 
 
-class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
+class Dataset(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
     """Prototyping class for experimental datasets
     """
     name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
@@ -25,7 +25,7 @@ class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Mo
     class Meta:
         ordering = ['name']
         unique_together = ('name', 'author')
-        verbose_name_plural = 'ExperimentalDatasets'
+        verbose_name_plural = 'Datasets'
 
         permissions = (
             ('create_dataset', 'Can create experimental datasets'),
@@ -68,7 +68,7 @@ class ExperimentalDataset(UserCreatedModelMixin, VisibilityModelMixin, models.Mo
 
 
 class DatasetFile(models.Model):
-    dataset = models.ForeignKey(ExperimentalDataset, related_name='file_uploads')
+    dataset = models.ForeignKey(Dataset, related_name='file_uploads')
     upload = models.FileField(upload_to='uploads')
     original_name = models.CharField(max_length=255)
 

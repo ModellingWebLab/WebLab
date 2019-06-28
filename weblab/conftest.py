@@ -11,7 +11,7 @@ from core import recipes
 from entities.models import Entity
 from repocache.models import CachedEntityVersion
 from repocache.populate import populate_entity_cache
-from datasets.models import ExperimentalDataset
+from datasets.models import Dataset
 
 
 class Helpers:
@@ -264,7 +264,7 @@ def moderator(user, helpers):
 
 @pytest.fixture
 def dataset_creator(user, helpers):
-    helpers.add_permission(user, 'create_dataset', ExperimentalDataset)
+    helpers.add_permission(user, 'create_dataset', Dataset)
     return user
 
 
