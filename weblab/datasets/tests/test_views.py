@@ -1,5 +1,7 @@
 import io
 import json
+import shutil
+from pathlib import Path
 import uuid
 import zipfile
 from io import BytesIO
@@ -287,6 +289,67 @@ class TestFileUpload:
         response = client.post('/datasets/%d/upload-file' % dataset.pk, {})
 
         assert response.status_code == 400
+
+@pytest.fixture
+def archive_file_path():
+    return str(Path(__file__).absolute().parent.joinpath('./data1.zip'))
+
+
+@pytest.mark.django_db
+class TestDatasetJsonView:
+    def test_dataset_json(self, client, logged_in_user, helpers):
+        dataset = recipes.dataset.make(author=logged_in_user)
+
+        response = client.get('/datasets/%d/files.json' % dataset.pk)
+
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        ver = data['version']
+
+        assert ver['id'] == dataset.id
+        assert ver['author'] == 'Test User'
+        assert ver['visibility'] == dataset.visibility
+        assert ver['name'] == dataset.name
+        assert (
+            parse_datetime(ver['created']).replace(microsecond=0) ==
+            dataset.created_at.replace(microsecond=0)
+        )
+        assert ver['files'] == []
+        assert ver['numFiles'] == 0
+        assert (ver['download_url'] ==
+                '/datasets/%d/archive' % (dataset.pk))
+
+    # def test_dataset_file_json(self, client, logged_in_user, helpers):
+    #     dataset = recipes.dataset.make(author=logged_in_user)
+    #     if not dataset.abs_path:
+    #         dataset.abs_path.mkdir()
+    #     shutil.copyfile(archive_file_path, str(dataset.archive_path))
+    #
+    #     response = client.get('/datasets/%d/files.json' % dataset.pk)
+    #
+    #     assert response.status_code == 200
+    #
+    #     data = json.loads(response.content.decode())
+    #     ver = data['version']
+    #
+    #     file_ = ver['files'][0]
+    #     # assert file_['id'] == file_['name'] == 'file1.txt'
+    #     # assert file_['filetype'] == 'TXTPROTOCOL'
+    #     # assert file_['size'] == 15
+    #     # assert (file_['url'] ==
+    #     #         '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, version.hexsha))
+    #     #
+    #     # if can_create_expt:
+    #     #     assert len(ver['planned_experiments']) == 1
+    #     #     planned = ver['planned_experiments'][0]
+    #     #     assert planned['model'] == model.pk
+    #     #     assert planned['model_version'] == version.hexsha
+    #     #     assert planned['protocol'] == planned_expt.protocol.pk
+    #     #     assert planned['protocol_version'] == str(planned_expt.protocol_version)
+    #     # else:
+    #     #     assert len(ver['planned_experiments']) == 0
+    #     #
 
 
 # @pytest.mark.django_db
