@@ -296,8 +296,8 @@ class TestEntityVersionChangeVisibilityView:
 
 @pytest.mark.django_db
 class TestEntityVersionJsonView:
-    @pytest.mark.parametrize("can_create_expt", [True, False])
-    def test_version_json(self, client, logged_in_user, helpers, can_create_expt):
+    @pytest.mark.parametrize("can_create_expt,is_parsed_ok", [(True, True), (False, False)])
+    def test_version_json(self, client, logged_in_user, helpers, can_create_expt, is_parsed_ok):
         if can_create_expt:
             helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
         model = recipes.model.make(name='mymodel', author__full_name='model author')
@@ -309,6 +309,9 @@ class TestEntityVersionJsonView:
             protocol=recipes.protocol.make(), protocol_version=uuid.uuid4(),
         )
         planned_expt.save()
+        cached_version = model.repocache.get_version(version.hexsha)
+        cached_version.parsed_ok = is_parsed_ok
+        cached_version.save()
 
         response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
 
@@ -327,6 +330,7 @@ class TestEntityVersionJsonView:
             version.committed_at
         )
         assert ver['version'] == 'v1'
+        assert ver['parsedOk'] == is_parsed_ok
         assert len(ver['files']) == ver['numFiles'] == 1
         assert ver['url'] == '/entities/models/%d/versions/%s' % (model.pk, version.hexsha)
         assert (ver['download_url'] ==
