@@ -590,7 +590,7 @@ class TestEntityComparisonView:
     def test_no_valid_versions(self, client, logged_in_user):
         model = recipes.model.make()
         response = client.get(
-            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk+1, model.pk)
+            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk + 1, model.pk)
         )
 
         assert response.status_code == 200
@@ -1874,7 +1874,6 @@ class TestEntityDiffView:
         data = json.loads(response.content.decode())
         assert data['error']
 
-
     def test_cannot_diff_entities_with_no_access(self, client, helpers):
         model = recipes.model.make()
         v1 = helpers.add_version(model, visibility='public')
@@ -1927,7 +1926,6 @@ class TestEntityDiffView:
         assert data['getUnixDiff']['responseText'] == (
             "Couldn't compute unix diff (something went wrong)")
 
-
     @patch('requests.post')
     def test_bives_diff(self, mock_post, client, helpers):
         model = recipes.model.make()
@@ -1958,7 +1956,6 @@ class TestEntityDiffView:
                     'reportHtml',
                     'xmlDiff',
                 ]})
-
 
         assert response.status_code == 200
         data = json.loads(response.content.decode())
@@ -2009,6 +2006,7 @@ class TestEntityDiffView:
         data = json.loads(response.content.decode())
         assert 'response' not in data['getBivesDiff']
         assert data['getBivesDiff']['responseText'] == 'error-message'
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("recipe,url", [
