@@ -235,6 +235,20 @@ class Entity(UserCreatedModelMixin, models.Model):
             user
         )
 
+    def is_parsed_ok(self, version):
+        """Whether the files comprising this entity version are syntactically correct.
+
+        Only protocols are checked at present, on upload, and the result cached in the DB.
+
+        :param version: a `CachedEntityVersion` instance or sha referencing a version
+        """
+        from repocache.models import CachedEntityVersion
+        if isinstance(version, CachedEntityVersion):
+            ok = version.parsed_ok
+        else:
+            ok = self.repocache.get_version(version).parsed_ok
+        return ok
+
 
 class EntityManager(models.Manager):
     def get_queryset(self):

@@ -1397,6 +1397,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface initially
         assert not version.interface.exists()
+        assert not protocol.is_parsed_ok(version)
 
         # Submit the fake task response
         response = client.post('/entities/callback/check-proto', json.dumps({
@@ -1415,6 +1416,10 @@ class TestCheckProtocolCallbackView:
         assert version.interface.get().term == ''
         assert version.interface.get().optional
 
+        # Check parsing is treated as having happened OK
+        version.refresh_from_db()
+        assert protocol.is_parsed_ok(version)
+
         # Check submitting a new task is now a no-op
         from entities.processing import submit_check_protocol_task
         submit_check_protocol_task(protocol, hexsha)
@@ -1430,6 +1435,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface initially
         assert not version.interface.exists()
+        assert not protocol.is_parsed_ok(version)
 
         # Submit the fake task response
         req = ['r1', 'r2']
@@ -1444,6 +1450,10 @@ class TestCheckProtocolCallbackView:
 
         # Check the analysis task has been deleted
         assert not AnalysisTask.objects.filter(id=task_id).exists()
+
+        # Check parsing is treated as having happened OK
+        version.refresh_from_db()
+        assert protocol.is_parsed_ok(version)
 
         # Check the terms are as expected
         assert version.interface.count() == len(req) + len(opt)
@@ -1464,6 +1474,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface or error file initially
         assert not version.interface.exists()
+        assert not protocol.is_parsed_ok(version)
         commit = protocol.repo.get_commit(hexsha)
         assert 'errors.txt' not in commit.filenames
 
@@ -1478,6 +1489,10 @@ class TestCheckProtocolCallbackView:
 
         # Check the analysis task has been deleted
         assert not AnalysisTask.objects.filter(id=task_id).exists()
+
+        # Check parsing is not OK this time
+        version.refresh_from_db()
+        assert not protocol.is_parsed_ok(version)
 
         # Check there's an ephemeral error file
         commit = protocol.repo.get_commit(hexsha)
