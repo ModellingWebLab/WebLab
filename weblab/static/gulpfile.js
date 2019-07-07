@@ -4,7 +4,7 @@ var watchify = require('watchify');
 var browserify = require('browserify');
 var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
-var gutil = require('gulp-util');
+var log = require('fancy-log');
 var sourcemaps = require('gulp-sourcemaps');
 var assign = require('lodash.assign');
 
@@ -52,13 +52,13 @@ gulp.task('js', bundle.bind(null, browserified()));
  
 
 gulp.task('watch', function () {
-  gulp.watch(config.sass.src, ['sass']);
+  gulp.watch(config.sass.src, gulp.series('sass'));
   // subscribe to JS file updates.
   // bundle() must be called in order to start emitting update events
   bundle(watchified);
   watchified.on('update', bundle.bind(null, watchified));
-  watchified.on('log', gutil.log);
+  watchified.on('log', log);
 });
 
 
-gulp.task('default', ['sass', 'js']);
+gulp.task('default', gulp.series(gulp.parallel('sass', 'js')));
