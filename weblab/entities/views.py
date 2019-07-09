@@ -236,6 +236,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
                 'created': commit.committed_at,
                 'name': obj.name,
                 'version': obj.repo.get_name_for_commit(commit.hexsha),
+                'parsedOk': obj.is_parsed_ok(commit.hexsha),
                 'files': files,
                 'numFiles': len(files),
                 'planned_experiments': planned_experiments,

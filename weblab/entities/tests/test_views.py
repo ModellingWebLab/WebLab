@@ -296,8 +296,8 @@ class TestEntityVersionChangeVisibilityView:
 
 @pytest.mark.django_db
 class TestEntityVersionJsonView:
-    @pytest.mark.parametrize("can_create_expt", [True, False])
-    def test_version_json(self, client, logged_in_user, helpers, can_create_expt):
+    @pytest.mark.parametrize("can_create_expt,is_parsed_ok", [(True, True), (False, False)])
+    def test_version_json(self, client, logged_in_user, helpers, can_create_expt, is_parsed_ok):
         if can_create_expt:
             helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
         model = recipes.model.make(name='mymodel', author__full_name='model author')
@@ -309,6 +309,9 @@ class TestEntityVersionJsonView:
             protocol=recipes.protocol.make(), protocol_version=uuid.uuid4(),
         )
         planned_expt.save()
+        cached_version = model.repocache.get_version(version.hexsha)
+        cached_version.parsed_ok = is_parsed_ok
+        cached_version.save()
 
         response = client.get('/entities/models/%d/versions/latest/files.json' % model.pk)
 
@@ -327,6 +330,7 @@ class TestEntityVersionJsonView:
             version.committed_at
         )
         assert ver['version'] == 'v1'
+        assert ver['parsedOk'] == is_parsed_ok
         assert len(ver['files']) == ver['numFiles'] == 1
         assert ver['url'] == '/entities/models/%d/versions/%s' % (model.pk, version.hexsha)
         assert (ver['download_url'] ==
@@ -586,7 +590,7 @@ class TestEntityComparisonView:
     def test_no_valid_versions(self, client, logged_in_user):
         model = recipes.model.make()
         response = client.get(
-            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk+1, model.pk)
+            '/entities/models/compare/%d:nocommit/%d:nocommit' % (model.pk + 1, model.pk)
         )
 
         assert response.status_code == 200
@@ -1397,6 +1401,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface initially
         assert not version.interface.exists()
+        assert not protocol.is_parsed_ok(version)
 
         # Submit the fake task response
         response = client.post('/entities/callback/check-proto', json.dumps({
@@ -1415,6 +1420,10 @@ class TestCheckProtocolCallbackView:
         assert version.interface.get().term == ''
         assert version.interface.get().optional
 
+        # Check parsing is treated as having happened OK
+        version.refresh_from_db()
+        assert protocol.is_parsed_ok(version)
+
         # Check submitting a new task is now a no-op
         from entities.processing import submit_check_protocol_task
         submit_check_protocol_task(protocol, hexsha)
@@ -1430,6 +1439,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface initially
         assert not version.interface.exists()
+        assert not protocol.is_parsed_ok(version)
 
         # Submit the fake task response
         req = ['r1', 'r2']
@@ -1444,6 +1454,10 @@ class TestCheckProtocolCallbackView:
 
         # Check the analysis task has been deleted
         assert not AnalysisTask.objects.filter(id=task_id).exists()
+
+        # Check parsing is treated as having happened OK
+        version.refresh_from_db()
+        assert protocol.is_parsed_ok(version)
 
         # Check the terms are as expected
         assert version.interface.count() == len(req) + len(opt)
@@ -1464,6 +1478,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface or error file initially
         assert not version.interface.exists()
+        assert not protocol.is_parsed_ok(version)
         commit = protocol.repo.get_commit(hexsha)
         assert 'errors.txt' not in commit.filenames
 
@@ -1478,6 +1493,10 @@ class TestCheckProtocolCallbackView:
 
         # Check the analysis task has been deleted
         assert not AnalysisTask.objects.filter(id=task_id).exists()
+
+        # Check parsing is not OK this time
+        version.refresh_from_db()
+        assert not protocol.is_parsed_ok(version)
 
         # Check there's an ephemeral error file
         commit = protocol.repo.get_commit(hexsha)
@@ -1855,7 +1874,6 @@ class TestEntityDiffView:
         data = json.loads(response.content.decode())
         assert data['error']
 
-
     def test_cannot_diff_entities_with_no_access(self, client, helpers):
         model = recipes.model.make()
         v1 = helpers.add_version(model, visibility='public')
@@ -1908,7 +1926,6 @@ class TestEntityDiffView:
         assert data['getUnixDiff']['responseText'] == (
             "Couldn't compute unix diff (something went wrong)")
 
-
     @patch('requests.post')
     def test_bives_diff(self, mock_post, client, helpers):
         model = recipes.model.make()
@@ -1939,7 +1956,6 @@ class TestEntityDiffView:
                     'reportHtml',
                     'xmlDiff',
                 ]})
-
 
         assert response.status_code == 200
         data = json.loads(response.content.decode())
@@ -1990,6 +2006,7 @@ class TestEntityDiffView:
         data = json.loads(response.content.decode())
         assert 'response' not in data['getBivesDiff']
         assert data['getBivesDiff']['responseText'] == 'error-message'
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("recipe,url", [

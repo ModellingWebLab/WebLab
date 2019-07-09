@@ -76,6 +76,10 @@ class CachedEntityVersion(VisibilityModelMixin):
     entity = models.ForeignKey(CachedEntity, on_delete=models.CASCADE, related_name='versions')
     sha = models.CharField(max_length=40)
     timestamp = models.DateTimeField()
+    parsed_ok = models.BooleanField(
+        default=False,
+        help_text='Whether this entity version has been verified as syntactically correct'
+    )
 
     class Meta:
         unique_together = ['entity', 'sha']
