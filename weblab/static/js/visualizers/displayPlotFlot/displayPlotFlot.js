@@ -3,7 +3,7 @@ var common = require('../../expt_common.js');
 
 var choicesDivId = 'choices',
 	resetButtonDivId = 'flot-buttons-div',
-	colouredSpanIdPrefix = 'span',
+	colouredSpanIdPrefix = 'legend-colour-span-',
 	legendDivId = 'legend',
 	tooltipId = 'flotTooltip',
 	plottedGraph = {}, // TODO: probably safer if this is an instance property!
@@ -388,27 +388,41 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
             thisFile.keyFile.getContents (this);
             return;
         }
+        this.setUp = true;
+        this.drawPlot();
+    }
+};
 
+contentFlotPlot.prototype.drawPlot = function ()
+{
+    var thisFile = this.file, thisFileId = thisFile.id, thisDiv = this.div;
+    $(thisDiv).empty();
         var styleLinespointsOrPoints = isStyleLinespointsOrPoints(thisFile.linestyle);
         var csvData = styleLinespointsOrPoints ? common.getCSVColumnsNonDownsampled (thisFile) :
                                                  common.getCSVColumnsDownsampled (thisFile);
         var keyVals = common.getKeyValues(thisFile, csvData.length);
 
+        var data_file = $('#dataset-link').data('file');
+        if (data_file)
+        {
+          // Overlay expt'l data
+          var data_cols = styleLinespointsOrPoints ? common.getCSVColumnsNonDownsampled(data_file) :
+                                                     common.getCSVColumnsDownsampled(data_file),
+              data_key = common.getKeyValues(data_file, data_cols.length);
+          data_cols.shift(); // Remove t
+          data_key.shift();
+          csvData = csvData.concat(data_cols);
+          keyVals = keyVals.concat(data_key);
+          console.log(keyVals);
+        }
+
         var datasets = {};
         for (var i = 1; i < csvData.length; i++)
         {
-            var curData = [], label = "line " + i;
+            var curData = [];
             for (var j = 0; j < csvData[i].length; j++)
                 curData.push ([csvData[i][j].x, csvData[i][j].y]);
-
-            if (keyVals.length == csvData.length)
-            {
-                if (thisFile.keyName)
-                    label = thisFile.keyName + " = " + keyVals[i] + " " + thisFile.keyUnits;
-                else
-                    label = keyVals[i];
-            }
-            datasets["line" + i] = {label: label, data: curData};
+            datasets["line" + i] = {label: keyVals[i], data: curData};
         }
 
         // Some of the plots won't come from specified plots, so these are missing.
@@ -474,7 +488,6 @@ contentFlotPlot.prototype.getContentsCallback = function (succ)
 
         // Save data for export if user requests it
         common.allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
-    }
 };
 
 contentFlotPlot.prototype.show = function ()
@@ -483,6 +496,12 @@ contentFlotPlot.prototype.show = function ()
     //console.log (this.div);
     if (!this.setUp)
         this.file.getContents (this);
+};
+
+contentFlotPlot.prototype.redraw = function ()
+{
+    if (this.setUp)
+        this.drawPlot();
 };
 
 function contentFlotPlotComparer (file, div)
@@ -616,10 +635,8 @@ contentFlotPlotComparer.prototype.showContents = function ()
                 var plotLabelStripText = $.data(document.body, 'plotLabelStripText');
                 if (plotLabelStripText)
                     label = label.replace(plotLabelStripText, "");
-                if (keyVals.length == csvData.length)
-                    label += ", " + eachCSVData.file.keyName + " = " + keyVals[i] + " " + eachCSVData.file.keyUnits;
-                else if (csvData.length > 2)
-                    label += " line " + i;
+                if (csvData.length > 2 || keyVals[i].substr(0, 5) !== "line ")
+                    label += ", " + keyVals[i];
                 datasets[key] = {label: label, data: curData, color: curColor};
 
                 var colouredSpan = $('<span />').attr('id', colouredSpanIdPrefix + curColor)
@@ -673,6 +690,12 @@ contentFlotPlotComparer.prototype.show = function ()
     {
         this.showContents ();
     }
+};
+
+contentFlotPlotComparer.prototype.redraw = function ()
+{
+    if (this.setUp)
+        this.showContents();
 };
 
 

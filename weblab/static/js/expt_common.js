@@ -290,6 +290,7 @@ function getCSV (file)
 
 /**
  * Extract key data for a file if available.
+ * If not, generates default labels 'line 1' etc.
  *
  * @param file  the file to get key data for
  * @param numTraces  the number of values to expect in a key vector
@@ -301,8 +302,15 @@ function getKeyValues(file, numTraces)
     {
         var keyData = getCSVColumns(file.keyFile);
         if (keyData.length > 0)
+        {
             for (var i=0; i<keyData[0].length; i++)
-                keyVals.push(keyData[0][i]);
+            {
+                if (file.keyName)
+                    keyVals.push(file.keyName + " = " + keyData[0][i] + " " + file.keyUnits);
+                else
+                    keyVals.push(keyData[0][i]);
+            }
+        }
         if (keyVals.length != numTraces)
         	console.log("Ignoring key data of wrong length (key length=" + keyVals.length + "; number of traces=" + numTraces + ")");
     }
@@ -312,6 +320,12 @@ function getKeyValues(file, numTraces)
         file.xAxes = file.xAxes || keyVals[0];
         if (keyVals.length == 2)
             file.yAxes = file.yAxes || keyVals[1];
+    }
+    if (keyVals.length != numTraces)
+    {
+        // Default labels
+        for (var i=0; i<numTraces; i++)
+            keyVals.push("line " + i);
     }
     return keyVals;
 }

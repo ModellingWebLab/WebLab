@@ -322,7 +322,7 @@ class TestEntityVersionJsonView:
 
         assert ver['name'] == 'mymodel'
         assert ver['id'] == version.hexsha
-        assert ver['author'] == 'model author'
+        assert ver['author'] == 'author'  # Commit author not entity author
         assert ver['entityId'] == model.pk
         assert ver['visibility'] == 'public'
         assert (

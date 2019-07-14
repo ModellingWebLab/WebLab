@@ -8,7 +8,7 @@ register = template.Library()
 @register.simple_tag(takes_context=True)
 def can_create_dataset(context):
     user = context['user']
-    return user.has_perm('datasets.create_dataset_experiment')
+    return user.has_perm('datasets.create_dataset')
 
 
 @register.filter
