@@ -26,6 +26,43 @@ function init() {
 
   var visualizers = {};
 
+  // Handle selecting a linked dataset to overlay
+  function load_linked_dataset(dataset_json_url) {
+    if (dataset_json_url) {
+      $.getJSON(dataset_json_url, function(json) {
+        dataset_json = json.version;
+        $('#dataset-link').data({json: dataset_json, file: null});
+        for (var i=0; i<dataset_json.files.length; i++)
+        {
+          if (dataset_json.files[i].name.endsWith('.csv'))
+          {
+            $.get(dataset_json.files[i].url, function(data) {
+              dataset_file = {contents: data};
+              utils.parseCsvRaw(dataset_file);
+              $('#dataset-link').data('file', dataset_file);
+              var viz = $('#dataset-link').data("viz");
+              console.log(viz);
+              if (viz) viz.redraw();
+            });
+            break;
+          }
+        }
+      });
+    }
+    else
+    {
+      $('#dataset-link').data({json: null, file: null});
+      var viz = $('#dataset-link').data("viz");
+      console.log(viz);
+      if (viz) viz.redraw();
+    }
+  }
+  // Load initial dataset, if any
+  load_linked_dataset($('#dataset-link').val());
+  // Load dataset on select change
+  $('#dataset-link').on('change', function () {
+    load_linked_dataset(this.value);
+  });
 
   function updateVisibility (jsonObject, actionIndicator) {
     actionIndicator.innerHTML = "<img src='"+staticPath+"/res/img/loading2-new.gif' alt='loading' />";
@@ -282,7 +319,7 @@ function init() {
 
     //console.log(v);
     var dv = doc.version;
-    dv.name.text("<small>Version: </small>" + v.name + " ");
+    dv.name.html("<small>Version: </small>" + v.name + " ");
 
     // If an experiment, show indication of status, perhaps including a note that we don't expect any results yet!
     //if (entityType == 'experiment')
@@ -698,6 +735,8 @@ function init() {
       $(df.display).empty();
       df.display.appendChild (f.div[pluginName]);
       f.viz[pluginName].show ();
+      // Let dataset link know we've initialised a plot
+      $('#dataset-link').data("viz", f.viz[pluginName]);
 
       // Show parent div of the file display, and scroll there
       doc.version.filedetails.style.display = "block";
@@ -706,6 +745,7 @@ function init() {
     }
     else {
       doc.version.filedetails.style.display = "none";
+      $('#dataset-link').data("viz", null);
     }
   }
 
@@ -805,7 +845,6 @@ function init() {
       filedetails : document.getElementById("entityversionfiledetails"),
       experimentlist: document.getElementById("entityexperimentlist"),
       experimentpartners: document.getElementById("entityexperimentlistpartners"),
-      switcher: document.getElementById("experiment-files-switcher"),
       visibility: document.getElementById("versionVisibility"),
       visibilityAction : document.getElementById("versionVisibilityAction"),
       deleteBtn: document.getElementById("deleteVersion"),

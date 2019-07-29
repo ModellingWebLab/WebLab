@@ -104,6 +104,8 @@ def process_check_protocol_callback(data):
         if 'required' not in data or 'optional' not in data:
             return {'error': 'missing terms'}
         cached_version = entity.repocache.get_version(version)
+        cached_version.parsed_ok = True
+        cached_version.save()
         terms = [
             ProtocolInterface(protocol_version=cached_version, term=term, optional=False)
             for term in data['required']
@@ -132,6 +134,8 @@ def process_check_protocol_callback(data):
             commit.add_ephemeral_file(ERROR_FILE_NAME, content)
         # Don't try to analyse this protocol again
         cached_version = entity.repocache.get_version(version)
+        cached_version.parsed_ok = False
+        cached_version.save()
         ProtocolInterface(protocol_version=cached_version, term='', optional=True).save()
 
     return {}

@@ -27,6 +27,7 @@
       <small>
         Created <time id="entityversiontime">{{ version.created_at }}</time>
         by <em id="entityversionauthor">{{ version.author.full_name }}</em>.
+        {% if version.finished_at %}Took {{ version.created_at|timesince:version.finished_at }}.{% endif %}
         Visibility: <span title="This is derived from the corresponding model version and protocol version visibilities">{{ version.visibility }}</span>
         <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
         <span id="exptStatus"></span>
@@ -68,12 +69,17 @@
       </p>
     </div>
 
-    <div id="experiment-files-switcher">
-      <button style="float:left;" id="experiment-files-switcher-files" title="View files associated with this ${entity.type}">Files</button>
-      <button style="margin-left:5px; float:left;" id="experiment-files-switcher-exp" title="View &amp; compare experiments using this ${entity.type}">Compare ${otherType}s</button>
-      <br/>
+    {% if experiment.protocol.protocol_experimental_datasets.exists %}
+    <div id="dataset-link-div">
+      <span>Overlay a dataset linked to this protocol:</span>
+      <select id="dataset-link">
+        <option selected value="">None</option>
+        {% for dataset in experiment.protocol.protocol_experimental_datasets.all %}
+          <option value="{% url 'datasets:version_json' dataset.id %}">{{ dataset.name }}</option>
+        {% endfor %}
+      </select>
     </div>
-
+    {% endif %}
 
     <div id="entityversiondetails">
       <div id="entityversionfiledetails">

@@ -37,6 +37,11 @@ class Entity(UserCreatedModelMixin, models.Model):
 
     name = models.CharField(validators=[MinLengthValidator(2)], max_length=255)
 
+    is_fitting_spec = models.BooleanField(
+        default=False,
+        help_text="This protocol is a parameter fitting specification",
+    )
+
     class Meta:
         ordering = ['name']
         unique_together = ('entity_type', 'name', 'author')
@@ -234,6 +239,20 @@ class Entity(UserCreatedModelMixin, models.Model):
             self.viewers,
             user
         )
+
+    def is_parsed_ok(self, version):
+        """Whether the files comprising this entity version are syntactically correct.
+
+        Only protocols are checked at present, on upload, and the result cached in the DB.
+
+        :param version: a `CachedEntityVersion` instance or sha referencing a version
+        """
+        from repocache.models import CachedEntityVersion
+        if isinstance(version, CachedEntityVersion):
+            ok = version.parsed_ok
+        else:
+            ok = self.repocache.get_version(version).parsed_ok
+        return ok
 
 
 class EntityManager(models.Manager):

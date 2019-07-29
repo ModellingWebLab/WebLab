@@ -243,12 +243,16 @@ p.right
 
 form {
   label {
-    display: block;
+    display: inline;
   }
   input {
+    display: block;
     &[type=text], &[type=email], &[type=password] {
       width: 20em;
     }
+  }
+  textarea {
+    display: block;
   }
   small, .helptext, p + ul, td > ul {
     color: #aaa;

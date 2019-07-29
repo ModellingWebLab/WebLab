@@ -24,7 +24,7 @@ from django.http import (
     JsonResponse,
 )
 from django.core.exceptions import PermissionDenied
-from django.db.models import F, Q
+from django.db.models import Count, F, Q
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
@@ -230,12 +230,13 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
         return JsonResponse({
             'version': {
                 'id': commit.hexsha,
-                'author': obj.author.full_name,
+                'author': commit.author.name,
                 'entityId': obj.id,
                 'visibility': obj.get_version_visibility(commit.hexsha),
                 'created': commit.committed_at,
                 'name': obj.name,
                 'version': obj.repo.get_name_for_commit(commit.hexsha),
+                'parsedOk': obj.is_parsed_ok(commit.hexsha),
                 'files': files,
                 'numFiles': len(files),
                 'planned_experiments': planned_experiments,
@@ -268,7 +269,11 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
         experiments = Experiment.objects.filter(**{
             entity_type: entity.pk,
             ('%s_version' % entity_type): commit.hexsha,
-        }).select_related(other_type).order_by(other_type, '-created_at')
+        }).annotate(
+            version_count=Count('versions'),
+        ).filter(
+            version_count__gt=0,
+        ).select_related(other_type).order_by(other_type, '-created_at')
 
         experiments = [
             exp for exp in experiments

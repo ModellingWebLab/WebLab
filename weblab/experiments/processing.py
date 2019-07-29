@@ -6,6 +6,7 @@ import requests
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.urlresolvers import reverse
+from django.utils.timezone import now
 
 from .emails import send_experiment_finished_email
 from .models import Experiment, ExperimentVersion, RunningExperiment
@@ -94,6 +95,8 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
         'password': settings.CHASTE_PASSWORD,
         'isAdmin': user.is_staff,
     }
+    if protocol.is_fitting_spec:
+        body['dataset'] = body['fittingSpec'] = body['protocol']
 
     try:
         response = requests.post(settings.CHASTE_URL, body)
@@ -179,6 +182,8 @@ def process_callback(data, files):
     exp.return_text = data.get('returnmsg') or 'finished'
     if exp.is_running:
         exp.return_text = 'running'
+    if exp.is_finished:
+        exp.finished_at = now()
 
     exp.save()
 

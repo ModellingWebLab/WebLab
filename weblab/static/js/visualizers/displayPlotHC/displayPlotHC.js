@@ -88,10 +88,33 @@ HCPlotter.prototype.getContentsCallback = function (succ)
             thisFile.keyFile.getContents (this);
             return;
         }
+        this.setUp = true;
+        this.drawPlot();
+    }
+};
 
+HCPlotter.prototype.drawPlot = function ()
+{
+    var thisFile = this.file;
+    $(this.div).empty();
 		var csvData = (thisFile.linestyle == "linespoints" || thisFile.linestyle == "points") ? common.getCSVColumnsNonDownsampled (thisFile) : common.getCSVColumnsDownsampled (thisFile);
 		var keyVals = common.getKeyValues(thisFile, csvData.length);
-		
+
+        var data_file = $('#dataset-link').data('file');
+        if (data_file)
+        {
+          // Overlay expt'l data
+          var data_cols = (thisFile.linestyle == "linespoints" || thisFile.linestyle == "points") ?
+                             common.getCSVColumnsNonDownsampled(data_file) :
+                             common.getCSVColumnsDownsampled(data_file),
+              data_key = common.getKeyValues(data_file, data_cols.length);
+          data_cols.shift(); // Remove t
+          data_key.shift();
+          csvData = csvData.concat(data_cols);
+          keyVals = keyVals.concat(data_key);
+          console.log(keyVals);
+        }
+
 		var div = document.createElement("div");
 		var id = "hcplot-" + thisFile.id.replace(/\W/g, '');
 		div.id = id;
@@ -105,28 +128,22 @@ HCPlotter.prototype.getContentsCallback = function (succ)
                 var curData = [];
                 for (var j = 0; j < csvData[i].length; j++)
                         curData.push ([csvData[i][j].x, csvData[i][j].y]);
-                var label;
-                if (keyVals.length == csvData.length)
-                {
-                    if (thisFile.keyName)
-                        label = thisFile.keyName + " = " + keyVals[i] + " " + thisFile.keyUnits;
-                    else
-                        label = keyVals[i];
-                }
-                else
-                    label = "line " + i;
-                datasets.push ({name : label, data: curData});
+                datasets.push ({name: keyVals[i], data: curData});
         }
         
         doHcPlot(id, datasets, thisFile);
-	}
-		
 };
 
 HCPlotter.prototype.show = function ()
 {
 	if (!this.setUp)
 		this.file.getContents (this);
+};
+
+HCPlotter.prototype.redraw = function ()
+{
+    if (this.setUp)
+        this.drawPlot();
 };
 
 function HCPlotterComparer (file, div)
@@ -254,12 +271,10 @@ HCPlotterComparer.prototype.showContents = function ()
                 var plotLabelStripText = $.data(document.body, 'plotLabelStripText');
                 if (plotLabelStripText)
                     label = label.replace(plotLabelStripText, "");
-                if (keyVals.length == csvData.length)
-                    label += ", " + csvFile.keyName + " = " + keyVals[i] + " " + csvFile.keyUnits
-                else if (csvData.length > 2)
-                    label += " line " + i;
+                if (csvData.length > 2 || keyVals[i].substr(0, 5) !== "line ")
+                    label += ", " + keyVals[i];
 
-                datasets.push ({name : label, data: curData});
+                datasets.push({name: label, data: curData});
         	}
         }
         
@@ -276,6 +291,12 @@ HCPlotterComparer.prototype.show = function ()
 	}
 	else
 		this.showContents ();
+};
+
+HCPlotterComparer.prototype.redraw = function ()
+{
+    if (this.setUp)
+        this.showContents();
 };
 
 function HCPlot ()

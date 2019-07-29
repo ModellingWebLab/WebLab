@@ -436,7 +436,8 @@ function parseLocation ()
 {
   var base = $('#matrixdiv').data('base-href'),
   rest = "",
-  ret = {};
+  ret = {},
+  queryParams = (new URL(document.location)).searchParams;
 
   if (document.location.pathname.substr(0, base.length) == base)
   {
@@ -445,6 +446,14 @@ function parseLocation ()
 
   $('.showButton').removeClass("selected");
   $('.showMyButton').hide();
+  if (queryParams.has('show_fits')) {
+    ret.show_fits = true;
+    $('#showFittingExpts').addClass("selected");
+    $('#showPredictionExpts').removeClass("selected");
+  } else {
+    $('#showPredictionExpts').addClass("selected");
+    $('#showFittingExpts').removeClass("selected");
+  }
   if (rest.length > 0)
   {
     var items = rest.split("/"),
@@ -622,47 +631,79 @@ function prepareMatrix ()
 	$("#comparisonMatrix").hide();
 
   function getBaseUrl() {
-    var url = $(div).data('base-href');
+    var url = $(div).data('base-href'),
+        suffix = $('.showButton.selected').data('suffix');
     if (url.substr(-1) === '/') {
       url = url.slice(0, -1);
     }
-    return url;
+    if (suffix) {
+      url = url + '/' + suffix;
+    }
+    return url + '?';
+  }
+
+  function getFittingParams() {
+    params = {};
+    if ($('#showFittingExpts').hasClass("selected")) params['show_fits'] = true;
+    return params;
   }
 
   function hideModeratedParams(hideModels, hideProtocols) {
-    var params = {};
+    var params = getFittingParams();
     if (hideModels) params['moderated-models'] = false;
     if (hideProtocols) params['moderated-protocols'] = false;
-    return params
+    return params;
   }
 
 	// The my/public/moderated view buttons
 	$("#showModeratedExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = getBaseUrl();
+        {
+            $('.showButton').removeClass("selected");
+            $(this).addClass("selected");
+			document.location.href = getBaseUrl() + $.param(getFittingParams());
+        }
 	});
 	$("#showPublicExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = getBaseUrl() + '/public';
+        {
+            $('.showButton').removeClass("selected");
+            $(this).addClass("selected");
+			document.location.href = getBaseUrl() + $.param(getFittingParams());
+        }
 	});
 	$("#showAllExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = getBaseUrl() + '/all';
+        {
+            $('.showButton').removeClass("selected");
+            $(this).addClass("selected");
+			document.location.href = getBaseUrl() + $.param(getFittingParams());
+        }
 	});
 	$("#showMyExpts").click(function () {
 		if (!$(this).hasClass("selected"))
-			document.location.href = getBaseUrl() + '/mine';
+        {
+            $('.showButton').removeClass("selected");
+            $(this).addClass("selected");
+			document.location.href = getBaseUrl() + $.param(getFittingParams());
+        }
 	});
 	$("#showMyExptsModels").click(function () {
 		var hideModels = hiddenToggle($(this)),
 			hideProtocols = $("#showMyExptsProtocols").text().substr(0,4) == 'Show';
-			document.location.href = getBaseUrl() + '/mine?' + $.param(hideModeratedParams(hideModels, hideProtocols));
+			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols));
 	});
 	$("#showMyExptsProtocols").click(function () {
 		var hideProtocols = hiddenToggle($(this)),
 			hideModels = $("#showMyExptsModels").text().substr(0,4) == 'Show';
-			document.location.href = getBaseUrl() + '/mine?' + $.param(hideModeratedParams(hideModels, hideProtocols));
+			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols));
 	});
+
+    // Hacky fitting experiment support
+    $('.showFitsButton').click(function() {
+        $('.showFitsButton').toggleClass("selected");
+        document.location.href = getBaseUrl() + $.param(getFittingParams());
+    });
 }
 
 /**

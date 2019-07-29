@@ -437,7 +437,7 @@ function init() {
     $('#parse_status').empty();
     if (v.parsedOk)
     {
-      $('#parse_status').append('<small>All ' + entityType + ' files parsed successfully.</small>');
+      $('#parse_status').append('All files parsed successfully.');
     }
     $('#updateInterface').off('click').click(function(){
       $.post(document.location.href, JSON.stringify({'task': 'updateInterface', 'version': v.id}))
