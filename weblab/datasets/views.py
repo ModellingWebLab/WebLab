@@ -86,7 +86,7 @@ class DatasetListView(LoginRequiredMixin, ListView):
 
 class DatasetView(VisibilityMixin, DetailView):
     """
-    View an Dataset
+    View a Dataset
 
     """
     model = Dataset
@@ -152,7 +152,7 @@ class DatasetAddFilesView(
 
 # class DatasetDeleteView(UserPassesTestMixin, DeleteView):
 #     """
-#     Delete an Dataset
+#     Delete a Dataset
 #     """
 #     model = Dataset
 #     # Raise a 403 error rather than redirecting to login,
@@ -168,7 +168,7 @@ class DatasetAddFilesView(
 
 class DatasetFileUploadView(View):
     """
-    Upload files to an dataset
+    Upload files to a dataset
     """
     form_class = DatasetFileUploadForm
 
