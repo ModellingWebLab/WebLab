@@ -5,7 +5,6 @@ import pytest
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.functions import Now
-from django.core.files.uploadedfile import SimpleUploadedFile
 
 from accounts.models import User
 from core import recipes
@@ -88,24 +87,6 @@ class Helpers:
     @staticmethod
     def login(client, user):
         client.login(username=user.email, password='password')
-
-    @staticmethod
-    def add_file(dataset, dataset_file):
-        """Add a file to a dataset"""
-        if not dataset.abs_path.exists():
-            dataset.abs_path.mkdir()
-        archive = str(dataset.abs_path / dataset.archive_name)
-        open(archive, 'w').write(contents)
-        # entity.repo.add_file(in_repo_path)
-        # commit = Helpers.fake_commit(entity.repo, 'file', User(full_name='author', email='author@example.com'))
-        # if tag_name:
-        #     entity.repo.tag(tag_name)
-        # if visibility:
-        #     entity.set_visibility_in_repo(commit, visibility)
-        # if cache:
-        #     populate_entity_cache(entity)
-        return dataset
-
 
 
 @pytest.fixture
@@ -288,18 +269,8 @@ def dataset_creator(user, helpers):
 
 
 @pytest.fixture
-def dataset_no_files(dataset_creator, public_protocol):
-    dataset = recipes.dataset.make(author=dataset_creator, name='mydataset', protocol=public_protocol)
-    return dataset
-
-@pytest.fixture
-def dataset_with_file(user, public_protocol):
+def dataset_no_files(user, public_protocol):
     dataset = recipes.dataset.make(author=user, name='mydataset', protocol=public_protocol)
-    recipes.dataset_file.make(
-        dataset=dataset,
-        upload=SimpleUploadedFile('file1.csv', b'file 1'),
-        original_name='file1.csv',
-    )
     return dataset
 
 

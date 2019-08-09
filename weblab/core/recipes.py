@@ -34,6 +34,3 @@ cached_entity_tag = Recipe('CachedEntityTag')
 dataset = Recipe('Dataset',
                  name=seq('mydataset'),
                  protocol=foreign_key(protocol))
-
-dataset_file = Recipe('DatasetFile',
-                      dataset=foreign_key(dataset))
