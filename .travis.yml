@@ -15,6 +15,8 @@ before_script:
 install:
   pip install -r requirements/test.txt
 script:
-  pytest --cov=weblab --cov-config=weblab/.coveragerc weblab
+  - pytest --cov=weblab --cov-config=weblab/.coveragerc weblab
+  - flake8 weblab
+  - isort --verbose --check-only --diff --recursive weblab
 after_success:
   - codecov
