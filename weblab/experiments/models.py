@@ -6,7 +6,7 @@ from django.db import models
 
 from core.combine import ArchiveReader
 from core.models import UserCreatedModelMixin
-from core.visibility import get_joint_visibility, Visibility, visibility_check
+from core.visibility import Visibility, get_joint_visibility, visibility_check
 from entities.models import ModelEntity, ProtocolEntity
 
 from .managers import ExperimentVersionManager

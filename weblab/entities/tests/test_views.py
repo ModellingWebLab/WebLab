@@ -15,7 +15,12 @@ from git import GitCommandError
 from guardian.shortcuts import assign_perm
 
 from core import recipes
-from entities.models import AnalysisTask, Entity, ModelEntity, ProtocolEntity
+from entities.models import (
+    AnalysisTask,
+    Entity,
+    ModelEntity,
+    ProtocolEntity,
+)
 from experiments.models import Experiment, PlannedExperiment
 from repocache.models import ProtocolInterface
 
@@ -2577,4 +2582,3 @@ class TestEntityRunExperiment:
             assert planned_experiment.protocol == protocol
             assert planned_experiment.protocol_version == proto_commit1.hexsha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
-

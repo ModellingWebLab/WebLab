@@ -1,14 +1,14 @@
 import pytest
 
+from accounts.models import User
 from core import recipes
 from core.visibility import (
     Visibility,
     get_joint_visibility,
     visibility_check,
     visibility_meets_threshold,
-    visible_entity_ids
+    visible_entity_ids,
 )
-from accounts.models import User
 
 
 def test_get_joint_visibility():

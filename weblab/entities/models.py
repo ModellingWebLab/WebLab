@@ -9,7 +9,8 @@ from django.db import models
 from guardian.shortcuts import get_objects_for_user
 
 from core.models import UserCreatedModelMixin
-from core.visibility import HELP_TEXT as VIS_HELP_TEXT, Visibility, visibility_check
+from core.visibility import HELP_TEXT as VIS_HELP_TEXT
+from core.visibility import Visibility, visibility_check
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
