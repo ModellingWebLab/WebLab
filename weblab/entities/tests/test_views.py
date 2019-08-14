@@ -1989,7 +1989,6 @@ class TestEntityDiffView:
         assert 'response' not in data['getBivesDiff']
         assert data['getBivesDiff']['responseText'] == 'bives request failed: 400 (Server error)'
 
-
     @patch('requests.post')
     def test_bives_diff_returns_error_on_server_error_message(self, mock_post, client, helpers):
         model = recipes.model.make()
@@ -2123,11 +2122,12 @@ class TestEntityRunExperiment:
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
-        assert response.context['other_object_list'] == [{'id': other_protocol.pk,
-                                                          'name': 'myprotocol2',
-                                                          'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
-                                                                       {'commit': other_commit1, 'tags': [], 'latest': False}]},
-                                                         ]
+        assert response.context['other_object_list'] == [
+            {'id': other_protocol.pk,
+             'name': 'myprotocol2',
+             'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
+                          {'commit': other_commit1, 'tags': [], 'latest': False}]},
+        ]
         assert response.context['preposition'] == 'under'
 
     def test_view_run_experiment_model_post(self, client, helpers, logged_in_user):
@@ -2238,11 +2238,12 @@ class TestEntityRunExperiment:
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
-        assert response.context['other_object_list'] == [{'id': other_protocol.pk,
-                                                          'name': 'myprotocol2',
-                                                          'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
-                                                                       {'commit': other_commit1, 'tags': [], 'latest': False}]},
-                                                         ]
+        assert response.context['other_object_list'] == [
+            {'id': other_protocol.pk,
+             'name': 'myprotocol2',
+             'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
+                          {'commit': other_commit1, 'tags': [], 'latest': False}]},
+        ]
         # Test post returns correct response
         data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.hexsha),
                                           '%d:%s' % (other_protocol.pk, other_commit1.hexsha),
@@ -2354,11 +2355,12 @@ class TestEntityRunExperiment:
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
-        assert response.context['other_object_list'] == [{'id': other_model.pk,
-                                                          'name': 'mymodel2',
-                                                          'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
-                                                                       {'commit': other_commit1, 'tags': [], 'latest': False}]},
-                                                   ]
+        assert response.context['other_object_list'] == [
+            {'id': other_model.pk,
+             'name': 'mymodel2',
+             'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
+                          {'commit': other_commit1, 'tags': [], 'latest': False}]},
+        ]
         assert response.context['preposition'] == 'on'
 
     def test_view_run_experiment_protocol_post(self, client, helpers, logged_in_user):
@@ -2470,15 +2472,16 @@ class TestEntityRunExperiment:
                                                     'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
-        assert response.context['other_object_list'] == [{'id': other_model.pk,
-                                                          'name': 'mymodel2',
-                                                          'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
-                                                                       {'commit': other_commit1, 'tags': [], 'latest': False}]},
-                                                   ]
+        assert response.context['other_object_list'] == [
+            {'id': other_model.pk,
+             'name': 'mymodel2',
+             'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
+                          {'commit': other_commit1, 'tags': [], 'latest': False}]},
+        ]
         # Test post returns correct response
         data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha),
-                                        '%d:%s' % (model.pk, commit2.hexsha),
-                                        '%d:%s' % (other_model.pk, other_commit1.hexsha)],
+                                          '%d:%s' % (model.pk, commit2.hexsha),
+                                          '%d:%s' % (other_model.pk, other_commit1.hexsha)],
                 'rerun_expts': 'on'}
         response = client.post(
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.hexsha),
