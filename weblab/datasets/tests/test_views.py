@@ -22,7 +22,7 @@ from datasets.models import Dataset
 
 @pytest.mark.django_db
 class TestDatasetCreation:
-    def test_create_model(self, logged_in_user, client, helpers, public_protocol):
+    def test_create_dataset(self, logged_in_user, client, helpers, public_protocol):
         helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         response = client.post('/datasets/new', data={
             'name': 'mydataset',
@@ -48,6 +48,24 @@ class TestDatasetCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
+    def test_create_dataset_with_file(self, client, logged_in_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+        dataset = recipes.dataset_file.make(
+            dataset__author=logged_in_user,
+            upload=SimpleUploadedFile('mydataset.zip', b'my test dataset'),
+            original_name='mydataset.zip',
+        ).dataset
+        response = client.post(
+            '/datasets/%d/addfiles' % dataset.pk,
+            data={
+                'filename[]': ['uploads/mydataset.zip'],
+                'delete_filename[]': [],
+                'mainEntry': ['file1.csv'],
+            },
+        )
+
+        assert response.status_code == 302
+        assert response.url == '/datasets/%d' % dataset.pk
 
 @pytest.mark.django_db
 class TestDatasetView:
@@ -113,12 +131,10 @@ class TestDatasetsList:
         assert response.status_code == 200
         assert list(response.context['object_list']) == datasets
 
-#
+
 # @pytest.mark.django_db
-# class TestEntityFileDownloadView:
-#     def test_download_file(self, client, public_model):
-#         version = public_model.repo.latest_commit
-#
+# class TestDatasetFileDownloadView:
+#     def test_download_file(self, client, dataset_no_files):
 #         response = client.get(
 #             '/entities/models/%d/versions/%s/download/file1.txt' %
 #             (public_model.pk, version.hexsha)
