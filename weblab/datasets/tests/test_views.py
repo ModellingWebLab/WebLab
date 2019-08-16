@@ -152,21 +152,39 @@ class TestDatasetsList:
         assert list(response.context['object_list']) == datasets
 
 
-# @pytest.mark.django_db
-# class TestDatasetFileDownloadView:
-#     def test_download_file(self, client, dataset_no_files):
-#         response = client.get(
-#             '/entities/models/%d/versions/%s/download/file1.txt' %
-#             (public_model.pk, version.hexsha)
-#         )
-#
-#         assert response.status_code == 200
-#         assert response.content == b'entity contents'
-#         assert response['Content-Disposition'] == (
-#             'attachment; filename=file1.txt'
-#         )
-#         assert response['Content-Type'] == 'text/plain'
-#
+@pytest.mark.django_db
+class TestDatasetFileDownloadView:
+    def test_download_file(self, client, my_dataset):
+        # set up dataset with file
+        # there must be someway to make this generic but as yet I havent found it
+        file_name = 'mydataset.csv'
+        file_contents = b'my test dataset'
+        recipes.dataset_file.make(
+            dataset=my_dataset,
+            upload=SimpleUploadedFile(file_name, file_contents),
+            original_name=file_name,
+
+        )
+        assert Dataset.objects.count() == 1
+        client.post(
+            '/datasets/%d/addfiles' % my_dataset.pk,
+            data={
+                'filename[]': ['uploads/' + file_name],
+                'delete_filename[]': [],
+                'mainEntry': [file_name],
+            },
+        )
+        response = client.get(
+            '/datasets/%d/download/mydataset.csv' % my_dataset.pk
+        )
+
+        assert response.status_code == 200
+        assert response.content == file_contents
+        assert response['Content-Disposition'] == (
+            'attachment; filename=mydataset.csv'
+        )
+        assert response['Content-Type'] == 'application/vnd.ms-excel'
+
 #     @pytest.mark.parametrize("filename", [
 #         ('oxmeta:membrane-voltage with spaces.csv'),
 #         ('oxmeta%3Amembrane_voltage.csv'),
