@@ -1,6 +1,7 @@
 import pytest
 
 import datasets.templatetags.datasets as dataset_tags
+from datasets.models import Dataset
 
 from core import recipes
 
@@ -28,6 +29,12 @@ def test_dataset_urls_no_files(dataset_no_files):
 #     assert response.url == '/datasets/%d' % dataset.pk
 #
 
+# @pytest.mark.django_db
+# def test_dataset_urls_with_files(dataset_dummy_files):
+#     dataset = dataset_dummy_files
+#     assert dataset_tags.url_dataset(dataset) == '/datasets/%d' % dataset.pk
+#
+#
 @pytest.mark.django_db
 def test_can_create_dataset_no_permission(user, helpers):
     context = {'user': user}
