@@ -292,6 +292,7 @@ def dataset_no_files(dataset_creator, public_protocol):
     dataset = recipes.dataset.make(author=dataset_creator, name='mydataset', protocol=public_protocol)
     return dataset
 
+
 @pytest.fixture
 def dataset_with_file(user, public_protocol):
     dataset = recipes.dataset.make(author=user, name='mydataset', protocol=public_protocol)
@@ -301,5 +302,3 @@ def dataset_with_file(user, public_protocol):
         original_name='file1.csv',
     )
     return dataset
-
-
