@@ -47,7 +47,6 @@ class TestDatasetCreation:
         assert response.url == '/datasets/%d/addfiles' % dataset.id
         assert dataset.name == 'mydataset'
         assert dataset.author == logged_in_user
-        dataset.delete()
 
     def test_create_dataset_requires_permissions(self, logged_in_user, client):
         response = client.post(

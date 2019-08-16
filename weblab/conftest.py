@@ -1,5 +1,7 @@
 import datetime
+import os
 import uuid
+from pathlib import Path
 
 import pytest
 from django.contrib.auth.models import AnonymousUser, Permission
@@ -223,32 +225,38 @@ def moderated_experiment_version(moderated_model, moderated_protocol):
 
 @pytest.fixture
 def admin_user():
-    return User.objects.create_superuser(
+    user = User.objects.create_superuser(
         email='admin@example.com',
         full_name='Admin User',
         institution='UCL',
         password='password',
     )
+    yield user
+    user.clean_up_storage()
 
 
 @pytest.fixture
 def user():
-    return User.objects.create_user(
+    user = User.objects.create_user(
         email='test@example.com',
         full_name='Test User',
         institution='UCL',
         password='password',
     )
+    yield user
+    user.clean_up_storage()
 
 
 @pytest.fixture
 def other_user():
-    return User.objects.create_user(
+    user = User.objects.create_user(
         email='other@example.com',
         full_name='Other User',
         institution='UCL',
         password='password',
     )
+    yield user
+    user.clean_up_storage()
 
 
 @pytest.fixture

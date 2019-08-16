@@ -36,7 +36,7 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, models.Model):
 
     @property
     def abs_path(self):
-        return Path(settings.DATASETS_BASE, str(self.author.id), str(self.id))
+        return self.author.get_storage_dir('dataset') / str(self.id)
 
     @property
     def archive_name(self):
