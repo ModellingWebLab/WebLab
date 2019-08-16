@@ -107,7 +107,6 @@ class Helpers:
         return dataset
 
 
-
 @pytest.fixture
 def helpers():
     """
@@ -194,7 +193,7 @@ def experiment_with_result(model_with_version, protocol_with_version):
         experiment__model=model_with_version,
         experiment__protocol=protocol_with_version,
     )
-    version.abs_path.mkdir()
+    version.mkdir()
     with (version.abs_path / 'result.txt').open('w') as f:
         f.write('experiment results')
     return version
