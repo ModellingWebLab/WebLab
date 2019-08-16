@@ -119,19 +119,20 @@ def helpers():
 
 @pytest.fixture(autouse=True)
 def fake_upload_path(settings, tmpdir):
-    settings.MEDIA_ROOT = str(tmpdir)
+    # Note that at present (Python 3.5, Django 1.11) Django requires this to be a string
+    settings.MEDIA_ROOT = os.path.join(str(tmpdir), 'uploads')
     return settings.MEDIA_ROOT
 
 
 @pytest.fixture(autouse=True)
 def fake_experiment_path(settings, tmpdir):
-    settings.EXPERIMENT_BASE = str(tmpdir)
+    settings.EXPERIMENT_BASE = Path(str(tmpdir)) / 'experiments'
     return settings.EXPERIMENT_BASE
 
 
 @pytest.fixture(autouse=True)
 def fake_repo_path(settings, tmpdir):
-    settings.REPO_BASE = str(tmpdir)
+    settings.REPO_BASE = Path(str(tmpdir)) / 'repos'
     return settings.REPO_BASE
 
 
