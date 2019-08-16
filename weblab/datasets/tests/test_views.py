@@ -50,22 +50,34 @@ class TestDatasetCreation:
 
     def test_create_dataset_with_file(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+        file_name = 'mydataset.csv'
+        file_contents = b'my test dataset'
         dataset = recipes.dataset_file.make(
             dataset__author=logged_in_user,
-            upload=SimpleUploadedFile('mydataset.zip', b'my test dataset'),
-            original_name='mydataset.zip',
+            upload=SimpleUploadedFile(file_name, file_contents),
+            original_name=file_name,
         ).dataset
+        assert Dataset.objects.count() == 1
         response = client.post(
             '/datasets/%d/addfiles' % dataset.pk,
             data={
-                'filename[]': ['uploads/mydataset.zip'],
+                'filename[]': ['uploads/' + file_name],
                 'delete_filename[]': [],
-                'mainEntry': ['file1.csv'],
+                'mainEntry': [file_name],
             },
         )
 
         assert response.status_code == 302
         assert response.url == '/datasets/%d' % dataset.pk
+        # The uploaded file is tidied up
+        assert dataset.file_uploads.count() == 0
+        # And appears in the archive created
+        assert dataset.archive_path.exists()
+        assert len(dataset.files) == 1
+        assert dataset.files[0].name == file_name
+        with dataset.open_file(file_name) as f:
+            assert file_contents == f.read()
+
 
 @pytest.mark.django_db
 class TestDatasetView:
