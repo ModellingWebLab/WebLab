@@ -183,7 +183,7 @@ class TestDatasetFileDownloadView:
         assert response['Content-Disposition'] == (
             'attachment; filename=mydataset.csv'
         )
-        assert response['Content-Type'] == 'application/vnd.ms-excel'
+        assert response['Content-Type'] == 'text/csv'
 
 #     @pytest.mark.parametrize("filename", [
 #         ('oxmeta:membrane-voltage with spaces.csv'),
