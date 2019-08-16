@@ -20,6 +20,14 @@ from core import recipes
 from datasets.models import Dataset
 
 
+@pytest.fixture
+def my_dataset(logged_in_user, helpers, public_protocol):
+    helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+    yield dataset
+    dataset.delete()
+
+
 @pytest.mark.django_db
 class TestDatasetCreation:
     def test_create_dataset(self, logged_in_user, client, helpers, public_protocol):
@@ -39,6 +47,7 @@ class TestDatasetCreation:
         assert response.url == '/datasets/%d/addfiles' % dataset.id
         assert dataset.name == 'mydataset'
         assert dataset.author == logged_in_user
+        dataset.delete()
 
     def test_create_dataset_requires_permissions(self, logged_in_user, client):
         response = client.post(
@@ -48,18 +57,17 @@ class TestDatasetCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
-    def test_create_dataset_with_file(self, client, logged_in_user, helpers):
-        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+    def test_create_dataset_with_file(self, client, my_dataset):
         file_name = 'mydataset.csv'
         file_contents = b'my test dataset'
-        dataset = recipes.dataset_file.make(
-            dataset__author=logged_in_user,
+        recipes.dataset_file.make(
+            dataset=my_dataset,
             upload=SimpleUploadedFile(file_name, file_contents),
             original_name=file_name,
-        ).dataset
+        )
         assert Dataset.objects.count() == 1
         response = client.post(
-            '/datasets/%d/addfiles' % dataset.pk,
+            '/datasets/%d/addfiles' % my_dataset.pk,
             data={
                 'filename[]': ['uploads/' + file_name],
                 'delete_filename[]': [],
@@ -68,14 +76,14 @@ class TestDatasetCreation:
         )
 
         assert response.status_code == 302
-        assert response.url == '/datasets/%d' % dataset.pk
+        assert response.url == '/datasets/%d' % my_dataset.pk
         # The uploaded file is tidied up
-        assert dataset.file_uploads.count() == 0
+        assert my_dataset.file_uploads.count() == 0
         # And appears in the archive created
-        assert dataset.archive_path.exists()
-        assert len(dataset.files) == 1
-        assert dataset.files[0].name == file_name
-        with dataset.open_file(file_name) as f:
+        assert my_dataset.archive_path.exists()
+        assert len(my_dataset.files) == 1
+        assert my_dataset.files[0].name == file_name
+        with my_dataset.open_file(file_name) as f:
             assert file_contents == f.read()
 
 
