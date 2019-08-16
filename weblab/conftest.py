@@ -136,6 +136,12 @@ def fake_repo_path(settings, tmpdir):
     return settings.REPO_BASE
 
 
+@pytest.fixture(autouse=True)
+def fake_dataset_path(settings, tmpdir):
+    settings.DATASETS_BASE = Path(str(tmpdir)) / 'datasets'
+    return settings.DATASETS_BASE
+
+
 @pytest.fixture
 def model_with_version():
     model = recipes.model.make()
