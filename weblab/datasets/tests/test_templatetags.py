@@ -7,8 +7,8 @@ from core import recipes
 
 
 @pytest.mark.django_db
-def test_dataset_urls_no_files(dataset_no_files):
-    dataset = dataset_no_files
+def test_dataset_urls_no_files(my_dataset):
+    dataset = my_dataset
     assert dataset_tags.url_dataset(dataset) == '/datasets/%d/addfiles' % dataset.pk
 
 
