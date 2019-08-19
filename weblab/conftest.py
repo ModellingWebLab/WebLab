@@ -1,5 +1,7 @@
 import datetime
+import os
 import uuid
+from pathlib import Path
 
 import pytest
 from django.contrib.auth.models import AnonymousUser, Permission
@@ -107,7 +109,6 @@ class Helpers:
         return dataset
 
 
-
 @pytest.fixture
 def helpers():
     """
@@ -118,20 +119,27 @@ def helpers():
 
 @pytest.fixture(autouse=True)
 def fake_upload_path(settings, tmpdir):
-    settings.MEDIA_ROOT = str(tmpdir)
+    # Note that at present (Python 3.5, Django 1.11) Django requires this to be a string
+    settings.MEDIA_ROOT = os.path.join(str(tmpdir), 'uploads')
     return settings.MEDIA_ROOT
 
 
 @pytest.fixture(autouse=True)
 def fake_experiment_path(settings, tmpdir):
-    settings.EXPERIMENT_BASE = str(tmpdir)
+    settings.EXPERIMENT_BASE = Path(str(tmpdir)) / 'experiments'
     return settings.EXPERIMENT_BASE
 
 
 @pytest.fixture(autouse=True)
 def fake_repo_path(settings, tmpdir):
-    settings.REPO_BASE = str(tmpdir)
+    settings.REPO_BASE = Path(str(tmpdir)) / 'repos'
     return settings.REPO_BASE
+
+
+@pytest.fixture(autouse=True)
+def fake_dataset_path(settings, tmpdir):
+    settings.DATASETS_BASE = Path(str(tmpdir)) / 'datasets'
+    return settings.DATASETS_BASE
 
 
 @pytest.fixture
@@ -194,7 +202,7 @@ def experiment_with_result(model_with_version, protocol_with_version):
         experiment__model=model_with_version,
         experiment__protocol=protocol_with_version,
     )
-    version.abs_path.mkdir()
+    version.mkdir()
     with (version.abs_path / 'result.txt').open('w') as f:
         f.write('experiment results')
     return version
@@ -224,32 +232,38 @@ def moderated_experiment_version(moderated_model, moderated_protocol):
 
 @pytest.fixture
 def admin_user():
-    return User.objects.create_superuser(
+    user = User.objects.create_superuser(
         email='admin@example.com',
         full_name='Admin User',
         institution='UCL',
         password='password',
     )
+    yield user
+    user.clean_up_storage()
 
 
 @pytest.fixture
 def user():
-    return User.objects.create_user(
+    user = User.objects.create_user(
         email='test@example.com',
         full_name='Test User',
         institution='UCL',
         password='password',
     )
+    yield user
+    user.clean_up_storage()
 
 
 @pytest.fixture
 def other_user():
-    return User.objects.create_user(
+    user = User.objects.create_user(
         email='other@example.com',
         full_name='Other User',
         institution='UCL',
         password='password',
     )
+    yield user
+    user.clean_up_storage()
 
 
 @pytest.fixture
