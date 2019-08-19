@@ -20,14 +20,6 @@ from core import recipes
 from datasets.models import Dataset
 
 
-@pytest.fixture
-def my_dataset(logged_in_user, helpers, public_protocol):
-    helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
-    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
-    yield dataset
-    dataset.delete()
-
-
 @pytest.mark.django_db
 class TestDatasetCreation:
     def test_create_dataset(self, logged_in_user, client, helpers, public_protocol):
@@ -56,33 +48,16 @@ class TestDatasetCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
-    def test_create_dataset_with_file(self, client, my_dataset):
+    def test_create_dataset_with_file(self, client, my_dataset_with_file):
         file_name = 'mydataset.csv'
         file_contents = b'my test dataset'
-        recipes.dataset_file.make(
-            dataset=my_dataset,
-            upload=SimpleUploadedFile(file_name, file_contents),
-            original_name=file_name,
-        )
-        assert Dataset.objects.count() == 1
-        response = client.post(
-            '/datasets/%d/addfiles' % my_dataset.pk,
-            data={
-                'filename[]': ['uploads/' + file_name],
-                'delete_filename[]': [],
-                'mainEntry': [file_name],
-            },
-        )
-
-        assert response.status_code == 302
-        assert response.url == '/datasets/%d' % my_dataset.pk
         # The uploaded file is tidied up
-        assert my_dataset.file_uploads.count() == 0
+        assert my_dataset_with_file.file_uploads.count() == 0
         # And appears in the archive created
-        assert my_dataset.archive_path.exists()
-        assert len(my_dataset.files) == 1
-        assert my_dataset.files[0].name == file_name
-        with my_dataset.open_file(file_name) as f:
+        assert my_dataset_with_file.archive_path.exists()
+        assert len(my_dataset_with_file.files) == 1
+        assert my_dataset_with_file.files[0].name == file_name
+        with my_dataset_with_file.open_file(file_name) as f:
             assert file_contents == f.read()
 
 
@@ -153,28 +128,28 @@ class TestDatasetsList:
 
 @pytest.mark.django_db
 class TestDatasetFileDownloadView:
-    def test_download_file(self, client, my_dataset):
+    def test_download_file(self, client, my_dataset_with_file):
         # set up dataset with file
         # there must be someway to make this generic but as yet I havent found it
-        file_name = 'mydataset.csv'
+        # file_name = 'mydataset.csv'
         file_contents = b'my test dataset'
-        recipes.dataset_file.make(
-            dataset=my_dataset,
-            upload=SimpleUploadedFile(file_name, file_contents),
-            original_name=file_name,
-
-        )
-        assert Dataset.objects.count() == 1
-        client.post(
-            '/datasets/%d/addfiles' % my_dataset.pk,
-            data={
-                'filename[]': ['uploads/' + file_name],
-                'delete_filename[]': [],
-                'mainEntry': [file_name],
-            },
-        )
+        # recipes.dataset_file.make(
+        #     dataset=my_dataset,
+        #     upload=SimpleUploadedFile(file_name, file_contents),
+        #     original_name=file_name,
+        #
+        # )
+        # assert Dataset.objects.count() == 1
+        # client.post(
+        #     '/datasets/%d/addfiles' % my_dataset.pk,
+        #     data={
+        #         'filename[]': ['uploads/' + file_name],
+        #         'delete_filename[]': [],
+        #         'mainEntry': [file_name],
+        #     },
+        # )
         response = client.get(
-            '/datasets/%d/download/mydataset.csv' % my_dataset.pk
+            '/datasets/%d/download/mydataset.csv' % my_dataset_with_file.pk
         )
 
         assert response.status_code == 200
@@ -204,6 +179,7 @@ class TestDatasetFileDownloadView:
 #         assert response['Content-Type'] == 'text/csv'
 #
 #     @pytest.mark.parametrize("filename", [
+
 #         ('/etc/passwd'),
 #         ('../../../../../pytest.ini'),
 #     ])

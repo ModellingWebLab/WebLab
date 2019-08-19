@@ -91,23 +91,6 @@ class Helpers:
     def login(client, user):
         client.login(username=user.email, password='password')
 
-    @staticmethod
-    def add_file(dataset, dataset_file):
-        """Add a file to a dataset"""
-        if not dataset.abs_path.exists():
-            dataset.abs_path.mkdir()
-        archive = str(dataset.abs_path / dataset.archive_name)
-        open(archive, 'w').write(contents)
-        # entity.repo.add_file(in_repo_path)
-        # commit = Helpers.fake_commit(entity.repo, 'file', User(full_name='author', email='author@example.com'))
-        # if tag_name:
-        #     entity.repo.tag(tag_name)
-        # if visibility:
-        #     entity.set_visibility_in_repo(commit, visibility)
-        # if cache:
-        #     populate_entity_cache(entity)
-        return dataset
-
 
 @pytest.fixture
 def helpers():
@@ -302,17 +285,33 @@ def dataset_creator(user, helpers):
 
 
 @pytest.fixture
-def dataset_no_files(dataset_creator, public_protocol):
-    dataset = recipes.dataset.make(author=dataset_creator, name='mydataset', protocol=public_protocol)
-    return dataset
+def my_dataset(logged_in_user, helpers, public_protocol):
+    helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+    yield dataset
+    dataset.delete()
 
 
 @pytest.fixture
-def dataset_with_file(user, public_protocol):
-    dataset = recipes.dataset.make(author=user, name='mydataset', protocol=public_protocol)
+def my_dataset_with_file(logged_in_user, helpers, public_protocol, client):
+    helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+    file_name = 'mydataset.csv'
+    file_contents = b'my test dataset'
     recipes.dataset_file.make(
         dataset=dataset,
-        upload=SimpleUploadedFile('file1.csv', b'file 1'),
-        original_name='file1.csv',
+        upload=SimpleUploadedFile(file_name, file_contents),
+        original_name=file_name,
     )
-    return dataset
+    client.post(
+        '/datasets/%d/addfiles' % dataset.pk,
+        data={
+            'filename[]': ['uploads/' + file_name],
+            'delete_filename[]': [],
+            'mainEntry': [file_name],
+        },
+    )
+    yield dataset
+    dataset.delete()
+
+
