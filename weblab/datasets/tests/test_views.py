@@ -219,80 +219,22 @@ class TestDatasetFileDownloadView:
 #         assert response.status_code == 404
 #
 #
-# @pytest.mark.django_db
-# class TestEntityArchiveView:
-#     def test_download_archive(self, client, helpers):
-#         model = recipes.model.make()
-#         commit = helpers.add_version(model, filename='file1.txt', visibility='public')
-#
-#         response = client.get('/entities/models/%d/versions/latest/archive' % model.pk)
-#         assert response.status_code == 200
-#         archive = zipfile.ZipFile(BytesIO(response.content))
-#         assert archive.filelist[0].filename == 'file1.txt'
-#         assert response['Content-Disposition'] == (
-#             'attachment; filename=%s_%s.zip' % (model.name, commit.hexsha)
-#         )
-#
-#     def test_returns_404_if_no_commits_yet(self, logged_in_user, client):
-#         model = recipes.model.make()
-#
-#         response = client.get('/entities/models/%d/versions/latest/archive' % model.pk)
-#         assert response.status_code == 404
-#
-#     def test_anonymous_model_download_for_running_experiment(self, client, queued_experiment):
-#         model = queued_experiment.experiment.model
-#         sha = model.repo.latest_commit.hexsha
-#         queued_experiment.experiment.model.set_version_visibility(sha, 'private')
-#
-#         response = client.get(
-#             '/entities/models/%d/versions/latest/archive' % model.pk,
-#             HTTP_AUTHORIZATION='Token {}'.format(queued_experiment.signature)
-#         )
-#
-#         assert response.status_code == 200
-#         archive = zipfile.ZipFile(BytesIO(response.content))
-#         assert archive.filelist[0].filename == 'file1.txt'
-#
-#     def test_anonymous_protocol_download_for_running_experiment(self, client, queued_experiment):
-#         protocol = queued_experiment.experiment.protocol
-#         protocol.set_version_visibility('latest', 'private')
-#
-#         response = client.get(
-#             '/entities/protocols/%d/versions/latest/archive' % protocol.pk,
-#             HTTP_AUTHORIZATION='Token {}'.format(queued_experiment.signature)
-#         )
-#
-#         assert response.status_code == 200
-#         archive = zipfile.ZipFile(BytesIO(response.content))
-#         assert archive.filelist[0].filename == 'file1.txt'
-#
-#     def test_anonymous_protocol_download_for_analysis_task(self, client, analysis_task):
-#         protocol = analysis_task.entity
-#         protocol.set_version_visibility('latest', 'private')
-#
-#         response = client.get(
-#             '/entities/protocols/%d/versions/latest/archive' % protocol.pk,
-#             HTTP_AUTHORIZATION='Token {}'.format(analysis_task.id)
-#         )
-#
-#         assert response.status_code == 200
-#         archive = zipfile.ZipFile(BytesIO(response.content))
-#         assert archive.filelist[0].filename == 'file1.txt'
-#
-#     def test_public_entity_still_visible_with_invalid_token(self, client, queued_experiment):
-#         model = queued_experiment.experiment.model
-#         queued_experiment.experiment.model.set_version_visibility('latest', 'public')
-#
-#         response = client.get(
-#             '/entities/models/%d/versions/latest/archive' % model.pk,
-#             HTTP_AUTHORIZATION='Token {}'.format(uuid.uuid4())
-#         )
-#
-#         assert response.status_code == 200
-#         archive = zipfile.ZipFile(BytesIO(response.content))
-#         assert archive.filelist[0].filename == 'file1.txt'
-#
-#
+@pytest.mark.django_db
+class TestEntityArchiveView:
+    def test_download_archive(self, my_dataset_with_file, client):
+        response = client.get('/datasets/%d/archive' % my_dataset_with_file.pk)
+        assert response.status_code == 200
+        archive = zipfile.ZipFile(BytesIO(response.content))
+        assert archive.filelist[0].filename == 'mydataset.csv'
+        assert response['Content-Disposition'] == (
+            'attachment; filename=%s.zip' % (my_dataset_with_file.name)
+        )
+
+    def test_returns_404_if_no_commits_yet(self, my_dataset, client):
+        response = client.get('/datasets/%d/archive' % my_dataset.pk)
+        assert response.status_code == 404
+
+
 @pytest.mark.django_db
 class TestFileUpload:
     def test_upload_file(self, logged_in_user, client):
