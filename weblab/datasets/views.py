@@ -261,10 +261,13 @@ class DatasetFileDownloadView(VisibilityMixin, SingleObjectMixin, View):
         if content_type is None:
             content_type = 'application/octet-stream'
 
-        with dataset.open_file(filename) as file_:
-            response = HttpResponse(content_type=content_type)
-            response['Content-Disposition'] = 'attachment; filename=%s' % filename
-            response.write(file_.read())
+        try:
+            with dataset.open_file(filename) as file_:
+                response = HttpResponse(content_type=content_type)
+                response['Content-Disposition'] = 'attachment; filename=%s' % filename
+                response.write(file_.read())
+        except KeyError:
+            raise Http404
 
         return response
 

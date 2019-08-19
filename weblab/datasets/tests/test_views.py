@@ -199,13 +199,12 @@ class TestDatasetFileDownloadView:
         assert response.status_code == 200
         assert response['Content-Type'] == 'application/octet-stream'
 
-    # def test_returns_404_for_nonexistent_file(self, my_dataset_with_file, client):
-    #     # this gives KeyError exception "There is no item named 'non-existant.csv"
-    #     response = client.get(
-    #         '/datasets/%d/download/non_existant.csv' % my_dataset_with_file.pk
-    #     )
-    #
-    #     assert response.status_code == 404
+    def test_returns_404_for_nonexistent_file(self, my_dataset_with_file, client):
+        response = client.get(
+            '/datasets/%d/download/non_existent.csv' % my_dataset_with_file.pk
+        )
+
+        assert response.status_code == 404
 
 
 @pytest.mark.django_db
