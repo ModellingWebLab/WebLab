@@ -230,7 +230,7 @@ class TestDatasetArchiveView:
             'attachment; filename=%s.zip' % (my_dataset_with_file.name)
         )
 
-    def test_returns_404_if_no_commits_yet(self, my_dataset, client):
+    def test_returns_404_if_no_files_yet(self, my_dataset, client):
         response = client.get('/datasets/%d/archive' % my_dataset.pk)
         assert response.status_code == 404
 
