@@ -1128,7 +1128,6 @@ class TestExperimentVersionJsonView:
         version.author.full_name = 'test user'
         version.author.save()
         version.status = 'SUCCESS'
-        # version.mkdir()
 
         response = client.get(
             ('/experiments/%d/versions/%d/files.json' % (version.experiment.pk, version.pk))
