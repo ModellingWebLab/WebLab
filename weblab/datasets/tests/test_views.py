@@ -141,84 +141,83 @@ class TestDatasetFileDownloadView:
         )
         assert response['Content-Type'] == 'text/csv'
 
+    @pytest.mark.parametrize("filename", [
+        ('oxmeta:membrane-voltage with spaces.csv'),
+        ('oxmeta%3Amembrane_voltage.csv'),
+    ])
+    def test_handles_odd_characters(self, logged_in_user, helpers, client, public_protocol, filename):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+        dataset = recipes.dataset.make(author=logged_in_user, name="dataset", protocol=public_protocol)
+        file_contents = b'my test dataset'
+        recipes.dataset_file.make(
+            dataset=dataset,
+            upload=SimpleUploadedFile(filename, file_contents),
+            original_name=filename,
+        )
+        client.post(
+            '/datasets/%d/addfiles' % dataset.pk,
+            data={
+                'filename[]': ['uploads/' + filename],
+                'delete_filename[]': [],
+                'mainEntry': [filename],
+            },
+        )
 
-#     @pytest.mark.parametrize("filename", [
-#         ('oxmeta:membrane-voltage with spaces.csv'),
-#         ('oxmeta%3Amembrane_voltage.csv'),
-#     ])
-#     def test_handles_odd_characters(self, logged_in_user, helpers, client, public_protocol, filename):
-#         dataset_name = filename[0:len(filename)-4]
-#         helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
-#         dataset = recipes.dataset.make(author=logged_in_user, name=dataset_name, protocol=public_protocol)
-#         file_contents = b'my test dataset'
-#         recipes.dataset_file.make(
-#             dataset=dataset,
-#             upload=SimpleUploadedFile(filename, file_contents),
-#             original_name=filename,
-#         )
-#         client.post(
-#             '/datasets/%d/addfiles' % dataset.pk,
-#             data={
-#                 'filename[]': ['uploads/' + filename],
-#                 'delete_filename[]': [],
-#                 'mainEntry': [filename],
-#             },
-#         )
-#
-#         # neither of these get methods work
-#
-#
-#         # response = client.get(
-#         #     '/datasets/%d/download/%s' % (dataset.pk, filename)
-#         # )
-#
-#         # this gives exception No reverse match
-#         response = client.get(
-#             reverse('datasets:file_download', args=['dataset', dataset.pk, filename])
-#         )
-#
-#         assert response.status_code == 200
-# #        assert response.status_code == 404
-#         # assert response.content == b'my test dataset'
-#         # assert response['Content-Disposition'] == (
-#         #     'attachment; filename=' + filename
-#         # )
-#         # assert response['Content-Type'] == 'text/csv'
+        # neither of these get methods work
 
-    # @pytest.mark.parametrize("filename", [
-    #     ('/etc/passwd'),
-    #     ('../../../../../pytest.ini'),
-    # ])
-    # def test_disallows_non_local_files(self, client, my_dataset_with_file, filename):
+        # this gives the exception of No file found - since it is looking for that dataset zip file containing the csv
+        # response = client.get(
+        #     '/datasets/%d/download/%s' % (dataset.pk, filename)
+        # )
+
+        # this gives exception No reverse match
+        # response = client.get(
+        #     reverse('datasets:file_download', args=['dataset', dataset.pk, filename])
+        # )
+
+        # assert response.status_code == 200
+        # assert response.content == b'my test dataset'
+        # assert response['Content-Disposition'] == (
+        #     'attachment; filename=' + filename
+        # )
+        # assert response['Content-Type'] == 'text/csv'
+
+    @pytest.mark.parametrize("filename", [
+        ('/etc/passwd'),
+        ('../../../../../pytest.ini'),
+    ])
+    def test_disallows_non_local_files(self, client, my_dataset_with_file, filename):
+
+        # this gets the 404 code but not from our code but
+        # it doesnt throw the KeyError exception that the next two commented out tests do
+
+        response = client.get(
+            '/datasets/%d/download/%s' %
+            (my_dataset_with_file.pk, filename)
+        )
+
+        assert response.status_code == 404
+
+    # @patch('mimetypes.guess_type', return_value=(None, None))
+    # def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, my_dataset_with_file, client):
+    #     # this gives KeyError exception "There is no item named 'mydataset.txt"
     #     response = client.get(
     #         '/datasets/%d/download/%s' %
-    #         (my_dataset_with_file.pk, filename)
+    #         (my_dataset_with_file.pk, 'mydataset.txt')
+    #     )
+    #
+    #     assert response.status_code == 200
+    #     assert response['Content-Type'] == 'application/octet-stream'
+
+    # def test_returns_404_for_nonexistent_file(self, my_dataset_with_file, client):
+    #     # this gives KeyError exception "There is no item named 'non-existant.csv"
+    #     response = client.get(
+    #         '/datasets/%d/download/non_existant.csv' % my_dataset_with_file.pk
     #     )
     #
     #     assert response.status_code == 404
-    #
-#     @patch('mimetypes.guess_type', return_value=(None, None))
-#     def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, client, public_model):
-#         version = public_model.repo.latest_commit
-#
-#         response = client.get(
-#             '/entities/models/%d/versions/%s/download/file1.txt' %
-#             (public_model.pk, version.hexsha)
-#         )
-#
-#         assert response.status_code == 200
-#         assert response['Content-Type'] == 'application/octet-stream'
-#
-#     def test_returns_404_for_nonexistent_file(self, client, public_model):
-#         version = public_model.repo.latest_commit
-#         response = client.get(
-#             '/entities/models/%d/versions/%s/download/nonexistent.txt' %
-#             (public_model.pk, version.hexsha)
-#         )
-#
-#         assert response.status_code == 404
-#
-#
+
+
 @pytest.mark.django_db
 class TestDatasetArchiveView:
     def test_download_archive(self, my_dataset_with_file, client):
