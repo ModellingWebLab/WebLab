@@ -182,10 +182,6 @@ class TestDatasetFileDownloadView:
         ('../../../../../pytest.ini'),
     ])
     def test_disallows_non_local_files(self, client, my_dataset_with_file, filename):
-
-        # this gets the 404 code but not from our code but
-        # it doesnt throw the KeyError exception that the next two commented out tests do
-
         response = client.get(
             '/datasets/%d/download/%s' %
             (my_dataset_with_file.pk, filename)
@@ -193,16 +189,15 @@ class TestDatasetFileDownloadView:
 
         assert response.status_code == 404
 
-    # @patch('mimetypes.guess_type', return_value=(None, None))
-    # def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, my_dataset_with_file, client):
-    #     # this gives KeyError exception "There is no item named 'mydataset.txt"
-    #     response = client.get(
-    #         '/datasets/%d/download/%s' %
-    #         (my_dataset_with_file.pk, 'mydataset.txt')
-    #     )
-    #
-    #     assert response.status_code == 200
-    #     assert response['Content-Type'] == 'application/octet-stream'
+    @patch('mimetypes.guess_type', return_value=(None, None))
+    def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, my_dataset_with_file, client):
+        response = client.get(
+            '/datasets/%d/download/%s' %
+            (my_dataset_with_file.pk, 'mydataset.csv')
+        )
+
+        assert response.status_code == 200
+        assert response['Content-Type'] == 'application/octet-stream'
 
     # def test_returns_404_for_nonexistent_file(self, my_dataset_with_file, client):
     #     # this gives KeyError exception "There is no item named 'non-existant.csv"
