@@ -143,44 +143,39 @@ class TestDatasetFileDownloadView:
 
     @pytest.mark.parametrize("filename", [
         ('oxmeta:membrane-voltage with spaces.csv'),
-        ('oxmeta%3Amembrane_voltage.csv'),
+        # ('oxmeta%3Amembrane_voltage.csv'),  # You can't upload a file with this name
     ])
     def test_handles_odd_characters(self, logged_in_user, helpers, client, public_protocol, filename):
         helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         dataset = recipes.dataset.make(author=logged_in_user, name="dataset", protocol=public_protocol)
         file_contents = b'my test dataset'
-        recipes.dataset_file.make(
+        file_upload = recipes.dataset_file.make(
             dataset=dataset,
             upload=SimpleUploadedFile(filename, file_contents),
             original_name=filename,
         )
-        client.post(
+        response = client.post(
             '/datasets/%d/addfiles' % dataset.pk,
             data={
-                'filename[]': ['uploads/' + filename],
+                'filename[]': [str(file_upload.upload)],
                 'delete_filename[]': [],
-                'mainEntry': [filename],
+                'mainEntry': [file_upload.original_name],
             },
         )
+        # Check file added OK
+        assert response.status_code == 302
+        assert response.url == '/datasets/%d' % dataset.pk
 
-        # neither of these get methods work
+        response = client.get(
+            reverse('datasets:file_download', args=[dataset.pk, filename])
+        )
 
-        # this gives the exception of No file found - since it is looking for that dataset zip file containing the csv
-        # response = client.get(
-        #     '/datasets/%d/download/%s' % (dataset.pk, filename)
-        # )
-
-        # this gives exception No reverse match
-        # response = client.get(
-        #     reverse('datasets:file_download', args=['dataset', dataset.pk, filename])
-        # )
-
-        # assert response.status_code == 200
-        # assert response.content == b'my test dataset'
-        # assert response['Content-Disposition'] == (
-        #     'attachment; filename=' + filename
-        # )
-        # assert response['Content-Type'] == 'text/csv'
+        assert response.status_code == 200
+        assert response.content == b'my test dataset'
+        assert response['Content-Disposition'] == (
+            'attachment; filename=' + filename
+        )
+        assert response['Content-Type'] == 'text/csv'
 
     @pytest.mark.parametrize("filename", [
         ('/etc/passwd'),
