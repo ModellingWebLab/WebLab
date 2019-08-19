@@ -129,25 +129,7 @@ class TestDatasetsList:
 @pytest.mark.django_db
 class TestDatasetFileDownloadView:
     def test_download_file(self, client, my_dataset_with_file):
-        # set up dataset with file
-        # there must be someway to make this generic but as yet I havent found it
-        # file_name = 'mydataset.csv'
         file_contents = b'my test dataset'
-        # recipes.dataset_file.make(
-        #     dataset=my_dataset,
-        #     upload=SimpleUploadedFile(file_name, file_contents),
-        #     original_name=file_name,
-        #
-        # )
-        # assert Dataset.objects.count() == 1
-        # client.post(
-        #     '/datasets/%d/addfiles' % my_dataset.pk,
-        #     data={
-        #         'filename[]': ['uploads/' + file_name],
-        #         'delete_filename[]': [],
-        #         'mainEntry': [file_name],
-        #     },
-        # )
         response = client.get(
             '/datasets/%d/download/mydataset.csv' % my_dataset_with_file.pk
         )
