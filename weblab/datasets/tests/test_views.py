@@ -220,7 +220,7 @@ class TestDatasetFileDownloadView:
 #
 #
 @pytest.mark.django_db
-class TestEntityArchiveView:
+class TestDatasetArchiveView:
     def test_download_archive(self, my_dataset_with_file, client):
         response = client.get('/datasets/%d/archive' % my_dataset_with_file.pk)
         assert response.status_code == 200
