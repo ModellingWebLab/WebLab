@@ -335,69 +335,62 @@ class TestDatasetJsonView:
                 '/datasets/%d/download/mydataset.csv' % dataset.pk )
 
 
-# @pytest.mark.django_db
-# @pytest.mark.parametrize("recipe,url", [
-#     (recipes.model, '/entities/models/%d'),
-#     (recipes.model, '/entities/models/%d/versions/'),
-#     (recipes.model, '/entities/models/%d/versions/latest'),
-#     (recipes.model, '/entities/models/%d/versions/latest/compare'),
-#     (recipes.model, '/entities/models/%d/versions/latest/archive'),
-#     (recipes.model, '/entities/models/%d/versions/latest/files.json'),
-#     (recipes.model, '/entities/models/%d/versions/latest/download/file1.txt'),
-#     (recipes.protocol, '/entities/protocols/%d'),
-#     (recipes.protocol, '/entities/protocols/%d/versions/'),
-#     (recipes.protocol, '/entities/protocols/%d/versions/latest'),
-#     (recipes.protocol, '/entities/protocols/%d/versions/latest/compare'),
-#     (recipes.protocol, '/entities/protocols/%d/versions/latest/archive'),
-#     (recipes.protocol, '/entities/protocols/%d/versions/latest/files.json'),
-#     (recipes.protocol, '/entities/protocols/%d/versions/latest/download/file1.txt'),
-# ])
-# class TestEntityVisibility:
-#     def test_private_entity_visible_to_self(self, client, logged_in_user, helpers, recipe, url):
-#         entity = recipe.make(author=logged_in_user)
-#         helpers.add_version(entity, visibility='private')
-#         assert client.get(url % entity.pk, follow=True).status_code == 200
-#
-#     def test_private_entity_visible_to_collaborator(self, client, logged_in_user, helpers, recipe, url):
-#         entity = recipe.make()
-#         helpers.add_version(entity, visibility='private')
-#         assign_perm('edit_entity', logged_in_user, entity)
-#         assert client.get(url % entity.pk, follow=True).status_code == 200
-#
-#     def test_private_entity_invisible_to_other_user(
-#         self,
-#         client, logged_in_user, other_user, helpers,
-#         recipe, url
-#     ):
-#         entity = recipe.make(author=other_user)
-#         helpers.add_version(entity, visibility='private')
-#         response = client.get(url % entity.pk)
-#         assert response.status_code == 404
-#
-#     def test_private_entity_requires_login_for_anonymous(self, client, helpers, recipe, url):
-#         entity = recipe.make()
-#         helpers.add_version(entity, visibility='private')
-#         response = client.get(url % entity.pk)
-#         assert response.status_code == 302
-#         assert '/login' in response.url
-#
-#     def test_public_entity_visible_to_anonymous(self, client, helpers, recipe, url):
-#         entity = recipe.make()
-#         helpers.add_version(entity, visibility='public')
-#         assert client.get(url % entity.pk, follow=True).status_code == 200
-#
-#     def test_public_entity_visible_to_logged_in_user(self, client, logged_in_user, helpers, recipe, url):
-#         entity = recipe.make()
-#         helpers.add_version(entity, visibility='public')
-#         assert client.get(url % entity.pk, follow=True).status_code == 200
-#
-#     def test_nonexistent_entity_redirects_anonymous_to_login(self, client, helpers, recipe, url):
-#         response = client.get(url % 10000)
-#         assert response.status_code == 302
-#         assert '/login' in response.url
-#
-#     def test_nonexistent_entity_generates_404_for_user(self, client, logged_in_user, helpers, recipe, url):
-#         response = client.get(url % 10000)
-#         assert response.status_code == 404
-#
+# note this does not test the archive/download url because of
+# how difficult it is to make a dummy dataset with a file
+# should I try harder ??
+@pytest.mark.django_db
+@pytest.mark.parametrize("recipe,url", [
+    (recipes.dataset, '/datasets/%d'),
+    (recipes.dataset, '/datasets/%d/files.json'),
+])
+class TestDatasetVisibility:
+    def test_private_dataset_visible_to_self(self, client, logged_in_user, helpers, public_protocol, recipe, url):
+        dataset = recipe.make(author=logged_in_user, visibility='private', protocol=public_protocol)
+        assert client.get(url % dataset.pk, follow=True).status_code == 200
+
+    # this permission does not exist  - should it ?
+    # def test_private_dataset_visible_to_collaborator(self, dataset_creator, client, logged_in_user, helpers, 
+    #                                                 public_protocol, recipe, url):
+    #     dataset = recipe.make(author=dataset_creator, visibility='private', protocol=public_protocol)
+    #     assign_perm('edit_dataset', logged_in_user, dataset)
+    #     assert client.get(url % dataset.pk, follow=True).status_code == 200
+
+    def test_private_dataset_invisible_to_other_user(
+        self,
+        client, logged_in_user, other_user, helpers, public_protocol,
+        recipe, url
+    ):
+        dataset = recipe.make(author=other_user, visibility='private', protocol=public_protocol)
+        response = client.get(url % dataset.pk)
+        assert response.status_code == 404
+
+    def test_private_dataset_requires_login_for_anonymous(self, client, helpers,
+                                                          dataset_creator, public_protocol,
+                                                          recipe, url):
+        dataset = recipe.make(author=dataset_creator, visibility='private', protocol=public_protocol)
+        response = client.get(url % dataset.pk)
+        assert response.status_code == 302
+        assert '/login' in response.url
+
+    def test_public_dataset_visible_to_anonymous(self, client, helpers,
+                                                 dataset_creator, public_protocol,
+                                                 recipe, url):
+        dataset = recipe.make(author=dataset_creator, visibility='private', protocol=public_protocol)
+        assert client.get(url % dataset.pk, follow=True).status_code == 200
+
+    def test_public_dataset_visible_to_logged_in_user(self, client, logged_in_user, helpers,
+                                                      dataset_creator, public_protocol,
+                                                      recipe, url):
+        dataset = recipe.make(author=dataset_creator, visibility='private', protocol=public_protocol)
+        assert client.get(url % dataset.pk, follow=True).status_code == 200
+
+    def test_nonexistent_dataset_redirects_anonymous_to_login(self, client, helpers, recipe, url):
+        response = client.get(url % 10000)
+        assert response.status_code == 302
+        assert '/login' in response.url
+
+    def test_nonexistent_dataset_generates_404_for_user(self, client, logged_in_user, helpers, recipe, url):
+        response = client.get(url % 10000)
+        assert response.status_code == 404
+
 
