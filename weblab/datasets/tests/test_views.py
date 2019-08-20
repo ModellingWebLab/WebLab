@@ -60,6 +60,44 @@ class TestDatasetCreation:
         with my_dataset_with_file.open_file(file_name) as f:
             assert file_contents == f.read()
 
+    # should only really add one file to a dataset
+    # check that if a user changes their mind and deletes/replaces file
+    def test_add_delete_add_file(self, logged_in_user, client, helpers, public_protocol):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+        dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+        file_name = 'mydataset.csv'
+        file_contents = b'my test dataset'
+        recipes.dataset_file.make(
+            dataset=dataset,
+            upload=SimpleUploadedFile(file_name, file_contents),
+            original_name=file_name,
+        )
+        file_name2 = 'mydataset2.csv'
+        file_contents2 = b'my test dataset2'
+        recipes.dataset_file.make(
+            dataset=dataset,
+            upload=SimpleUploadedFile(file_name2, file_contents2),
+            original_name=file_name2,
+        )
+        response = client.post(
+            '/datasets/%d/addfiles' % dataset.pk,
+            data={
+                'filename[]': ['uploads/' + file_name2],
+                'delete_filename[]': [file_name],
+                'mainEntry': [file_name],
+            },
+        )
+        assert response.status_code == 302
+        assert response.url == '/datasets/%d' % dataset.pk
+        # check upload has been cleared
+        assert dataset.file_uploads.count() == 0
+        # And correct file appears in the archive created
+        assert dataset.archive_path.exists()
+        assert len(dataset.files) == 1
+        assert dataset.files[0].name == file_name2
+        with dataset.open_file(file_name2) as f:
+            assert file_contents2 == f.read()
+
 
 @pytest.mark.django_db
 class TestDatasetView:
