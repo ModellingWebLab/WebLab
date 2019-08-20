@@ -150,22 +150,6 @@ class DatasetAddFilesView(
             reverse('datasets:detail', args=[dataset.id]))
 
 
-# class DatasetDeleteView(UserPassesTestMixin, DeleteView):
-#     """
-#     Delete a Dataset
-#     """
-#     model = Dataset
-#     # Raise a 403 error rather than redirecting to login,
-#     # if the user doesn't have delete permissions.
-#     raise_exception = True
-#
-#     def test_func(self):
-#         return self.get_object().is_deletable_by(self.request.user)
-#
-#     def get_success_url(self, *args, **kwargs):
-#         return reverse('datasets:list')
-
-
 class DatasetFileUploadView(View):
     """
     Upload files to a dataset
