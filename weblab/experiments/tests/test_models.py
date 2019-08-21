@@ -176,7 +176,7 @@ class TestExperimentVersion:
 
     def test_files(self, archive_file_path):
         version = recipes.experiment_version.make()
-        version.abs_path.mkdir()
+        version.mkdir()
         shutil.copy(archive_file_path, str(version.archive_path))
 
         assert len(version.files) == 4
@@ -191,7 +191,7 @@ class TestExperimentVersion:
 
     def test_open_file(self, archive_file_path):
         version = recipes.experiment_version.make()
-        version.abs_path.mkdir()
+        version.mkdir()
         shutil.copy(archive_file_path, str(version.archive_path))
 
         assert version.open_file('stdout.txt').readline() == b'line of output\n'

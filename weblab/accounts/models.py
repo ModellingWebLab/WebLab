@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
@@ -40,3 +41,34 @@ class User(PermissionsMixin, AbstractBaseUser):
 
     def get_full_name(self):
         return self.full_name
+
+    def __init__(self, *args, **kwargs):
+        """Set up storage locations.
+
+        Note that we do this here so tests can override the settings.
+        """
+        super().__init__(*args, **kwargs)
+        # Per-user on-disk storage locations (NB Experiments are not per-user!)
+        self.STORAGE_DIRS = {
+            'repo': settings.REPO_BASE,
+            'dataset': settings.DATASETS_BASE,
+        }
+
+    def get_storage_dir(self, kind):
+        """Find out where on disk to store files of the given kind for this user.
+
+        :return: `Path` object
+        """
+        return self.STORAGE_DIRS[kind] / str(self.id)
+
+    def clean_up_storage(self):
+        """Remove all on-disk storage associated with this user.
+
+        Intended for use by tests, not production code. It works around the problem
+        that DB transaction rollback doesn't call pre_delete signals.
+        """
+        from shutil import rmtree
+        for kind in self.STORAGE_DIRS.keys():
+            storage_dir = self.get_storage_dir(kind)
+            if storage_dir.exists():
+                rmtree(str(storage_dir))

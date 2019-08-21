@@ -198,7 +198,7 @@ def process_callback(data, files):
                        '%s (backend returned no archive)' % exp.return_text)
             return {'error': 'no archive found'}
 
-        exp.abs_path.mkdir(exist_ok=True, parents=True)
+        exp.mkdir()
         with exp.archive_path.open('wb+') as dest:
             for chunk in files['experiment'].chunks():
                 dest.write(chunk)

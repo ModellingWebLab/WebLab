@@ -181,6 +181,10 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
     def abs_path(self):
         return Path(settings.EXPERIMENT_BASE, str(self.id))
 
+    def mkdir(self):
+        """Create the folder for this version's results (and parents if needed)."""
+        self.abs_path.mkdir(exist_ok=True, parents=True)
+
     @property
     def archive_path(self):
         return self.abs_path / 'results.omex'

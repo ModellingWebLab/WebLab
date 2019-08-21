@@ -1,16 +1,20 @@
 import datetime
+import os
 import uuid
+from pathlib import Path
 
 import pytest
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.functions import Now
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from accounts.models import User
 from core import recipes
 from entities.models import Entity
 from repocache.models import CachedEntityVersion
 from repocache.populate import populate_entity_cache
+from datasets.models import Dataset
 
 
 class Helpers:
@@ -98,20 +102,27 @@ def helpers():
 
 @pytest.fixture(autouse=True)
 def fake_upload_path(settings, tmpdir):
-    settings.MEDIA_ROOT = str(tmpdir)
+    # Note that at present (Python 3.5, Django 1.11) Django requires this to be a string
+    settings.MEDIA_ROOT = os.path.join(str(tmpdir), 'uploads')
     return settings.MEDIA_ROOT
 
 
 @pytest.fixture(autouse=True)
 def fake_experiment_path(settings, tmpdir):
-    settings.EXPERIMENT_BASE = str(tmpdir)
+    settings.EXPERIMENT_BASE = Path(str(tmpdir)) / 'experiments'
     return settings.EXPERIMENT_BASE
 
 
 @pytest.fixture(autouse=True)
 def fake_repo_path(settings, tmpdir):
-    settings.REPO_BASE = str(tmpdir)
+    settings.REPO_BASE = Path(str(tmpdir)) / 'repos'
     return settings.REPO_BASE
+
+
+@pytest.fixture(autouse=True)
+def fake_dataset_path(settings, tmpdir):
+    settings.DATASETS_BASE = Path(str(tmpdir)) / 'datasets'
+    return settings.DATASETS_BASE
 
 
 @pytest.fixture
@@ -140,6 +151,7 @@ def public_protocol(helpers):
     protocol = recipes.protocol.make()
     helpers.add_version(protocol, visibility='public')
     return protocol
+
 
 @pytest.fixture
 def moderated_model(helpers):
@@ -173,7 +185,7 @@ def experiment_with_result(model_with_version, protocol_with_version):
         experiment__model=model_with_version,
         experiment__protocol=protocol_with_version,
     )
-    version.abs_path.mkdir()
+    version.mkdir()
     with (version.abs_path / 'result.txt').open('w') as f:
         f.write('experiment results')
     return version
@@ -203,32 +215,38 @@ def moderated_experiment_version(moderated_model, moderated_protocol):
 
 @pytest.fixture
 def admin_user():
-    return User.objects.create_superuser(
+    user = User.objects.create_superuser(
         email='admin@example.com',
         full_name='Admin User',
         institution='UCL',
         password='password',
     )
+    yield user
+    user.clean_up_storage()
 
 
 @pytest.fixture
 def user():
-    return User.objects.create_user(
+    user = User.objects.create_user(
         email='test@example.com',
         full_name='Test User',
         institution='UCL',
         password='password',
     )
+    yield user
+    user.clean_up_storage()
 
 
 @pytest.fixture
 def other_user():
-    return User.objects.create_user(
+    user = User.objects.create_user(
         email='other@example.com',
         full_name='Other User',
         institution='UCL',
         password='password',
     )
+    yield user
+    user.clean_up_storage()
 
 
 @pytest.fixture
@@ -253,7 +271,47 @@ def model_creator(user, helpers):
     helpers.add_permission(user, 'create_model')
     return user
 
+
 @pytest.fixture
 def moderator(user, helpers):
     helpers.add_permission(user, 'moderator')
     return user
+
+
+@pytest.fixture
+def dataset_creator(user, helpers):
+    helpers.add_permission(user, 'create_dataset', Dataset)
+    return user
+
+
+@pytest.fixture
+def my_dataset(logged_in_user, helpers, public_protocol):
+    helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+    yield dataset
+    dataset.delete()
+
+
+@pytest.fixture
+def my_dataset_with_file(logged_in_user, helpers, public_protocol, client):
+    helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+    file_name = 'mydataset.csv'
+    file_contents = b'my test dataset'
+    recipes.dataset_file.make(
+        dataset=dataset,
+        upload=SimpleUploadedFile(file_name, file_contents),
+        original_name=file_name,
+    )
+    client.post(
+        '/datasets/%d/addfiles' % dataset.pk,
+        data={
+            'filename[]': ['uploads/' + file_name],
+            'delete_filename[]': [],
+            'mainEntry': [file_name],
+        },
+    )
+    yield dataset
+    dataset.delete()
+
+

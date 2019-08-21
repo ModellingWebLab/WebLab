@@ -30,3 +30,10 @@ experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experime
 cached_entity = Recipe('CachedEntity')
 cached_entity_version = Recipe('CachedEntityVersion')
 cached_entity_tag = Recipe('CachedEntityTag')
+
+dataset = Recipe('Dataset',
+                 name=seq('mydataset'),
+                 protocol=foreign_key(protocol))
+
+dataset_file = Recipe('DatasetFile',
+                      dataset=foreign_key(dataset))

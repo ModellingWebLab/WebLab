@@ -8,6 +8,6 @@ class DatasetsConfig(AppConfig):
     name = 'datasets'
 
     def ready(self):
-        from .models import ExperimentalDataset
-        post_save.connect(dataset_created, ExperimentalDataset)
-        pre_delete.connect(dataset_deleted, ExperimentalDataset)
+        from .models import Dataset
+        post_save.connect(dataset_created, Dataset)
+        pre_delete.connect(dataset_deleted, Dataset)

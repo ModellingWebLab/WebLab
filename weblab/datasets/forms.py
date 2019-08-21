@@ -6,14 +6,14 @@ from django.core.exceptions import ValidationError
 from accounts.models import User
 from core import visibility
 
-from .models import ExperimentalDataset, DatasetFile
+from .models import Dataset, DatasetFile
 
 
-class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
-    """Used for creating an entirely new ExperimentalDataset."""
+class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for creating an entirely new Dataset."""
     class Meta:
-        model = ExperimentalDataset
-        fields = ['name', 'visibility', 'protocol']
+        model = Dataset
+        fields = ['name', 'visibility', 'protocol', 'description']
 
     def clean_name(self):
         name = self.cleaned_data['name']
@@ -30,15 +30,11 @@ class ExperimentalDatasetForm(UserKwargModelFormMixin, forms.ModelForm):
         return dataset
 
 
-class ExperimentalDatasetAddFilesForm(forms.Form):
+class DatasetAddFilesForm(forms.Form):
     """Used to add files to a new dataset."""
     class Meta:
-        model = ExperimentalDataset
-        fields = ['description']
+        model = Dataset
 
-    description = forms.CharField(
-        label='Description of this dataset',
-        widget=forms.Textarea)
 
 # EntityCollaboratorFormSet = formset_factory(
 #     EntityCollaboratorForm,
@@ -47,7 +43,7 @@ class ExperimentalDatasetAddFilesForm(forms.Form):
 # )
 
 
-class FileUploadForm(forms.ModelForm):
+class DatasetFileUploadForm(forms.ModelForm):
     class Meta:
         model = DatasetFile
         fields = ['upload']
