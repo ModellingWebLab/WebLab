@@ -126,7 +126,6 @@ class DatasetAddFilesView(
             # Copy new files into the archive
             for upload in dataset.file_uploads.filter(upload__in=additions).order_by('-pk'):
                 src = upload.upload.path
-                files_to_delete.add(src)
                 if upload.original_name not in archive.namelist():
                     # Avoid duplicates if user changed their mind about a file and replaced it
                     # TODO: Also handling if user changed their mind but did't replace!
