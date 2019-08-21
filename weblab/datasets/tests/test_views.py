@@ -133,7 +133,8 @@ class TestDatasetView:
         assert response.status_code == 200
         assert response.context_data['object'].visibility == 'public'
 
-        dataset_private = recipes.dataset.make(author=logged_in_user, name='mydataset1', visibility='private', protocol=protocol)
+        dataset_private = recipes.dataset.make(
+            author=logged_in_user, name='mydataset1', visibility='private', protocol=protocol)
         response = client.get(
             '/datasets/%d' % dataset_private.pk,
         )
@@ -143,8 +144,10 @@ class TestDatasetView:
 
     def test_cannot_access_invisible_version(self, client, other_user, logged_in_user):
         protocol = recipes.protocol.make(author=other_user)
-        dataset_other = recipes.dataset.make(author=other_user, name='otherdataset', visibility='private', protocol=protocol)
-        dataset_mine = recipes.dataset.make(author=logged_in_user, name='mydataset', visibility='private', protocol=protocol)
+        dataset_other = recipes.dataset.make(
+            author=other_user, name='otherdataset', visibility='private', protocol=protocol)
+        dataset_mine = recipes.dataset.make(
+            author=logged_in_user, name='mydataset', visibility='private', protocol=protocol)
 
         # can access mine
         response = client.get(
@@ -347,7 +350,7 @@ class TestDatasetJsonView:
         assert file_['filetype'] == 'http://purl.org/NET/mediatypes/text/csv'
         assert file_['size'] == 15
         assert (file_['url'] ==
-                '/datasets/%d/download/mydataset.csv' % dataset.pk )
+                '/datasets/%d/download/mydataset.csv' % dataset.pk)
 
 
 # note this does not test the archive/download url because of
@@ -363,7 +366,7 @@ class TestDatasetVisibility:
         assert client.get(url % dataset.pk, follow=True).status_code == 200
 
     # this permission does not exist  - should it ?
-    # def test_private_dataset_visible_to_collaborator(self, dataset_creator, client, logged_in_user, helpers, 
+    # def test_private_dataset_visible_to_collaborator(self, dataset_creator, client, logged_in_user, helpers,
     #                                                 public_protocol, recipe, url):
     #     dataset = recipe.make(author=dataset_creator, visibility='private', protocol=public_protocol)
     #     assign_perm('edit_dataset', logged_in_user, dataset)

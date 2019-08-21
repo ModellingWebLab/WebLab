@@ -196,7 +196,7 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
                 'files': files,
                 'numFiles': len(files),
                 'download_url': reverse(
-                     'datasets:archive', args=[dataset.id]
+                    'datasets:archive', args=[dataset.id]
                 ),
             }
         })
