@@ -8,12 +8,11 @@ from core import recipes
 
 @pytest.mark.django_db
 def test_dataset_urls_no_files(my_dataset):
-    dataset = my_dataset
-    assert dataset_tags.url_dataset(dataset) == '/datasets/%d/addfiles' % dataset.pk
+    assert dataset_tags.url_dataset(my_dataset) == '/datasets/%d/addfiles' % my_dataset.pk
 
 
 @pytest.mark.django_db
-def test_can_create_dataset_no_permission(user, helpers):
+def test_can_create_dataset_no_permission(user):
     context = {'user': user}
     assert not dataset_tags.can_create_dataset(context)
 

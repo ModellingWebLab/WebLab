@@ -215,13 +215,10 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
             'version': {
                 'id': dataset.id,
                 'author': dataset.author.full_name,
-                # 'status': version.status,
                 'parsedOk': False,
                 'visibility': dataset.visibility,
                 'created': dataset.created_at,
                 'name': dataset.name,
-                # 'experimentId': version.experiment.id,
-                # 'version': version.id,
                 'files': files,
                 'numFiles': len(files),
                 'download_url': reverse(

@@ -49,6 +49,7 @@ class TestDatasetCreation:
         assert '/login/' in response.url
 
     def test_create_dataset_with_file(self, client, my_dataset_with_file):
+        # These match what the fixture sets up
         file_name = 'mydataset.csv'
         file_contents = b'my test dataset'
         # The uploaded file is tidied up
@@ -60,8 +61,6 @@ class TestDatasetCreation:
         with my_dataset_with_file.open_file(file_name) as f:
             assert file_contents == f.read()
 
-    # should only really add one file to a dataset
-    # check that if a user changes their mind and deletes/replaces file
     def test_add_delete_add_file(self, logged_in_user, client, helpers, public_protocol):
         helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
@@ -157,8 +156,9 @@ class TestDatasetView:
 
 @pytest.mark.django_db
 class TestDatasetsList:
-    def test_lists_my_datasets(self, client, logged_in_user):
+    def test_lists_my_datasets(self, client, logged_in_user, other_user):
         datasets = recipes.dataset.make(_quantity=2, author=logged_in_user)
+        recipes.dataset.make(_quantity=1, author=other_user)
         response = client.get('/datasets/mine')
         assert response.status_code == 200
         assert list(response.context['object_list']) == datasets
@@ -305,7 +305,7 @@ class TestDatasetJsonView:
         ver = data['version']
 
         assert ver['id'] == dataset.id
-        assert ver['author'] == 'Test User'
+        assert ver['author'] == logged_in_user.full_name
         assert ver['visibility'] == dataset.visibility
         assert ver['name'] == dataset.name
         assert (
@@ -337,7 +337,6 @@ class TestDatasetJsonView:
 
 # note this does not test the archive/download url because of
 # how difficult it is to make a dummy dataset with a file
-# should I try harder ??
 @pytest.mark.django_db
 @pytest.mark.parametrize("recipe,url", [
     (recipes.dataset, '/datasets/%d'),
