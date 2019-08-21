@@ -134,3 +134,69 @@ def test_url_runexperiments(model_with_version, protocol_with_version):
     protocol_commit = protocol.repo.latest_commit
     assert (entity_tags.url_run_experiments(protocol, protocol_commit) ==
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, protocol_commit.hexsha))
+
+
+@pytest.mark.django_db
+def test_can_create_entity(anon_user, model_creator, admin_user):
+    context = {'user': anon_user}
+    assert not entity_tags.can_create_entity(context, 'model')
+
+    context = {'user': model_creator}
+    assert entity_tags.can_create_entity(context, 'model')
+
+    context = {'user': admin_user}
+    assert entity_tags.can_create_entity(context, 'model')
+
+
+@pytest.mark.django_db
+def test_can_create_version(anon_user, model_creator, admin_user):
+    model = recipes.model.make()
+    context = {'user': anon_user}
+    assert not entity_tags.can_create_version(context, model)
+
+    context = {'user': model_creator}
+    assert not entity_tags.can_create_version(context, model)
+
+    context = {'user': admin_user}
+    assert entity_tags.can_create_version(context, model)
+
+    model = recipes.model.make(author=model_creator)
+    context = {'user': model_creator}
+    assert entity_tags.can_create_version(context, model)
+
+
+@pytest.mark.django_db
+def test_can_delete_entity(anon_user, model_creator, admin_user):
+    model = recipes.model.make()
+    context = {'user': anon_user}
+    assert not entity_tags.can_delete_entity(context, model)
+
+    context = {'user': model_creator}
+    assert not entity_tags.can_delete_entity(context, model)
+
+    context = {'user': admin_user}
+    assert entity_tags.can_delete_entity(context, model)
+
+    model = recipes.model.make(author=model_creator)
+    context = {'user': model_creator}
+    assert entity_tags.can_delete_entity(context, model)
+
+
+@pytest.mark.django_db
+def test_can_manage_entity(anon_user, model_creator, admin_user):
+    model = recipes.model.make()
+    context = {'user': anon_user}
+    assert not entity_tags.can_manage_entity(context, model)
+
+    context = {'user': model_creator}
+    assert not entity_tags.can_manage_entity(context, model)
+
+    context = {'user': admin_user}
+    assert entity_tags.can_manage_entity(context, model)
+
+    model = recipes.model.make(author=model_creator)
+    context = {'user': model_creator}
+    assert entity_tags.can_manage_entity(context, model)
+
+
+

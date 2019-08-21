@@ -74,7 +74,7 @@ class Entity(UserCreatedModelMixin, models.Model):
         :return: `Path` object
         """
         return Path(
-            settings.REPO_BASE, str(self.author.id), '%ss' % self.entity_type, str(self.id)
+            self.author.get_storage_dir('repo'), '%ss' % self.entity_type, str(self.id)
         )
 
     def nice_version(self, commit):

@@ -6,7 +6,7 @@ def dataset_created(sender, instance, created, **kwargs):
     Signal callback when a dataset has been created.
     """
     if created:
-        instance.abs_path.mkdir(exist_ok=True, parents=True)
+        instance.abs_path.mkdir(exist_ok=False, parents=True)
 
 
 def dataset_deleted(sender, instance, **kwargs):

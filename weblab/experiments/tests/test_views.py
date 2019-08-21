@@ -1078,7 +1078,7 @@ class TestExperimentComparisonJsonView:
     def test_file_json(self, client, archive_file_path, helpers, experiment_version):
         experiment_version.author.full_name = 'test user'
         experiment_version.author.save()
-        experiment_version.abs_path.mkdir()
+        experiment_version.mkdir()
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
         exp = experiment_version.experiment
         exp.model.set_version_visibility('latest', 'public')
@@ -1093,7 +1093,7 @@ class TestExperimentComparisonJsonView:
             experiment__protocol=protocol,
             experiment__protocol_version=protocol_commit.hexsha,
         )
-        version2.abs_path.mkdir()
+        version2.mkdir()
         shutil.copyfile(archive_file_path, str(version2.archive_path))
 
         response = client.get(
@@ -1128,7 +1128,6 @@ class TestExperimentVersionJsonView:
         version.author.full_name = 'test user'
         version.author.save()
         version.status = 'SUCCESS'
-        version.abs_path.mkdir()
 
         response = client.get(
             ('/experiments/%d/versions/%d/files.json' % (version.experiment.pk, version.pk))
@@ -1158,7 +1157,7 @@ class TestExperimentVersionJsonView:
         version = experiment_version
         version.author.full_name = 'test user'
         version.author.save()
-        version.abs_path.mkdir()
+        version.mkdir()
         shutil.copyfile(archive_file_path, str(version.archive_path))
 
         response = client.get(
@@ -1181,7 +1180,7 @@ class TestExperimentVersionJsonView:
 @pytest.mark.django_db
 class TestExperimentArchiveView:
     def test_download_archive(self, client, experiment_version, archive_file_path):
-        experiment_version.abs_path.mkdir(exist_ok=True)
+        experiment_version.mkdir()
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
         experiment_version.experiment.model.name = 'my_model'
         experiment_version.experiment.model.save()
@@ -1211,7 +1210,7 @@ class TestExperimentArchiveView:
 @pytest.mark.django_db
 class TestExperimentFileDownloadView:
     def test_download_file(self, client, archive_file_path, experiment_version):
-        experiment_version.abs_path.mkdir(exist_ok=True)
+        experiment_version.mkdir()
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 
         response = client.get(
@@ -1226,7 +1225,7 @@ class TestExperimentFileDownloadView:
         assert response['Content-Type'] == 'text/plain'
 
     def test_handles_odd_characters(self, client, archive_file_path, experiment_version):
-        experiment_version.abs_path.mkdir(exist_ok=True)
+        experiment_version.mkdir()
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
         filename = 'oxmeta:membrane%3Avoltage - space.csv'
 
@@ -1243,7 +1242,7 @@ class TestExperimentFileDownloadView:
         assert response['Content-Type'] == 'text/csv'
 
     def test_disallows_non_local_files(self, client, archive_file_path, experiment_version):
-        experiment_version.abs_path.mkdir(exist_ok=True)
+        experiment_version.mkdir()
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 
         for filename in ['/etc/passwd', '../../../pytest.ini']:
@@ -1282,7 +1281,7 @@ class TestEnforcesExperimentVersionVisibility:
             experiment__protocol_version=protocol_version.hexsha,
         )
 
-        os.mkdir(str(experiment_version.abs_path))
+        experiment_version.mkdir()
         shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 
         exp_url = url % (experiment_version.experiment.pk, experiment_version.pk)
