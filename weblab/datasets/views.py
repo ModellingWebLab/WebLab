@@ -1,21 +1,12 @@
-import json
 import mimetypes
 import os.path
-import shutil
-import subprocess
 import urllib
-from itertools import groupby
-from tempfile import NamedTemporaryFile
 from zipfile import ZipFile
 
-import requests
 from braces.views import UserFormKwargsMixin
-from django.conf import settings
-from django.contrib import messages
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     PermissionRequiredMixin,
-    UserPassesTestMixin,
 )
 from django.core.urlresolvers import reverse
 from django.http import (
@@ -25,28 +16,14 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.core.exceptions import PermissionDenied
-from django.db.models import F, Q
-from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import TemplateView
-from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import CreateView, DeleteView, FormMixin
+from django.views.generic.edit import CreateView, FormMixin
 from django.views.generic.list import ListView
-from git import BadName, GitCommandError
-from guardian.shortcuts import get_objects_for_user
 
 from core.combine import ManifestWriter
-from core.filetypes import get_file_type
-from core.visibility import (
-    Visibility, VisibilityMixin
-)
-from experiments.models import Experiment, PlannedExperiment
-from repocache.exceptions import RepoCacheMiss
-from repocache.models import CachedEntityVersion
+from core.visibility import VisibilityMixin
 
 from .models import Dataset
 

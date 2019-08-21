@@ -2,7 +2,6 @@ import binascii
 import uuid
 from pathlib import Path
 
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
 from django.db import models

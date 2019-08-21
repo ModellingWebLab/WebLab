@@ -1,9 +1,6 @@
 import pytest
 
 import datasets.templatetags.datasets as dataset_tags
-from datasets.models import Dataset
-
-from core import recipes
 
 
 @pytest.mark.django_db
