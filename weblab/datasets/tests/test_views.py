@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import shutil
 from pathlib import Path
 import uuid
@@ -66,36 +67,57 @@ class TestDatasetCreation:
         dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
         file_name = 'mydataset.csv'
         file_contents = b'my test dataset'
-        recipes.dataset_file.make(
+        del1 = recipes.dataset_file.make(  # Uploaded then deleted
             dataset=dataset,
             upload=SimpleUploadedFile(file_name, file_contents),
             original_name=file_name,
         )
+        file_name_rep = 'mydatasetr.csv'
+        del2 = recipes.dataset_file.make(  # Uploaded then replaced by alternative version
+            dataset=dataset,
+            upload=SimpleUploadedFile(file_name_rep, b'my test original dataset'),
+            original_name=file_name_rep,
+        )
         file_name2 = 'mydataset2.csv'
         file_contents2 = b'my test dataset2'
-        recipes.dataset_file.make(
+        file_upload2 = recipes.dataset_file.make(  # Uploaded and kept
             dataset=dataset,
             upload=SimpleUploadedFile(file_name2, file_contents2),
             original_name=file_name2,
         )
+        file_contents_rep = b'my test dataset2'
+        file_upload_rep = recipes.dataset_file.make(  # Replacement version of mydatasetr.csv
+            dataset=dataset,
+            upload=SimpleUploadedFile(file_name_rep, file_contents_rep),
+            original_name=file_name_rep,
+        )
         response = client.post(
             '/datasets/%d/addfiles' % dataset.pk,
             data={
-                'filename[]': ['uploads/' + file_name2],
-                'delete_filename[]': [file_name],
+                'filename[]': [str(file_upload2.upload), str(file_upload_rep.upload)],
+                'delete_filename[]': [file_name, file_name_rep],
                 'mainEntry': [file_name],
             },
         )
         assert response.status_code == 302
         assert response.url == '/datasets/%d' % dataset.pk
-        # check upload has been cleared
+        # Check uploads have been cleared & files removed
         assert dataset.file_uploads.count() == 0
-        # And correct file appears in the archive created
+        assert not os.path.exists(del1.upload.path)
+        assert not os.path.exists(del2.upload.path)
+        assert not os.path.exists(file_upload2.upload.path)
+        assert not os.path.exists(file_upload_rep.upload.path)
+        # And correct files appear in the archive created
         assert dataset.archive_path.exists()
-        assert len(dataset.files) == 1
-        assert dataset.files[0].name == file_name2
-        with dataset.open_file(file_name2) as f:
-            assert file_contents2 == f.read()
+        assert len(dataset.files) == 2
+        file_map = {
+            file_name2: file_contents2,
+            file_name_rep: file_contents_rep,
+        }
+        for f in dataset.files:
+            assert f.name in file_map
+            with dataset.open_file(f.name) as fp:
+                assert fp.read() == file_map[f.name]
 
 
 @pytest.mark.django_db

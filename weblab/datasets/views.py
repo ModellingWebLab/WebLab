@@ -114,8 +114,6 @@ class DatasetAddFilesView(
             form.add_error(None, 'No files were added to this dataset')
             return self.form_invalid(form)
 
-        files_to_delete = set()  # Temp files to be removed if successful
-
         archive_path = dataset.archive_path
         if archive_path.exists():
             form = self.get_form()
@@ -140,8 +138,8 @@ class DatasetAddFilesView(
             archive.writestr('manifest.xml', ET.tostring(manifest_writer.xml_doc.getroot()))
 
         # Temporary upload files have been safely written, so can be deleted
-        for filepath in files_to_delete:
-            os.remove(filepath)
+        for upload in dataset.file_uploads.all():
+            os.remove(upload.upload.path)
         # Remove records from the DatasetFile table too
         dataset.file_uploads.all().delete()
 
