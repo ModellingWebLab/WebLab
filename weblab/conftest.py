@@ -6,15 +6,15 @@ from pathlib import Path
 import pytest
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.functions import Now
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models.functions import Now
 
 from accounts.models import User
 from core import recipes
+from datasets.models import Dataset
 from entities.models import Entity
 from repocache.models import CachedEntityVersion
 from repocache.populate import populate_entity_cache
-from datasets.models import Dataset
 
 
 class Helpers:
@@ -313,5 +313,3 @@ def my_dataset_with_file(logged_in_user, helpers, public_protocol, client):
     )
     yield dataset
     dataset.delete()
-
-

@@ -3,9 +3,8 @@ from django.db import models
 from django.utils.text import get_valid_filename
 
 from core.combine import ArchiveReader
-from core.models import UserCreatedModelMixin
+from core.models import UserCreatedModelMixin, VisibilityModelMixin
 from core.visibility import visibility_check
-from core.models import VisibilityModelMixin
 from entities.models import ProtocolEntity
 
 

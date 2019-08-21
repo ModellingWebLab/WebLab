@@ -18,5 +18,3 @@ def test_can_create_dataset_no_permission(user):
 def test_can_create_dataset_permission(dataset_creator):
     context = {'user': dataset_creator}
     assert dataset_tags.can_create_dataset(context)
-
-

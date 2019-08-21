@@ -4,10 +4,7 @@ import urllib
 from zipfile import ZipFile
 
 from braces.views import UserFormKwargsMixin
-from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-)
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.http import (
     Http404,
@@ -25,13 +22,8 @@ from django.views.generic.list import ListView
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
 
+from .forms import DatasetAddFilesForm, DatasetFileUploadForm, DatasetForm
 from .models import Dataset
-
-from .forms import (
-    DatasetForm,
-    DatasetFileUploadForm,
-    DatasetAddFilesForm,
-)
 
 
 class DatasetCreateView(

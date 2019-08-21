@@ -197,6 +197,3 @@ def test_can_manage_entity(anon_user, model_creator, admin_user):
     model = recipes.model.make(author=model_creator)
     context = {'user': model_creator}
     assert entity_tags.can_manage_entity(context, model)
-
-
-

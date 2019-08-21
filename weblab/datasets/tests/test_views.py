@@ -409,5 +409,3 @@ class TestDatasetVisibility:
     def test_nonexistent_dataset_generates_404_for_user(self, client, logged_in_user, helpers, recipe, url):
         response = client.get(url % 10000)
         assert response.status_code == 404
-
-
