@@ -83,7 +83,9 @@ class UserCreatedModelMixin(models.Model):
         return {
             user
             for user in self.collaborators
-        } | { self.author }
+        } | {
+            self.author
+        }
 
     def is_managed_by(self, user):
         """

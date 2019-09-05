@@ -12,10 +12,10 @@ urlpatterns = [
         '^'
         '(?P<subset>mine|public|all)?'
         '/?'
-        '(?:models(?P<model_pks>(/\d+)+)'
+        r'(?:models(?P<model_pks>(/\d+)+)'
         '(?:/versions(?P<model_versions>(/%s)+))?)?'
         '/?'
-        '(?:protocols(?P<protocol_pks>(/\d+)+)'
+        r'(?:protocols(?P<protocol_pks>(/\d+)+)'
         '(?:/versions(?P<protocol_versions>(/%s)+))?)?'
         '$' % (_COMMIT, _COMMIT.replace('sha', 'sha1')),
         views.ExperimentsView.as_view(),

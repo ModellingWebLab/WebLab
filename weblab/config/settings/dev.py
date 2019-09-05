@@ -1,3 +1,6 @@
+# Ignore warnings about names defined from star imports
+# flake8: noqa: F405
+
 import copy
 import sys
 

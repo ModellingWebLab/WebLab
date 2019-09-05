@@ -8,7 +8,12 @@ from tempfile import TemporaryDirectory
 
 from django.utils.functional import cached_property
 from django.utils.timezone import utc
-from git import Actor, Blob, GitCommandError, Repo
+from git import (
+    Actor,
+    Blob,
+    GitCommandError,
+    Repo,
+)
 
 from core.combine import (
     MANIFEST_FILENAME,

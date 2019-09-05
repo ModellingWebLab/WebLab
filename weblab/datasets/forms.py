@@ -1,10 +1,6 @@
 from braces.forms import UserKwargModelFormMixin
 from django import forms
-from django.forms import formset_factory
 from django.core.exceptions import ValidationError
-
-from accounts.models import User
-from core import visibility
 
 from .models import Dataset, DatasetFile
 

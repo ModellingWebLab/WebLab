@@ -15,7 +15,9 @@ from django.contrib.auth.mixins import (
     PermissionRequiredMixin,
     UserPassesTestMixin,
 )
+from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
+from django.db.models import Count, F, Q
 from django.http import (
     Http404,
     HttpResponse,
@@ -23,8 +25,6 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.core.exceptions import PermissionDenied
-from django.db.models import Count, F, Q
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
@@ -38,10 +38,8 @@ from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
 from core.filetypes import get_file_type
-from core.visibility import (
-    Visibility, VisibilityMixin
-)
-from experiments.models import Experiment, PlannedExperiment, ExperimentVersion
+from core.visibility import Visibility, VisibilityMixin
+from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedEntityVersion
 

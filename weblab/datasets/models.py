@@ -1,16 +1,11 @@
-import uuid
-from pathlib import Path
-
-from django.conf import settings
 from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.text import get_valid_filename
 
 from core.combine import ArchiveReader
-from core.models import UserCreatedModelMixin
-from core.visibility import get_joint_visibility, Visibility, visibility_check
-from core.models import VisibilityModelMixin
-from entities.models import ModelEntity, ProtocolEntity
+from core.models import UserCreatedModelMixin, VisibilityModelMixin
+from core.visibility import visibility_check
+from entities.models import ProtocolEntity
 
 
 class Dataset(UserCreatedModelMixin, VisibilityModelMixin, models.Model):

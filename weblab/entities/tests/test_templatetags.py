@@ -55,8 +55,7 @@ def test_model_urls(model_with_version):
     assert entity_tags.url_entity_comparison_base('model') == '/entities/models/compare'
     assert entity_tags.url_entity_diff_base('model') == '/entities/models/diff'
 
-    assert (entity_tags.url_entity_comparison_json(
-                ['%d:%s' % (model.pk, model_version.hexsha)], 'model') ==
+    assert (entity_tags.url_entity_comparison_json(['%d:%s' % (model.pk, model_version.hexsha)], 'model') ==
             '/entities/models/compare/%d:%s/info' % (model.pk, model_version.hexsha))
 
 
@@ -86,8 +85,7 @@ def test_protocol_urls(protocol_with_version):
     assert entity_tags.url_entity_comparison_base('protocol') == '/entities/protocols/compare'
     assert entity_tags.url_entity_diff_base('protocol') == '/entities/protocols/diff'
 
-    assert (entity_tags.url_entity_comparison_json(
-                ['%d:%s' % (protocol.pk, protocol_version.hexsha)], 'protocol') ==
+    assert (entity_tags.url_entity_comparison_json(['%d:%s' % (protocol.pk, protocol_version.hexsha)], 'protocol') ==
             '/entities/protocols/compare/%d:%s/info' % (protocol.pk, protocol_version.hexsha))
 
 
@@ -199,6 +197,3 @@ def test_can_manage_entity(anon_user, model_creator, admin_user):
     model = recipes.model.make(author=model_creator)
     context = {'user': model_creator}
     assert entity_tags.can_manage_entity(context, model)
-
-
-

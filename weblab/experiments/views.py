@@ -7,7 +7,12 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from django.core.urlresolvers import reverse
-from django.db.models import F, OuterRef, Q, Subquery
+from django.db.models import (
+    F,
+    OuterRef,
+    Q,
+    Subquery,
+)
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404

@@ -3,9 +3,6 @@ from django.db.utils import IntegrityError
 
 from core import recipes
 from datasets.models import Dataset
-from repocache.exceptions import RepoCacheMiss
-from repocache.models import CachedEntity
-from repocache.populate import populate_entity_cache
 
 
 @pytest.mark.django_db

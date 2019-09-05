@@ -11,11 +11,7 @@ from django.utils.timezone import now
 
 from core import recipes
 from experiments.models import Experiment, ExperimentVersion, RunningExperiment
-from experiments.processing import (
-    ProcessingException,
-    process_callback,
-    submit_experiment,
-)
+from experiments.processing import ProcessingException, process_callback, submit_experiment
 
 
 def generate_response(template='%s succ celery-task-id', field='signature'):
