@@ -121,6 +121,87 @@ class TestDatasetCreation:
 
 
 @pytest.mark.django_db
+class TestDatasetDeletion:
+
+    def test_owner_can_delete_dataset(
+            self, helpers, logged_in_user, public_protocol , client
+    ):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+        dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+        file_name = 'mydataset.csv'
+        file_contents = b'my test dataset'
+        recipes.dataset_file.make(  # Uploaded then deleted
+            dataset=dataset,
+            upload=SimpleUploadedFile(file_name, file_contents),
+            original_name=file_name,
+        )
+        client.post(
+            '/datasets/%d/addfiles' % dataset.pk,
+            data={
+                'filename[]': ['uploads/' + file_name],
+                'delete_filename[]': [],
+                'mainEntry': [file_name],
+            },
+        )
+        response = client.post('/datasets/%d/delete' % dataset.pk)
+        assert response.status_code == 302
+        assert response.url == '/datasets/'
+        assert not Dataset.objects.filter(pk=dataset.pk).exists()
+        assert not dataset.archive_path.exists()
+
+    def test_non_owner_cannot_delete_dataset(
+            self, helpers, other_user, logged_in_user, public_protocol , client
+    ):
+        helpers.add_permission(other_user, 'create_dataset', Dataset)
+        dataset = recipes.dataset.make(author=other_user, name='mydataset', protocol=public_protocol)
+        file_name = 'mydataset.csv'
+        file_contents = b'my test dataset'
+        recipes.dataset_file.make(  # Uploaded then deleted
+            dataset=dataset,
+            upload=SimpleUploadedFile(file_name, file_contents),
+            original_name=file_name,
+        )
+        client.post(
+            '/datasets/%d/addfiles' % dataset.pk,
+            data={
+                'filename[]': ['uploads/' + file_name],
+                'delete_filename[]': [],
+                'mainEntry': [file_name],
+            },
+        )
+        response = client.post('/datasets/%d/delete' % dataset.pk)
+        assert response.status_code == 403
+        assert Dataset.objects.filter(pk=dataset.pk).exists()
+        assert dataset.archive_path.exists()
+
+    def test_admin_can_delete_dataset(
+            self, helpers, other_user, logged_in_admin, public_protocol , client
+    ):
+        helpers.add_permission(other_user, 'create_dataset', Dataset)
+        dataset = recipes.dataset.make(author=other_user, name='mydataset', protocol=public_protocol)
+        file_name = 'mydataset.csv'
+        file_contents = b'my test dataset'
+        recipes.dataset_file.make(  # Uploaded then deleted
+            dataset=dataset,
+            upload=SimpleUploadedFile(file_name, file_contents),
+            original_name=file_name,
+        )
+        client.post(
+            '/datasets/%d/addfiles' % dataset.pk,
+            data={
+                'filename[]': ['uploads/' + file_name],
+                'delete_filename[]': [],
+                'mainEntry': [file_name],
+            },
+        )
+        response = client.post('/datasets/%d/delete' % dataset.pk)
+        assert response.status_code == 302
+        assert response.url == '/datasets/'
+        assert not Dataset.objects.filter(pk=dataset.pk).exists()
+        assert not dataset.archive_path.exists()
+
+
+@pytest.mark.django_db
 class TestDatasetView:
     def test_view_dataset(self, client, logged_in_user, helpers):
         protocol = recipes.protocol.make()
