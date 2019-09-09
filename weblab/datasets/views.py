@@ -219,7 +219,7 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
                 'files': files,
                 'numFiles': len(files),
                 'download_url': reverse(
-                     'datasets:archive', args=[dataset.id]
+                    'datasets:archive', args=[dataset.id]
                 ),
             }
         })
@@ -273,3 +273,19 @@ class DatasetArchiveView(VisibilityMixin, SingleObjectMixin, View):
             response.write(archive.read())
 
         return response
+
+
+class DatasetDeleteView(UserPassesTestMixin, DeleteView):
+    """
+    Delete all versions of a dataset
+    """
+    model = Dataset
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have delete permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('datasets:list')
