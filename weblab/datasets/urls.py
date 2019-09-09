@@ -57,10 +57,10 @@ urlpatterns = [
         name='archive',
     ),
 
-    # url(
-    #     r'^(?P<pk>\d+)/delete$',
-    #     views.DatasetDeleteView.as_view(),
-    #     name='delete',
-    # ),
-    #
+    url(
+        r'^(?P<pk>\d+)/delete$',
+        views.DatasetDeleteView.as_view(),
+        name='delete',
+    ),
+
 ]
