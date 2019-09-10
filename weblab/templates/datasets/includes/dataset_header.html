@@ -10,9 +10,9 @@
     {% can_delete_entity dataset as can_delete %}
     {% if can_delete %}
       Delete dataset:
-      <a title="delete all versions of this dataset" href="{% url 'datasets:delete' dataset.id %}">
-        <img src="{% static 'img/delete.png' %}" alt="delete all versions of this dataset"
-             title="delete all versions of this {{type}}"/></a>
+      <a title="delete dataset" href="{% url 'datasets:delete' dataset.id %}">
+        <img src="{% static 'img/delete.png' %}" alt="delete dataset"
+             title="delete dataset"/></a>
     {% endif %}
     <br>
 
