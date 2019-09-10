@@ -277,7 +277,7 @@ class DatasetArchiveView(VisibilityMixin, SingleObjectMixin, View):
 
 class DatasetDeleteView(UserPassesTestMixin, DeleteView):
     """
-    Delete all versions of a dataset
+    Delete dataset
     """
     model = Dataset
     # Raise a 403 error rather than redirecting to login,
