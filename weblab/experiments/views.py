@@ -15,7 +15,7 @@ from django.db.models import (
     Subquery,
 )
 from django.db.models.functions import Coalesce
-from django.http import Http404, HttpResponse, JsonResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
@@ -32,7 +32,6 @@ from entities.models import ModelEntity, ProtocolEntity
 from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
 from repocache.models import CachedEntityVersion
 
-from weblab import experiments
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, PlannedExperiment
 from .processing import process_callback, submit_experiment
