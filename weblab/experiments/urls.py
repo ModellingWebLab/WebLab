@@ -105,7 +105,4 @@ urlpatterns = [
         views.ExperimentComparisonJsonView.as_view(),
         name='compare_json',
     ),
-
-
-
 ]
