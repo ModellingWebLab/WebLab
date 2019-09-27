@@ -893,6 +893,21 @@ class TestExperimentVersionView:
 
 
 @pytest.mark.django_db
+class TestExperimentTasks:
+    def test_get_queryset(self, logged_in_user, client, queued_experiment):
+        response = client.get('/experiments/tasks')
+        assert response.status_code == 200
+
+    # def test_owner_can_delete_experiment(
+    #     self, logged_in_user, client, queued_experiment
+    # ):
+    #     assert queued_experiment.pk == 1
+    #     assert Experiment.objects.filter(pk=queued_experiment.pk).exists()
+    #     response = client.post('/experiments/task', {'chkBoxes[]': queued_experiment.pk})
+    #     assert Experiment.objects.filter(pk=queued_experiment.pk).exists()
+
+
+@pytest.mark.django_db
 class TestExperimentDeletion:
     def test_owner_can_delete_experiment(
         self, logged_in_user, client, experiment_with_result

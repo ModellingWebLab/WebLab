@@ -5,7 +5,8 @@ import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin, \
+    LoginRequiredMixin
 from django.core.urlresolvers import reverse
 from django.db.models import (
     F,
@@ -14,8 +15,8 @@ from django.db.models import (
     Subquery,
 )
 from django.db.models.functions import Coalesce
-from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.http import Http404, HttpResponse, JsonResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
@@ -23,6 +24,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import DeleteView, FormMixin
+from django.views.generic.list import ListView
 from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import VisibilityMixin, visible_entity_ids
@@ -30,6 +32,7 @@ from entities.models import ModelEntity, ProtocolEntity
 from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
 from repocache.models import CachedEntityVersion
 
+from weblab import experiments
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, PlannedExperiment
 from .processing import process_callback, submit_experiment
@@ -45,10 +48,33 @@ class ExperimentsView(TemplateView):
     template_name = 'experiments/experiments.html'
 
 
+class ExperimentTasks(LoginRequiredMixin, ListView):
+    """
+    Show running and queued versions of all experiments
+    Delete checked versions
+    """
+    model = Experiment
+    template_name = "experiments/experiment_tasks.html"
+
+    def get_queryset(self):
+        return self.model.objects.filter(
+            Q(author=self.request.user) &
+            Q(versions__status=ExperimentVersion.STATUS_QUEUED) |
+            Q(versions__status=ExperimentVersion.STATUS_RUNNING))
+
+    def post(self, request):
+        """Process list of user selected checkboxes and kill running versions"""
+        for ver in request.POST.getlist('chkBoxes[]'):
+            self.model.objects.filter(versions=ver).delete()
+
+        return redirect(reverse('experiments:tasks'))
+
+
 class ExperimentMatrixJsonView(View):
     """
     Serve up JSON for experiment matrix
     """
+
     @classmethod
     def entity_json(cls, entity, version, *, extend_name, visibility, author, friendly_version=''):
         if extend_name:
@@ -391,6 +417,13 @@ class ExperimentVersionDeleteView(UserPassesTestMixin, DeleteView):
         return reverse('experiments:versions', args=[self.get_object().experiment.id])
 
 
+class ExperimentVersionMultipleDeleteView(TemplateView):
+    template_name = 'entities/compare.html'
+
+    def get_context_data(self, **kwargs):
+        versions = self.kwargs['versions'].strip('/').split('/')
+
+
 class ExperimentComparisonView(TemplateView):
     """
     Compare multiple experiment versions
@@ -419,6 +452,7 @@ class ExperimentComparisonJsonView(View):
     """
     Serve up JSON view of multiple experiment versions for comparison
     """
+
     def _file_json(self, version, archive_file):
         """
         JSON for a single file in the experiment archive

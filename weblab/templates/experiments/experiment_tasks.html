@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load experiments %}
+{% load staticfiles %}
+
+{% block title %}Running Experiments{% endblock title %}
+
+{% block content %}
+
+    <div id="taskHeader">
+        <h2>List of active tasks</h2>
+        <a id="taskRefreshPage"><img src="{% static 'img/refresh.png' %}" alt="Refresh tasks"
+                                     title="Refresh tasks"/></a>
+    </div>
+
+    {% if  object_list %}
+        <p>
+            [<small><a id="cancelRunningExperimentsAll">select all</a></small>]
+            [<small><a id="cancelRunningExperimentsNone">select none</a></small>]
+        </p>
+    {% endif %}
+
+    <form action="" method="post">
+        {% csrf_token %}
+
+        {% if  object_list %}
+            <p>
+                <button type="submit">Cancel selected experiments</button>
+            </p>
+        {% endif %}
+        <div id="experimentversionlist">
+            {% if not object_list %}
+                <p class="failed">You have no queued or running tasks.</p>
+            {% endif %}
+
+            {% for experiment in object_list|dictsort:"name" %}
+                {{ experiment.name }}
+                <div class="suppl">
+                    <small>Experiment version created
+                        <time>{{ experiment.created_at }}</time>
+                        by <em>{{ experiment.author.full_name }}</em>.
+                    </small>
+                </div>
+                <ul id="taskList">
+                    {% for version in experiment.versions.all|dictsortreversed:"created_at" %}
+                        <li>
+                            <div id="taskDisplay">
+                                <input class="taskCancelCheckBox" type="checkbox" name="chkBoxes[]"
+                                       value="{{ version.id }}">
+                                <div class="experiment-{{ version.status }}" id="taskDetailBox">
+                                    Version: {{ version.name }} by
+                                    <em>{{ version.author.full_name }}</em>
+                                    <div class="suppl" id="taskVersionDetailBox" style="padding-bottom: 0px">
+                                        <small>Created&nbsp;</small>
+                                        <time>{{ version.created_at }}&nbsp;</time>
+                                        {% with version.files|length as numfiles %}
+                                            <small>containing&nbsp;</small> {{ numfiles }} file{{ numfiles|pluralize }}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+            </c:forEach>
+        </div>
+        {% if object_list %}
+            <p id='expversioncolorlegend'>
+                Key:
+                <span class="experiment-QUEUED">queued</span>
+                <span class="experiment-RUNNING">running</span>
+            </p>
+        {% endif %}
+    </form>
+{% endblock content %}
