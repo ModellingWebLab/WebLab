@@ -35,7 +35,7 @@
             {% for experiment in object_list|dictsort:"name" %}
                 {{ experiment.name }}
                 <div class="suppl">
-                    <small>Experiment version created
+                    <small>Experiment created
                         <time>{{ experiment.created_at }}</time>
                         by <em>{{ experiment.author.full_name }}</em>.
                     </small>
