@@ -417,12 +417,6 @@ class ExperimentVersionDeleteView(UserPassesTestMixin, DeleteView):
         return reverse('experiments:versions', args=[self.get_object().experiment.id])
 
 
-class ExperimentVersionMultipleDeleteView(TemplateView):
-    template_name = 'entities/compare.html'
-
-    def get_context_data(self, **kwargs):
-        versions = self.kwargs['versions'].strip('/').split('/')
-
 
 class ExperimentComparisonView(TemplateView):
     """
