@@ -18,3 +18,9 @@ def url_dataset(dataset):
     else:
         url_name = 'datasets:addfiles'
     return reverse(url_name, args=[dataset.id])
+
+
+@register.simple_tag(takes_context=True)
+def can_delete_entity(context, entity):
+    user = context['user']
+    return entity.is_deletable_by(user)
