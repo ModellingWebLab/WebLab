@@ -4,7 +4,7 @@ import urllib
 from zipfile import ZipFile
 
 from braces.views import UserFormKwargsMixin
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
 from django.core.urlresolvers import reverse
 from django.http import (
     Http404,
@@ -16,7 +16,7 @@ from django.http import (
 from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import CreateView, FormMixin
+from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 
 from core.combine import ManifestWriter
