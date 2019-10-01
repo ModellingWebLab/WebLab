@@ -4,7 +4,11 @@ import urllib
 from zipfile import ZipFile
 
 from braces.views import UserFormKwargsMixin
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import (
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    UserPassesTestMixin,
+)
 from django.core.urlresolvers import reverse
 from django.http import (
     Http404,

@@ -166,7 +166,7 @@ class TestDatasetDeletion:
         assert dataset.archive_path.exists()
 
     def test_admin_can_delete_dataset(
-            self, helpers, other_user, logged_in_admin, public_protocol , client
+            self, helpers, other_user, logged_in_admin, public_protocol, client
     ):
         helpers.add_permission(other_user, 'create_dataset', Dataset)
         dataset = recipes.dataset.make(author=other_user, name='mydataset', protocol=public_protocol)
