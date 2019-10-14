@@ -188,6 +188,9 @@ def process_callback(data, files):
     exp.save()
 
     if exp.is_finished or exp.status == ExperimentVersion.STATUS_INAPPLICABLE:
+        # We unset the task_id to ensure the delete() below doesn't send a message to the back-end cancelling
+        # the task, causing it to be killed while still sending us its 'finished' message!
+        run.task_id = ''
         run.delete()
 
     if exp.is_finished:
