@@ -3,7 +3,7 @@ from django.db import models
 
 from core.models import VisibilityModelMixin
 from core.visibility import Visibility
-from entities.models import Entity
+from entities.models import Entity, ModelEntity, ProtocolEntity
 
 from .exceptions import RepoCacheMiss
 
@@ -123,6 +123,202 @@ class CachedEntityTag(models.Model):
     class Meta:
         unique_together = ['entity', 'tag']
 
+
+####################################################################################################
+#
+# Mixin classes defining the common cache structure
+#
+
+class CachedEntityMixin(models.Model):
+    """
+    Abstract class representing a cache for any entity type's repository.
+
+    This is intended to reflect the state of the entity's repository,
+    and should not be changed without first changing the repo.
+
+    Concrete cache types should inherit from this and define a suitable ``entity`` column, e.g.
+        entity = models.OneToOneField(ModelEntity, on_delete=models.CASCADE)
+
+    Once a trio of (entity, version, tag) concrete cache classes are defined, the method
+    _set_class_links() should be called to let them know about each other, setting the
+    CachedModelClass, CachedVersionClass and CachedTagClass properties on each class.
+    """
+
+    class Meta:
+        abstract = True
+
+    @property
+    def visibility(self):
+        """
+        Visibility of the entity (this is based on the most visible version).
+
+        :return: string representing visibility, or PRIVATE if no versions found
+        """
+        if self.versions.filter(visibility=Visibility.MODERATED).exists():
+            return Visibility.MODERATED
+        if self.versions.filter(visibility=Visibility.PUBLIC).exists():
+            return Visibility.PUBLIC
+        return Visibility.PRIVATE
+
+    @property
+    def latest_version(self):
+        return self.versions.latest()
+
+    def get_version(self, sha):
+        """
+        Get a version of the entity
+
+        :param sha: hex string of the commit SHA of the version,
+            or 'latest' to get the latest version
+
+        :return: CachedVersionClass object
+        :raise: RepoCacheMiss if entity does not exist in cache, or has no versions
+        """
+        try:
+            if sha == 'latest':
+                return self.latest_version
+            else:
+                return self.versions.get(sha=sha)
+        except ObjectDoesNotExist:
+            raise RepoCacheMiss("Entity version not found")
+
+    def add_version(self, sha):
+        """
+        Add an entity version to the cache
+
+        :param sha: hex string of the commit SHA of the version
+        :return: CachedVersionClass object
+        """
+        commit = self.entity.repo.get_commit(sha)
+        visibility = self.entity.get_visibility_from_repo(commit)
+        return self.CachedVersionClass.objects.create(
+            entity=self,
+            sha=commit.hexsha,
+            timestamp=commit.committed_at,
+            visibility=visibility,
+        )
+
+
+class CachedEntityVersionMixin(VisibilityModelMixin):
+    """
+    Abstract class representing a cache for a single version / commit in any entity type's repository.
+
+    Concrete cache types should inherit from this and define a suitable ``entity`` column, e.g.
+        entity = models.ForeignKey(CachedModel, on_delete=models.CASCADE, related_name='versions')
+
+    They should also define the property:
+    - ``CachedTagClass`` referring to the concrete ``CachedEntityTagMixin`` they use
+    """
+    sha = models.CharField(max_length=40)
+    timestamp = models.DateTimeField()
+    parsed_ok = models.BooleanField(
+        default=False,
+        help_text='Whether this entity version has been verified as syntactically correct'
+    )
+
+    class Meta:
+        abstract = True
+        unique_together = ['entity', 'sha']
+        get_latest_by = 'timestamp'
+        ordering = ['-timestamp', '-pk']
+
+    def __str__(self):
+        """Return handy representation for debugging."""
+        return self.entity.entity.name + '@' + self.sha
+
+    def set_visibility(self, visibility):
+        """
+        Set the visibility of this version, if it exists
+
+        :param visibility: string representing visibility
+        """
+        self.visibility = visibility
+        self.save()
+
+    def tag(self, tagname):
+        """
+        Add a tag for this version
+
+        :param tagname: Tag name
+        """
+        return self.CachedTagClass.objects.create(
+            entity=self.entity,
+            version=self,
+            tag=tagname,
+        )
+
+
+class CachedEntityTagMixin(models.Model):
+    """
+    Abstract class representing a cache for a tag in any entity type's repository.
+
+    Concrete cache types should inherit from this and define a suitable ``entity`` and ``version``
+    columns, e.g.
+        entity = models.ForeignKey(CachedModel, related_name='tags')
+        version = models.ForeignKey(CachedModelVersion, on_delete=models.CASCADE, related_name='tags')
+    """
+    tag = models.CharField(max_length=255)
+
+    class Meta:
+        abstract = True
+        unique_together = ['entity', 'tag']
+
+
+def _set_class_links(entity_cache_type, version_cache_type, tag_cache_type):
+    """Set the CachedModelClass, CachedVersionClass and CachedTagClass property on each relevant class."""
+    entity_cache_type.CachedVersionClass = version_cache_type
+    entity_cache_type.CachedTagClass = tag_cache_type
+
+    version_cache_type.CachedEntityClass = entity_cache_type
+    version_cache_type.CachedTagClass = tag_cache_type
+
+    tag_cache_type.CachedEntityClass = entity_cache_type
+    tag_cache_type.CachedVersionClass = version_cache_type
+
+
+####################################################################################################
+#
+# Concrete cache classes go here
+#
+
+class CachedModel(CachedEntityMixin):
+    """Cache for a CellML model's repository."""
+    entity = models.OneToOneField(ModelEntity, on_delete=models.CASCADE)
+
+class CachedModelVersion(CachedEntityVersionMixin):
+    """Cache for a single version / commit in a CellML model's repository."""
+    entity = models.ForeignKey(CachedModel, on_delete=models.CASCADE, related_name='versions')
+
+class CachedModelTag(CachedEntityTagMixin):
+    """Cache for a tag in a CellML model's repository."""
+    entity = models.ForeignKey(CachedModel, related_name='tags')
+    version = models.ForeignKey(CachedModelVersion, on_delete=models.CASCADE, related_name='tags')
+
+
+_set_class_links(CachedModel, CachedModelVersion, CachedModelTag)
+
+
+class CachedProtocol(CachedEntityMixin):
+    """Cache for a protocol's repository."""
+    entity = models.OneToOneField(ProtocolEntity, on_delete=models.CASCADE)
+
+class CachedProtocolVersion(CachedEntityVersionMixin):
+    """Cache for a single version / commit in a protocol's repository."""
+    entity = models.ForeignKey(CachedProtocol, on_delete=models.CASCADE, related_name='versions')
+
+class CachedProtocolTag(CachedEntityTagMixin):
+    """Cache for a tag in a protocol's repository."""
+    entity = models.ForeignKey(CachedProtocol, related_name='tags')
+    version = models.ForeignKey(CachedProtocolVersion, on_delete=models.CASCADE, related_name='tags')
+
+
+_set_class_links(CachedProtocol, CachedProtocolVersion, CachedProtocolTag)
+
+
+####################################################################################################
+#
+# Finally, we have other classes that build on the cache to store per-version information
+#
 
 class ProtocolInterface(models.Model):
     """
