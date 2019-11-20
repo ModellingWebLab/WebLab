@@ -328,8 +328,7 @@ class ProtocolInterface(models.Model):
 
     A blank term is added to indicate that the interface has been analysed, in case of no actual terms being found.
     """
-    protocol_version = models.ForeignKey(CachedEntityVersion, on_delete=models.SET_NULL, related_name='interface', null=True, db_constraint=False)
-    new_protocol_version = models.ForeignKey(CachedProtocolVersion, on_delete=models.SET_NULL, related_name='interface', null=True, db_constraint=False, default=None)
+    protocol_version = models.ForeignKey(CachedProtocolVersion, on_delete=models.CASCADE, related_name='interface')
     term = models.CharField(
         max_length=500,
         blank=True,
