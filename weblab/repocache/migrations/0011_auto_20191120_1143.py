@@ -114,4 +114,14 @@ class Migration(migrations.Migration):
             name='cachedmodeltag',
             unique_together=set([('entity', 'tag')]),
         ),
+        migrations.AddField(
+            model_name='protocolinterface',
+            name='new_protocol_version',
+            field=models.ForeignKey(db_constraint=False, default=None, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='interface', to='repocache.CachedProtocolVersion'),
+        ),
+        migrations.AlterField(
+            model_name='protocolinterface',
+            name='protocol_version',
+            field=models.ForeignKey(db_constraint=False, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='interface', to='repocache.CachedEntityVersion'),
+        ),
     ]

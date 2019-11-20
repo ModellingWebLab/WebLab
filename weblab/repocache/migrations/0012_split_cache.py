@@ -23,6 +23,8 @@ def split_cache(apps, schema_editor):
     CachedProtocolVersion = apps.get_model('repocache', 'CachedProtocolVersion')
     CachedProtocolTag = apps.get_model('repocache', 'CachedProtocolTag')
 
+    ProtocolInterface = apps.get_model('repocache', 'ProtocolInterface')
+
     for cached_entity in CachedEntity.objects.all():
         if cached_entity.entity.entity_type == 'model':
             new_cls = CachedModel
@@ -53,6 +55,15 @@ def split_cache(apps, schema_editor):
                 )
                 new_cached_tag.save()
 
+    # Transfer protocol interface terms from the generic to protocol-specific caches
+    for iface in ProtocolInterface.objects.all():
+        old_cache_version = iface.protocol_version
+        protocol = old_cache_version.entity.entity
+        iface.new_protocol_version = CachedProtocolVersion.objects.get(
+            sha=old_cache_version.sha,
+            entity=CachedProtocol.objects.get(entity__pk=protocol.pk)
+        )
+        iface.save()
 
     # Remove old generic cache entries, so reverse migration doesn't duplicate data
     CachedEntity.objects.all().delete()
@@ -75,6 +86,8 @@ def combine_caches(apps, schema_editor):
     CachedProtocol = apps.get_model('repocache', 'CachedProtocol')
     CachedProtocolVersion = apps.get_model('repocache', 'CachedProtocolVersion')
     CachedProtocolTag = apps.get_model('repocache', 'CachedProtocolTag')
+
+    ProtocolInterface = apps.get_model('repocache', 'ProtocolInterface')
 
     for cache_type in ((CachedModel, CachedModelVersion, CachedModelTag),
                        (CachedProtocol, CachedProtocolVersion, CachedProtocolTag)):
@@ -100,6 +113,16 @@ def combine_caches(apps, schema_editor):
                         version=new_cached_version,
                     )
                     new_cached_tag.save()
+
+    # Transfer protocol interface terms from the protocol-specific to generic caches
+    for iface in ProtocolInterface.objects.all():
+        new_cache_version = iface.new_protocol_version
+        protocol = new_cache_version.entity.entity
+        iface.protocol_version = CachedEntityVersion.objects.get(
+            sha=new_cache_version.sha,
+            entity=CachedEntity.objects.get(entity__pk=protocol.pk)
+        )
+        iface.save()
 
     # Remove old specific cache entries, so repeat forward migration doesn't duplicate data
     CachedModel.objects.all().delete()
