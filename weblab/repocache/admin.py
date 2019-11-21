@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import CachedModel, CachedModelTag, CachedModelVersion, CachedProtocol, CachedProtocolVersion, CachedProtocolTag
+from .models import (
+    CachedModel,
+    CachedModelTag,
+    CachedModelVersion,
+    CachedProtocol,
+    CachedProtocolTag,
+    CachedProtocolVersion,
+)
 
 
 admin.register(CachedModel)

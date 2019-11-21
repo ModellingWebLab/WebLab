@@ -1,6 +1,6 @@
 from django.db.models import Q
 
-from .models import CachedModelVersion, CachedProtocolVersion, CACHED_VERSION_TYPE_MAP
+from .models import CACHED_VERSION_TYPE_MAP, CachedModelVersion, CachedProtocolVersion
 
 
 def get_public_entity_ids():

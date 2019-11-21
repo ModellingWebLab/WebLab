@@ -3,7 +3,7 @@ from django.db import models
 
 from core.models import VisibilityModelMixin
 from core.visibility import Visibility
-from entities.models import Entity, ModelEntity, ProtocolEntity
+from entities.models import ModelEntity, ProtocolEntity
 
 from .exceptions import RepoCacheMiss
 
@@ -169,9 +169,11 @@ class CachedModel(CachedEntityMixin):
     """Cache for a CellML model's repository."""
     entity = models.OneToOneField(ModelEntity, on_delete=models.CASCADE, related_name='cachedmodel')
 
+
 class CachedModelVersion(CachedEntityVersionMixin):
     """Cache for a single version / commit in a CellML model's repository."""
     entity = models.ForeignKey(CachedModel, on_delete=models.CASCADE, related_name='versions')
+
 
 class CachedModelTag(CachedEntityTagMixin):
     """Cache for a tag in a CellML model's repository."""
@@ -186,9 +188,11 @@ class CachedProtocol(CachedEntityMixin):
     """Cache for a protocol's repository."""
     entity = models.OneToOneField(ProtocolEntity, on_delete=models.CASCADE, related_name='cachedprotocol')
 
+
 class CachedProtocolVersion(CachedEntityVersionMixin):
     """Cache for a single version / commit in a protocol's repository."""
     entity = models.ForeignKey(CachedProtocol, on_delete=models.CASCADE, related_name='versions')
+
 
 class CachedProtocolTag(CachedEntityTagMixin):
     """Cache for a tag in a protocol's repository."""
