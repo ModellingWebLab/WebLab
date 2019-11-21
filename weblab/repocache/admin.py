@@ -1,8 +1,11 @@
 from django.contrib import admin
 
-from .models import CachedEntity, CachedEntityTag, CachedEntityVersion
+from .models import CachedModel, CachedModelTag, CachedModelVersion, CachedProtocol, CachedProtocolVersion, CachedProtocolTag
 
 
-admin.register(CachedEntity)
-admin.register(CachedEntityTag)
-admin.register(CachedEntityVersion)
+admin.register(CachedModel)
+admin.register(CachedModelTag)
+admin.register(CachedModelVersion)
+admin.register(CachedProtocol)
+admin.register(CachedProtocolVersion)
+admin.register(CachedProtocolTag)

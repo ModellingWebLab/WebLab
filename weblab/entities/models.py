@@ -104,8 +104,14 @@ class Entity(UserCreatedModelMixin, models.Model):
 
     @property
     def repocache(self):
-        from repocache.models import CachedEntity
-        return CachedEntity.objects.get_or_create(entity=self)[0]
+        from repocache.models import get_or_create_cached_entity
+        return get_or_create_cached_entity(self)[0]
+
+    @property
+    def cachedentity(self):
+        """Temporary workaround until ModelEntity and ProtocolEntity have their own tables."""
+        name = 'cached' + self.entity_type
+        return getattr(self, name)
 
     def set_version_visibility(self, commit, visibility):
         """
@@ -245,10 +251,10 @@ class Entity(UserCreatedModelMixin, models.Model):
 
         Only protocols are checked at present, on upload, and the result cached in the DB.
 
-        :param version: a `CachedEntityVersion` instance or sha referencing a version
+        :param version: a `CachedProtocolVersion` instance or sha referencing a version
         """
-        from repocache.models import CachedEntityVersion
-        if isinstance(version, CachedEntityVersion):
+        from repocache.models import CachedProtocolVersion
+        if isinstance(version, CachedProtocolVersion):
             ok = version.parsed_ok
         else:
             ok = self.repocache.get_version(version).parsed_ok

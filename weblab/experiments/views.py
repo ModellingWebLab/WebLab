@@ -28,7 +28,7 @@ from guardian.shortcuts import get_objects_for_user
 from core.visibility import VisibilityMixin, visible_entity_ids
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
-from repocache.models import CachedEntityVersion
+from repocache.models import CACHED_VERSION_TYPE_MAP, CachedModelVersion, CachedProtocolVersion
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, PlannedExperiment
@@ -93,20 +93,19 @@ class ExperimentMatrixJsonView(View):
 
     def versions_query(self, entity_type, requested_versions, entity_query, visibility_where):
         """Get the query expression for selecting entity versions to display."""
+        CachedEntityVersion = CACHED_VERSION_TYPE_MAP[entity_type]
         if requested_versions:
             if requested_versions[0] == '*':
                 q_entity_versions = CachedEntityVersion.objects.filter(
-                    entity__entity__entity_type=entity_type,
                     entity__entity__in=entity_query,
                 )
             else:
                 q_entity_versions = CachedEntityVersion.objects.filter(
-                    entity__entity__entity_type=entity_type,
                     entity__entity__in=entity_query,
                     sha__in=requested_versions,
                 )
         else:
-            where = visibility_where & Q(entity__entity__entity_type=entity_type) & Q(entity__entity__in=entity_query)
+            where = visibility_where & Q(entity__entity__in=entity_query)
             q_entity_versions = CachedEntityVersion.objects.filter(
                 where,
             ).order_by(
@@ -244,11 +243,11 @@ class ExperimentMatrixJsonView(View):
             protocol__in=q_protocols,
             protocol_version__in=protocol_versions.keys(),
         )
-        q_cached_protocol = CachedEntityVersion.objects.filter(
+        q_cached_protocol = CachedProtocolVersion.objects.filter(
             entity__entity=OuterRef('experiment__protocol'),
             sha=OuterRef('experiment__protocol_version'),
         )
-        q_cached_model = CachedEntityVersion.objects.filter(
+        q_cached_model = CachedModelVersion.objects.filter(
             entity__entity=OuterRef('experiment__model'),
             sha=OuterRef('experiment__model_version'),
         )
@@ -262,7 +261,7 @@ class ExperimentMatrixJsonView(View):
         ).select_related(
             'experiment',
             'experiment__protocol', 'experiment__model',
-            'experiment__protocol__cachedentity', 'experiment__model__cachedentity',
+            'experiment__protocol__cachedprotocol', 'experiment__model__cachedmodel',
         ).annotate(
             protocol_visibility=Subquery(q_cached_protocol.values('visibility')[:1]),
             model_visibility=Subquery(q_cached_model.values('visibility')[:1]),

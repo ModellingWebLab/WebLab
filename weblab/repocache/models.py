@@ -8,122 +8,6 @@ from entities.models import Entity, ModelEntity, ProtocolEntity
 from .exceptions import RepoCacheMiss
 
 
-class CachedEntity(models.Model):
-    """
-    Cache for an entity's repository.
-
-    This is intended to reflect the state of the entity's repository,
-    and should not be changed without first changing the repo.
-    """
-    entity = models.OneToOneField(Entity, on_delete=models.CASCADE)
-
-    @property
-    def visibility(self):
-        """
-        Visibility of the entity (this is based on the most visible version).
-
-        :return: string representing visibility, or PRIVATE if no versions found
-        """
-        if self.versions.filter(visibility=Visibility.MODERATED).exists():
-            return Visibility.MODERATED
-        if self.versions.filter(visibility=Visibility.PUBLIC).exists():
-            return Visibility.PUBLIC
-        return Visibility.PRIVATE
-
-    @property
-    def latest_version(self):
-        return self.versions.latest()
-
-    def get_version(self, sha):
-        """
-        Get a version of the entity
-
-        :param sha: hex string of the commit SHA of the version
-            or 'latest' to get the latest version
-
-        :return: CachedEntityVersion object
-        :raise: RepoCacheMiss if entity does not exist in cache, or has no versions
-        """
-        try:
-            if sha == 'latest':
-                return self.latest_version
-            else:
-                return self.versions.get(sha=sha)
-        except ObjectDoesNotExist:
-            raise RepoCacheMiss("Entity version not found")
-
-    def add_version(self, sha):
-        """
-        Add an entity version to the cache
-
-        :param sha: hex string of the commit SHA of the version
-        :return CachedEntityVersion object
-        """
-        commit = self.entity.repo.get_commit(sha)
-        visibility = self.entity.get_visibility_from_repo(commit)
-        return CachedEntityVersion.objects.create(
-            entity=self,
-            sha=commit.hexsha,
-            timestamp=commit.committed_at,
-            visibility=visibility,
-        )
-
-
-class CachedEntityVersion(VisibilityModelMixin):
-    """
-    Cache for a single version / commit in an entity's repository
-    """
-    entity = models.ForeignKey(CachedEntity, on_delete=models.CASCADE, related_name='versions')
-    sha = models.CharField(max_length=40)
-    timestamp = models.DateTimeField()
-    parsed_ok = models.BooleanField(
-        default=False,
-        help_text='Whether this entity version has been verified as syntactically correct'
-    )
-
-    class Meta:
-        unique_together = ['entity', 'sha']
-        get_latest_by = 'timestamp'
-        ordering = ['-timestamp', '-pk']
-
-    def __str__(self):
-        """Return handy representation for debugging."""
-        return self.entity.entity.name + '@' + self.sha
-
-    def set_visibility(self, visibility):
-        """
-        Set the visibility of this version, if it exists
-
-        :param visibility: string representing visibility
-        """
-        self.visibility = visibility
-        self.save()
-
-    def tag(self, tagname):
-        """
-        Add a tag for this version
-
-        :param tagname: Tag name
-        """
-        return CachedEntityTag.objects.create(
-            entity=self.entity,
-            version=self,
-            tag=tagname,
-        )
-
-
-class CachedEntityTag(models.Model):
-    """
-    Cache for a tag in an entity's repository
-    """
-    entity = models.ForeignKey(CachedEntity, related_name='tags')
-    tag = models.CharField(max_length=255)
-    version = models.ForeignKey(CachedEntityVersion, on_delete=models.CASCADE, related_name='tags')
-
-    class Meta:
-        unique_together = ['entity', 'tag']
-
-
 ####################################################################################################
 #
 # Mixin classes defining the common cache structure
@@ -137,7 +21,7 @@ class CachedEntityMixin(models.Model):
     and should not be changed without first changing the repo.
 
     Concrete cache types should inherit from this and define a suitable ``entity`` column, e.g.
-        entity = models.OneToOneField(ModelEntity, on_delete=models.CASCADE)
+        entity = models.OneToOneField(ModelEntity, on_delete=models.CASCADE, related_name='cachedentity')
 
     Once a trio of (entity, version, tag) concrete cache classes are defined, the method
     _set_class_links() should be called to let them know about each other, setting the
@@ -283,7 +167,7 @@ def _set_class_links(entity_cache_type, version_cache_type, tag_cache_type):
 
 class CachedModel(CachedEntityMixin):
     """Cache for a CellML model's repository."""
-    entity = models.OneToOneField(ModelEntity, on_delete=models.CASCADE)
+    entity = models.OneToOneField(ModelEntity, on_delete=models.CASCADE, related_name='cachedmodel')
 
 class CachedModelVersion(CachedEntityVersionMixin):
     """Cache for a single version / commit in a CellML model's repository."""
@@ -300,7 +184,7 @@ _set_class_links(CachedModel, CachedModelVersion, CachedModelTag)
 
 class CachedProtocol(CachedEntityMixin):
     """Cache for a protocol's repository."""
-    entity = models.OneToOneField(ProtocolEntity, on_delete=models.CASCADE)
+    entity = models.OneToOneField(ProtocolEntity, on_delete=models.CASCADE, related_name='cachedprotocol')
 
 class CachedProtocolVersion(CachedEntityVersionMixin):
     """Cache for a single version / commit in a protocol's repository."""
@@ -313,6 +197,23 @@ class CachedProtocolTag(CachedEntityTagMixin):
 
 
 _set_class_links(CachedProtocol, CachedProtocolVersion, CachedProtocolTag)
+
+
+CACHE_TYPE_MAP = {
+    'model': CachedModel,
+    'protocol': CachedProtocol,
+}
+
+CACHED_VERSION_TYPE_MAP = {
+    'model': CachedModelVersion,
+    'protocol': CachedProtocolVersion,
+}
+
+
+def get_or_create_cached_entity(entity):
+    """Return the appropriate concrete cache instance for a given entity."""
+    cache_cls = CACHE_TYPE_MAP[entity.entity_type]
+    return cache_cls.objects.get_or_create(entity=entity)
 
 
 ####################################################################################################

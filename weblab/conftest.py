@@ -13,7 +13,6 @@ from accounts.models import User
 from core import recipes
 from datasets.models import Dataset
 from entities.models import Entity
-from repocache.models import CachedEntityVersion
 from repocache.populate import populate_entity_cache
 
 
@@ -45,7 +44,7 @@ class Helpers:
     @staticmethod
     def add_fake_version(entity, visibility, date=None):
         """Add a new commit/version only in the cache, not in git."""
-        version = CachedEntityVersion.objects.create(
+        version = entity.repocache.CachedVersionClass.objects.create(
             entity=entity.repocache,
             sha=uuid.uuid4(),
             timestamp=date or Now(),
