@@ -270,8 +270,17 @@ class EntityManager(models.Manager):
         return super().create(**kwargs)
 
     def with_edit_permission(self, user):
+        """Query over all managed entities the given user has been given permission to edit."""
         if user.has_perm('entities.create_%s' % self.model.entity_type):
             return get_objects_for_user(user, 'entities.edit_entity', with_superuser=False)
+        else:
+            return self.none()
+
+    def shared_with_user(self, user):
+        """Query over all managed entities shared explicitly with the given user."""
+        if user.is_authenticated:
+            return get_objects_for_user(user, 'entities.edit_entity', with_superuser=False).filter(
+                entity_type=self.model.entity_type)
         else:
             return self.none()
 

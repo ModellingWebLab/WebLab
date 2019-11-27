@@ -25,9 +25,8 @@ from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import DeleteView, FormMixin
 from guardian.shortcuts import get_objects_for_user
 
-from core.visibility import VisibilityMixin, visible_entity_ids
+from core.visibility import VisibilityMixin
 from entities.models import ModelEntity, ProtocolEntity
-from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
 from repocache.models import CACHED_VERSION_TYPE_MAP, CachedModelVersion, CachedProtocolVersion
 
 from .forms import ExperimentSimulateCallbackForm
@@ -149,9 +148,13 @@ class ExperimentMatrixJsonView(View):
             })
 
         # Base visibility: don't show private versions...
-        visibility_where = ~Q(visibility='private')
+        if subset == 'moderated':
+            visibility_where = Q(visibility='moderated')
+        else:
+            visibility_where = ~Q(visibility='private')
 
         if user.is_authenticated:
+            q_mine = Q(author=user)
             # Can also include versions the user has explicit permission to see
             visible_entities = user.entity_set.union(
                 get_objects_for_user(user, 'entities.edit_entity', with_superuser=False)
@@ -159,63 +162,62 @@ class ExperimentMatrixJsonView(View):
                 'id', flat=True
             )
         else:
+            q_mine = Q()
             visible_entities = set()
 
         # Figure out which entity versions will be listed on the axes
         # If specific versions have been requested, show at most those
         # (filtering out any this user can't see)
         # Otherwise we look at which subset has been requested: moderated, mine, all (visible), public
-        if not model_pks or not protocol_pks:
-            if subset == 'moderated':
-                entity_ids = get_moderated_entity_ids()
-                visibility_where = Q(visibility='moderated')
-            elif subset == 'mine' and user.is_authenticated:
-                # TODO? This is still 3 queries...
-                entity_ids = set(user.entity_set.values_list('id', flat=True))
-
-                moderated_model_ids = get_moderated_entity_ids('model')
-                if request.GET.get('moderated-models', 'true') == 'true':
-                    entity_ids |= moderated_model_ids
-                else:
-                    entity_ids -= moderated_model_ids
-
-                moderated_protocol_ids = get_moderated_entity_ids('protocol')
-                if request.GET.get('moderated-protocols', 'true') == 'true':
-                    entity_ids |= moderated_protocol_ids
-                else:
-                    entity_ids -= moderated_protocol_ids
-
-            elif subset == 'public':
-                entity_ids = get_public_entity_ids()
-            elif subset == 'all':
-                entity_ids = visible_entity_ids(request.user)
+        q_moderated_models = Q(cachedmodel__versions__visibility='moderated')
+        q_moderated_protocols = Q(cachedprotocol__versions__visibility='moderated')
+        q_public_models = Q(cachedmodel__versions__visibility__in=['public', 'moderated'])
+        q_public_protocols = Q(cachedprotocol__versions__visibility__in=['public', 'moderated'])
+        if subset == 'moderated':
+            q_models = ModelEntity.objects.filter(q_moderated_models)
+            q_protocols = ProtocolEntity.objects.filter(q_moderated_protocols)
+            visibility_where = Q(visibility='moderated')
+        elif subset == 'mine' and user.is_authenticated:
+            if request.GET.get('moderated-models', 'true') == 'true':
+                q_models = ModelEntity.objects.filter(q_mine | q_moderated_models)
             else:
-                entity_ids = set()
+                q_models = ModelEntity.objects.filter(q_mine).filter(
+                    cachedmodel__versions__visibility__in=['public', 'private'])
+            if request.GET.get('moderated-protocols', 'true') == 'true':
+                q_protocols = ProtocolEntity.objects.filter(q_mine | q_moderated_protocols)
+            else:
+                q_protocols = ProtocolEntity.objects.filter(q_mine).filter(
+                    cachedprotocol__versions__visibility__in=['public', 'private'])
+        elif subset == 'public':
+            q_models = ModelEntity.objects.filter(q_public_models)
+            q_protocols = ProtocolEntity.objects.filter(q_public_protocols)
+        elif subset == 'all':
+            q_models = ModelEntity.objects.filter(q_public_models | q_mine).union(
+                ModelEntity.objects.shared_with_user(user))
+            q_protocols = ProtocolEntity.objects.filter(q_public_protocols | q_mine).union(
+                ProtocolEntity.objects.shared_with_user(user))
+        else:
+            q_models = ModelEntity.objects.none()
+            q_protocols = ProtocolEntity.objects.none()
 
         if subset not in ['moderated', 'public']:
             visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
 
         if model_pks:
             model_visibility_where = ~Q(visibility='private') | Q(entity__entity__in=visible_entities)
-            model_ids = set(model_pks)
+            q_models = q_models.filter(id__in=set(model_pks))
         else:
             model_visibility_where = visibility_where
-            model_ids = entity_ids
-
-        q_models = ModelEntity.objects.filter(id__in=model_ids)
         q_model_versions = self.versions_query('model', model_versions, q_models, model_visibility_where)
 
         if protocol_pks:
             protocol_visibility_where = ~Q(visibility='private') | Q(entity__entity__in=visible_entities)
-            protocol_ids = set(protocol_pks)
+            q_protocols = q_protocols.filter(id__in=set(protocol_pks))
         else:
             if show_fits:
                 protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=True)
             else:
                 protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=False)
-            protocol_ids = entity_ids
-
-        q_protocols = ProtocolEntity.objects.filter(id__in=protocol_ids)
         q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols, protocol_visibility_where)
 
         # Get the JSON data needed to display the matrix axes
