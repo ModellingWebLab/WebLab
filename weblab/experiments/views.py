@@ -398,8 +398,8 @@ class ExperimentComparisonView(TemplateView):
 
     def get_context_data(self, **kwargs):
         pks = set(map(int, self.kwargs['version_pks'].strip('/').split('/')))
-        versions = ExperimentVersion.objects.visible_to(
-            self.request.user).filter(pk__in=pks).order_by('created_at')
+        versions = ExperimentVersion.objects.filter(pk__in=pks).order_by('created_at')
+        versions = [v for v in versions if v.experiment.is_visible_to_user(self.request.user)]
 
         if len(versions) < len(pks):
             messages.error(
@@ -480,12 +480,11 @@ class ExperimentComparisonJsonView(View):
 
     def get(self, request, *args, **kwargs):
         pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/') if pk}
-        versions = ExperimentVersion.objects.visible_to(
-            self.request.user).filter(pk__in=pks).order_by('created_at')
+        versions = ExperimentVersion.objects.filter(pk__in=pks).order_by('created_at')
+        versions = [v for v in versions if v.experiment.is_visible_to_user(self.request.user)]
 
-        models = set(versions.values_list('experiment__model', 'experiment__model_version'))
-        protocols = set(versions.values_list(
-            'experiment__protocol', 'experiment__protocol_version'))
+        models = set((v.experiment.model, v.experiment.model_version) for v in versions)
+        protocols = set((v.experiment.protocol, v.experiment.protocol_version) for v in versions)
         compare_model_versions = len(models) > len(dict(models))
         compare_protocol_versions = len(protocols) > len(dict(protocols))
 
