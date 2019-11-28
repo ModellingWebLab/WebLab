@@ -4,6 +4,7 @@ from django.db import models
 from core.models import VisibilityModelMixin
 from core.visibility import Visibility
 from entities.models import ModelEntity, ProtocolEntity
+from fitting.models import FittingSpec
 
 from .exceptions import RepoCacheMiss
 
@@ -203,14 +204,35 @@ class CachedProtocolTag(CachedEntityTagMixin):
 _set_class_links(CachedProtocol, CachedProtocolVersion, CachedProtocolTag)
 
 
+class CachedFittingSpec(CachedEntityMixin):
+    """Cache for a fitting specifications's repository."""
+    entity = models.OneToOneField(FittingSpec, on_delete=models.CASCADE, related_name='cachedfittingspec')
+
+
+class CachedFittingSpecVersion(CachedEntityVersionMixin):
+    """Cache for a single version / commit in a fitting specifications's repository."""
+    entity = models.ForeignKey(CachedFittingSpec, on_delete=models.CASCADE, related_name='versions')
+
+
+class CachedFittingSpecTag(CachedEntityTagMixin):
+    """Cache for a tag in a fitting specifications's repository."""
+    entity = models.ForeignKey(CachedFittingSpec, related_name='tags')
+    version = models.ForeignKey(CachedFittingSpecVersion, on_delete=models.CASCADE, related_name='tags')
+
+
+_set_class_links(CachedFittingSpec, CachedFittingSpecVersion, CachedFittingSpecTag)
+
+
 CACHE_TYPE_MAP = {
     'model': CachedModel,
     'protocol': CachedProtocol,
+    'fittingspec': CachedFittingSpec,
 }
 
 CACHED_VERSION_TYPE_MAP = {
     'model': CachedModelVersion,
     'protocol': CachedProtocolVersion,
+    'fittingspec': CachedFittingSpecVersion,
 }
 
 

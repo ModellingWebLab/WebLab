@@ -11,4 +11,5 @@ def entity_deleted(sender, instance, **kwargs):
     """
     Signal callback when an entity is about to be deleted.
     """
-    instance.repo.delete()
+    if instance.repo_abs_path.exists():
+        instance.repo.delete()
