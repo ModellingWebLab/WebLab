@@ -25,9 +25,11 @@ class Entity(UserCreatedModelMixin, models.Model):
 
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
+    ENTITY_TYPE_FITTINGSPEC = 'fittingspec'
     ENTITY_TYPE_CHOICES = (
         (ENTITY_TYPE_MODEL, ENTITY_TYPE_MODEL),
         (ENTITY_TYPE_PROTOCOL, ENTITY_TYPE_PROTOCOL),
+        (ENTITY_TYPE_FITTINGSPEC, ENTITY_TYPE_FITTINGSPEC),
     )
 
     entity_type = models.CharField(
@@ -48,6 +50,7 @@ class Entity(UserCreatedModelMixin, models.Model):
         permissions = (
             ('create_model', 'Can create models'),
             ('create_protocol', 'Can create protocols'),
+            ('create_fittingspec', 'Can create fitting specifications'),
             # Edit entity is used as an object-level permission
             ('edit_entity', 'Can edit entity'),
             ('moderator', 'Can promote public entity versions to moderated'),

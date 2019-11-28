@@ -11,6 +11,11 @@ protocol = Recipe(
     'ProtocolEntity',
     entity_type='protocol', name=seq('myprotocol')
 )
+fittingspec = Recipe(
+    'FittingSpec',
+    entity_type='fittingspec', name=seq('myspec'),
+    protocol=foreign_key(protocol),
+)
 
 model_file = Recipe('EntityFile', entity=foreign_key(model))
 protocol_file = Recipe('EntityFile', entity=foreign_key(protocol))

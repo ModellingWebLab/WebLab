@@ -56,6 +56,7 @@ LOCAL_APPS = [
     'datasets',
     'entities',
     'experiments',
+    'fitting',
     'repocache',
 ]
 
