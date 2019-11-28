@@ -37,7 +37,7 @@ class TestPopulate:
         assert not cached.tags.exists()
 
     def test_migration_adds_new_properties(self, model_with_version):
-        # Make sure that deploying after adding new commit properties to the cache will update
+        # Make sure that deploying after adding new commit properties to the cache will update
         # existing cache entries. We can't (easily) create old-style cache entries, but we can
         # delete the relevant properties from an existing cache entry and re-populate.
         populate_entity_cache(model_with_version)
