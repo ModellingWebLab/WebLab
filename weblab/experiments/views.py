@@ -147,7 +147,7 @@ class ExperimentMatrixJsonView(View):
                 }
             })
 
-        # Base visibility: don't show private versions...
+        # Base visibility: don't show private versions, unless only showing moderated versions
         if subset == 'moderated':
             visibility_where = Q(visibility='moderated')
         else:
@@ -166,9 +166,7 @@ class ExperimentMatrixJsonView(View):
             visible_entities = set()
 
         # Figure out which entity versions will be listed on the axes
-        # If specific versions have been requested, show at most those
-        # (filtering out any this user can't see)
-        # Otherwise we look at which subset has been requested: moderated, mine, all (visible), public
+        # We look at which subset has been requested: moderated, mine, all (visible), public
         q_moderated_models = Q(cachedmodel__versions__visibility='moderated')
         q_moderated_protocols = Q(cachedprotocol__versions__visibility='moderated')
         q_public_models = Q(cachedmodel__versions__visibility__in=['public', 'moderated'])
@@ -203,6 +201,7 @@ class ExperimentMatrixJsonView(View):
         if subset not in ['moderated', 'public']:
             visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
 
+        # If specific versions have been requested, show at most those
         if model_pks:
             model_visibility_where = ~Q(visibility='private') | Q(entity__entity__in=visible_entities)
             q_models = q_models.filter(id__in=set(model_pks))
