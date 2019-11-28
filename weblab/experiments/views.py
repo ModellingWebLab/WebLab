@@ -174,7 +174,6 @@ class ExperimentMatrixJsonView(View):
         if subset == 'moderated':
             q_models = ModelEntity.objects.filter(q_moderated_models)
             q_protocols = ProtocolEntity.objects.filter(q_moderated_protocols)
-            visibility_where = Q(visibility='moderated')
         elif subset == 'mine' and user.is_authenticated:
             if request.GET.get('moderated-models', 'true') == 'true':
                 q_models = ModelEntity.objects.filter(q_mine | q_moderated_models)
@@ -203,20 +202,15 @@ class ExperimentMatrixJsonView(View):
 
         # If specific versions have been requested, show at most those
         if model_pks:
-            model_visibility_where = ~Q(visibility='private') | Q(entity__entity__in=visible_entities)
             q_models = q_models.filter(id__in=set(model_pks))
-        else:
-            model_visibility_where = visibility_where
-        q_model_versions = self.versions_query('model', model_versions, q_models, model_visibility_where)
+        q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
 
         if protocol_pks:
-            protocol_visibility_where = ~Q(visibility='private') | Q(entity__entity__in=visible_entities)
             q_protocols = q_protocols.filter(id__in=set(protocol_pks))
+        if show_fits:  # Temporary hack
+            protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=True)
         else:
-            if show_fits:
-                protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=True)
-            else:
-                protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=False)
+            protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=False)
         q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols, protocol_visibility_where)
 
         # Get the JSON data needed to display the matrix axes
