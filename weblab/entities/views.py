@@ -68,6 +68,14 @@ class EntityTypeMixin:
             if et.entity_type == self.kwargs['entity_type']
         )
 
+    @property
+    def other_model(self):
+        return next(
+            et
+            for et in (ModelEntity, ProtocolEntity)
+            if et.entity_type != self.kwargs['entity_type']
+        )
+
     def get_context_data(self, **kwargs):
         kwargs.update({
             'type': self.model.entity_type,
@@ -294,7 +302,7 @@ class EntityComparisonView(EntityTypeMixin, TemplateView):
         for version in self.kwargs['versions'].strip('/').split('/'):
             id, sha = version.split(':')
             try:
-                entity = Entity.objects.get(pk=id)
+                entity = self.model.objects.get(pk=id)
                 if entity.is_version_visible_to_user(sha, self.request.user):
                     valid_versions.append(version)
             except (RepoCacheMiss, Entity.DoesNotExist):
@@ -1040,9 +1048,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
         # ended up using a nested dict as nested lists caused django's unpacking in forloops to
         # mess things up slightly
         cached_name = 'cached' + entity.other_type
-        other_entities = Entity.objects.filter(
-            entity_type=entity.other_type
-        ).select_related(
+        other_entities = self.other_model.objects.select_related(
             cached_name
         ).prefetch_related(
             cached_name + '__versions',

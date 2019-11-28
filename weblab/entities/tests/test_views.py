@@ -15,12 +15,7 @@ from git import GitCommandError
 from guardian.shortcuts import assign_perm
 
 from core import recipes
-from entities.models import (
-    AnalysisTask,
-    Entity,
-    ModelEntity,
-    ProtocolEntity,
-)
+from entities.models import AnalysisTask, ModelEntity, ProtocolEntity
 from experiments.models import Experiment, PlannedExperiment
 from repocache.models import ProtocolInterface
 
@@ -101,7 +96,7 @@ class TestEntityDeletion:
         entity = recipe.make(author=logged_in_user)
         repo_path = entity.repo_abs_path
         helpers.add_version(entity)
-        assert Entity.objects.filter(pk=entity.pk).exists()
+        assert type(entity).objects.filter(pk=entity.pk).exists()
         assert repo_path.exists()
 
         response = client.post(url % entity.pk)
@@ -109,7 +104,7 @@ class TestEntityDeletion:
         assert response.status_code == 302
         assert response.url == list_url
 
-        assert not Entity.objects.filter(pk=entity.pk).exists()
+        assert not type(entity).objects.filter(pk=entity.pk).exists()
         assert not repo_path.exists()
 
     @pytest.mark.usefixtures('logged_in_user')
@@ -125,7 +120,7 @@ class TestEntityDeletion:
         response = client.post(url % entity.pk)
 
         assert response.status_code == 403
-        assert Entity.objects.filter(pk=entity.pk).exists()
+        assert type(entity).objects.filter(pk=entity.pk).exists()
         assert repo_path.exists()
 
 
