@@ -105,5 +105,6 @@ class TestEntityCacheModelsVisibility:
 
         version = model.repocache.get_version(commit.hexsha)
         assert version.sha == commit.hexsha
+        assert version.message == commit.message
         assert version.timestamp == commit.committed_at
         assert version.visibility == 'public'

@@ -26,13 +26,14 @@ class Helpers:
                     tag_name=None,
                     visibility=None,
                     cache=True,
+                    message='file',
                     contents='entity contents'):
         """Add a single commit/version to an entity"""
         entity.repo.create()
         in_repo_path = str(entity.repo_abs_path / filename)
         open(in_repo_path, 'w').write(contents)
         entity.repo.add_file(in_repo_path)
-        commit = Helpers.fake_commit(entity.repo, 'file', User(full_name='author', email='author@example.com'))
+        commit = Helpers.fake_commit(entity.repo, message, User(full_name='author', email='author@example.com'))
         if tag_name:
             entity.repo.tag(tag_name)
         if visibility:
@@ -42,11 +43,12 @@ class Helpers:
         return commit
 
     @staticmethod
-    def add_fake_version(entity, visibility, date=None):
+    def add_fake_version(entity, visibility, date=None, message='cache-only commit'):
         """Add a new commit/version only in the cache, not in git."""
         version = entity.repocache.CachedVersionClass.objects.create(
             entity=entity.repocache,
             sha=uuid.uuid4(),
+            message=message,
             timestamp=date or Now(),
             visibility=visibility,
         )

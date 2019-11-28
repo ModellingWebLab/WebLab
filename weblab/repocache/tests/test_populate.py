@@ -18,6 +18,7 @@ class TestPopulate:
 
         version = cached.versions.get()
         assert version.sha == latest.hexsha
+        assert version.message == latest.message
         assert version.timestamp == latest.committed_at
 
         assert cached.tags.get().tag == 'v1'
@@ -35,6 +36,23 @@ class TestPopulate:
         assert not cached.versions.exists()
         assert not cached.tags.exists()
 
+    def test_migration_adds_new_properties(self, model_with_version):
+        # Make sure that deploying after adding new commit properties to the cache will update
+        # existing cache entries. We can't (easily) create old-style cache entries, but we can
+        # delete the relevant properties from an existing cache entry and re-populate.
+        populate_entity_cache(model_with_version)
+        commit = model_with_version.repo.latest_commit
+        version = model_with_version.cachedentity.latest_version
+        assert version.message == commit.message
+
+        version.message = ' '
+        version.save()
+
+        populate_entity_cache(model_with_version)
+        updated_version = model_with_version.cachedentity.latest_version
+        assert updated_version.pk == version.pk  # Still the same cache entry
+        assert updated_version.message == commit.message  # Message has been fixed
+
     def test_changes_wrong_visibility(self, model_with_version):
         populate_entity_cache(model_with_version)
 
@@ -51,7 +69,7 @@ class TestPopulate:
     def test_falls_back_to_older_visibilities(self, helpers):
         model = recipes.model.make()
         v1 = helpers.add_version(model, visibility='public', cache=False)
-        v2 = helpers.add_version(model, cache=False)
+        v2 = helpers.add_version(model, message='v2', cache=False)
         v3 = helpers.add_version(model, visibility='private', cache=False)
         v4 = helpers.add_version(model, cache=False)
 
@@ -59,6 +77,7 @@ class TestPopulate:
 
         assert model.repocache.get_version(v1.hexsha).visibility == 'public'
         assert model.repocache.get_version(v2.hexsha).visibility == 'public'
+        assert model.repocache.get_version(v2.hexsha).message == 'v2'
         assert model.repocache.get_version(v3.hexsha).visibility == 'private'
         assert model.repocache.get_version(v4.hexsha).visibility == 'private'
 

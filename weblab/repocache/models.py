@@ -78,6 +78,7 @@ class CachedEntityMixin(models.Model):
         return self.CachedVersionClass.objects.create(
             entity=self,
             sha=commit.hexsha,
+            message=commit.message,
             timestamp=commit.committed_at,
             visibility=visibility,
         )
@@ -94,7 +95,8 @@ class CachedEntityVersionMixin(VisibilityModelMixin):
     - ``CachedTagClass`` referring to the concrete ``CachedEntityTagMixin`` they use
     """
     sha = models.CharField(max_length=40)
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(help_text='When this commit was made')
+    message = models.TextField(help_text='Git commit message', default=' ')
     parsed_ok = models.BooleanField(
         default=False,
         help_text='Whether this entity version has been verified as syntactically correct'
@@ -136,7 +138,7 @@ class CachedEntityTagMixin(models.Model):
     """
     Abstract class representing a cache for a tag in any entity type's repository.
 
-    Concrete cache types should inherit from this and define a suitable ``entity`` and ``version``
+    Concrete cache types should inherit from this and define suitable ``entity`` and ``version``
     columns, e.g.
         entity = models.ForeignKey(CachedModel, related_name='tags')
         version = models.ForeignKey(CachedModelVersion, on_delete=models.CASCADE, related_name='tags')

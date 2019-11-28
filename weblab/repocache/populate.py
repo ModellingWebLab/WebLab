@@ -26,9 +26,14 @@ def populate_entity_cache(entity):
             sha=commit.hexsha,
             defaults={
                 'timestamp': commit.committed_at,
+                'message': commit.message,
                 'visibility': visibility or entity.DEFAULT_VISIBILITY,
             }
         )[0]
+        # Check if any updates are needed to an already-present cached version
+        if commit.message != version.message:
+            version.message = commit.message
+            version.save()
         if visibility and visibility != version.visibility:
             version.visibility = visibility
             version.save()
