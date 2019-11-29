@@ -80,6 +80,7 @@ class EntityTypeMixin:
         kwargs.update({
             'type': self.model.entity_type,
             'other_type': self.model.other_type,
+            'current_namespace': 'entities',
         })
         return super().get_context_data(**kwargs)
 
