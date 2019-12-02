@@ -19,6 +19,17 @@ VISIBILITY_NOTE_PREFIX = 'Visibility: '
 
 
 class Entity(UserCreatedModelMixin, models.Model):
+    """
+    Base class for 'entities' - conceptual entities backed by git repositories.
+
+    Subclasses describe (CellML) models, protocols, and fitting specifications.
+
+    The entity_type column states which concrete type each DB row represents, and is fixed by each subclass.
+    In addition, other class properties defined in subclasses refer to these types in helpful ways:
+    - ``other_type`` refers to the other axis on a models vs protocols matrix
+    - ``display_type`` is used to display the type of the entity to users in templates
+    - ``url_type`` is used as a URL fragment to refer to this entity type
+    """
     DEFAULT_VISIBILITY = Visibility.PRIVATE
 
     VISIBILITY_HELP = VIS_HELP_TEXT
@@ -58,22 +69,6 @@ class Entity(UserCreatedModelMixin, models.Model):
 
     def __str__(self):
         return self.name
-
-    @property
-    def display_type(self):
-        """Used to display the type of this entity in templates.
-
-        Defaults to ``entity_type`` but may be changed by subclasses.
-        """
-        return self.entity_type
-
-    @property
-    def url_type(self):
-        """Used as a URL fragment to refer to this entity type.
-
-        Defaults to ``entity_type`` but may be changed by subclasses.
-        """
-        return self.entity_type
 
     @property
     def repo(self):
@@ -300,6 +295,8 @@ class EntityManager(models.Manager):
 class ModelEntity(Entity):
     entity_type = Entity.ENTITY_TYPE_MODEL
     other_type = Entity.ENTITY_TYPE_PROTOCOL
+    display_type = 'model'
+    url_type = 'model'
 
     objects = EntityManager()
 
@@ -311,6 +308,8 @@ class ModelEntity(Entity):
 class ProtocolEntity(Entity):
     entity_type = Entity.ENTITY_TYPE_PROTOCOL
     other_type = Entity.ENTITY_TYPE_MODEL
+    display_type = 'protocol'
+    url_type = 'protocol'
 
     objects = EntityManager()
 
