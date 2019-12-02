@@ -1,5 +1,7 @@
 from django.conf.urls import url
 
+from entities import views as entity_views
+
 from . import views
 from .models import FittingSpec
 
@@ -9,7 +11,7 @@ _ENTITY_TYPE = '(?P<entity_type>%s)s' % FittingSpec.url_type
 urlpatterns = [
     url(
         r'^%s/$' % _ENTITY_TYPE,
-        views.FittingSpecListView.as_view(),
+        entity_views.EntityListView.as_view(),
         name='list',
     ),
 

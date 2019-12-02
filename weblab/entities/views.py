@@ -40,6 +40,7 @@ from guardian.shortcuts import get_objects_for_user
 from core.filetypes import get_file_type
 from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
+from fitting.models import FittingSpec
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedProtocolVersion
 
@@ -64,8 +65,8 @@ class EntityTypeMixin:
     def model(self):
         return next(
             et
-            for et in (ModelEntity, ProtocolEntity)
-            if et.entity_type == self.kwargs['entity_type']
+            for et in (ModelEntity, ProtocolEntity, FittingSpec)
+            if et.url_type == self.kwargs['entity_type']
         )
 
     @property
@@ -73,7 +74,7 @@ class EntityTypeMixin:
         return next(
             et
             for et in (ModelEntity, ProtocolEntity)
-            if et.entity_type != self.kwargs['entity_type']
+            if et.other_type == self.kwargs['entity_type']
         )
 
     def get_context_data(self, **kwargs):

@@ -16,29 +16,14 @@ from django.urls import reverse
 from django.views.generic.edit import CreateView
 from django.views.generic.list import ListView
 
+from entities.views import EntityTypeMixin
+
 from .forms import FittingSpecForm
 from .models import FittingSpec
 
 
-class FittingSpecMixin:
-    """
-    Mixin for entity-style pages, setting the entity type to be a fitting specification.
-    """
-    model = FittingSpec
-    other_model = None
-
-    def get_context_data(self, **kwargs):
-        kwargs.update({
-            'entity_type': self.model.entity_type,
-            'other_type': self.model.other_type,
-            'type': self.model.display_type,
-            'url_type': self.model.url_type,
-        })
-        return super().get_context_data(**kwargs)
-
-
 class FittingSpecCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, FittingSpecMixin,
+    LoginRequiredMixin, PermissionRequiredMixin, EntityTypeMixin,
     UserFormKwargsMixin, CreateView
 ):
     """Create a new fitting specification, initially without any versions."""
@@ -49,13 +34,3 @@ class FittingSpecCreateView(
     def get_success_url(self):
         return reverse('fitting:newspecversion',
                        args=[self.object.pk])
-
-
-class FittingSpecListView(LoginRequiredMixin, FittingSpecMixin, ListView):
-    """
-    List all user's fitting specifications.
-    """
-    template_name = 'entities/entity_list.html'
-
-    def get_queryset(self):
-        return self.model.objects.filter(author=self.request.user)
