@@ -82,7 +82,6 @@ class EntityTypeMixin:
             'other_type': self.model.other_type,
             'type': self.model.display_type,
             'url_type': self.model.url_type,
-            'current_namespace': 'entities',
         })
         return super().get_context_data(**kwargs)
 

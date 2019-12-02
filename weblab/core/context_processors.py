@@ -16,4 +16,5 @@ def common(request):
         'VISIBILITY_HELP': visibility.HELP_TEXT,
         'ERROR_MESSAGES': error_messages,
         'INFO_MESSAGES': info_messages,
+        'current_namespace': request.resolver_match.namespace,
     }
