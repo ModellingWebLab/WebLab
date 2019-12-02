@@ -28,6 +28,10 @@ class FittingSpec(Entity):
     class Meta:
         verbose_name = 'fitting specification'
 
+    # We change the default display & URL form for this entity type, since the default looks bad!
+    display_type = Meta.verbose_name
+    url_type = 'spec'
+
     # The 'edit_entity' object-level permission is only in the entities app,
     # so we need to delegate via our parent link when accessing it.
 

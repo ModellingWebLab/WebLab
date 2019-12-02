@@ -2,18 +2,18 @@
 {% load entities %}
 {% load staticfiles %}
 
-{% block title %}{{ entity.entity_type|capfirst }} collaborators - {% endblock title %}
+{% block title %}{{ entity.display_type|capfirst }} collaborators - {% endblock title %}
 
 {% block content %}
   {% include "./includes/entity_header.html" %}
 
-  <h2><small>Add or remove collaborators for this {{ entity.entity_type }}</small></h2>
+  <h2><small>Add or remove collaborators for this {{ entity.display_type }}</small></h2>
 
   <form method="POST" action="">
     {% csrf_token %}
 
     {{ formset.management_form }}
-    <p>Collaborators can create new versions of the {{ entity.entity_type }}, add tags and change the {{ entity.entity_type }} visibility.</p>
+    <p>Collaborators can create new versions of the {{ entity.display_type }}, add tags and change the {{ entity.display_type }} visibility.</p>
 
     <table class="formset">
       <tbody>

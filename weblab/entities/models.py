@@ -60,6 +60,22 @@ class Entity(UserCreatedModelMixin, models.Model):
         return self.name
 
     @property
+    def display_type(self):
+        """Used to display the type of this entity in templates.
+
+        Defaults to ``entity_type`` but may be changed by subclasses.
+        """
+        return self.entity_type
+
+    @property
+    def url_type(self):
+        """Used as a URL fragment to refer to this entity type.
+
+        Defaults to ``entity_type`` but may be changed by subclasses.
+        """
+        return self.entity_type
+
+    @property
     def repo(self):
         """This entity's git repository wrapper.
 

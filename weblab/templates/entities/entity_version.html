@@ -52,7 +52,7 @@
             Run experiments:
             <a title="Run experiments" href="{{ entity|url_run_experiments:version }}">
               <img src="{% static 'img/batch.png' %}" alt="Run experiments:"
-                   title="Run experiments using this {{ entity.entity_type }}"/>
+                   title="Run experiments using this {{ type }}"/>
             </a>
           {% endif %}
         </div>
@@ -60,7 +60,7 @@
     </div>
 
     <div id="entity-view-buttons" class="link-list">
-      <a class="button selected" href="{{ entity|url_version:version }}" title="View files associated with this {{ entity.entity_type }}">Files</a>
+      <a class="button selected" href="{{ entity|url_version:version }}" title="View files associated with this {{ type }}">Files</a>
       <div class="button hover-menu" title="Compare... (hover to see options)">Compare&hellip;<ul>
         <li><a href="{{ entity|url_compare_experiments:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
         <li><a href="{{ entity|url_version_comparison_matrix }}" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>

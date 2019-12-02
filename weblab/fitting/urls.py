@@ -1,9 +1,10 @@
 from django.conf.urls import url
 
 from . import views
+from .models import FittingSpec
 
 
-_ENTITY_TYPE = '(?P<entity_type>fittingspec)s'
+_ENTITY_TYPE = '(?P<entity_type>%s)s' % FittingSpec.url_type
 
 urlpatterns = [
     url(
