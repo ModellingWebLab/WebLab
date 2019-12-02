@@ -5,9 +5,9 @@
 
 {% block content %}
 
-  <a class="button {% if type == 'model' %}selected{% endif %}" href="{% url "entities:list" 'model' %}" id="modelchooser">models</a>
-  <a class="button {% if type == 'protocol' %}selected{% endif %}" href="{% url "entities:list" 'protocol' %}" id="protocolchooser">protocols</a>
-  <a class="button {% if type == 'experiment' %}selected{% endif %}" href="{% url "experiments:list" 'mine' %}" id="experimentchooser">experiments</a>
+  <a class="button {% if type == 'model' %}selected{% endif %}" href="{% url 'entities:list' 'model' %}">models</a>
+  <a class="button {% if type == 'protocol' %}selected{% endif %}" href="{% url 'entities:list' 'protocol' %}">protocols</a>
+  <a class="button {% if entity_type == 'fittingspec' %}selected{% endif %}" href="{% url 'fitting:list' 'spec' %}">fitting specifications</a>
 
   <section id="{{ entity_type }}list">
     <h2>Your {{ type }}s</h2>
