@@ -392,21 +392,20 @@ class EntityComparisonJsonView(View):
         return JsonResponse(response)
 
 
-class EntityView(VisibilityMixin, SingleObjectMixin, RedirectView):
+class EntityView(VisibilityMixin, EntityTypeMixin, SingleObjectMixin, RedirectView):
     """
     View an entity
 
     All this does is redirect to the latest version of the entity, if it exists.
     Otherwise it redirects to the 'add version' page.
     """
-    model = Entity
-
     def get_redirect_url(self, *args, **kwargs):
         entity = self.get_object()
+        ns = self.request.resolver_match.namespace
         if entity.repocache.versions.exists():
-            return reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], 'latest'])
+            return reverse(ns + ':version', args=[kwargs['entity_type'], kwargs['pk'], 'latest'])
         else:
-            return reverse('entities:newversion', args=[kwargs['entity_type'], kwargs['pk']])
+            return reverse(ns + ':newversion', args=[kwargs['entity_type'], kwargs['pk']])
 
 
 class EntityTagVersionView(
