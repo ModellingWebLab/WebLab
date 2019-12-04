@@ -15,7 +15,7 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
         name = self.cleaned_data['name']
         if self._meta.model.objects.filter(name=name).exists():
             raise ValidationError(
-                'You already have a %s named "%s"' % (self.entity_type, name))
+                'You already have a %s named "%s"' % (self._meta.model.display_type, name))
 
         return name
 
