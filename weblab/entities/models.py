@@ -283,11 +283,36 @@ class EntityManager(models.Manager):
         kwargs['entity_type'] = self.model.entity_type
         return super().create(**kwargs)
 
+    def visible_to_user(self, user):
+        """Query over all managed entities that the given user can view.
+
+        This includes those entities of the managed ``entity_type`` for which either:
+        - the user is the author
+        - the entity has at least one non-private version
+        - or the entity is explicitly shared with the user
+        """
+        from repocache.models import CACHED_VERSION_TYPE_MAP
+        CachedEntityVersion = CACHED_VERSION_TYPE_MAP[self.model.entity_type]
+        non_private = self.annotate(
+            non_private=models.Exists(
+                CachedEntityVersion.objects.filter(
+                    entity__entity=models.OuterRef('pk'),
+                    visibility__in=['public', 'moderated'],
+                )
+            )
+        ).filter(
+            non_private=True,
+        )
+        owned = self.filter(author=user)
+        shared = self.shared_with_user(user)
+        return owned | non_private | shared
+
     def shared_with_user(self, user):
         """Query over all managed entities shared explicitly with the given user."""
         if user.is_authenticated:
-            return get_objects_for_user(user, 'entities.edit_entity', with_superuser=False).filter(
-                entity_type=self.model.entity_type)
+            shared_pks = get_objects_for_user(
+                user, 'entities.edit_entity', with_superuser=False).values_list('pk', flat=True)
+            return self.get_queryset().filter(pk__in=shared_pks)
         else:
             return self.none()
 
