@@ -73,7 +73,6 @@ class TestRepository:
 
     def test_repo_is_deleted(self):
         spec = recipes.fittingspec.make()
-        spec.repo.create()
         assert spec.repo_abs_path.exists()
         spec.delete()
         assert not spec.repo_abs_path.exists()
