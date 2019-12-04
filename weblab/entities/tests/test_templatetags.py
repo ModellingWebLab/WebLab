@@ -35,9 +35,10 @@ def test_file_type():
 def test_model_urls(model_with_version):
     model = model_with_version
     model_version = model.repo.latest_commit
+    context = {'current_namespace': 'entities'}
 
-    assert entity_tags.url_new('model') == '/entities/models/new'
-    assert entity_tags.url_entity(model) == '/entities/models/%d' % model.pk
+    assert entity_tags.ns_url(context, 'new', 'model') == '/entities/models/new'
+    assert entity_tags.entity_url(context, 'detail', model) == '/entities/models/%d' % model.pk
     assert entity_tags.url_delete(model) == '/entities/models/%d/delete' % model.pk
     assert entity_tags.url_versions(model) == '/entities/models/%d/versions/' % model.pk
     assert entity_tags.url_newversion(model) == '/entities/models/%d/versions/new' % model.pk
@@ -63,9 +64,10 @@ def test_model_urls(model_with_version):
 def test_protocol_urls(protocol_with_version):
     protocol = protocol_with_version
     protocol_version = protocol.repo.latest_commit
+    context = {'current_namespace': 'entities'}
 
-    assert entity_tags.url_new('protocol') == '/entities/protocols/new'
-    assert entity_tags.url_entity(protocol) == '/entities/protocols/%d' % protocol.pk
+    assert entity_tags.ns_url(context, 'new', 'protocol') == '/entities/protocols/new'
+    assert entity_tags.entity_url(context, 'detail', protocol) == '/entities/protocols/%d' % protocol.pk
     assert entity_tags.url_delete(protocol) == '/entities/protocols/%d/delete' % protocol.pk
     assert entity_tags.url_versions(protocol) == '/entities/protocols/%d/versions/' % protocol.pk
     assert (entity_tags.url_newversion(protocol) ==

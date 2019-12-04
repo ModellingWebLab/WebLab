@@ -23,6 +23,29 @@ def file_type(filename):
     return get_file_type(filename)
 
 
+@register.simple_tag(takes_context=True)
+def ns_url(context, name, *args):
+    """An extended version of the built-in url tag that dynamically figures out the namespace portion.
+
+    :param name: the URL pattern name, *without* initial namespace (that will be determined from context)
+    :param args: any positional args for the URL
+    """
+    ns = context['current_namespace']
+    return reverse(ns + ':' + name, args=args)
+
+
+@register.simple_tag(takes_context=True)
+def entity_url(context, name, entity, *args):
+    """An extended version of the built-in url tag specifically for common entity URLs.
+
+    :param name: the URL pattern name, *without* initial namespace (that will be determined from context)
+    :param entity: the entity this URL is about
+    :param args: any extra positional args for the URL
+    """
+    ns = context['current_namespace']
+    return reverse(ns + ':' + name, args=(entity.url_type, entity.id) + args)
+
+
 @register.filter
 def url_versions(entity):
     return reverse('entities:version_list', args=[entity.entity_type, entity.id])
@@ -143,17 +166,6 @@ def url_change_version_visibility(entity, commit):
     last_tag = _url_friendly_label(entity, commit)
     args = [entity.entity_type, entity.id, last_tag]
     return reverse('entities:change_visibility', args=args)
-
-
-@register.filter
-def url_entity(entity):
-    url_name = 'entities:detail'
-    return reverse(url_name, args=[entity.entity_type, entity.id])
-
-
-@register.filter
-def url_new(entity_type):
-    return reverse('entities:new', args=[entity_type])
 
 
 @register.filter

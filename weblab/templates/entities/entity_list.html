@@ -14,7 +14,7 @@
 
     {% can_create_entity entity_type as permission %}
     {% if permission %}
-    <small><a href="{% url current_namespace|add:':new' url_type %}" class="pointer">Create a new {{ type }}</a></small>
+    <small><a href="{% ns_url 'new' url_type %}" class="pointer">Create a new {{ type }}</a></small>
     {% else %}
     <small>Your account doesn't have the authority to upload {{ type }}s; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
     {% endif %}
@@ -22,11 +22,11 @@
     <ul>
       {% for entity in object_list %}
         <li title="{{ entity.name }}">
-          <strong><a href="{{ entity|url_entity }}">{{ entity.name }}</a></strong>
+          <strong><a href="{% entity_url 'detail' entity %}">{{ entity.name }}</a></strong>
 
           {% can_create_version entity as permission %}
           {% if permission %}
-          <small>(<a href="{{ entity|url_newversion }}">add new version</a>)</small>
+          <small>(<a href="{% entity_url 'newversion' entity %}">add new version</a>)</small>
           {% endif %}
         </li>
       {% endfor %}
