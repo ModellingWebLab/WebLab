@@ -5,8 +5,7 @@ import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin, \
-    LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
 from django.core.urlresolvers import reverse
 from django.db.models import (
     F,
@@ -16,15 +15,14 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import TemplateView
+from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import DeleteView, FormMixin
-from django.views.generic.list import ListView
 from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import VisibilityMixin, visible_entity_ids
@@ -35,7 +33,6 @@ from repocache.models import CachedEntityVersion
 from .forms import ExperimentSimulateCallbackForm
 from .models import Experiment, ExperimentVersion, RunningExperiment, PlannedExperiment
 from .processing import process_callback, submit_experiment
-
 
 logger = logging.getLogger(__name__)
 
@@ -416,7 +413,6 @@ class ExperimentVersionDeleteView(UserPassesTestMixin, DeleteView):
 
     def get_success_url(self, *args, **kwargs):
         return reverse('experiments:versions', args=[self.get_object().experiment.id])
-
 
 
 class ExperimentComparisonView(TemplateView):
