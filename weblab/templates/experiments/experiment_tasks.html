@@ -32,35 +32,18 @@
                 <p class="failed">You have no queued or running tasks.</p>
             {% endif %}
 
-            {% for experiment in object_list|dictsort:"name" %}
-                {{ experiment.name }}
-                <div class="suppl">
-                    <small>Experiment created
-                        <time>{{ experiment.created_at }}</time>
-                        by <em>{{ experiment.author.full_name }}</em>.
-                    </small>
-                </div>
-                <ul id="taskList">
-                    {% for version in experiment.versions.all|dictsortreversed:"created_at" %}
-                        <li>
-                            <div id="taskDisplay">
-                                <input class="taskCancelCheckBox" type="checkbox" name="chkBoxes[]"
-                                       value="{{ version.id }}">
-                                <div class="experiment-{{ version.status }}" id="taskDetailBox">
-                                    Version: {{ version.name }} by
-                                    <em>{{ version.author.full_name }}</em>
-                                    <div class="suppl" id="taskVersionDetailBox" style="padding-bottom: 0px">
-                                        <small>Created&nbsp;</small>
-                                        <time>{{ version.created_at }}&nbsp;</time>
-                                        {% with version.files|length as numfiles %}
-                                            <small>containing&nbsp;</small> {{ numfiles }} file{{ numfiles|pluralize }}
-                                        {% endwith %}
-                                    </div>
-                                </div>
-                            </div>
-                        </li>
+            {% for running_experiment in object_list %}
 
-                    {% endfor %}
+                <ul id="taskList">
+                    <li>
+                        <div id="taskDisplay">
+                            <input class="taskCancelCheckBox" type="checkbox" name="chkBoxes[]"
+                                   value="{{ running_experiment.experiment_version.id }}">
+                            <div class="experiment-{{ running_experiment.experiment_version.status }}" id="taskDetailBox">
+                               {{ running_experiment.experiment_version.experiment.name }} Version: {{ running_experiment.experiment_version.name }}
+                            </div>
+                        </div>
+                    </li>
                 </ul>
             {% endfor %}
             </c:forEach>

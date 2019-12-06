@@ -33,7 +33,7 @@ from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
 from repocache.models import CachedEntityVersion
 
 from .forms import ExperimentSimulateCallbackForm
-from .models import Experiment, ExperimentVersion, PlannedExperiment
+from .models import Experiment, ExperimentVersion, RunningExperiment, PlannedExperiment
 from .processing import process_callback, submit_experiment
 
 
@@ -52,19 +52,21 @@ class ExperimentTasks(LoginRequiredMixin, ListView):
     Show running and queued versions of all experiments
     Delete checked versions
     """
-    model = Experiment
+    model = RunningExperiment
     template_name = "experiments/experiment_tasks.html"
 
     def get_queryset(self):
-        return self.model.objects.filter(
-            Q(author=self.request.user) &
-            Q(versions__status=ExperimentVersion.STATUS_QUEUED) |
-            Q(versions__status=ExperimentVersion.STATUS_RUNNING))
+        q_running_experiments = RunningExperiment.objects.filter(
+            Q(experiment_version__author=self.request.user)
+        ).order_by(
+            'experiment_version__created_at',
+        ).select_related('experiment_version')
+        return q_running_experiments
 
     def post(self, request):
         """Process list of user selected checkboxes and kill running versions"""
         for ver in request.POST.getlist('chkBoxes[]'):
-            self.model.objects.filter(versions=ver).delete()
+            self.model.objects.filter(experiment_version_id=ver).delete()
 
         return redirect(reverse('experiments:tasks'))
 
