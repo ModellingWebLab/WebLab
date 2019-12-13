@@ -88,7 +88,9 @@ def test_protocol_urls(protocol_with_version):
     assert entity_tags.url_entity_comparison_base(context, 'protocol') == '/entities/protocols/compare'
     assert entity_tags.url_entity_diff_base(context, 'protocol') == '/entities/protocols/diff'
 
-    assert (entity_tags.entity_comparison_json_url(context, ['%d:%s' % (protocol.pk, protocol_version.hexsha)], 'protocol') ==
+    assert (entity_tags.entity_comparison_json_url(context,
+                                                   ['%d:%s' % (protocol.pk, protocol_version.hexsha)],
+                                                   'protocol') ==
             '/entities/protocols/compare/%d:%s/info' % (protocol.pk, protocol_version.hexsha))
 
 

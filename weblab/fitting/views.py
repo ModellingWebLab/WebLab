@@ -14,12 +14,10 @@ from braces.views import UserFormKwargsMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse
 from django.views.generic.edit import CreateView
-# from django.views.generic.list import ListView
 
 from entities.views import EntityTypeMixin
 
 from .forms import FittingSpecForm
-# from .models import FittingSpec
 
 
 class FittingSpecCreateView(
