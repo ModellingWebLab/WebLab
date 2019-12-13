@@ -441,6 +441,11 @@ class TestExperimentMatrix:
         v2 = helpers.add_version(exp.model).hexsha
         helpers.add_version(exp.model).hexsha  # v3, not used
 
+        # Add an experiment with a different model, which shouldn't appear
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_fake_version(other_model, 'public')
+        make_experiment(other_model, other_model_version.sha, exp.protocol, exp.protocol_version)
+
         response = client.get(
             '/experiments/matrix',
             {
@@ -467,6 +472,11 @@ class TestExperimentMatrix:
             exp.model, v2,
             exp.protocol, exp.protocol_version,
         )
+
+        # Add an experiment with a different model, which shouldn't appear
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_fake_version(other_model, 'public')
+        make_experiment(other_model, other_model_version.sha, exp.protocol, exp.protocol_version)
 
         response = client.get(
             '/experiments/matrix',
@@ -511,6 +521,11 @@ class TestExperimentMatrix:
             exp.protocol, v2,
         )
 
+        # Add an experiment with a different protocol, which shouldn't appear
+        other_protocol = recipes.model.make()
+        other_protocol_version = helpers.add_fake_version(other_protocol, 'public')
+        make_experiment(exp.model, exp.model_version, other_protocol, other_protocol_version.sha)
+
         response = client.get(
             '/experiments/matrix',
             {
@@ -537,6 +552,11 @@ class TestExperimentMatrix:
             exp.model, exp.model_version,
             exp.protocol, v2,
         )
+
+        # Add an experiment with a different protocol, which shouldn't appear
+        other_protocol = recipes.protocol.make()
+        other_protocol_version = helpers.add_fake_version(other_protocol, 'public')
+        make_experiment(exp.model, exp.model_version, other_protocol, other_protocol_version.sha)
 
         response = client.get(
             '/experiments/matrix',
