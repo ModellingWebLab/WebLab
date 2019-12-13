@@ -590,6 +590,59 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert len(data['notifications']['errors']) == 1
 
+    def test_submatrix_with_models_and_protocols_given(self, client, helpers):
+        m1, m2 = recipes.model.make(_quantity=2)
+        m1v1 = helpers.add_fake_version(m1, 'public').sha
+        m1v2 = helpers.add_fake_version(m1, 'public').sha
+        m2v1 = helpers.add_fake_version(m2, 'public').sha
+        p1, p2 = recipes.protocol.make(_quantity=2)
+        p1v1 = helpers.add_fake_version(p1, 'public').sha
+        p1v2 = helpers.add_fake_version(p1, 'public').sha
+        p2v1 = helpers.add_fake_version(p2, 'public').sha
+
+        exp1 = make_experiment(m1, m1v1, p1, p1v1)
+        exp2 = make_experiment(m1, m1v2, p1, p1v2)
+        make_experiment(m2, m2v1, p1, p1v1)  # Should not appear
+        make_experiment(m2, m2v1, p2, p2v1)  # Should not appear
+        make_experiment(m1, m1v1, p2, p2v1)  # Should not appear
+
+        response = client.get(
+            '/experiments/matrix',
+            {
+                'subset': 'all',
+                'modelIds[]': [m1.pk],
+                'modelVersions[]': '*',
+                'protoIds[]': [p1.pk],
+                'protoVersions[]': '*',
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert set(data['getMatrix']['models'].keys()) == {str(m1v1), str(m1v2)}
+        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1), str(p1v2)}
+        assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk), str(exp2.pk)}
+
+        # Now select only some versions
+        response = client.get(
+            '/experiments/matrix',
+            {
+                'subset': 'all',
+                'modelIds[]': [m1.pk],
+                'modelVersions[]': [m1v1],
+                'protoIds[]': [p1.pk],
+                'protoVersions[]': [p1v1],
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert set(data['getMatrix']['models'].keys()) == {str(m1v1)}
+        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1)}
+        assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk)}
+
     def test_experiment_without_version_is_ignored(
         self, client, public_model, public_protocol
     ):
