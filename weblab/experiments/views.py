@@ -195,7 +195,7 @@ class ExperimentMatrixJsonView(View):
                     cachedprotocol__versions__visibility__in=['public', 'private'])
         elif subset == 'public':
             q_models = q_models.filter(q_public_models)
-            q_protocols = q_protocolsobjects.filter(q_public_protocols)
+            q_protocols = q_protocols.filter(q_public_protocols)
         elif subset == 'all':
             shared_models = ModelEntity.objects.shared_with_user(user)
             if model_pks:
