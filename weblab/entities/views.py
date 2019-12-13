@@ -200,6 +200,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
     def _file_json(self, blob):
         obj = self._get_object()
         commit = self.get_commit()
+        ns = self.request.resolver_match.namespace
 
         return {
             'id': blob.name,
@@ -208,7 +209,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
             'size': blob.size,
             'created': commit.committed_at,
             'url': reverse(
-                'entities:file_download',
+                ns + ':file_download',
                 args=[obj.entity_type, obj.id, commit.hexsha, blob.name]
             ),
         }
@@ -226,13 +227,14 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
     def get(self, request, *args, **kwargs):
         obj = self._get_object()
         commit = self.get_commit()
+        ns = self.request.resolver_match.namespace
 
         files = [
             self._file_json(f)
             for f in commit.files
             if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
-        if request.user.has_perm('experiments.create_experiment'):
+        if request.user.has_perm('experiments.create_experiment') and obj.entity_type in ('model', 'protocol'):
             planned_experiments = self._planned_experiments()
         else:
             planned_experiments = []
@@ -250,15 +252,15 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
                 'numFiles': len(files),
                 'planned_experiments': planned_experiments,
                 'url': reverse(
-                    'entities:version',
+                    ns + ':version',
                     args=[obj.entity_type, obj.id, commit.hexsha]
                 ),
                 'download_url': reverse(
-                    'entities:entity_archive',
+                    ns + ':entity_archive',
                     args=[obj.entity_type, obj.id, commit.hexsha]
                 ),
                 'change_url': reverse(
-                    'entities:change_visibility',
+                    ns + ':change_visibility',
                     args=[obj.entity_type, obj.id, commit.hexsha]
                 ),
             }
@@ -331,6 +333,7 @@ class EntityComparisonJsonView(View):
         :param commit: `Commit` object
         :param blob: `git.Blob` object
         """
+        ns = self.request.resolver_match.namespace
         return {
             'id': blob.name,
             'name': blob.name,
@@ -339,7 +342,7 @@ class EntityComparisonJsonView(View):
             'filetype': get_file_type(blob.name),
             'size': blob.size,
             'url': reverse(
-                'entities:file_download',
+                ns + ':file_download',
                 args=[entity.entity_type, entity.id, commit.hexsha, blob.name]
             ),
         }
@@ -446,7 +449,8 @@ class EntityTagVersionView(
         """What page to show when the form was processed OK."""
         entity = self._get_object()
         version = self.kwargs['sha']
-        return reverse('entities:version', args=[entity.entity_type, entity.id, version])
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':version', args=[entity.entity_type, entity.id, version])
 
 
 class EntityDeleteView(UserPassesTestMixin, DeleteView):
@@ -462,7 +466,8 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
         return self.get_object().is_deletable_by(self.request.user)
 
     def get_success_url(self, *args, **kwargs):
-        return reverse('entities:list', args=[self.kwargs['entity_type']])
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':list', args=[self.kwargs['entity_type']])
 
 
 class EntityAlterFileView(
@@ -661,8 +666,9 @@ class EntityNewVersionView(
                 record_experiments_to_run(request.user, entity, commit)
 
             # Show the user the new version
+            ns = self.request.resolver_match.namespace
             return HttpResponseRedirect(
-                reverse('entities:version', args=[entity.entity_type, entity.id, commit.hexsha]))
+                reverse(ns + ':version', args=[entity.entity_type, entity.id, commit.hexsha]))
         else:
             # Nothing changed, so inform the user and do nothing else.
             form = self.get_form()
@@ -828,8 +834,7 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
         return response
 
 
-class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
-    model = Entity
+class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTypeMixin, DetailView):
     formset_class = EntityCollaboratorFormSet
     template_name = 'entities/entity_collaborators_form.html'
     context_object_name = 'entity'
@@ -872,7 +877,8 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, DetailVie
     def get_success_url(self):
         """What page to show when the form was processed OK."""
         entity = self.object
-        return reverse('entities:entity_collaborators', args=[entity.entity_type, entity.id])
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':entity_collaborators', args=[entity.entity_type, entity.id])
 
     def get_context_data(self, **kwargs):
         if 'formset' not in kwargs:

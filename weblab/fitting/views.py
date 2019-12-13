@@ -32,5 +32,5 @@ class FittingSpecCreateView(
     form_class = FittingSpecForm
 
     def get_success_url(self):
-        return reverse('fitting:newspecversion',
-                       args=[self.object.pk])
+        return reverse('fitting:newversion',
+                       args=[self.kwargs['entity_type'], self.object.pk])

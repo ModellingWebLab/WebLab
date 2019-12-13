@@ -11,7 +11,7 @@
     <div id="entityexperimentlist">
       <h1>Comparison of {{ type }}s</h1>
       <div id="entitiesToCompare"
-        data-comparison-href="{{ entity_versions|url_entity_comparison_json:entity_type }}"
+        data-comparison-href="{% entity_comparison_json_url entity_versions entity_type %}"
         data-diff-base-href="{% url_entity_diff_base entity_type %}"
         >
           loading...

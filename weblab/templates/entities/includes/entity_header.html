@@ -10,14 +10,14 @@
     {% can_delete_entity entity as can_delete %}
     {% if can_delete %}
       Delete {{ type }}:
-      <a title="delete all versions of this {{ type }}" href="{{ entity|url_delete }}">
+      <a title="delete all versions of this {{ type }}" href="{% entity_url 'delete' entity %}">
         <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
              title="delete all versions of this {{type}}"/></a>
     {% endif %}
     {% can_manage_entity entity as can_manage %}
     {% if can_manage %}
       &nbsp;
-      <a title="manage collaborators for this {{ type }}" href="{{ entity|url_collaborators }}">
+      <a title="manage collaborators for this {{ type }}" href="{% entity_url 'entity_collaborators' entity %}">
         Manage collaborators
       </a>
     {% endif %}

@@ -46,7 +46,7 @@
                        name="model_protocol_list[]"/>
               {% endif %}
               <strong>
-                <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
+                <a class="entityversionlink" href="{% entity_version_url 'version' entity entity_version.commit %}">
                   {% include "./includes/version_name.html" with tags=entity_version.tags version=entity_version.commit only %}
                 </a>
               </strong>
@@ -84,7 +84,7 @@
                        name="model_protocol_list[]"/>
               {% endif %}
               <strong>
-                <a class="entityversionlink" href="{{ entity|url_version:entity_version.commit }}">
+                <a class="entityversionlink" href="{% entity_version_url 'version' entity entity_version.commit %}">
                   {% include "./includes/version_name.html" with tags=entity_version.tags version=entity_version.commit only %}
                 </a>
               </strong>
