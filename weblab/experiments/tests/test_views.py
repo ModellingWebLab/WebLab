@@ -21,7 +21,6 @@ from experiments.models import (
     PlannedExperiment,
     RunningExperiment,
 )
-from weblab.conftest import Helpers
 
 
 def generate_response(template='%s succ celery-task-id'):
@@ -902,7 +901,7 @@ class TestExperimentVersionView:
 class TestExperimentTasks:
 
     @pytest.mark.usefixtures('other_user')
-    def test_load_page_other_user(self,  client):
+    def test_load_page_other_user(self, client):
         response = client.get('/experiments/tasks')
         assert response.status_code == 302
 
@@ -915,12 +914,12 @@ class TestExperimentTasks:
     def test_get_queryset_other_user(self, other_user, client, experiment_version):
         experiment_version.author = other_user
         experiment_version.save()
-        running_exp = recipes.running_experiment.make(experiment_version=experiment_version)
+        recipes.running_experiment.make(experiment_version=experiment_version)
         assert RunningExperiment.objects.count() == 1
         response = client.get('/experiments/tasks')
         assert len(response.context['runningexperiment_list']) == 0
 
-    def test_get_queryset(self, logged_in_user, client,  helpers):
+    def test_get_queryset(self, logged_in_user, client, helpers):
         # Create three experiment versions 2 running and 1 completed
         model_1 = recipes.model.make(author=logged_in_user)
         model_1_version = helpers.add_version(model_1, visibility='public')
@@ -930,7 +929,7 @@ class TestExperimentTasks:
         protocol_2 = recipes.protocol.make(author=logged_in_user)
         protocol_2_version = helpers.add_version(protocol_2, visibility='public')
 
-        exp_version_1 = recipes.experiment_version.make(
+        recipes.experiment_version.make(
             status=ExperimentVersion.STATUS_SUCCESS,
             experiment__model=model_1,
             experiment__model_version=model_1_version.hexsha,
@@ -983,6 +982,7 @@ class TestExperimentTasks:
         response = client.post('/experiments/tasks', {'chkBoxes[]': [running_exp.experiment_version.id]})
         assert RunningExperiment.objects.count() == 1
         assert response.status_code == 404
+
 
 @pytest.mark.django_db
 class TestExperimentDeletion:
