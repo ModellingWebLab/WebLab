@@ -72,7 +72,6 @@ class ExperimentMatrixJsonView(View):
     """
     Serve up JSON for experiment matrix
     """
-
     @classmethod
     def entity_json(cls, entity, version, *, extend_name, visibility, author, friendly_version=''):
         if extend_name:
@@ -443,7 +442,6 @@ class ExperimentComparisonJsonView(View):
     """
     Serve up JSON view of multiple experiment versions for comparison
     """
-
     def _file_json(self, version, archive_file):
         """
         JSON for a single file in the experiment archive
