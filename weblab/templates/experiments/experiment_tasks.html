@@ -29,7 +29,7 @@
         {% endif %}
         <div id="experimentversionlist">
             {% if not object_list %}
-                <p class="failed">You have no queued or running tasks.</p>
+                <p class="failed">You have no running tasks.</p>
             {% endif %}
 
             {% for running_experiment in object_list %}

@@ -15,7 +15,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
@@ -46,25 +46,25 @@ class ExperimentsView(TemplateView):
 
 class ExperimentTasks(LoginRequiredMixin, ListView):
     """
-    Show running and queued versions of all experiments
+    Show running versions of all experiments
     Delete checked versions
     """
     model = RunningExperiment
     template_name = "experiments/experiment_tasks.html"
 
     def get_queryset(self):
-        q_running_experiments = RunningExperiment.objects.filter(
+        return RunningExperiment.objects.filter(
             Q(experiment_version__author=self.request.user)
         ).order_by(
             'experiment_version__created_at',
-        ).select_related('experiment_version')
-        return q_running_experiments
+        ).select_related('experiment_version', 'experiment_version__experiment')
 
     def post(self, request):
-        """Process list of user selected checkboxes and kill running versions"""
-        for ver in request.POST.getlist('chkBoxes[]'):
-            self.model.objects.filter(experiment_version_id=ver).delete()
-
+        for running_exp_id in request.POST.getlist('chkBoxes[]'):
+            exp_version = ExperimentVersion.objects.get(id=running_exp_id)
+            if not exp_version.author == self.request.user:
+                raise Http404
+            exp_version.delete()
         return redirect(reverse('experiments:tasks'))
 
 
