@@ -15,10 +15,13 @@ from django.test import Client
 from django.utils.dateparse import parse_datetime
 
 from core import recipes
-from experiments.models import Experiment, ExperimentVersion, PlannedExperiment, RunningExperiment
-
+from experiments.models import (
+    Experiment,
+    ExperimentVersion,
+    PlannedExperiment,
+    RunningExperiment,
+)
 from weblab.conftest import Helpers
-
 
 
 def generate_response(template='%s succ celery-task-id'):

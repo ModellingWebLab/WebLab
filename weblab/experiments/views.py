@@ -5,7 +5,11 @@ import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import (
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    UserPassesTestMixin,
+)
 from django.core.urlresolvers import reverse
 from django.db.models import (
     F,
@@ -31,7 +35,12 @@ from repocache.entities import get_moderated_entity_ids, get_public_entity_ids
 from repocache.models import CachedEntityVersion
 
 from .forms import ExperimentSimulateCallbackForm
-from .models import Experiment, ExperimentVersion, RunningExperiment, PlannedExperiment
+from .models import (
+    Experiment,
+    ExperimentVersion,
+    PlannedExperiment,
+    RunningExperiment,
+)
 from .processing import process_callback, submit_experiment
 
 
