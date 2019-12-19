@@ -978,6 +978,7 @@ class TestExperimentTasks:
         running_exp = recipes.running_experiment.make(experiment_version=experiment_version)
         assert RunningExperiment.objects.count() == 1
         response = client.post('/experiments/tasks', {'chkBoxes[]': [running_exp.experiment_version.id]})
+        assert RunningExperiment.objects.count() == 1
         assert response.status_code == 404
 
 @pytest.mark.django_db
