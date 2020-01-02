@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load experiments %}
+{% load staticfiles %}
+
+{% block title %}Tasks - {% endblock title %}
+
+{% block content %}
+
+    <div id="taskHeader">
+        <h2>List of active tasks</h2>
+        <a id="taskRefreshPage"><img src="{% static 'img/refresh.png' %}" alt="Refresh tasks"
+                                     title="Refresh tasks"/></a>
+    </div>
+
+    {% if  object_list %}
+        <p>
+            [<small><a id="cancelRunningExperimentsAll">select all</a></small>]
+            [<small><a id="cancelRunningExperimentsNone">select none</a></small>]
+        </p>
+    {% endif %}
+
+    <form action="" method="post">
+        {% csrf_token %}
+
+        {% if  object_list %}
+            <p>
+                <button type="submit">Cancel selected experiments</button>
+            </p>
+        {% endif %}
+        <div id="experimentversionlist">
+            {% if not object_list %}
+                <p class="failed">You have no running tasks.</p>
+            {% endif %}
+
+            {% for running_experiment in object_list %}
+
+                <ul id="taskList">
+                    <li>
+                        <div id="taskDisplay">
+                            <input class="taskCancelCheckBox" type="checkbox" name="chkBoxes[]"
+                                   value="{{ running_experiment.experiment_version.id }}">
+                            <div class="experiment-{{ running_experiment.experiment_version.status }}" id="taskDetailBox">
+                               {{ running_experiment.experiment_version.experiment.name }} Version: {{ running_experiment.experiment_version.name }}
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            {% endfor %}
+            </c:forEach>
+        </div>
+        {% if object_list %}
+            <p id='expversioncolorlegend'>
+                Key:
+                <span class="experiment-QUEUED">queued</span>
+                <span class="experiment-RUNNING">running</span>
+            </p>
+        {% endif %}
+    </form>
+{% endblock content %}

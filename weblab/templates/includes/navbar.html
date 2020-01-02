@@ -16,6 +16,7 @@
           <a>{{ user.full_name }}</a>
           <ul>
             <li><a href="{% url 'entities:list' 'model' %}">My Files</a></li>
+            <li><a href="{% url 'experiments:tasks' %}">Tasks</a></li>
             <li><a href="{% url 'accounts:myaccount' %}">Account</a></li>
 
             {% if user.is_superuser %}
