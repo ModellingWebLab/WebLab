@@ -64,7 +64,7 @@ class ExperimentTasks(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return RunningExperiment.objects.filter(
-            Q(experiment_version__author=self.request.user)
+            experiment_version__author=self.request.user
         ).order_by(
             'experiment_version__created_at',
         ).select_related('experiment_version', 'experiment_version__experiment')

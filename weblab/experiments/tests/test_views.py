@@ -900,7 +900,6 @@ class TestExperimentVersionView:
 @pytest.mark.django_db
 class TestExperimentTasks:
 
-    @pytest.mark.usefixtures('other_user')
     def test_load_page_other_user(self, client):
         response = client.get('/experiments/tasks')
         assert response.status_code == 302
@@ -939,7 +938,7 @@ class TestExperimentTasks:
         )
 
         exp_version_2 = recipes.experiment_version.make(
-            status=ExperimentVersion.STATUS_RUNNING,
+            status=ExperimentVersion.STATUS_QUEUED,
             experiment__model=model_1,
             experiment__model_version=model_1_version.hexsha,
             experiment__protocol=protocol_1,
@@ -963,13 +962,11 @@ class TestExperimentTasks:
 
         # Return only running experiment versions
         response = client.get('/experiments/tasks')
-        assert len(response.context['runningexperiment_list']) == 2
         assert set(response.context['runningexperiment_list']) == {running_exp_version2, running_exp_version3}
 
         # Cancel one of the running versions check the other one is still present
         client.post('/experiments/tasks', {'chkBoxes[]': [running_exp_version2.experiment_version.id]})
         response = client.get('/experiments/tasks')
-        assert len(response.context['runningexperiment_list']) == 1
         assert set(response.context['runningexperiment_list']) == {running_exp_version3}
         assert RunningExperiment.objects.count() == 1
 
