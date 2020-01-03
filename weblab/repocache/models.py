@@ -204,17 +204,17 @@ class CachedProtocolTag(CachedEntityTag):
 _set_class_links(CachedProtocol, CachedProtocolVersion, CachedProtocolTag)
 
 
-class CachedFittingSpec(CachedEntityMixin):
+class CachedFittingSpec(CachedEntity):
     """Cache for a fitting specifications's repository."""
     entity = models.OneToOneField(FittingSpec, on_delete=models.CASCADE, related_name='cachedfittingspec')
 
 
-class CachedFittingSpecVersion(CachedEntityVersionMixin):
+class CachedFittingSpecVersion(CachedEntityVersion):
     """Cache for a single version / commit in a fitting specifications's repository."""
     entity = models.ForeignKey(CachedFittingSpec, on_delete=models.CASCADE, related_name='versions')
 
 
-class CachedFittingSpecTag(CachedEntityTagMixin):
+class CachedFittingSpecTag(CachedEntityTag):
     """Cache for a tag in a fitting specifications's repository."""
     entity = models.ForeignKey(CachedFittingSpec, related_name='tags')
     version = models.ForeignKey(CachedFittingSpecVersion, on_delete=models.CASCADE, related_name='tags')
