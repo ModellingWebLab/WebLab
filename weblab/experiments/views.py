@@ -147,6 +147,14 @@ class ExperimentMatrixJsonView(View):
                 }
             })
 
+        # Base models/protocols to show
+        q_models = ModelEntity.objects.all()
+        if model_pks:
+            q_models = q_models.filter(id__in=set(model_pks))
+        q_protocols = ProtocolEntity.objects.all()
+        if protocol_pks:
+            q_protocols = q_protocols.filter(id__in=set(protocol_pks))
+
         # Base visibility: don't show private versions, unless only showing moderated versions
         if subset == 'moderated':
             visibility_where = Q(visibility='moderated')
@@ -172,27 +180,31 @@ class ExperimentMatrixJsonView(View):
         q_public_models = Q(cachedmodel__versions__visibility__in=['public', 'moderated'])
         q_public_protocols = Q(cachedprotocol__versions__visibility__in=['public', 'moderated'])
         if subset == 'moderated':
-            q_models = ModelEntity.objects.filter(q_moderated_models)
-            q_protocols = ProtocolEntity.objects.filter(q_moderated_protocols)
+            q_models = q_models.filter(q_moderated_models)
+            q_protocols = q_protocols.filter(q_moderated_protocols)
         elif subset == 'mine' and user.is_authenticated:
             if request.GET.get('moderated-models', 'true') == 'true':
-                q_models = ModelEntity.objects.filter(q_mine | q_moderated_models)
+                q_models = q_models.filter(q_mine | q_moderated_models)
             else:
-                q_models = ModelEntity.objects.filter(q_mine).filter(
+                q_models = q_models.filter(q_mine).filter(
                     cachedmodel__versions__visibility__in=['public', 'private'])
             if request.GET.get('moderated-protocols', 'true') == 'true':
-                q_protocols = ProtocolEntity.objects.filter(q_mine | q_moderated_protocols)
+                q_protocols = q_protocols.filter(q_mine | q_moderated_protocols)
             else:
-                q_protocols = ProtocolEntity.objects.filter(q_mine).filter(
+                q_protocols = q_protocols.filter(q_mine).filter(
                     cachedprotocol__versions__visibility__in=['public', 'private'])
         elif subset == 'public':
-            q_models = ModelEntity.objects.filter(q_public_models)
-            q_protocols = ProtocolEntity.objects.filter(q_public_protocols)
+            q_models = q_models.filter(q_public_models)
+            q_protocols = q_protocols.filter(q_public_protocols)
         elif subset == 'all':
-            q_models = ModelEntity.objects.filter(q_public_models | q_mine).union(
-                ModelEntity.objects.shared_with_user(user))
-            q_protocols = ProtocolEntity.objects.filter(q_public_protocols | q_mine).union(
-                ProtocolEntity.objects.shared_with_user(user))
+            shared_models = ModelEntity.objects.shared_with_user(user)
+            if model_pks:
+                shared_models = shared_models.filter(id__in=set(model_pks))
+            q_models = q_models.filter(q_public_models | q_mine).union(shared_models)
+            shared_protocols = ProtocolEntity.objects.shared_with_user(user)
+            if protocol_pks:
+                shared_protocols = shared_protocols.filter(id__in=set(protocol_pks))
+            q_protocols = q_protocols.filter(q_public_protocols | q_mine).union(shared_protocols)
         else:
             q_models = ModelEntity.objects.none()
             q_protocols = ProtocolEntity.objects.none()
@@ -201,12 +213,7 @@ class ExperimentMatrixJsonView(View):
             visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
 
         # If specific versions have been requested, show at most those
-        if model_pks:
-            q_models = q_models.filter(id__in=set(model_pks))
         q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
-
-        if protocol_pks:
-            q_protocols = q_protocols.filter(id__in=set(protocol_pks))
         if show_fits:  # Temporary hack
             protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=True)
         else:
