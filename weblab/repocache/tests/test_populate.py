@@ -24,8 +24,8 @@ class TestPopulate:
 
     def test_removes_old_versions(self):
         model = recipes.model.make()
-        cached = recipes.cached_entity_version.make(entity__entity=model).entity
-        recipes.cached_entity_tag.make(entity=cached)
+        cached = recipes.cached_model_version.make(entity__entity=model).entity
+        recipes.cached_model_tag.make(entity=cached)
 
         assert cached.versions.exists()
         assert cached.tags.exists()

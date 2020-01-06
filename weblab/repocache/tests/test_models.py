@@ -2,57 +2,96 @@ import pytest
 from django.db.utils import IntegrityError
 
 from core import recipes
-from repocache.models import CachedEntity
+from repocache.models import CachedModel, CachedProtocol
 
 
 @pytest.mark.django_db
 class TestEntityCacheModels:
-    def test_cachedentity_is_deleted_when_entity_is_deleted(self):
-        cached = recipes.cached_entity.make()
+    @pytest.mark.parametrize("recipe,manager", [
+        (recipes.cached_model, CachedModel.objects),
+        (recipes.cached_protocol, CachedProtocol.objects),
+    ])
+    def test_cachedentity_is_deleted_when_entity_is_deleted(self, recipe, manager):
+        cached = recipe.make()
         cached.entity.delete()
+        assert not manager.filter(pk=cached.pk).exists()
 
-        assert not CachedEntity.objects.filter(pk=cached.pk).exists()
-
-    def test_related_names_for_versions(self):
-        version = recipes.cached_entity_version.make()
+    @pytest.mark.parametrize("recipe", [
+        (recipes.cached_model_version),
+        (recipes.cached_protocol_version),
+    ])
+    def test_related_names_for_versions(self, recipe):
+        version = recipe.make()
         assert list(version.entity.versions.all()) == [version]
 
-    def test_related_names_for_tags(self):
-        tag = recipes.cached_entity_tag.make()
+    @pytest.mark.parametrize("recipe", [
+        (recipes.cached_model_tag),
+        (recipes.cached_protocol_tag),
+    ])
+    def test_related_names_for_tags(self, recipe):
+        tag = recipe.make()
         assert list(tag.entity.tags.all()) == [tag]
 
-    def test_uniqueness_of_entity_and_version_sha(self):
-        version = recipes.cached_entity_version.make()
+    @pytest.mark.parametrize("recipe", [
+        (recipes.cached_model_version),
+        (recipes.cached_protocol_version),
+    ])
+    def test_uniqueness_of_entity_and_version_sha(self, recipe):
+        version = recipe.make()
         with pytest.raises(IntegrityError):
-            recipes.cached_entity_version.make(entity=version.entity, sha=version.sha)
+            recipe.make(entity=version.entity, sha=version.sha)
 
-    def test_uniqueness_of_entity_and_tag(self):
-        version = recipes.cached_entity_tag.make()
+    @pytest.mark.parametrize("recipe", [
+        (recipes.cached_model_tag),
+        (recipes.cached_protocol_tag),
+    ])
+    def test_uniqueness_of_entity_and_tag(self, recipe):
+        version = recipe.make()
         with pytest.raises(IntegrityError):
-            recipes.cached_entity_tag.make(entity=version.entity, tag=version.tag)
+            recipe.make(entity=version.entity, tag=version.tag)
 
-    def test_uniqueness_of_entity(self):
-        cached = recipes.cached_entity.make()
+    @pytest.mark.parametrize("recipe", [
+        (recipes.cached_model),
+        (recipes.cached_protocol),
+    ])
+    def test_uniqueness_of_entity(self, recipe):
+        cached = recipe.make()
         with pytest.raises(IntegrityError):
-            recipes.cached_entity.make(entity=cached.entity)
+            recipe.make(entity=cached.entity)
 
 
 @pytest.mark.django_db
 class TestEntityCacheModelsVisibility:
-    def test_entity_visibility(self):
-        version = recipes.cached_entity_version.make(visibility='public')
+    @pytest.mark.parametrize("recipe", [
+        (recipes.cached_model_version),
+        (recipes.cached_protocol_version),
+    ])
+    def test_entity_visibility(self, recipe):
+        version = recipe.make(visibility='public')
         assert version.entity.visibility == 'public'
 
-    def test_entity_visibility_is_private_if_no_versions(self):
-        cached = recipes.cached_entity.make()
+    @pytest.mark.parametrize("recipe", [
+        (recipes.cached_model),
+        (recipes.cached_protocol),
+    ])
+    def test_entity_visibility_is_private_if_no_versions(self, recipe):
+        cached = recipe.make()
         assert cached.visibility == 'private'
 
-    def test_get_version(self):
-        version = recipes.cached_entity_version.make()
+    @pytest.mark.parametrize("recipe", [
+        (recipes.cached_model_version),
+        (recipes.cached_protocol_version),
+    ])
+    def test_get_version(self, recipe):
+        version = recipe.make()
         assert version.entity.get_version(version.sha) == version
 
-    def test_set_entity_version_visibility(self):
-        version = recipes.cached_entity_version.make()
+    @pytest.mark.parametrize("recipe", [
+        (recipes.cached_model_version),
+        (recipes.cached_protocol_version),
+    ])
+    def test_set_entity_version_visibility(self, recipe):
+        version = recipe.make()
         version.set_visibility('public')
         version.refresh_from_db()
         assert version.visibility == 'public'

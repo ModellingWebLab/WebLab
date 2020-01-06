@@ -41,7 +41,7 @@ from core.filetypes import get_file_type
 from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from repocache.exceptions import RepoCacheMiss
-from repocache.models import CachedEntityVersion
+from repocache.models import CachedProtocolVersion
 
 from .forms import (
     EntityChangeVisibilityForm,
@@ -900,11 +900,9 @@ class GetProtocolInterfacesJsonView(View):
                 'id', flat=True
             )
             where = where | Q(entity__entity__in=visible_protocols)
-        # Ensure we only get protocols
-        where = Q(entity__entity__entity_type='protocol') & where
         # Now sort and filter these so we only get the latest version per protocol,
         # then annotate with the extra info we need to reduce total query count
-        visible_versions = CachedEntityVersion.objects.filter(
+        visible_versions = CachedProtocolVersion.objects.filter(
             where,
         ).order_by(
             'entity__id',
@@ -1041,13 +1039,14 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
 
         # ended up using a nested dict as nested lists caused django's unpacking in forloops to
         # mess things up slightly
+        cached_name = 'cached' + entity.other_type
         other_entities = Entity.objects.filter(
             entity_type=entity.other_type
         ).select_related(
-            'cachedentity'
+            cached_name
         ).prefetch_related(
-            'cachedentity__versions',
-            'cachedentity__versions__tags'
+            cached_name + '__versions',
+            cached_name + '__versions__tags'
         )
         context['object_list'] = []
         context['other_object_list'] = []

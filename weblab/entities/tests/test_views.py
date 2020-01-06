@@ -254,7 +254,7 @@ class TestEntityVersionView:
 
     def test_404_for_version_not_in_repo(self, client, helpers):
         model = recipes.model.make()
-        recipes.cached_entity_version.make(
+        recipes.cached_model_version.make(
             entity__entity=model,
             sha='test-sha',
             visibility='public'

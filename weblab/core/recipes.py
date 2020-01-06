@@ -27,9 +27,13 @@ running_experiment = Recipe('RunningExperiment')
 
 experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experiment))
 
-cached_entity = Recipe('CachedEntity')
-cached_entity_version = Recipe('CachedEntityVersion')
-cached_entity_tag = Recipe('CachedEntityTag')
+cached_model = Recipe('CachedModel')
+cached_model_version = Recipe('CachedModelVersion')
+cached_model_tag = Recipe('CachedModelTag')
+
+cached_protocol = Recipe('CachedProtocol')
+cached_protocol_version = Recipe('CachedProtocolVersion')
+cached_protocol_tag = Recipe('CachedProtocolTag')
 
 dataset = Recipe('Dataset',
                  name=seq('mydataset'),

@@ -1,17 +1,17 @@
 from django.db import transaction
 
-from .models import CachedEntity, CachedEntityTag, CachedEntityVersion
+from .models import get_or_create_cached_entity
 
 
 @transaction.atomic
 def populate_entity_cache(entity):
     """
-    Process the repository of the given entity,
-    adding CachedEntity and related models
+    Process the repository of the given entity, adding the relevant cache entries,
+    according to entity type.
 
     :param entity: entity to process
     """
-    cached, cache_created = CachedEntity.objects.get_or_create(entity=entity)
+    cached, cache_created = get_or_create_cached_entity(entity)
 
     tag_dict = entity.repo.tag_dict
 
@@ -21,7 +21,7 @@ def populate_entity_cache(entity):
     for commit in entity.repo.commits:
         valid_shas.add(commit.hexsha)
         visibility = entity.get_visibility_from_repo(commit)
-        version = CachedEntityVersion.objects.get_or_create(
+        version = cached.CachedVersionClass.objects.get_or_create(
             entity=cached,
             sha=commit.hexsha,
             defaults={
@@ -51,7 +51,7 @@ def populate_entity_cache(entity):
         # Store any tags related to this commit
         for tag in tag_dict.get(commit.hexsha, []):
             cached.tags.add(
-                CachedEntityTag.objects.get_or_create(
+                cached.CachedTagClass.objects.get_or_create(
                     entity=cached,
                     tag=tag.name,
                     defaults={'version': version},

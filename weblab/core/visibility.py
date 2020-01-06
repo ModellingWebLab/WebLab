@@ -53,30 +53,6 @@ def visibility_meets_threshold(visibility, threshold):
     return VISIBILITY_LEVEL_MAP[visibility] >= VISIBILITY_LEVEL_MAP[threshold]
 
 
-def visible_entity_ids(user):
-    """
-    Get IDs of entities which are visible to the given user
-
-    :return: set of entity IDs
-    """
-    from entities.models import ModelEntity, ProtocolEntity
-    from repocache.entities import get_public_entity_ids
-
-    public_entity_ids = get_public_entity_ids()
-
-    if user.is_authenticated:
-        # Get the user's own entities and those they have permission for
-        visible = user.entity_set.all().union(
-            ModelEntity.objects.with_edit_permission(user),
-            ProtocolEntity.objects.with_edit_permission(user),
-        )
-        visible_ids = set(visible.values_list('id', flat=True))
-
-        return public_entity_ids | visible_ids
-    else:
-        return public_entity_ids
-
-
 def visibility_check(visibility, allowed_users, user):
     """
     Visibility check

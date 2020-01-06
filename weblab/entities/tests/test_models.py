@@ -4,7 +4,7 @@ from django.db.utils import IntegrityError
 from core import recipes
 from entities.models import Entity, ModelEntity, ProtocolEntity
 from repocache.exceptions import RepoCacheMiss
-from repocache.models import CachedEntity
+from repocache.models import CachedModel
 from repocache.populate import populate_entity_cache
 
 
@@ -76,15 +76,15 @@ class TestEntity:
 
     def test_get_repocache(self):
         model = recipes.model.make()
-        assert CachedEntity.objects.count() == 0
+        assert CachedModel.objects.count() == 0
         assert model.repocache
-        assert CachedEntity.objects.count() == 1
+        assert CachedModel.objects.count() == 1
         assert model.repocache
-        assert CachedEntity.objects.count() == 1
+        assert CachedModel.objects.count() == 1
 
     def test_entity_visibility_gets_latest_visibility_from_cache(self):
         model = recipes.model.make()
-        recipes.cached_entity_version.make(
+        recipes.cached_model_version.make(
             entity__entity=model,
             sha='test-sha',
             visibility='public'
@@ -94,7 +94,7 @@ class TestEntity:
 
     def test_get_version_visibility_fetches_from_cache(self):
         model = recipes.model.make()
-        recipes.cached_entity_version.make(
+        recipes.cached_model_version.make(
             entity__entity=model,
             sha='test-sha',
             visibility='public'
