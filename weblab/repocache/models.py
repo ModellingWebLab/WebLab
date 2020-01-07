@@ -79,7 +79,7 @@ class CachedEntityMixin(models.Model):
             entity=self,
             sha=commit.sha,
             message=commit.message,
-            timestamp=commit.committed_at,
+            timestamp=commit.timestamp,
             visibility=visibility,
         )
 

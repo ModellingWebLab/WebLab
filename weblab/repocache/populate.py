@@ -25,7 +25,7 @@ def populate_entity_cache(entity):
             entity=cached,
             sha=commit.sha,
             defaults={
-                'timestamp': commit.committed_at,
+                'timestamp': commit.timestamp,
                 'message': commit.message,
                 'visibility': visibility or entity.DEFAULT_VISIBILITY,
             }

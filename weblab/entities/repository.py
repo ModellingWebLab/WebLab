@@ -272,7 +272,7 @@ class Commit:
 
         :return: file handle to archive
         """
-        mtime = self.committed_at
+        mtime = self.timestamp
         return ArchiveWriter().write(
             (blob.name, blob.data_stream, mtime) for blob in self.files
         )
@@ -308,7 +308,7 @@ class Commit:
         return other._commit == self._commit
 
     @property
-    def committed_at(self):
+    def timestamp(self):
         """
         Datetime representation of commit timestamp
 

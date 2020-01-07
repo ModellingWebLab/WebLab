@@ -195,7 +195,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
             'name': blob.name,
             'filetype': get_file_type(blob.name),
             'size': blob.size,
-            'created': commit.committed_at,
+            'created': commit.timestamp,
             'url': reverse(
                 'entities:file_download',
                 args=[obj.entity_type, obj.id, commit.sha, blob.name]
@@ -231,7 +231,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
                 'author': commit.author.name,
                 'entityId': obj.id,
                 'visibility': obj.get_version_visibility(commit.sha),
-                'created': commit.committed_at,
+                'created': commit.timestamp,
                 'name': obj.name,
                 'version': obj.repo.get_name_for_commit(commit.sha),
                 'parsedOk': obj.is_parsed_ok(commit.sha),
@@ -324,7 +324,7 @@ class EntityComparisonJsonView(View):
             'id': blob.name,
             'name': blob.name,
             'author': entity.author.full_name,
-            'created': commit.committed_at,
+            'created': commit.timestamp,
             'filetype': get_file_type(blob.name),
             'size': blob.size,
             'url': reverse(
@@ -351,7 +351,7 @@ class EntityComparisonJsonView(View):
             'author': entity.author.full_name,
             'parsedOk': False,
             'visibility': entity.get_version_visibility(commit.sha, default=entity.DEFAULT_VISIBILITY),
-            'created': commit.committed_at,
+            'created': commit.timestamp,
             'name': entity.name,
             'version': entity.repo.get_name_for_commit(commit.sha),
             'files': files,

@@ -332,7 +332,7 @@ class TestEntityVersionJsonView:
         assert ver['visibility'] == 'public'
         assert (
             parse_datetime(ver['created']).replace(microsecond=0) ==
-            version.committed_at
+            version.timestamp
         )
         assert ver['version'] == 'v1'
         assert ver['parsedOk'] == is_parsed_ok

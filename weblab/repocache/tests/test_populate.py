@@ -19,7 +19,7 @@ class TestPopulate:
         version = cached.versions.get()
         assert version.sha == latest.sha
         assert version.message == latest.message
-        assert version.timestamp == latest.committed_at
+        assert version.timestamp == latest.timestamp
 
         assert cached.tags.get().tag == 'v1'
 
