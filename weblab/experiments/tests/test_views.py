@@ -58,8 +58,8 @@ def planned_experiments(model_with_version, protocol_with_version):
     """Fill in DB for NewExperimentView tests."""
     model = model_with_version
     protocol = protocol_with_version
-    model_version = model.repo.latest_commit.hexsha
-    protocol_version = protocol.repo.latest_commit.hexsha
+    model_version = model.repo.latest_commit.sha
+    protocol_version = protocol.repo.latest_commit.sha
     PlannedExperiment(
         model=model,
         protocol=protocol,
@@ -174,22 +174,22 @@ class TestExperimentMatrix:
         my_moderated_protocol = recipes.protocol.make(author=logged_in_user)
         helpers.add_version(my_moderated_protocol, visibility='moderated')
 
-        my_version = make_experiment(my_model, my_model_version.hexsha, my_protocol, my_protocol_version.hexsha)
+        my_version = make_experiment(my_model, my_model_version.sha, my_protocol, my_protocol_version.sha)
         with_moderated_model = make_experiment(
-            moderated_model, moderated_model.repo.latest_commit.hexsha,
-            my_protocol, my_protocol_version.hexsha,
+            moderated_model, moderated_model.repo.latest_commit.sha,
+            my_protocol, my_protocol_version.sha,
         )
         with_moderated_protocol = make_experiment(
-            my_model, my_model_version.hexsha,
-            moderated_protocol, moderated_protocol.repo.latest_commit.hexsha,
+            my_model, my_model_version.sha,
+            moderated_protocol, moderated_protocol.repo.latest_commit.sha,
         )
         with_my_moderated_model = make_experiment(
-            my_moderated_model, my_moderated_model.repo.latest_commit.hexsha,
-            my_protocol, my_protocol_version.hexsha,
+            my_moderated_model, my_moderated_model.repo.latest_commit.sha,
+            my_protocol, my_protocol_version.sha,
         )
         with_my_moderated_protocol = make_experiment(
-            my_model, my_model_version.hexsha,
-            my_moderated_protocol, my_moderated_protocol.repo.latest_commit.hexsha,
+            my_model, my_model_version.sha,
+            my_moderated_protocol, my_moderated_protocol.repo.latest_commit.sha,
         )
 
         # All my experiments plus ones involving moderated entities
@@ -248,8 +248,8 @@ class TestExperimentMatrix:
         my_protocol_private_version = helpers.add_version(my_protocol_private, visibility='private')
 
         exp1 = make_experiment(
-            my_model_moderated, my_model_moderated_version.hexsha,
-            my_protocol_private, my_protocol_private_version.hexsha,
+            my_model_moderated, my_model_moderated_version.sha,
+            my_protocol_private, my_protocol_private_version.sha,
         )
 
         # Someone else's public model with my public protocol: should be visible
@@ -263,16 +263,16 @@ class TestExperimentMatrix:
         my_protocol_second_private_version = helpers.add_version(my_protocol_public, visibility='private')
 
         exp2 = make_experiment(
-            other_model_public, other_model_public_version.hexsha,
-            my_protocol_public, my_protocol_public_version.hexsha,
+            other_model_public, other_model_public_version.sha,
+            my_protocol_public, my_protocol_public_version.sha,
         )
         exp2_model_private = make_experiment(  # noqa: F841
-            other_model_public, other_model_second_private_version.hexsha,
-            my_protocol_public, my_protocol_public_version.hexsha,
+            other_model_public, other_model_second_private_version.sha,
+            my_protocol_public, my_protocol_public_version.sha,
         )
         exp2_protocol_private = make_experiment(
-            other_model_public, other_model_public_version.hexsha,
-            my_protocol_public, my_protocol_second_private_version.hexsha,
+            other_model_public, other_model_public_version.sha,
+            my_protocol_public, my_protocol_second_private_version.sha,
         )
 
         # Someone else's public model and moderated protocol: should be visible
@@ -281,12 +281,12 @@ class TestExperimentMatrix:
         other_protocol_private_version = helpers.add_version(other_protocol_moderated, visibility='private')
 
         exp3 = make_experiment(
-            other_model_public, other_model_public_version.hexsha,
-            other_protocol_moderated, other_protocol_moderated_version.hexsha,
+            other_model_public, other_model_public_version.sha,
+            other_protocol_moderated, other_protocol_moderated_version.sha,
         )
         exp3_protocol_private = make_experiment(
-            other_model_public, other_model_second_private_version.hexsha,
-            other_protocol_moderated, other_protocol_private_version.hexsha,
+            other_model_public, other_model_second_private_version.sha,
+            other_protocol_moderated, other_protocol_private_version.sha,
         )
 
         # Other's private model, my public protocol: should not be visible
@@ -294,8 +294,8 @@ class TestExperimentMatrix:
         other_model_private_version = helpers.add_version(other_model_private, visibility='private')
 
         exp4 = make_experiment(  # noqa: F841
-            other_model_private, other_model_private_version.hexsha,
-            my_protocol_public, my_protocol_public_version.hexsha,
+            other_model_private, other_model_private_version.sha,
+            my_protocol_public, my_protocol_public_version.sha,
         )
 
         response = client.get('/experiments/matrix?subset=public')
@@ -339,8 +339,8 @@ class TestExperimentMatrix:
         other_protocol_public_version = helpers.add_version(other_protocol_public, visibility='public')
 
         exp1 = make_experiment(
-            my_model_public, my_model_public_version.hexsha,
-            other_protocol_public, other_protocol_public_version.hexsha,
+            my_model_public, my_model_public_version.sha,
+            other_protocol_public, other_protocol_public_version.sha,
         )
 
         # My public model with somebody else's moderated protocol: should not be visible
@@ -348,8 +348,8 @@ class TestExperimentMatrix:
         other_protocol_moderated_version = helpers.add_version(other_protocol_moderated, visibility='moderated')
 
         exp2 = make_experiment(
-            my_model_public, my_model_public_version.hexsha,
-            other_protocol_moderated, other_protocol_moderated_version.hexsha,
+            my_model_public, my_model_public_version.sha,
+            other_protocol_moderated, other_protocol_moderated_version.sha,
         )
 
         # Someone else's moderated model and public protocol: should not be visible
@@ -357,21 +357,21 @@ class TestExperimentMatrix:
         other_model_moderated_version = helpers.add_version(other_model_moderated, visibility='moderated')
 
         exp3 = make_experiment(  # noqa: F841
-            other_model_moderated, other_model_moderated_version.hexsha,
-            other_protocol_public, other_protocol_public_version.hexsha,
+            other_model_moderated, other_model_moderated_version.sha,
+            other_protocol_public, other_protocol_public_version.sha,
         )
 
         # Someone else's moderated model and moderated protocol: should be visible
         exp4 = make_experiment(
-            other_model_moderated, other_model_moderated_version.hexsha,
-            other_protocol_moderated, other_protocol_moderated_version.hexsha,
+            other_model_moderated, other_model_moderated_version.sha,
+            other_protocol_moderated, other_protocol_moderated_version.sha,
         )
 
         # A later public version shouldn't show up
         other_model_second_public_version = helpers.add_version(other_model_moderated, visibility='public')
         exp4_public = make_experiment(
-            other_model_moderated, other_model_second_public_version.hexsha,
-            other_protocol_moderated, other_protocol_moderated_version.hexsha,
+            other_model_moderated, other_model_second_public_version.sha,
+            other_protocol_moderated, other_protocol_moderated_version.sha,
         )
 
         response = client.get('/experiments/matrix')
@@ -400,8 +400,8 @@ class TestExperimentMatrix:
         other_protocol = recipes.protocol.make()
         other_protocol_version = helpers.add_version(other_protocol)
         make_experiment(
-            other_model, other_model_version.hexsha,
-            other_protocol, other_protocol_version.hexsha,
+            other_model, other_model_version.sha,
+            other_protocol, other_protocol_version.sha,
         )
 
         # Throw in a non-existent protocol so we can make sure it gets ignored
@@ -438,8 +438,8 @@ class TestExperimentMatrix:
     def test_submatrix_with_model_versions(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         v1 = exp.model_version
-        v2 = helpers.add_version(exp.model).hexsha
-        helpers.add_version(exp.model).hexsha  # v3, not used
+        v2 = helpers.add_version(exp.model).sha
+        helpers.add_version(exp.model).sha  # v3, not used
 
         response = client.get(
             '/experiments/matrix',
@@ -460,8 +460,8 @@ class TestExperimentMatrix:
     def test_submatrix_with_all_model_versions(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         v1 = exp.model_version
-        v2 = helpers.add_version(exp.model).hexsha
-        v3 = helpers.add_version(exp.model).hexsha
+        v2 = helpers.add_version(exp.model).sha
+        v3 = helpers.add_version(exp.model).sha
 
         exp2 = make_experiment(
             exp.model, v2,
@@ -503,7 +503,7 @@ class TestExperimentMatrix:
     def test_submatrix_with_protocol_versions(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         v1 = exp.protocol_version
-        v2 = helpers.add_version(exp.protocol).hexsha
+        v2 = helpers.add_version(exp.protocol).sha
         helpers.add_version(exp.protocol)  # v3, not used
 
         exp2 = make_experiment(
@@ -530,8 +530,8 @@ class TestExperimentMatrix:
     def test_submatrix_with_all_protocol_versions(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         v1 = exp.protocol_version
-        v2 = helpers.add_version(exp.protocol).hexsha
-        v3 = helpers.add_version(exp.protocol).hexsha
+        v2 = helpers.add_version(exp.protocol).sha
+        v3 = helpers.add_version(exp.protocol).sha
 
         exp2 = make_experiment(
             exp.model, exp.model_version,
@@ -575,9 +575,9 @@ class TestExperimentMatrix:
     ):
         recipes.experiment.make(
             model=public_model,
-            model_version=public_model.repo.latest_commit.hexsha,
+            model_version=public_model.repo.latest_commit.sha,
             protocol=public_protocol,
-            protocol_version=public_protocol.repo.latest_commit.hexsha,
+            protocol_version=public_protocol.repo.latest_commit.sha,
         )
 
         response = client.get('/experiments/matrix?subset=all')
@@ -594,7 +594,7 @@ class TestExperimentMatrix:
         response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert str(new_version.hexsha) in data['getMatrix']['models']
+        assert str(new_version.sha) in data['getMatrix']['models']
         assert str(experiment_version.experiment.protocol_version) in data['getMatrix']['protocols']
         assert len(data['getMatrix']['experiments']) == 0
 
@@ -609,8 +609,8 @@ class TestNewExperimentView:
     ):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
         add_permission(logged_in_user, 'create_experiment')
         response = client.post(
             '/experiments/new',
@@ -709,8 +709,8 @@ class TestNewExperimentView:
 
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
         add_permission(logged_in_user, 'create_experiment')
         response = client.post(
             '/experiments/new',
@@ -751,8 +751,8 @@ class TestNewExperimentView:
 
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
         add_permission(logged_in_user, 'create_experiment')
         response = client.post(
             '/experiments/new',
@@ -951,7 +951,7 @@ class TestExperimentComparisonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_commit.hexsha,
+            experiment__protocol_version=protocol_commit.sha,
         )
 
         response = client.get(
@@ -974,7 +974,7 @@ class TestExperimentComparisonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=proto,
-            experiment__protocol_version=proto_commit.hexsha,
+            experiment__protocol_version=proto_commit.sha,
         )
 
         response = client.get(
@@ -1010,7 +1010,7 @@ class TestExperimentComparisonJsonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_commit.hexsha,
+            experiment__protocol_version=protocol_commit.sha,
         )
 
         response = client.get(
@@ -1040,7 +1040,7 @@ class TestExperimentComparisonJsonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=proto,
-            experiment__protocol_version=proto_commit.hexsha,
+            experiment__protocol_version=proto_commit.sha,
         )
 
         response = client.get(
@@ -1069,7 +1069,7 @@ class TestExperimentComparisonJsonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_commit.hexsha,
+            experiment__protocol_version=protocol_commit.sha,
         )
         version2.mkdir()
         shutil.copyfile(archive_file_path, str(version2.archive_path))
@@ -1254,9 +1254,9 @@ class TestEnforcesExperimentVersionVisibility:
         protocol_version = helpers.add_version(protocol, visibility='public')
         experiment_version = recipes.experiment_version.make(
             experiment__model=model,
-            experiment__model_version=model_version.hexsha,
+            experiment__model_version=model_version.sha,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_version.hexsha,
+            experiment__protocol_version=protocol_version.sha,
         )
 
         experiment_version.mkdir()

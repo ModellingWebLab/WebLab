@@ -17,7 +17,7 @@ class TestPopulate:
         latest = model_with_version.repo.latest_commit
 
         version = cached.versions.get()
-        assert version.sha == latest.hexsha
+        assert version.sha == latest.sha
         assert version.message == latest.message
         assert version.timestamp == latest.committed_at
 
@@ -75,11 +75,11 @@ class TestPopulate:
 
         populate_entity_cache(model)
 
-        assert model.repocache.get_version(v1.hexsha).visibility == 'public'
-        assert model.repocache.get_version(v2.hexsha).visibility == 'public'
-        assert model.repocache.get_version(v2.hexsha).message == 'v2'
-        assert model.repocache.get_version(v3.hexsha).visibility == 'private'
-        assert model.repocache.get_version(v4.hexsha).visibility == 'private'
+        assert model.repocache.get_version(v1.sha).visibility == 'public'
+        assert model.repocache.get_version(v2.sha).visibility == 'public'
+        assert model.repocache.get_version(v2.sha).message == 'v2'
+        assert model.repocache.get_version(v3.sha).visibility == 'private'
+        assert model.repocache.get_version(v4.sha).visibility == 'private'
 
     def test_falls_back_to_private(self, helpers):
         model = recipes.model.make()
@@ -87,7 +87,7 @@ class TestPopulate:
 
         populate_entity_cache(model)
 
-        assert model.repocache.get_version(commit.hexsha).visibility == 'private'
+        assert model.repocache.get_version(commit.sha).visibility == 'private'
 
     def test_applies_missing_visibilities(self, helpers):
         model = recipes.model.make()

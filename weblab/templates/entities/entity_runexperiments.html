@@ -37,12 +37,12 @@
               {% if entity_version.latest %}
 
                 <input class="latestexperimentCheckBox" type="checkbox"
-                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.sha }}"
                        name="model_protocol_list[]"
                        checked/>
               {% else %}
                 <input class="experimentCheckBox" type="checkbox"
-                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.sha }}"
                        name="model_protocol_list[]"/>
               {% endif %}
               <strong>
@@ -75,12 +75,12 @@
               {% if entity_version.latest %}
 
                 <input class="latestexperimentCheckBox" type="checkbox"
-                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.sha }}"
                        name="model_protocol_list[]"
                        checked/>
               {% else %}
                 <input class="experimentCheckBox" type="checkbox"
-                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.sha }}"
                        name="model_protocol_list[]"/>
               {% endif %}
               <strong>

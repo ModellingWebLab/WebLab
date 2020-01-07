@@ -101,10 +101,10 @@ class TestEntityCacheModelsVisibility:
         commit = helpers.add_version(model, visibility='public', cache=False)
 
         assert model.repocache.versions.count() == 0
-        model.repocache.add_version(commit.hexsha)
+        model.repocache.add_version(commit.sha)
 
-        version = model.repocache.get_version(commit.hexsha)
-        assert version.sha == commit.hexsha
+        version = model.repocache.get_version(commit.sha)
+        assert version.sha == commit.sha
         assert version.message == commit.message
         assert version.timestamp == commit.committed_at
         assert version.visibility == 'public'

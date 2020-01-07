@@ -153,13 +153,13 @@ def record_experiments_to_run(user, entity, commit):
     """
     new_version_kwargs = {
         entity.entity_type: entity,
-        entity.entity_type + '_version': commit.hexsha,
+        entity.entity_type + '_version': commit.sha,
     }
     for parent in commit.parents:
         # Find visible experiments involving this parent
         parent_kwargs = {
             entity.entity_type: entity,
-            entity.entity_type + '_version': parent.hexsha,
+            entity.entity_type + '_version': parent.sha,
         }
         for expt in Experiment.objects.filter(**parent_kwargs):
             if expt.is_visible_to_user(user):

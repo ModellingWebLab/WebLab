@@ -197,9 +197,9 @@ def experiment_version(public_model, public_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=public_model,
-        experiment__model_version=public_model.repo.latest_commit.hexsha,
+        experiment__model_version=public_model.repo.latest_commit.sha,
         experiment__protocol=public_protocol,
-        experiment__protocol_version=public_protocol.repo.latest_commit.hexsha,
+        experiment__protocol_version=public_protocol.repo.latest_commit.sha,
     )
 
 
@@ -208,9 +208,9 @@ def moderated_experiment_version(moderated_model, moderated_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=moderated_model,
-        experiment__model_version=moderated_model.repo.latest_commit.hexsha,
+        experiment__model_version=moderated_model.repo.latest_commit.sha,
         experiment__protocol=moderated_protocol,
-        experiment__protocol_version=moderated_protocol.repo.latest_commit.hexsha,
+        experiment__protocol_version=moderated_protocol.repo.latest_commit.sha,
     )
 
 

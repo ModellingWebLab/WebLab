@@ -19,11 +19,11 @@ def populate_entity_cache(entity):
     commits_without_visibility = []
     valid_shas = set()
     for commit in entity.repo.commits:
-        valid_shas.add(commit.hexsha)
+        valid_shas.add(commit.sha)
         visibility = entity.get_visibility_from_repo(commit)
         version = cached.CachedVersionClass.objects.get_or_create(
             entity=cached,
-            sha=commit.hexsha,
+            sha=commit.sha,
             defaults={
                 'timestamp': commit.committed_at,
                 'message': commit.message,
@@ -49,12 +49,12 @@ def populate_entity_cache(entity):
                 entity.set_version_visibility(sha, visibility)
             commits_without_visibility = []
         else:
-            commits_without_visibility.append(commit.hexsha)
+            commits_without_visibility.append(commit.sha)
 
         cached.versions.add(version)
 
         # Store any tags related to this commit
-        for tag in tag_dict.get(commit.hexsha, []):
+        for tag in tag_dict.get(commit.sha, []):
             cached.tags.add(
                 cached.CachedTagClass.objects.get_or_create(
                     entity=cached,

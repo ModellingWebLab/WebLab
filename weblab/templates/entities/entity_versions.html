@@ -19,7 +19,7 @@
       {% for tags, commit in versions %}
       <li>
         <p>
-          <input class="comparisonCheckBox" type="checkbox" value="{{ entity.id }}:{{ commit.hexsha }}">
+          <input class="comparisonCheckBox" type="checkbox" value="{{ entity.id }}:{{ commit.sha }}">
           <strong>
             <a class="entityversionlink" href="{{ entity|url_version:commit }}">
               {% include "./includes/version_name.html" with tags=tags version=commit only %}

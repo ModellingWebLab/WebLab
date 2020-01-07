@@ -77,7 +77,7 @@ class CachedEntityMixin(models.Model):
         visibility = self.entity.get_visibility_from_repo(commit)
         return self.CachedVersionClass.objects.create(
             entity=self,
-            sha=commit.hexsha,
+            sha=commit.sha,
             message=commit.message,
             timestamp=commit.committed_at,
             visibility=visibility,

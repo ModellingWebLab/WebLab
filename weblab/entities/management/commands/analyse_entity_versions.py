@@ -20,5 +20,5 @@ class Command(BaseCommand):
             for entity in entities:
                 for commit in entity.repo.commits:
                     self.stdout.write('Analysing commit {} in {} {}'.format(
-                        commit.hexsha[:10], entity.entity_type, entity.name))
+                        commit.sha[:10], entity.entity_type, entity.name))
                     entity.analyse_new_version(commit)
