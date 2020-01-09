@@ -985,18 +985,18 @@ class TestExperimentTasks:
         recipes.experiment_version.make(
             status=ExperimentVersion.STATUS_SUCCESS,
             experiment__model=model_1,
-            experiment__model_version=model_1_version.hexsha,
+            experiment__model_version=model_1_version.sha,
             experiment__protocol=protocol_1,
-            experiment__protocol_version=protocol_1_version.hexsha,
+            experiment__protocol_version=protocol_1_version.sha,
             author=logged_in_user,
         )
 
         exp_version_2 = recipes.experiment_version.make(
             status=ExperimentVersion.STATUS_QUEUED,
             experiment__model=model_1,
-            experiment__model_version=model_1_version.hexsha,
+            experiment__model_version=model_1_version.sha,
             experiment__protocol=protocol_1,
-            experiment__protocol_version=protocol_1_version2.hexsha,
+            experiment__protocol_version=protocol_1_version2.sha,
             author=logged_in_user,
         )
         running_exp_version2 = recipes.running_experiment.make(experiment_version=exp_version_2)
@@ -1004,9 +1004,9 @@ class TestExperimentTasks:
         exp_version_3 = recipes.experiment_version.make(
             status=ExperimentVersion.STATUS_RUNNING,
             experiment__model=model_1,
-            experiment__model_version=model_1_version.hexsha,
+            experiment__model_version=model_1_version.sha,
             experiment__protocol=protocol_2,
-            experiment__protocol_version=protocol_2_version.hexsha,
+            experiment__protocol_version=protocol_2_version.sha,
             author=logged_in_user,
         )
         running_exp_version3 = recipes.running_experiment.make(experiment_version=exp_version_3)
