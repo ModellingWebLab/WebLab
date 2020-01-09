@@ -452,7 +452,7 @@ class TestExperimentMatrix:
         other_model = recipes.model.make()
         other_model_version = helpers.add_fake_version(other_model, 'public')
         make_experiment(other_model, other_model_version.sha, exp.protocol, exp.protocol_version)
-        
+
         response = client.get(
             '/experiments/matrix',
             {
