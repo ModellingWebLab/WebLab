@@ -42,21 +42,21 @@ def test_model_urls(model_with_version):
     assert entity_tags.url_versions(model) == '/entities/models/%d/versions/' % model.pk
     assert entity_tags.url_newversion(model) == '/entities/models/%d/versions/new' % model.pk
     assert (entity_tags.url_version(model, model_version) ==
-            '/entities/models/%d/versions/%s' % (model.pk, model_version.hexsha))
+            '/entities/models/%d/versions/%s' % (model.pk, model_version.sha))
     assert (entity_tags.url_version_json(model, model_version) ==
-            '/entities/models/%d/versions/%s/files.json' % (model.pk, model_version.hexsha))
+            '/entities/models/%d/versions/%s/files.json' % (model.pk, model_version.sha))
     assert (entity_tags.url_compare_experiments(model, model_version) ==
-            '/entities/models/%d/versions/%s/compare' % (model.pk, model_version.hexsha))
+            '/entities/models/%d/versions/%s/compare' % (model.pk, model_version.sha))
 
     assert (entity_tags.url_change_version_visibility(model, model_version) ==
-            '/entities/models/%d/versions/%s/visibility' % (model.pk, model_version.hexsha))
+            '/entities/models/%d/versions/%s/visibility' % (model.pk, model_version.sha))
     assert (entity_tags.url_tag_version(model, model_version) ==
-            '/entities/tag/%d/%s' % (model.pk, model_version.hexsha))
+            '/entities/tag/%d/%s' % (model.pk, model_version.sha))
     assert entity_tags.url_entity_comparison_base('model') == '/entities/models/compare'
     assert entity_tags.url_entity_diff_base('model') == '/entities/models/diff'
 
-    assert (entity_tags.url_entity_comparison_json(['%d:%s' % (model.pk, model_version.hexsha)], 'model') ==
-            '/entities/models/compare/%d:%s/info' % (model.pk, model_version.hexsha))
+    assert (entity_tags.url_entity_comparison_json(['%d:%s' % (model.pk, model_version.sha)], 'model') ==
+            '/entities/models/compare/%d:%s/info' % (model.pk, model_version.sha))
 
 
 @pytest.mark.django_db
@@ -71,22 +71,22 @@ def test_protocol_urls(protocol_with_version):
     assert (entity_tags.url_newversion(protocol) ==
             '/entities/protocols/%d/versions/new' % protocol.pk)
     assert (entity_tags.url_version(protocol, protocol_version) ==
-            '/entities/protocols/%d/versions/%s' % (protocol.pk, protocol_version.hexsha))
+            '/entities/protocols/%d/versions/%s' % (protocol.pk, protocol_version.sha))
     assert (entity_tags.url_version_json(protocol, protocol_version) ==
             '/entities/protocols/%d/versions/%s/files.json' %
-            (protocol.pk, protocol_version.hexsha))
+            (protocol.pk, protocol_version.sha))
     assert (entity_tags.url_compare_experiments(protocol, protocol_version) ==
-            '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, protocol_version.hexsha))
+            '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, protocol_version.sha))
     assert (entity_tags.url_change_version_visibility(protocol, protocol_version) ==
-            '/entities/protocols/%d/versions/%s/visibility' % (protocol.pk, protocol_version.hexsha))
+            '/entities/protocols/%d/versions/%s/visibility' % (protocol.pk, protocol_version.sha))
     assert (entity_tags.url_tag_version(protocol, protocol_version) ==
-            '/entities/tag/%d/%s' % (protocol.pk, protocol_version.hexsha))
+            '/entities/tag/%d/%s' % (protocol.pk, protocol_version.sha))
 
     assert entity_tags.url_entity_comparison_base('protocol') == '/entities/protocols/compare'
     assert entity_tags.url_entity_diff_base('protocol') == '/entities/protocols/diff'
 
-    assert (entity_tags.url_entity_comparison_json(['%d:%s' % (protocol.pk, protocol_version.hexsha)], 'protocol') ==
-            '/entities/protocols/compare/%d:%s/info' % (protocol.pk, protocol_version.hexsha))
+    assert (entity_tags.url_entity_comparison_json(['%d:%s' % (protocol.pk, protocol_version.sha)], 'protocol') ==
+            '/entities/protocols/compare/%d:%s/info' % (protocol.pk, protocol_version.sha))
 
 
 @pytest.mark.django_db
@@ -97,9 +97,9 @@ def test_name_of_entity_linked_to_experiment(model_with_version, protocol_with_v
     exp = recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=model_with_version,
-        experiment__model_version=model_with_version.repo.latest_commit.hexsha,
+        experiment__model_version=model_with_version.repo.latest_commit.sha,
         experiment__protocol=protocol_with_version,
-        experiment__protocol_version=protocol_with_version.repo.latest_commit.hexsha,
+        experiment__protocol_version=protocol_with_version.repo.latest_commit.sha,
     ).experiment
 
     assert entity_tags.name_of_model(exp) == '%s @ v1' % model_with_version.name
@@ -109,18 +109,18 @@ def test_name_of_entity_linked_to_experiment(model_with_version, protocol_with_v
 @pytest.mark.django_db
 def test_url_friendly_label(model_with_version, helpers):
     commit = model_with_version.repo.latest_commit
-    assert entity_tags._url_friendly_label(model_with_version, commit) == commit.hexsha
+    assert entity_tags._url_friendly_label(model_with_version, commit) == commit.sha
 
     model_with_version.repo.tag('v1')
     assert entity_tags._url_friendly_label(model_with_version, commit) == 'v1'
 
     commit2 = helpers.add_version(model_with_version)
     model_with_version.repo.tag('new')
-    assert entity_tags._url_friendly_label(model_with_version, commit2) == commit2.hexsha
+    assert entity_tags._url_friendly_label(model_with_version, commit2) == commit2.sha
 
     commit3 = helpers.add_version(model_with_version)
     model_with_version.repo.tag('latest')
-    assert entity_tags._url_friendly_label(model_with_version, commit3) == commit3.hexsha
+    assert entity_tags._url_friendly_label(model_with_version, commit3) == commit3.sha
 
 
 @pytest.mark.django_db
@@ -128,12 +128,12 @@ def test_url_runexperiments(model_with_version, protocol_with_version):
     model = model_with_version
     model_commit = model.repo.latest_commit
     assert (entity_tags.url_run_experiments(model, model_commit) ==
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, model_commit.hexsha))
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, model_commit.sha))
 
     protocol = protocol_with_version
     protocol_commit = protocol.repo.latest_commit
     assert (entity_tags.url_run_experiments(protocol, protocol_commit) ==
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, protocol_commit.hexsha))
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, protocol_commit.sha))
 
 
 @pytest.mark.django_db

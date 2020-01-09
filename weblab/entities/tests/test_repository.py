@@ -70,7 +70,7 @@ class TestRepository:
 
         repo.tag('v1')
 
-        assert repo.tag_dict[commit.hexsha][0].name == 'v1'
+        assert repo.tag_dict[commit.sha][0].name == 'v1'
 
         # A tag cannot be reused / moved
         repo.commit('second commit', author)
@@ -81,12 +81,12 @@ class TestRepository:
         repo.add_file(repo_file)
         commit = repo.commit('commit_message', author)
 
-        assert repo.get_name_for_commit(commit.hexsha) == commit.hexsha
+        assert repo.get_name_for_commit(commit.sha) == commit.sha
         assert repo.get_name_for_commit('latest') == 'latest'
 
         repo.tag('v1')
 
-        assert repo.get_name_for_commit(commit.hexsha) == 'v1'
+        assert repo.get_name_for_commit(commit.sha) == 'v1'
         assert repo.get_name_for_commit('v1') == 'v1'
         assert repo.get_name_for_commit('latest') == 'v1'
 
@@ -127,7 +127,7 @@ class TestRepository:
         repo.add_file(repo_file)
         commit = repo.commit('commit 1', author)
         assert repo.latest_commit == commit
-        assert repo.get_commit(commit.hexsha) == commit
+        assert repo.get_commit(commit.sha) == commit
         assert repo.get_commit('latest') == commit
         assert next(repo.commits) == commit
 
@@ -211,7 +211,7 @@ class TestCommit:
         commit = repo.commit('commit 1', author)
         assert commit.author.name == author.full_name
         assert commit.author.email == author.email
-        assert commit.hexsha == commit._commit.hexsha
+        assert commit.sha == commit._commit.hexsha
         assert commit.message == 'commit 1'
 
     def test_parents(self, repo, repo_file, author):

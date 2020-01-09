@@ -157,7 +157,7 @@ class TestEntityVersionView:
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')
         commit = model.repo.latest_commit
-        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
                    commit, [])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
                    commit, [])
@@ -165,14 +165,14 @@ class TestEntityVersionView:
         # Now add a second version with tag
         assert len(list(model.repo.commits)) == 1
         commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('my_tag', commit2.hexsha)
+        model.add_tag('my_tag', commit2.sha)
 
         # Commits are yielded newest first
         assert len(list(model.repo.commits)) == 2
         assert commit == list(model.repo.commits)[-1]
         commit = model.repo.latest_commit
 
-        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
                    commit, ['my_tag'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'my_tag'),
                    commit, ['my_tag'])
@@ -183,9 +183,9 @@ class TestEntityVersionView:
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')
         commit = model.repo.latest_commit
-        model.add_tag('tag1', commit.hexsha)
-        model.add_tag('tag2', commit.hexsha)
-        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
+        model.add_tag('tag1', commit.sha)
+        model.add_tag('tag2', commit.sha)
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
                    commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'),
                    commit, ['tag1', 'tag2'])
@@ -197,10 +197,10 @@ class TestEntityVersionView:
     def test_shows_correct_visibility(self, client, logged_in_user, model_with_version):
         model = model_with_version
         commit = model.repo.latest_commit
-        model.set_version_visibility(commit.hexsha, 'public')
+        model.set_version_visibility(commit.sha, 'public')
 
         response = client.get(
-            '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha),
+            '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
         )
 
         assert response.status_code == 200
@@ -211,9 +211,9 @@ class TestEntityVersionView:
         model = recipes.model.make()
         commit1 = helpers.add_version(model, visibility='private')
         helpers.add_version(model, visibility='public')
-        model.add_tag('tag1', commit1.hexsha)
+        model.add_tag('tag1', commit1.sha)
 
-        response = client.get('/entities/models/%d/versions/%s' % (model.pk, commit1.hexsha))
+        response = client.get('/entities/models/%d/versions/%s' % (model.pk, commit1.sha))
         assert response.status_code == 404
 
         response = client.get('/entities/models/%d/versions/%s' % (model.pk, 'tag1'))
@@ -223,9 +223,9 @@ class TestEntityVersionView:
         model = recipes.model.make()
         commit1 = helpers.add_version(model, visibility='private')
         helpers.add_version(model, visibility='public')
-        model.add_tag('tag1', commit1.hexsha)
+        model.add_tag('tag1', commit1.sha)
 
-        response = client.get('/entities/models/%d/versions/%s' % (model.pk, commit1.hexsha))
+        response = client.get('/entities/models/%d/versions/%s' % (model.pk, commit1.sha))
         assert response.status_code == 302
 
         response = client.get('/entities/models/%d/versions/%s' % (model.pk, 'tag1'))
@@ -233,7 +233,7 @@ class TestEntityVersionView:
 
     def test_no_token_access(self, client, queued_experiment):
         model = queued_experiment.experiment.model
-        sha = model.repo.latest_commit.hexsha
+        sha = model.repo.latest_commit.sha
         queued_experiment.experiment.model.set_version_visibility(sha, 'private')
 
         response = client.get(
@@ -248,7 +248,7 @@ class TestEntityVersionView:
         commit = helpers.add_version(model, visibility='public', cache=False)
 
         response = client.get(
-            '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha)
+            '/entities/models/%d/versions/%s' % (model.pk, commit.sha)
         )
         assert response.status_code == 404
 
@@ -272,17 +272,17 @@ class TestEntityVersionChangeVisibilityView:
         helpers.login(client, logged_in_user)
         model = recipes.model.make(author=logged_in_user)
         commit = helpers.add_version(model)
-        assert model.get_version_visibility(commit.hexsha) == 'private'
+        assert model.get_version_visibility(commit.sha) == 'private'
 
         response = client.post(
-            '/entities/models/%d/versions/%s/visibility' % (model.pk, commit.hexsha),
+            '/entities/models/%d/versions/%s/visibility' % (model.pk, commit.sha),
             data={
                 'visibility': 'public',
             })
 
         assert response.status_code == 200
-        assert model.get_version_visibility(commit.hexsha) == 'public'
-        assert model.repocache.get_version(commit.hexsha).visibility == 'public'
+        assert model.get_version_visibility(commit.sha) == 'public'
+        assert model.repocache.get_version(commit.sha).visibility == 'public'
 
     def test_non_owner_cannot_change_visibility(self, client, logged_in_user, other_user, helpers):
         helpers.login(client, logged_in_user)
@@ -290,13 +290,13 @@ class TestEntityVersionChangeVisibilityView:
         commit = helpers.add_version(model)
 
         response = client.post(
-            '/entities/models/%d/versions/%s/visibility' % (model.pk, commit.hexsha),
+            '/entities/models/%d/versions/%s/visibility' % (model.pk, commit.sha),
             data={
                 'visibility': 'public',
             })
 
         assert response.status_code == 403
-        assert model.get_version_visibility(commit.hexsha) != 'public'
+        assert model.get_version_visibility(commit.sha) != 'public'
 
 
 @pytest.mark.django_db
@@ -307,14 +307,14 @@ class TestEntityVersionJsonView:
             helpers.add_permission(logged_in_user, 'create_experiment', Experiment)
         model = recipes.model.make(name='mymodel', author__full_name='model author')
         version = helpers.add_version(model)
-        model.set_version_visibility(version.hexsha, 'public')
+        model.set_version_visibility(version.sha, 'public')
         model.repo.tag('v1')
         planned_expt = PlannedExperiment(
-            model=model, model_version=version.hexsha,
+            model=model, model_version=version.sha,
             protocol=recipes.protocol.make(), protocol_version=uuid.uuid4(),
         )
         planned_expt.save()
-        cached_version = model.repocache.get_version(version.hexsha)
+        cached_version = model.repocache.get_version(version.sha)
         cached_version.parsed_ok = is_parsed_ok
         cached_version.save()
 
@@ -326,20 +326,20 @@ class TestEntityVersionJsonView:
         ver = data['version']
 
         assert ver['name'] == 'mymodel'
-        assert ver['id'] == version.hexsha
+        assert ver['id'] == version.sha
         assert ver['author'] == 'author'  # Commit author not entity author
         assert ver['entityId'] == model.pk
         assert ver['visibility'] == 'public'
         assert (
             parse_datetime(ver['created']).replace(microsecond=0) ==
-            version.committed_at
+            version.timestamp
         )
         assert ver['version'] == 'v1'
         assert ver['parsedOk'] == is_parsed_ok
         assert len(ver['files']) == ver['numFiles'] == 1
-        assert ver['url'] == '/entities/models/%d/versions/%s' % (model.pk, version.hexsha)
+        assert ver['url'] == '/entities/models/%d/versions/%s' % (model.pk, version.sha)
         assert (ver['download_url'] ==
-                '/entities/models/%d/versions/%s/archive' % (model.pk, version.hexsha))
+                '/entities/models/%d/versions/%s/archive' % (model.pk, version.sha))
         assert 'change_url' in ver
 
         file_ = ver['files'][0]
@@ -347,13 +347,13 @@ class TestEntityVersionJsonView:
         assert file_['filetype'] == 'TXTPROTOCOL'
         assert file_['size'] == 15
         assert (file_['url'] ==
-                '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, version.hexsha))
+                '/entities/models/%d/versions/%s/download/file1.txt' % (model.pk, version.sha))
 
         if can_create_expt:
             assert len(ver['planned_experiments']) == 1
             planned = ver['planned_experiments'][0]
             assert planned['model'] == model.pk
-            assert planned['model_version'] == version.hexsha
+            assert planned['model_version'] == version.sha
             assert planned['protocol'] == planned_expt.protocol.pk
             assert planned['protocol_version'] == str(planned_expt.protocol_version)
         else:
@@ -447,7 +447,7 @@ class TestGetProtocolInterfacesJsonView:
 class TestModelEntityCompareExperimentsView:
     def test_shows_related_experiments(self, client, experiment_version):
         exp = experiment_version.experiment
-        sha = exp.model.repo.latest_commit.hexsha
+        sha = exp.model.repo.latest_commit.sha
         recipes.experiment_version.make()  # another experiment which should not be included
         exp.model.set_version_visibility('latest', 'public')
         exp.protocol.set_version_visibility('latest', 'public')
@@ -468,7 +468,7 @@ class TestModelEntityCompareExperimentsView:
 
         recipes.experiment_version.make(
             experiment__protocol=protocol,
-            experiment__protocol_version=helpers.add_version(protocol, visibility='private').hexsha,
+            experiment__protocol_version=helpers.add_version(protocol, visibility='private').sha,
             experiment__model=exp.model,
             experiment__model_version=sha,
         )  # should not be included for visibility reasons
@@ -497,7 +497,7 @@ class TestProtocolEntityCompareExperimentsView:
         exp.author = logged_in_user
         exp.save()
 
-        sha = exp.protocol.repo.latest_commit.hexsha
+        sha = exp.protocol.repo.latest_commit.sha
         recipes.experiment_version.make(
             experiment__author=logged_in_user
         ).experiment  # should not be included, as it uses a different protocol
@@ -520,7 +520,7 @@ class TestProtocolEntityCompareExperimentsView:
             experiment__protocol=exp.protocol,
             experiment__protocol_version=sha,
             experiment__model=model,
-            experiment__model_version=helpers.add_version(model, visibility='private').hexsha,
+            experiment__model_version=helpers.add_version(model, visibility='private').sha,
         )  # should not be included for visibility reasons
 
         response = client.get(
@@ -544,7 +544,7 @@ class TestEntityComparisonView:
     def test_loads_entity_versions(self, client, helpers, logged_in_user):
         model = recipes.model.make()
         v1 = helpers.add_version(model, visibility='public')
-        version_spec = '%d:%s' % (model.pk, v1.hexsha)
+        version_spec = '%d:%s' % (model.pk, v1.sha)
         response = client.get(
             '/entities/models/compare/%s' % version_spec
         )
@@ -557,8 +557,8 @@ class TestEntityComparisonView:
         v1 = helpers.add_version(model, visibility='public')
         v2 = helpers.add_version(model, visibility='private')
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
         response = client.get(
             '/entities/models/compare/%s/%s' % (v1_spec, v2_spec)
         )
@@ -572,8 +572,8 @@ class TestEntityComparisonView:
         v2 = helpers.add_version(model, visibility='private')
         assign_perm('edit_entity', logged_in_user, model)
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
         response = client.get(
             '/entities/models/compare/%s/%s' % (v1_spec, v2_spec)
         )
@@ -584,7 +584,7 @@ class TestEntityComparisonView:
     def test_ignores_invalid_versions(self, client, helpers, logged_in_user):
         model = recipes.model.make()
         v1 = helpers.add_version(model, visibility='public')
-        version_spec = '%d:%s' % (model.pk, v1.hexsha)
+        version_spec = '%d:%s' % (model.pk, v1.sha)
         response = client.get(
             '/entities/models/compare/%s/%d:nocommit' % (version_spec, model.pk)
         )
@@ -609,8 +609,8 @@ class TestEntityComparisonJsonView:
         v1 = helpers.add_version(model, visibility='public')
         v2 = helpers.add_version(model)
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
         response = client.get(
             '/entities/models/compare/%s/%s/info' % (v1_spec, v2_spec)
         )
@@ -618,12 +618,12 @@ class TestEntityComparisonJsonView:
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         versions = data['getEntityInfos']['entities']
-        assert versions[0]['id'] == v1.hexsha
-        assert versions[1]['id'] == v2.hexsha
+        assert versions[0]['id'] == v1.sha
+        assert versions[1]['id'] == v2.sha
         assert versions[0]['author'] == model.author.full_name
         assert versions[0]['visibility'] == 'public'
         assert versions[0]['name'] == model.name
-        assert versions[0]['version'] == v1.hexsha
+        assert versions[0]['version'] == v1.sha
         assert versions[0]['numFiles'] == 1
         assert versions[0]['commitMessage'] == v1.message
 
@@ -632,8 +632,8 @@ class TestEntityComparisonJsonView:
         v1 = helpers.add_version(model, visibility='public')
         v2 = helpers.add_version(model, visibility='private')
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
         response = client.get(
             '/entities/models/compare/%s/%s/info' % (v1_spec, v2_spec)
         )
@@ -642,7 +642,7 @@ class TestEntityComparisonJsonView:
         data = json.loads(response.content.decode())
         versions = data['getEntityInfos']['entities']
         assert len(versions) == 1
-        assert versions[0]['id'] == v1.hexsha
+        assert versions[0]['id'] == v1.sha
 
     def test_can_compare_entities_if_collaborator(self, client, logged_in_user, helpers):
         model = recipes.model.make()
@@ -650,8 +650,8 @@ class TestEntityComparisonJsonView:
         v2 = helpers.add_version(model, visibility='private')
         assign_perm('edit_entity', logged_in_user, model)
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
         response = client.get(
             '/entities/models/compare/%s/%s/info' % (v1_spec, v2_spec)
         )
@@ -660,15 +660,15 @@ class TestEntityComparisonJsonView:
         data = json.loads(response.content.decode())
         versions = data['getEntityInfos']['entities']
         assert len(versions) == 2
-        assert versions[0]['id'] == v1.hexsha
-        assert versions[1]['id'] == v2.hexsha
+        assert versions[0]['id'] == v1.sha
+        assert versions[1]['id'] == v2.sha
 
     def test_file_json(self, client, helpers):
         model = recipes.model.make()
         filename = 'oxmeta:v%3A.txt'
         v1 = helpers.add_version(model, visibility='public', filename=filename)
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
         response = client.get(
             '/entities/models/compare/%s/info' % v1_spec
         )
@@ -676,7 +676,7 @@ class TestEntityComparisonJsonView:
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         versions = data['getEntityInfos']['entities']
-        assert versions[0]['id'] == v1.hexsha
+        assert versions[0]['id'] == v1.sha
         assert versions[0]['numFiles'] == 1
         file_ = versions[0]['files'][0]
         assert file_['id'] == filename
@@ -685,12 +685,12 @@ class TestEntityComparisonJsonView:
         assert file_['filetype'] == 'TXTPROTOCOL'
         assert file_['size'] == 15
         assert file_['url'] == (
-            '/entities/models/%d/versions/%s/download/%s' % (model.pk, v1.hexsha, filename.replace('%', '%25')))
+            '/entities/models/%d/versions/%s/download/%s' % (model.pk, v1.sha, filename.replace('%', '%25')))
 
     def test_ignores_invalid_versions(self, client, logged_in_user, helpers):
         model = recipes.model.make()
         v1 = helpers.add_version(model, visibility='public')
-        version_spec = '%d:%s' % (model.pk, v1.hexsha)
+        version_spec = '%d:%s' % (model.pk, v1.sha)
         response = client.get(
             '/entities/models/compare/%s/%d:nocommit' % (version_spec, model.pk)
         )
@@ -714,10 +714,10 @@ class TestTagging:
         model = recipes.model.make()
         commit = helpers.add_version(model)
         helpers.add_version(model)
-        model.repo.tag('tag', ref=commit.hexsha)
+        model.repo.tag('tag', ref=commit.sha)
         tags = model.repo.tag_dict
         assert len(tags) == 1
-        assert tags[commit.hexsha][0].name == 'tag'
+        assert tags[commit.sha][0].name == 'tag'
 
     def test_nasty_tag_chars(self, helpers):
         model = recipes.model.make()
@@ -727,7 +727,7 @@ class TestTagging:
             model.repo.tag('tag/')
 
         model.repo.tag('my/tag')
-        assert model.repo.tag_dict[model.repo.latest_commit.hexsha][0].name == 'my/tag'
+        assert model.repo.tag_dict[model.repo.latest_commit.sha][0].name == 'my/tag'
 
         with pytest.raises(GitCommandError):
             model.repo.tag('tag with spaces')
@@ -747,23 +747,23 @@ class TestTagging:
         commit = model.repo.latest_commit
 
         response = client.post(
-            '/entities/tag/%d/%s' % (model.pk, commit.hexsha),
+            '/entities/tag/%d/%s' % (model.pk, commit.sha),
             data={
                 'tag': 'v1',
             },
         )
         assert response.status_code == 302
-        assert response.url == '/entities/models/%d/versions/%s' % (model.pk, commit.hexsha)
+        assert response.url == '/entities/models/%d/versions/%s' % (model.pk, commit.sha)
         assert 'v1' in model.repo._repo.tags
         tags = model.repo.tag_dict
         assert len(tags) == 1
-        assert tags[commit.hexsha][0].name == 'v1'
+        assert tags[commit.sha][0].name == 'v1'
 
     def test_cannot_tag_as_non_owner(self, logged_in_user, client, helpers):
         protocol = recipes.protocol.make()
         commit = helpers.add_version(protocol)
         response = client.post(
-            '/entities/tag/%d/%s' % (protocol.pk, commit.hexsha),
+            '/entities/tag/%d/%s' % (protocol.pk, commit.sha),
             data={},
         )
         assert response.status_code == 302
@@ -774,7 +774,7 @@ class TestTagging:
         helpers.add_permission(logged_in_user, 'create_protocol')
         assign_perm('edit_entity', logged_in_user, protocol)
         response = client.post(
-            '/entities/tag/%d/%s' % (protocol.pk, commit.hexsha),
+            '/entities/tag/%d/%s' % (protocol.pk, commit.sha),
             data={
                 'tag': 'v1',
             },
@@ -789,7 +789,7 @@ class TestEntityVersionList:
         model = recipes.model.make()
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='moderated')
-        model.add_tag('v1', commit2.hexsha)
+        model.add_tag('v1', commit2.sha)
 
         response = client.get('/entities/models/%d/versions/' % model.pk)
         assert response.status_code == 200
@@ -877,7 +877,7 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         latest = model.repo.latest_commit
-        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.sha)
         assert 'v1' in model.repo._repo.tags
 
         assert latest.message == 'files'
@@ -906,7 +906,7 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         latest = model.repo.latest_commit
-        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.sha)
         assert 'delete-file' in model.repo._repo.tags
 
         assert latest.message == 'delete file1'
@@ -936,7 +936,7 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         latest = model.repo.latest_commit
-        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.sha)
         assert 'delete-files' in model.repo._repo.tags
 
         assert latest.message == 'delete files'
@@ -979,7 +979,7 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         latest = model.repo.latest_commit
-        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.hexsha)
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, latest.sha)
         assert 'replace-file' in model.repo._repo.tags
 
         assert latest.message == 'replace file1'
@@ -1028,7 +1028,7 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         commit = model.repo.latest_commit
-        assert response.url == '/entities/models/%d/versions/%s' % (model.id, commit.hexsha)
+        assert response.url == '/entities/models/%d/versions/%s' % (model.id, commit.sha)
 
         assert 0 == PlannedExperiment.objects.count()
         assert 0 == model.files.count()
@@ -1064,14 +1064,14 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         commit = protocol.repo.latest_commit
-        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.hexsha)
+        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.sha)
         # Check documentation parsing
         assert ProtocolEntity.README_NAME in commit.filenames
         readme = commit.get_blob(ProtocolEntity.README_NAME)
         assert readme.data_stream.read() == doc
         # Check new version analysis "happened"
         assert mock_check.called
-        mock_check.assert_called_once_with(protocol, commit.hexsha)
+        mock_check.assert_called_once_with(protocol, commit.sha)
 
         assert 0 == PlannedExperiment.objects.count()
         assert 0 == protocol.files.count()
@@ -1098,7 +1098,7 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         commit = protocol.repo.latest_commit
-        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.hexsha)
+        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.sha)
         # Check documentation parsing
         assert ProtocolEntity.README_NAME in commit.filenames
         readme = commit.get_blob(ProtocolEntity.README_NAME)
@@ -1112,7 +1112,7 @@ class TestVersionCreation:
         mock_post.return_value.content = b'error'
         # ...then we should also get a clean failure
         from entities.processing import submit_check_protocol_task
-        submit_check_protocol_task(protocol, commit.hexsha)
+        submit_check_protocol_task(protocol, commit.sha)
         assert mock_post.called
         assert not AnalysisTask.objects.exists()
 
@@ -1166,9 +1166,9 @@ class TestVersionCreation:
             recipes.experiment_version.make(
                 status='SUCCESS',
                 experiment__model=model,
-                experiment__model_version=model_commit.hexsha,
+                experiment__model_version=model_commit.sha,
                 experiment__protocol=proto,
-                experiment__protocol_version=proto_commit.hexsha,
+                experiment__protocol_version=proto_commit.sha,
             )
             if shared:
                 assign_perm('edit_entity', logged_in_user, proto)
@@ -1208,11 +1208,11 @@ class TestVersionCreation:
             )
             assert response.status_code == 302
             new_commit = model.repo.latest_commit
-            assert response.url == '/entities/models/%d/versions/%s' % (model.id, new_commit.hexsha)
+            assert response.url == '/entities/models/%d/versions/%s' % (model.id, new_commit.sha)
         else:
             assert route == 'edit_file'
             response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
-                'parent_hexsha': model_commit.hexsha,
+                'parent_hexsha': model_commit.sha,
                 'file_name': 'file1.txt',
                 'file_contents': 'new file 1',
                 'visibility': 'private',
@@ -1226,18 +1226,18 @@ class TestVersionCreation:
             assert detail['updateEntityFile']['response']
             new_commit = model.repo.latest_commit
             assert detail['updateEntityFile']['url'] == '/entities/models/%d/versions/%s' % (
-                model.id, new_commit.hexsha)
+                model.id, new_commit.sha)
 
         # Test that planned experiments have been added correctly
         expected_proto_versions = set([
-            (my_private_protocol, my_private_protocol.repo.latest_commit.hexsha),
-            (public_protocol, public_protocol.repo.latest_commit.hexsha),
-            (visible_protocol, visible_protocol.repo.latest_commit.hexsha),
+            (my_private_protocol, my_private_protocol.repo.latest_commit.sha),
+            (public_protocol, public_protocol.repo.latest_commit.sha),
+            (visible_protocol, visible_protocol.repo.latest_commit.sha),
         ])
         assert len(expected_proto_versions) == PlannedExperiment.objects.count()
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.model == model
-            assert planned_experiment.model_version == new_commit.hexsha
+            assert planned_experiment.model_version == new_commit.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
 
 
@@ -1278,7 +1278,7 @@ class TestAlterFileView:
 
         # Wrong file name
         response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
-            'parent_hexsha': first_commit.hexsha,
+            'parent_hexsha': first_commit.sha,
             'file_name': 'file2.txt',
             'file_contents': 'new file 1',
             'visibility': 'private',
@@ -1294,7 +1294,7 @@ class TestAlterFileView:
 
         # Missing arg
         response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
-            'parent_hexsha': first_commit.hexsha,
+            'parent_hexsha': first_commit.sha,
             'file_name': 'file1.txt',
             'tag': '',
         }), content_type='application/json')
@@ -1310,7 +1310,7 @@ class TestAlterFileView:
         first_commit = helpers.add_version(model, tag_name='v1', contents='initial file 1')
 
         response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
-            'parent_hexsha': first_commit.hexsha,
+            'parent_hexsha': first_commit.sha,
             'file_name': 'file1.txt',
             'file_contents': 'initial file 1',
             'visibility': 'private',
@@ -1331,7 +1331,7 @@ class TestAlterFileView:
 
         with patch('entities.repository.Repository.add_file', side_effect=GitCommandError('add', 1, 'error')):
             response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
-                'parent_hexsha': first_commit.hexsha,
+                'parent_hexsha': first_commit.sha,
                 'file_name': 'file1.txt',
                 'file_contents': 'new file 1',
                 'visibility': 'private',
@@ -1353,7 +1353,7 @@ class TestAlterFileView:
         first_commit = helpers.add_version(model, tag_name='v1', contents='initial file 1')
 
         response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
-            'parent_hexsha': first_commit.hexsha,
+            'parent_hexsha': first_commit.sha,
             'file_name': 'file1.txt',
             'file_contents': 'new file 1',
             'visibility': 'private',
@@ -1375,7 +1375,7 @@ class TestAlterFileView:
         first_commit = helpers.add_version(model, tag_name='v1', contents='initial file 1')
 
         response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
-            'parent_hexsha': first_commit.hexsha,
+            'parent_hexsha': first_commit.sha,
             'file_name': 'file1.txt',
             'file_contents': 'new file 1',
             'visibility': 'private',
@@ -1391,7 +1391,7 @@ class TestAlterFileView:
         detail = json.loads(response.content.decode())['updateEntityFile']
         assert detail['response']
         assert detail['url'] == '/entities/models/%d/versions/%s' % (
-            model.id, new_commit.hexsha)
+            model.id, new_commit.sha)
         assert 0 == PlannedExperiment.objects.count()
 
 
@@ -1572,7 +1572,7 @@ class TestEntityFileDownloadView:
 
         response = client.get(
             '/entities/models/%d/versions/%s/download/file1.txt' %
-            (public_model.pk, version.hexsha)
+            (public_model.pk, version.sha)
         )
 
         assert response.status_code == 200
@@ -1591,7 +1591,7 @@ class TestEntityFileDownloadView:
         v1 = helpers.add_version(model, visibility='public', filename=filename)
 
         response = client.get(
-            reverse('entities:file_download', args=['model', model.pk, v1.hexsha, filename])
+            reverse('entities:file_download', args=['model', model.pk, v1.sha, filename])
         )
 
         assert response.status_code == 200
@@ -1610,7 +1610,7 @@ class TestEntityFileDownloadView:
 
         response = client.get(
             '/entities/models/%d/versions/%s/download/%s' %
-            (public_model.pk, version.hexsha, filename)
+            (public_model.pk, version.sha, filename)
         )
 
         assert response.status_code == 404
@@ -1621,7 +1621,7 @@ class TestEntityFileDownloadView:
 
         response = client.get(
             '/entities/models/%d/versions/%s/download/file1.txt' %
-            (public_model.pk, version.hexsha)
+            (public_model.pk, version.sha)
         )
 
         assert response.status_code == 200
@@ -1631,7 +1631,7 @@ class TestEntityFileDownloadView:
         version = public_model.repo.latest_commit
         response = client.get(
             '/entities/models/%d/versions/%s/download/nonexistent.txt' %
-            (public_model.pk, version.hexsha)
+            (public_model.pk, version.sha)
         )
 
         assert response.status_code == 404
@@ -1648,7 +1648,7 @@ class TestEntityArchiveView:
         archive = zipfile.ZipFile(BytesIO(response.content))
         assert archive.filelist[0].filename == 'file1.txt'
         assert response['Content-Disposition'] == (
-            'attachment; filename=%s_%s.zip' % (model.name, commit.hexsha)
+            'attachment; filename=%s_%s.zip' % (model.name, commit.sha)
         )
 
     def test_returns_404_if_no_commits_yet(self, logged_in_user, client):
@@ -1659,7 +1659,7 @@ class TestEntityArchiveView:
 
     def test_anonymous_model_download_for_running_experiment(self, client, queued_experiment):
         model = queued_experiment.experiment.model
-        sha = model.repo.latest_commit.hexsha
+        sha = model.repo.latest_commit.sha
         queued_experiment.experiment.model.set_version_visibility(sha, 'private')
 
         response = client.get(
@@ -1849,8 +1849,8 @@ class TestEntityDiffView:
         v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
         v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
         response = client.get(
             '/entities/models/diff/%s/%s/file1.txt?type=unix' % (v1_spec, v2_spec)
         )
@@ -1869,8 +1869,8 @@ class TestEntityDiffView:
         v1 = helpers.add_version(model, visibility='public')
         v2 = helpers.add_version(model, visibility='private')
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
         response = client.get(
             '/entities/models/diff/%s/%s/file1.txt?type=invalid' % (v1_spec, v2_spec)
         )
@@ -1884,8 +1884,8 @@ class TestEntityDiffView:
         v1 = helpers.add_version(model, visibility='public')
         v2 = helpers.add_version(model, visibility='private')
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
         response = client.get(
             '/entities/models/diff/%s/%s/file1.txt' % (v1_spec, v2_spec)
         )
@@ -1900,8 +1900,8 @@ class TestEntityDiffView:
         v2 = helpers.add_version(model, visibility='private')
         assign_perm('edit_entity', logged_in_user, model)
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
         response = client.get(
             '/entities/models/diff/%s/%s/file1.txt' % (v1_spec, v2_spec)
         )
@@ -1916,8 +1916,8 @@ class TestEntityDiffView:
         v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
         v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
 
         mock_run.side_effect = SubprocessError('something went wrong')
 
@@ -1937,8 +1937,8 @@ class TestEntityDiffView:
         v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
         v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
 
         mock_post.return_value.json.return_value = {
             'bivesDiff': 'diff-contents',
@@ -1973,8 +1973,8 @@ class TestEntityDiffView:
         v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
         v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
 
         mock_post.return_value.ok = False
         mock_post.return_value.status_code = 400
@@ -1995,8 +1995,8 @@ class TestEntityDiffView:
         v1 = helpers.add_version(model, contents='v1 contents\n', visibility='public')
         v2 = helpers.add_version(model, contents='v2 contents\n', visibility='public')
 
-        v1_spec = '%d:%s' % (model.pk, v1.hexsha)
-        v2_spec = '%d:%s' % (model.pk, v2.hexsha)
+        v1_spec = '%d:%s' % (model.pk, v1.sha)
+        v2_spec = '%d:%s' % (model.pk, v2.sha)
 
         mock_post.return_value.json.return_value = {
             'error': ['error-message'],
@@ -2087,7 +2087,7 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         commit1 = helpers.add_version(protocol, visibility='public')
         commit2 = helpers.add_version(protocol, visibility='public')
-        protocol.add_tag('v1', commit2.hexsha)
+        protocol.add_tag('v1', commit2.sha)
 
         response = client.get(
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'latest'))
@@ -2107,12 +2107,12 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         commit1 = helpers.add_version(protocol, visibility='public')
         commit2 = helpers.add_version(protocol, visibility='public')
-        protocol.add_tag('v1', commit2.hexsha)
+        protocol.add_tag('v1', commit2.sha)
 
         other_protocol = recipes.protocol.make(author=other_user)
         other_commit1 = helpers.add_version(other_protocol, visibility='public')
         other_commit2 = helpers.add_version(other_protocol, visibility='public')
-        other_protocol.add_tag('v1', other_commit2.hexsha)
+        other_protocol.add_tag('v1', other_commit2.sha)
 
         response = client.get(
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'latest'))
@@ -2138,11 +2138,11 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         commit1 = helpers.add_version(protocol, visibility='public')
         commit2 = helpers.add_version(protocol, visibility='public')
-        protocol.add_tag('v1', commit2.hexsha)
+        protocol.add_tag('v1', commit2.sha)
 
         # Test context has correct information
         response = client.get(
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.hexsha))
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2150,22 +2150,22 @@ class TestEntityRunExperiment:
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
-        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.sha)],
                 'rerun_expts': 'on'}
         response = client.post(
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.hexsha),
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha),
             data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
 
         # Test that planned experiments have been added correctly
         expected_proto_versions = set([
-            (protocol, commit2.hexsha)
+            (protocol, commit2.sha)
         ])
         assert PlannedExperiment.objects.count() == 1
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.model == model
-            assert planned_experiment.model_version == commit_model.hexsha
+            assert planned_experiment.model_version == commit_model.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
 
     def test_view_run_experiment_model_post_exclude_existing(self, client, helpers, logged_in_user):
@@ -2176,18 +2176,18 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         commit1 = helpers.add_version(protocol, visibility='public')
         commit2 = helpers.add_version(protocol, visibility='public')
-        protocol.add_tag('v1', commit2.hexsha)
+        protocol.add_tag('v1', commit2.sha)
 
         recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=model,
-            experiment__model_version=commit_model.hexsha,
+            experiment__model_version=commit_model.sha,
             experiment__protocol=protocol,
-            experiment__protocol_version=commit1.hexsha)
+            experiment__protocol_version=commit1.sha)
 
         # Test context has correct information
         response = client.get(
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.hexsha))
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2195,23 +2195,23 @@ class TestEntityRunExperiment:
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
-        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit1.hexsha),
-                                          '%d:%s' % (protocol.pk, commit2.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit1.sha),
+                                          '%d:%s' % (protocol.pk, commit2.sha)],
                 }
         response = client.post(
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.hexsha),
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha),
             data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
 
         # Test that planned experiments have been added correctly
         expected_proto_versions = set([
-            (protocol, commit2.hexsha)
+            (protocol, commit2.sha)
         ])
         assert PlannedExperiment.objects.count() == 1
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.model == model
-            assert planned_experiment.model_version == commit_model.hexsha
+            assert planned_experiment.model_version == commit_model.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
 
     def test_view_run_experiment_post_model_multiple_users(self, client, helpers, logged_in_user, other_user):
@@ -2222,16 +2222,16 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         commit1 = helpers.add_version(protocol, visibility='public')
         commit2 = helpers.add_version(protocol, visibility='public')
-        protocol.add_tag('v1', commit2.hexsha)
+        protocol.add_tag('v1', commit2.sha)
 
         other_protocol = recipes.protocol.make(author=other_user)
         other_commit1 = helpers.add_version(other_protocol, visibility='public')
         other_commit2 = helpers.add_version(other_protocol, visibility='public')
-        other_protocol.add_tag('v1', other_commit2.hexsha)
+        other_protocol.add_tag('v1', other_commit2.sha)
 
         # check context
         response = client.get(
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.hexsha))
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2245,26 +2245,26 @@ class TestEntityRunExperiment:
                           {'commit': other_commit1, 'tags': [], 'latest': False}]},
         ]
         # Test post returns correct response
-        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.hexsha),
-                                          '%d:%s' % (other_protocol.pk, other_commit1.hexsha),
-                                          '%d:%s' % (other_protocol.pk, other_commit2.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.sha),
+                                          '%d:%s' % (other_protocol.pk, other_commit1.sha),
+                                          '%d:%s' % (other_protocol.pk, other_commit2.sha)],
                 'rerun_expts': 'on'}
         response = client.post(
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.hexsha),
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha),
             data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
 
         # Test that planned experiments have been added correctly
         expected_proto_versions = set([
-            (protocol, commit2.hexsha),
-            (other_protocol, other_commit1.hexsha),
-            (other_protocol, other_commit2.hexsha)
+            (protocol, commit2.sha),
+            (other_protocol, other_commit1.sha),
+            (other_protocol, other_commit2.sha)
         ])
         assert PlannedExperiment.objects.count() == 3
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.model == model
-            assert planned_experiment.model_version == commit_model.hexsha
+            assert planned_experiment.model_version == commit_model.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
 
     def test_view_run_experiment_model_not_latest(self, client, helpers, logged_in_user):
@@ -2272,13 +2272,13 @@ class TestEntityRunExperiment:
         model = recipes.model.make(author=logged_in_user)
         helpers.add_version(model, visibility='private')
         model_commit1 = helpers.add_version(model, visibility='public')
-        model.add_tag('model_v1', model_commit1.hexsha)
+        model.add_tag('model_v1', model_commit1.sha)
         model_commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('model_v2', model_commit2.hexsha)
+        model.add_tag('model_v2', model_commit2.sha)
         protocol = recipes.protocol.make(author=logged_in_user)
         commit1 = helpers.add_version(protocol, visibility='public')
         commit2 = helpers.add_version(protocol, visibility='public')
-        protocol.add_tag('v1', commit2.hexsha)
+        protocol.add_tag('v1', commit2.sha)
 
         # display page using tag
         response = client.get(
@@ -2292,8 +2292,8 @@ class TestEntityRunExperiment:
         assert response.context['preposition'] == 'under'
 
         # Test post returns correct response
-        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.hexsha),
-                                          '%d:%s' % (protocol.pk, commit1.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.sha),
+                                          '%d:%s' % (protocol.pk, commit1.sha)],
                 'rerun_expts': 'on'}
         response = client.post(
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'model_v1'),
@@ -2303,13 +2303,13 @@ class TestEntityRunExperiment:
 
         # Test that planned experiments have been added correctly
         expected_proto_versions = set([
-            (protocol, commit2.hexsha),
-            (protocol, commit1.hexsha),
+            (protocol, commit2.sha),
+            (protocol, commit1.sha),
         ])
         assert PlannedExperiment.objects.count() == 2
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.model == model
-            assert planned_experiment.model_version == model_commit1.hexsha
+            assert planned_experiment.model_version == model_commit1.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
 
     # repeat tests with protocol as the calling entity
@@ -2318,7 +2318,7 @@ class TestEntityRunExperiment:
         model = recipes.model.make(author=logged_in_user)
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('v1', commit2.hexsha)
+        model.add_tag('v1', commit2.sha)
         protocol = recipes.protocol.make(author=logged_in_user)
         helpers.add_version(protocol, visibility='private')
 
@@ -2337,12 +2337,12 @@ class TestEntityRunExperiment:
         model = recipes.model.make(author=logged_in_user)
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('v1', commit2.hexsha)
+        model.add_tag('v1', commit2.sha)
 
         other_model = recipes.model.make(author=other_user)
         other_commit1 = helpers.add_version(other_model, visibility='public')
         other_commit2 = helpers.add_version(other_model, visibility='public')
-        other_model.add_tag('v1', other_commit2.hexsha)
+        other_model.add_tag('v1', other_commit2.sha)
 
         protocol = recipes.protocol.make(author=logged_in_user)
         helpers.add_version(protocol, visibility='private')
@@ -2368,12 +2368,12 @@ class TestEntityRunExperiment:
         model = recipes.model.make(author=logged_in_user)
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('v1', commit2.hexsha)
+        model.add_tag('v1', commit2.sha)
         protocol = recipes.protocol.make(author=logged_in_user)
         commit_protocol = helpers.add_version(protocol, visibility='public')
 
         response = client.get(
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.hexsha))
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
@@ -2381,23 +2381,23 @@ class TestEntityRunExperiment:
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
-        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.sha), '%d:%s' % (model.pk, commit2.sha)],
                 'rerun_expts': 'on'}
         response = client.post(
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.hexsha),
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha),
             data=data)
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d/versions/latest' % protocol.pk
 
         # Test that planned experiments have been added correctly
         expected_model_versions = set([
-            (model, commit2.hexsha),
-            (model, commit1.hexsha)
+            (model, commit2.sha),
+            (model, commit1.sha)
         ])
         assert PlannedExperiment.objects.count() == 2
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.protocol == protocol
-            assert planned_experiment.protocol_version == commit_protocol.hexsha
+            assert planned_experiment.protocol_version == commit_protocol.sha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
 
     def test_view_run_experiment_protocol_post_exclude_existing(self, client, helpers, logged_in_user):
@@ -2405,26 +2405,26 @@ class TestEntityRunExperiment:
         model = recipes.model.make(author=logged_in_user)
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('v1', commit2.hexsha)
+        model.add_tag('v1', commit2.sha)
         protocol = recipes.protocol.make(author=logged_in_user)
         commit_protocol = helpers.add_version(protocol, visibility='public')
 
         recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=model,
-            experiment__model_version=commit1.hexsha,
+            experiment__model_version=commit1.sha,
             experiment__protocol=protocol,
-            experiment__protocol_version=commit_protocol.hexsha)
+            experiment__protocol_version=commit_protocol.sha)
         # This experiment has no versions so should not be excluded
         recipes.experiment.make(
             model=model,
-            model_version=commit2.hexsha,
+            model_version=commit2.sha,
             protocol=protocol,
-            protocol_version=commit_protocol.hexsha)
+            protocol_version=commit_protocol.sha)
 
         # Test context has correct information
         response = client.get(
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.hexsha))
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
@@ -2432,22 +2432,22 @@ class TestEntityRunExperiment:
                                                                  {'commit': commit1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
-        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.sha), '%d:%s' % (model.pk, commit2.sha)],
                 }
         response = client.post(
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.hexsha),
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha),
             data=data)
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d/versions/latest' % protocol.pk
 
         # Test that planned experiments have been added correctly
         expected_model_versions = set([
-            (model, commit2.hexsha),
+            (model, commit2.sha),
         ])
         assert PlannedExperiment.objects.count() == 1
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.protocol == protocol
-            assert planned_experiment.protocol_version == commit_protocol.hexsha
+            assert planned_experiment.protocol_version == commit_protocol.sha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
 
     def test_view_run_experiment_post_protocol_multiple_users(self, client, helpers, logged_in_user, other_user):
@@ -2455,17 +2455,17 @@ class TestEntityRunExperiment:
         model = recipes.model.make(author=logged_in_user)
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('v1', commit2.hexsha)
+        model.add_tag('v1', commit2.sha)
         protocol = recipes.protocol.make(author=logged_in_user)
         commit_protocol = helpers.add_version(protocol, visibility='public')
 
         other_model = recipes.model.make(author=other_user)
         other_commit1 = helpers.add_version(other_model, visibility='public')
         other_commit2 = helpers.add_version(other_model, visibility='public')
-        other_model.add_tag('v1', other_commit2.hexsha)
+        other_model.add_tag('v1', other_commit2.sha)
 
         response = client.get(
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.hexsha))
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
@@ -2479,26 +2479,26 @@ class TestEntityRunExperiment:
                           {'commit': other_commit1, 'tags': [], 'latest': False}]},
         ]
         # Test post returns correct response
-        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha),
-                                          '%d:%s' % (model.pk, commit2.hexsha),
-                                          '%d:%s' % (other_model.pk, other_commit1.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.sha),
+                                          '%d:%s' % (model.pk, commit2.sha),
+                                          '%d:%s' % (other_model.pk, other_commit1.sha)],
                 'rerun_expts': 'on'}
         response = client.post(
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.hexsha),
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha),
             data=data)
         assert response.status_code == 302
         assert response.url == '/entities/protocols/%d/versions/latest' % protocol.pk
 
         # Test that planned experiments have been added correctly
         expected_model_versions = set([
-            (model, commit2.hexsha),
-            (model, commit1.hexsha),
-            (other_model, other_commit1.hexsha)
+            (model, commit2.sha),
+            (model, commit1.sha),
+            (other_model, other_commit1.sha)
         ])
         assert PlannedExperiment.objects.count() == 3
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.protocol == protocol
-            assert planned_experiment.protocol_version == commit_protocol.hexsha
+            assert planned_experiment.protocol_version == commit_protocol.sha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
 
     def test_view_run_experiment_none_checked(self, client, helpers, logged_in_user):
@@ -2509,11 +2509,11 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         commit1 = helpers.add_version(protocol, visibility='public')
         commit2 = helpers.add_version(protocol, visibility='public')
-        protocol.add_tag('v1', commit2.hexsha)
+        protocol.add_tag('v1', commit2.sha)
 
         # Test context has correct information
         response = client.get(
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.hexsha))
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
@@ -2524,7 +2524,7 @@ class TestEntityRunExperiment:
         data = {'model_protocol_list[]': [],
                 'rerun_expts': 'on'}
         response = client.post(
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.hexsha),
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha),
             data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
@@ -2535,7 +2535,7 @@ class TestEntityRunExperiment:
         # Try again without re-running
         data = {'model_protocol_list[]': []}
         response = client.post(
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.hexsha),
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha),
             data=data)
         assert response.status_code == 302
         assert response.url == '/entities/models/%d/versions/latest' % model.pk
@@ -2548,16 +2548,16 @@ class TestEntityRunExperiment:
         model = recipes.model.make(author=logged_in_user)
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('v1', commit2.hexsha)
+        model.add_tag('v1', commit2.sha)
         protocol = recipes.protocol.make(author=logged_in_user)
         proto_commit1 = helpers.add_version(protocol, visibility='public')
         proto_commit2 = helpers.add_version(protocol, visibility='public')
-        protocol.add_tag('p1', proto_commit1.hexsha)
-        protocol.add_tag('p2', proto_commit2.hexsha)
+        protocol.add_tag('p1', proto_commit1.sha)
+        protocol.add_tag('p2', proto_commit2.sha)
 
         # display using sha
         response = client.get(
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, proto_commit1.hexsha))
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, proto_commit1.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
@@ -2567,21 +2567,21 @@ class TestEntityRunExperiment:
         assert response.context['preposition'] == 'on'
 
         # Test post returns correct response
-        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.hexsha), '%d:%s' % (model.pk, commit2.hexsha)],
+        data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.sha), '%d:%s' % (model.pk, commit2.sha)],
                 'rerun_expts': 'on'}
         response = client.post(
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, proto_commit1.hexsha),
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, proto_commit1.sha),
             data=data)
         assert response.status_code == 302
-        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.pk, proto_commit1.hexsha)
+        assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.pk, proto_commit1.sha)
 
         # Test that planned experiments have been added correctly
         expected_model_versions = set([
-            (model, commit2.hexsha),
-            (model, commit1.hexsha)
+            (model, commit2.sha),
+            (model, commit1.sha)
         ])
         assert PlannedExperiment.objects.count() == 2
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.protocol == protocol
-            assert planned_experiment.protocol_version == proto_commit1.hexsha
+            assert planned_experiment.protocol_version == proto_commit1.sha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions

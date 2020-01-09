@@ -26,13 +26,14 @@ class Helpers:
                     tag_name=None,
                     visibility=None,
                     cache=True,
+                    message='file',
                     contents='entity contents'):
         """Add a single commit/version to an entity"""
         entity.repo.create()
         in_repo_path = str(entity.repo_abs_path / filename)
         open(in_repo_path, 'w').write(contents)
         entity.repo.add_file(in_repo_path)
-        commit = Helpers.fake_commit(entity.repo, 'file', User(full_name='author', email='author@example.com'))
+        commit = Helpers.fake_commit(entity.repo, message, User(full_name='author', email='author@example.com'))
         if tag_name:
             entity.repo.tag(tag_name)
         if visibility:
@@ -42,11 +43,12 @@ class Helpers:
         return commit
 
     @staticmethod
-    def add_fake_version(entity, visibility='private', date=None):
+    def add_fake_version(entity, visibility='private', date=None, message='cache-only commit'):
         """Add a new commit/version only in the cache, not in git."""
         version = entity.repocache.CachedVersionClass.objects.create(
             entity=entity.repocache,
             sha=uuid.uuid4(),
+            message=message,
             timestamp=date or Now(),
             visibility=visibility,
         )
@@ -195,9 +197,9 @@ def experiment_version(public_model, public_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=public_model,
-        experiment__model_version=public_model.repo.latest_commit.hexsha,
+        experiment__model_version=public_model.repo.latest_commit.sha,
         experiment__protocol=public_protocol,
-        experiment__protocol_version=public_protocol.repo.latest_commit.hexsha,
+        experiment__protocol_version=public_protocol.repo.latest_commit.sha,
     )
 
 
@@ -222,9 +224,9 @@ def moderated_experiment_version(moderated_model, moderated_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=moderated_model,
-        experiment__model_version=moderated_model.repo.latest_commit.hexsha,
+        experiment__model_version=moderated_model.repo.latest_commit.sha,
         experiment__protocol=moderated_protocol,
-        experiment__protocol_version=moderated_protocol.repo.latest_commit.hexsha,
+        experiment__protocol_version=moderated_protocol.repo.latest_commit.sha,
     )
 
 
