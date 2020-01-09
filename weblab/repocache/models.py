@@ -10,10 +10,10 @@ from .exceptions import RepoCacheMiss
 
 ####################################################################################################
 #
-# Mixin classes defining the common cache structure
+# Base classes defining the common cache structure
 #
 
-class CachedEntityMixin(models.Model):
+class CachedEntity(models.Model):
     """
     Abstract class representing a cache for any entity type's repository.
 
@@ -84,7 +84,7 @@ class CachedEntityMixin(models.Model):
         )
 
 
-class CachedEntityVersionMixin(VisibilityModelMixin):
+class CachedEntityVersion(VisibilityModelMixin):
     """
     Abstract class representing a cache for a single version / commit in any entity type's repository.
 
@@ -134,7 +134,7 @@ class CachedEntityVersionMixin(VisibilityModelMixin):
         )
 
 
-class CachedEntityTagMixin(models.Model):
+class CachedEntityTag(models.Model):
     """
     Abstract class representing a cache for a tag in any entity type's repository.
 
@@ -167,17 +167,17 @@ def _set_class_links(entity_cache_type, version_cache_type, tag_cache_type):
 # Concrete cache classes go here
 #
 
-class CachedModel(CachedEntityMixin):
+class CachedModel(CachedEntity):
     """Cache for a CellML model's repository."""
     entity = models.OneToOneField(ModelEntity, on_delete=models.CASCADE, related_name='cachedmodel')
 
 
-class CachedModelVersion(CachedEntityVersionMixin):
+class CachedModelVersion(CachedEntityVersion):
     """Cache for a single version / commit in a CellML model's repository."""
     entity = models.ForeignKey(CachedModel, on_delete=models.CASCADE, related_name='versions')
 
 
-class CachedModelTag(CachedEntityTagMixin):
+class CachedModelTag(CachedEntityTag):
     """Cache for a tag in a CellML model's repository."""
     entity = models.ForeignKey(CachedModel, related_name='tags')
     version = models.ForeignKey(CachedModelVersion, on_delete=models.CASCADE, related_name='tags')
@@ -186,17 +186,17 @@ class CachedModelTag(CachedEntityTagMixin):
 _set_class_links(CachedModel, CachedModelVersion, CachedModelTag)
 
 
-class CachedProtocol(CachedEntityMixin):
+class CachedProtocol(CachedEntity):
     """Cache for a protocol's repository."""
     entity = models.OneToOneField(ProtocolEntity, on_delete=models.CASCADE, related_name='cachedprotocol')
 
 
-class CachedProtocolVersion(CachedEntityVersionMixin):
+class CachedProtocolVersion(CachedEntityVersion):
     """Cache for a single version / commit in a protocol's repository."""
     entity = models.ForeignKey(CachedProtocol, on_delete=models.CASCADE, related_name='versions')
 
 
-class CachedProtocolTag(CachedEntityTagMixin):
+class CachedProtocolTag(CachedEntityTag):
     """Cache for a tag in a protocol's repository."""
     entity = models.ForeignKey(CachedProtocol, related_name='tags')
     version = models.ForeignKey(CachedProtocolVersion, on_delete=models.CASCADE, related_name='tags')

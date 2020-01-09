@@ -23,6 +23,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^tasks$',
+        views.ExperimentTasks.as_view(),
+        name='tasks',
+    ),
+
+    url(
         r'^new$',
         views.NewExperimentView.as_view(),
         name='new',

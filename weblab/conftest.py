@@ -43,7 +43,7 @@ class Helpers:
         return commit
 
     @staticmethod
-    def add_fake_version(entity, visibility, date=None, message='cache-only commit'):
+    def add_fake_version(entity, visibility='private', date=None, message='cache-only commit'):
         """Add a new commit/version only in the cache, not in git."""
         version = entity.repocache.CachedVersionClass.objects.create(
             entity=entity.repocache,
@@ -200,6 +200,22 @@ def experiment_version(public_model, public_protocol):
         experiment__model_version=public_model.repo.latest_commit.sha,
         experiment__protocol=public_protocol,
         experiment__protocol_version=public_protocol.repo.latest_commit.sha,
+    )
+
+
+@pytest.fixture
+def quick_experiment_version(helpers):
+    """An experiment version that exists only in the DB - no model/proto repos, no results."""
+    model = recipes.model.make()
+    model_version = str(helpers.add_fake_version(model, 'public').sha)
+    protocol = recipes.protocol.make()
+    protocol_version = str(helpers.add_fake_version(protocol, 'public').sha)
+    return recipes.experiment_version.make(
+        status='SUCCESS',
+        experiment__model=model,
+        experiment__model_version=model_version,
+        experiment__protocol=protocol,
+        experiment__protocol_version=protocol_version,
     )
 
 
