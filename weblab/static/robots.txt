@@ -1,0 +1,13 @@
+User-agent: *
+
+# Bots can't log in, so don't bother trying
+Disallow: /accounts
+Disallow: /social
+
+# Robots can kill Web Lab responsiveness if left unchecked.
+# We could potentially let them view the top-level public stuff, but restricting the
+# individual heavy views is tricky, so easier to be more restrictive.
+Disallow: /datasets
+Disallow: /entities
+Disallow: /experiments
+Disallow: /fitting
