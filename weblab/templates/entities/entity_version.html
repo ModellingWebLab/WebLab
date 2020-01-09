@@ -34,7 +34,7 @@
 
     <div class="suppl">
       <small>
-        Created <time id="entityversiontime">{{ version.committed_at }}</time>
+        Created <time id="entityversiontime">{{ version.timestamp }}</time>
         by <em id="entityversionauthor">{{ version.author }}</em>.
         <div id="versionVisibility" data-change-href="{{ entity|url_change_version_visibility:version }}">
           {% if permission %}
