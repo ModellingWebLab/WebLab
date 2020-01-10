@@ -1,4 +1,4 @@
-from entities.forms import EntityForm
+from entities.forms import EntityForm, EntityVersionForm
 from entities.models import ProtocolEntity
 
 from .models import FittingSpec
@@ -16,3 +16,11 @@ class FittingSpecForm(EntityForm):
         self.fields['protocol'].queryset = ProtocolEntity.objects.visible_to_user(self.user)
 
     # TODO: Perhaps sort available protocols so 'mine' first, then moderated, then others?
+
+
+class FittingSpecVersionForm(EntityVersionForm):
+	"""Used for creating a new version of a fitting specification.
+
+	This works almost the same as other entities, except we can't re-run experiments.
+	"""
+	rerun_expts = None

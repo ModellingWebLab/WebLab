@@ -15,9 +15,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.urls import reverse
 from django.views.generic.edit import CreateView
 
-from entities.views import EntityTypeMixin
+from entities.views import EntityNewVersionView, EntityTypeMixin
 
-from .forms import FittingSpecForm
+from .forms import FittingSpecForm, FittingSpecVersionForm
 
 
 class FittingSpecCreateView(
@@ -32,3 +32,11 @@ class FittingSpecCreateView(
     def get_success_url(self):
         return reverse('fitting:newversion',
                        args=[self.kwargs['entity_type'], self.object.pk])
+
+
+class FittingSpecNewVersionView(EntityNewVersionView):
+    """Create a new version of a fitting specification.
+
+    This is almost identical to other entities, except that we can't re-run experiments.
+    """
+    form_class = FittingSpecVersionForm

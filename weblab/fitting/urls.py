@@ -44,7 +44,7 @@ urlpatterns = [
 
     url(
         r'^%s/(?P<pk>\d+)/versions/new$' % _ENTITY_TYPE,
-        entity_views.EntityNewVersionView.as_view(),
+        views.FittingSpecNewVersionView.as_view(),
         name='newversion',
     ),
 

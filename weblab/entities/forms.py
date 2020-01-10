@@ -69,7 +69,9 @@ class EntityVersionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         entity_type = kwargs.pop('entity_type')
         super().__init__(*args, **kwargs)
-        self.fields['rerun_expts'].label = self.fields['rerun_expts'].label % entity_type
+        rerun_field = self.fields.get('rerun_expts', None)
+        if rerun_field:
+            rerun_field.label = rerun_field.label % entity_type
 
 
 class EntityChangeVisibilityForm(UserKwargModelFormMixin, forms.Form):
