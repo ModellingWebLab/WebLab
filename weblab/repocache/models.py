@@ -97,6 +97,7 @@ class CachedEntityVersion(VisibilityModelMixin):
     sha = models.CharField(max_length=40)
     timestamp = models.DateTimeField(help_text='When this commit was made')
     message = models.TextField(help_text='Git commit message', default=' ')
+    master_filename = models.TextField(help_text='Master filename', default=None, null=True)
     parsed_ok = models.BooleanField(
         default=False,
         help_text='Whether this entity version has been verified as syntactically correct'

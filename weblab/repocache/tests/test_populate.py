@@ -1,27 +1,51 @@
 import pytest
-
+import os.path
+from pathlib import Path
 from core import recipes
+from accounts.models import User
 from repocache.populate import populate_entity_cache
 
 
 @pytest.mark.django_db
 class TestPopulate:
-    def test_populate(self, model_with_version):
+    def test_populate(self, model_with_version, helpers):
         model_with_version.repo.tag('v1')
+        populate_entity_cache(model_with_version)
+        cached = model_with_version.cachedentity
+        assert cached is not None
+
+        latest = model_with_version.repo.latest_commit
+        version1 = cached.versions.get()
+
+        assert version1.sha == latest.sha
+        assert version1.message == latest.message
+        assert version1.timestamp == latest.timestamp
+        assert cached.tags.get().tag == 'v1'
+
+        # create second version with master_filename
+        model_with_version.repo.tag('v2')
+
+        # set up required files and manifest
+        path = os.path.join(model_with_version.repo._root, 'file.cellml')
+        with open(path, 'w') as f:
+            f.write('file contents')
+        repo_file = Path(path)
+        model_with_version.repo.add_file(repo_file)
+        model_with_version.repo.generate_manifest(master_filename='file.cellml')
+
+        commit = helpers.add_version(model_with_version)
+        assert commit.master_filename == 'file.cellml'
 
         populate_entity_cache(model_with_version)
+        version2 = model_with_version.repo.latest_commit
 
-        cached = model_with_version.cachedentity
+        assert model_with_version.cachedentity.get_version(version1.sha).master_filename == None
+        assert model_with_version.cachedentity.get_version(version2.sha).master_filename == 'file.cellml'
 
-        assert cached is not None
-        latest = model_with_version.repo.latest_commit
+        assert model_with_version.repocache.get_version(version1.sha).master_filename == None
+        assert model_with_version.repocache.get_version(version2.sha).master_filename == 'file.cellml'
 
-        version = cached.versions.get()
-        assert version.sha == latest.sha
-        assert version.message == latest.message
-        assert version.timestamp == latest.timestamp
-
-        assert cached.tags.get().tag == 'v1'
+        assert version2.master_filename == 'file.cellml'
 
     def test_removes_old_versions(self):
         model = recipes.model.make()
