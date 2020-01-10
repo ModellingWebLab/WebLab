@@ -2,7 +2,6 @@ import pytest
 import os.path
 from pathlib import Path
 from core import recipes
-from accounts.models import User
 from repocache.populate import populate_entity_cache
 
 
@@ -39,10 +38,10 @@ class TestPopulate:
         populate_entity_cache(model_with_version)
         version2 = model_with_version.repo.latest_commit
 
-        assert model_with_version.cachedentity.get_version(version1.sha).master_filename == None
+        assert model_with_version.cachedentity.get_version(version1.sha).master_filename is None
         assert model_with_version.cachedentity.get_version(version2.sha).master_filename == 'file.cellml'
 
-        assert model_with_version.repocache.get_version(version1.sha).master_filename == None
+        assert model_with_version.repocache.get_version(version1.sha).master_filename is None
         assert model_with_version.repocache.get_version(version2.sha).master_filename == 'file.cellml'
 
         assert version2.master_filename == 'file.cellml'
