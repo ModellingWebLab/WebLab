@@ -19,11 +19,11 @@ class TestPopulate:
         assert version1.sha == latest.sha
         assert version1.message == latest.message
         assert version1.timestamp == latest.timestamp
-        assert version1.master_filename == latest.master_filename == None
+        assert version1.master_filename == latest.master_filename is None
         assert cached.tags.get().tag == 'v1'
 
         model_with_version.repo.generate_manifest(master_filename='file1.txt')
-        commit = model_with_version.repo.commit('second commit', User(full_name=latest.author.name, email=latest.author.email))
+        commit = model_with_version.repo.commit('second', User(full_name=latest.author.name, email=latest.author.email))
         assert commit.master_filename == 'file1.txt'
 
         populate_entity_cache(model_with_version)
