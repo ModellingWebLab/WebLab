@@ -1,5 +1,6 @@
 import pytest
 
+from accounts.models import User
 from core import recipes
 from repocache.populate import populate_entity_cache
 
