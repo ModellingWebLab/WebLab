@@ -79,6 +79,7 @@ class CachedEntity(models.Model):
             entity=self,
             sha=commit.sha,
             message=commit.message,
+            master_filename=commit.master_filename,
             timestamp=commit.timestamp,
             visibility=visibility,
         )

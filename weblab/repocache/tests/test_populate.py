@@ -1,6 +1,5 @@
 import pytest
-import os.path
-from pathlib import Path
+
 from core import recipes
 from repocache.populate import populate_entity_cache
 
@@ -19,32 +18,18 @@ class TestPopulate:
         assert version1.sha == latest.sha
         assert version1.message == latest.message
         assert version1.timestamp == latest.timestamp
+        assert version1.master_filename == latest.master_filename == None
         assert cached.tags.get().tag == 'v1'
 
-        # create second version with master_filename
-        model_with_version.repo.tag('v2')
-
-        # set up required files and manifest
-        path = os.path.join(model_with_version.repo._root, 'file.cellml')
-        with open(path, 'w') as f:
-            f.write('file contents')
-        repo_file = Path(path)
-        model_with_version.repo.add_file(repo_file)
-        model_with_version.repo.generate_manifest(master_filename='file.cellml')
-
-        commit = helpers.add_version(model_with_version)
-        assert commit.master_filename == 'file.cellml'
+        model_with_version.repo.generate_manifest(master_filename='file1.txt')
+        commit = model_with_version.repo.commit('second commit', User(full_name=latest.author.name, email=latest.author.email))
+        assert commit.master_filename == 'file1.txt'
 
         populate_entity_cache(model_with_version)
-        version2 = model_with_version.repo.latest_commit
+        version2 = cached.latest_version
 
-        assert model_with_version.cachedentity.get_version(version1.sha).master_filename is None
-        assert model_with_version.cachedentity.get_version(version2.sha).master_filename == 'file.cellml'
-
-        assert model_with_version.repocache.get_version(version1.sha).master_filename is None
-        assert model_with_version.repocache.get_version(version2.sha).master_filename == 'file.cellml'
-
-        assert version2.master_filename == 'file.cellml'
+        assert version2.sha == commit.sha
+        assert version2.master_filename == commit.master_filename == 'file1.txt'
 
     def test_removes_old_versions(self):
         model = recipes.model.make()
