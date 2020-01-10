@@ -49,6 +49,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/(?P<pk>\d+)/versions/edit$' % _ENTITY_TYPE,
+        entity_views.EntityAlterFileView.as_view(),
+        name='alter_file',
+    ),
+
+    url(
         r'^%s/(?P<pk>\d+)/versions/%s(?:/%s)?$' % (_ENTITY_TYPE, _COMMIT, _FILEVIEW),
         entity_views.EntityVersionView.as_view(),
         name='version',
