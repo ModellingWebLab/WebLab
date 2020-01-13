@@ -19,8 +19,8 @@ class FittingSpecForm(EntityForm):
 
 
 class FittingSpecVersionForm(EntityVersionForm):
-	"""Used for creating a new version of a fitting specification.
+    """Used for creating a new version of a fitting specification.
 
-	This works almost the same as other entities, except we can't re-run experiments.
-	"""
-	rerun_expts = None
+    This works almost the same as other entities, except we can't re-run experiments.
+    """
+    rerun_expts = None
