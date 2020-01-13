@@ -19,7 +19,7 @@
       {% for tags, commit in versions %}
       <li>
         <p>
-          <input class="comparisonCheckBox" type="checkbox" value="{{ entity.id }}:{{ commit.hexsha }}">
+          <input class="comparisonCheckBox" type="checkbox" value="{{ entity.id }}:{{ commit.sha }}">
           <strong>
             <a class="entityversionlink" href="{% entity_version_url 'version' entity commit %}">
               {% include "./includes/version_name.html" with tags=tags version=commit only %}
@@ -27,7 +27,7 @@
           </strong>
           by <em>{{ commit.author }}</em><br />
           <span class="suppl">
-            <small>created </small> <time>{{commit.committed_at}}</time>
+            <small>created </small> <time>{{commit.timestamp}}</time>
             {% with commit.filenames|length as numfiles %}
             <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize}}
             {% endwith %}

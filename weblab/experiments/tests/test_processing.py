@@ -39,8 +39,8 @@ class TestSubmitExperiment:
             user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
 
         assert Experiment.objects.count() == 0
         assert RunningExperiment.objects.count() == 0
@@ -99,8 +99,8 @@ class TestSubmitExperiment:
                                       user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
 
         experiment = recipes.experiment.make(model=model, model_version=model_version,
                                              protocol=protocol, protocol_version=protocol_version)
@@ -114,8 +114,8 @@ class TestSubmitExperiment:
                                                   user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
 
         mock_post.side_effect = generate_response('something %s')
         with pytest.raises(ProcessingException):
@@ -137,8 +137,8 @@ class TestSubmitExperiment:
                                       user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
 
         mock_post.side_effect = generate_response('%s an error occurred')
 
@@ -153,8 +153,8 @@ class TestSubmitExperiment:
                                          user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
 
         mock_post.side_effect = generate_response('%s inapplicable')
 

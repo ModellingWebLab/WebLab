@@ -20,9 +20,9 @@ class TestExperiment:
         protocol = recipes.protocol.make(name='my protocol')
         experiment = recipes.experiment.make(
             model=model,
-            model_version=helpers.add_version(model, tag_name='v1').hexsha,
+            model_version=helpers.add_version(model, tag_name='v1').sha,
             protocol=protocol,
-            protocol_version=helpers.add_version(protocol, tag_name='v2').hexsha,
+            protocol_version=helpers.add_version(protocol, tag_name='v2').sha,
         )
 
         assert str(experiment) == experiment.name == 'my model / my protocol'
@@ -51,8 +51,8 @@ class TestExperiment:
     def test_nice_versions(self, experiment_version):
         exp = experiment_version.experiment
 
-        assert exp.nice_model_version == exp.model.repo.latest_commit.hexsha[:8] + '...'
-        assert exp.nice_protocol_version == exp.protocol.repo.latest_commit.hexsha[:8] + '...'
+        assert exp.nice_model_version == exp.model.repo.latest_commit.sha[:8] + '...'
+        assert exp.nice_protocol_version == exp.protocol.repo.latest_commit.sha[:8] + '...'
 
         exp.model.repo.tag('v1')
         assert exp.nice_model_version == 'v1'
@@ -63,10 +63,10 @@ class TestExperiment:
     def test_visibility(self, helpers):
         model = recipes.model.make()
         protocol = recipes.protocol.make()
-        mv1 = helpers.add_version(model, visibility='private').hexsha
-        mv2 = helpers.add_version(model, visibility='public').hexsha
-        pv1 = helpers.add_version(protocol, visibility='private').hexsha
-        pv2 = helpers.add_version(protocol, visibility='public').hexsha
+        mv1 = helpers.add_version(model, visibility='private').sha
+        mv2 = helpers.add_version(model, visibility='public').sha
+        pv1 = helpers.add_version(protocol, visibility='private').sha
+        pv2 = helpers.add_version(protocol, visibility='public').sha
 
         assert recipes.experiment.make(
             model=model, model_version=mv2,
@@ -95,8 +95,8 @@ class TestExperiment:
         exp = recipes.experiment_version.make(
             experiment__model=model,
             experiment__protocol=protocol,
-            experiment__model_version=mv.hexsha,
-            experiment__protocol_version=pv.hexsha,
+            experiment__model_version=mv.sha,
+            experiment__protocol_version=pv.sha,
         ).experiment
         assert user not in exp.viewers
 

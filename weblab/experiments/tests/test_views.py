@@ -15,7 +15,12 @@ from django.test import Client
 from django.utils.dateparse import parse_datetime
 
 from core import recipes
-from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
+from experiments.models import (
+    Experiment,
+    ExperimentVersion,
+    PlannedExperiment,
+    RunningExperiment,
+)
 
 
 def generate_response(template='%s succ celery-task-id'):
@@ -58,8 +63,8 @@ def planned_experiments(model_with_version, protocol_with_version):
     """Fill in DB for NewExperimentView tests."""
     model = model_with_version
     protocol = protocol_with_version
-    model_version = model.repo.latest_commit.hexsha
-    protocol_version = protocol.repo.latest_commit.hexsha
+    model_version = model.repo.latest_commit.sha
+    protocol_version = protocol.repo.latest_commit.sha
     PlannedExperiment(
         model=model,
         protocol=protocol,
@@ -178,12 +183,12 @@ class TestExperimentMatrix:
 
         my_version = make_experiment(my_model, my_model_version.sha, my_protocol, my_protocol_version.sha)
         with_moderated_model = make_experiment(
-            moderated_model, moderated_model.repo.latest_commit.hexsha,
+            moderated_model, moderated_model.repo.latest_commit.sha,
             my_protocol, my_protocol_version.sha,
         )
         with_moderated_protocol = make_experiment(
             my_model, my_model_version.sha,
-            moderated_protocol, moderated_protocol.repo.latest_commit.hexsha,
+            moderated_protocol, moderated_protocol.repo.latest_commit.sha,
         )
         with_my_moderated_model = make_experiment(
             my_moderated_model, my_moderated_model.repocache.latest_version.sha,
@@ -650,9 +655,9 @@ class TestExperimentMatrix:
     ):
         recipes.experiment.make(
             model=public_model,
-            model_version=public_model.repo.latest_commit.hexsha,
+            model_version=public_model.repo.latest_commit.sha,
             protocol=public_protocol,
-            protocol_version=public_protocol.repo.latest_commit.hexsha,
+            protocol_version=public_protocol.repo.latest_commit.sha,
         )
 
         response = client.get('/experiments/matrix?subset=all')
@@ -669,7 +674,7 @@ class TestExperimentMatrix:
         response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert str(new_version.hexsha) in data['getMatrix']['models']
+        assert str(new_version.sha) in data['getMatrix']['models']
         assert str(experiment_version.experiment.protocol_version) in data['getMatrix']['protocols']
         assert len(data['getMatrix']['experiments']) == 0
 
@@ -684,8 +689,8 @@ class TestNewExperimentView:
     ):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
         add_permission(logged_in_user, 'create_experiment')
         response = client.post(
             '/experiments/new',
@@ -784,8 +789,8 @@ class TestNewExperimentView:
 
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
         add_permission(logged_in_user, 'create_experiment')
         response = client.post(
             '/experiments/new',
@@ -826,8 +831,8 @@ class TestNewExperimentView:
 
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.hexsha
-        protocol_version = protocol.repo.latest_commit.hexsha
+        model_version = model.repo.latest_commit.sha
+        protocol_version = protocol.repo.latest_commit.sha
         add_permission(logged_in_user, 'create_experiment')
         response = client.post(
             '/experiments/new',
@@ -947,6 +952,90 @@ class TestExperimentVersionView:
 
 
 @pytest.mark.django_db
+class TestExperimentTasks:
+
+    def test_load_page_other_user(self, client):
+        response = client.get('/experiments/tasks')
+        assert response.status_code == 302
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_load_page_logged_in_user(self, client):
+        response = client.get('/experiments/tasks')
+        assert response.status_code == 200
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_get_queryset_other_user(self, other_user, client, experiment_version):
+        experiment_version.author = other_user
+        experiment_version.save()
+        recipes.running_experiment.make(experiment_version=experiment_version)
+        assert RunningExperiment.objects.count() == 1
+        response = client.get('/experiments/tasks')
+        assert len(response.context['runningexperiment_list']) == 0
+
+    def test_get_queryset(self, logged_in_user, client, helpers):
+        # Create three experiment versions 2 running and 1 completed
+        model_1 = recipes.model.make(author=logged_in_user)
+        model_1_version = helpers.add_version(model_1, visibility='public')
+        protocol_1 = recipes.protocol.make(author=logged_in_user)
+        protocol_1_version = helpers.add_version(protocol_1, visibility='public')
+        protocol_1_version2 = helpers.add_version(protocol_1, visibility='public')
+        protocol_2 = recipes.protocol.make(author=logged_in_user)
+        protocol_2_version = helpers.add_version(protocol_2, visibility='public')
+
+        recipes.experiment_version.make(
+            status=ExperimentVersion.STATUS_SUCCESS,
+            experiment__model=model_1,
+            experiment__model_version=model_1_version.sha,
+            experiment__protocol=protocol_1,
+            experiment__protocol_version=protocol_1_version.sha,
+            author=logged_in_user,
+        )
+
+        exp_version_2 = recipes.experiment_version.make(
+            status=ExperimentVersion.STATUS_QUEUED,
+            experiment__model=model_1,
+            experiment__model_version=model_1_version.sha,
+            experiment__protocol=protocol_1,
+            experiment__protocol_version=protocol_1_version2.sha,
+            author=logged_in_user,
+        )
+        running_exp_version2 = recipes.running_experiment.make(experiment_version=exp_version_2)
+
+        exp_version_3 = recipes.experiment_version.make(
+            status=ExperimentVersion.STATUS_RUNNING,
+            experiment__model=model_1,
+            experiment__model_version=model_1_version.sha,
+            experiment__protocol=protocol_2,
+            experiment__protocol_version=protocol_2_version.sha,
+            author=logged_in_user,
+        )
+        running_exp_version3 = recipes.running_experiment.make(experiment_version=exp_version_3)
+
+        assert ExperimentVersion.objects.count() == 3
+        assert RunningExperiment.objects.count() == 2
+
+        # Return only running experiment versions
+        response = client.get('/experiments/tasks')
+        assert set(response.context['runningexperiment_list']) == {running_exp_version2, running_exp_version3}
+
+        # Cancel one of the running versions check the other one is still present
+        client.post('/experiments/tasks', {'chkBoxes[]': [running_exp_version2.experiment_version.id]})
+        response = client.get('/experiments/tasks')
+        assert set(response.context['runningexperiment_list']) == {running_exp_version3}
+        assert RunningExperiment.objects.count() == 1
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_returns_404_incorrect_owner(self, other_user, client, experiment_version):
+        experiment_version.author = other_user
+        experiment_version.save()
+        running_exp = recipes.running_experiment.make(experiment_version=experiment_version)
+        assert RunningExperiment.objects.count() == 1
+        response = client.post('/experiments/tasks', {'chkBoxes[]': [running_exp.experiment_version.id]})
+        assert RunningExperiment.objects.count() == 1
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
 class TestExperimentDeletion:
     def test_owner_can_delete_experiment(
         self, logged_in_user, client, experiment_with_result
@@ -1026,7 +1115,7 @@ class TestExperimentComparisonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_commit.hexsha,
+            experiment__protocol_version=protocol_commit.sha,
         )
 
         response = client.get(
@@ -1049,7 +1138,7 @@ class TestExperimentComparisonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=proto,
-            experiment__protocol_version=proto_commit.hexsha,
+            experiment__protocol_version=proto_commit.sha,
         )
 
         response = client.get(
@@ -1085,7 +1174,7 @@ class TestExperimentComparisonJsonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_commit.hexsha,
+            experiment__protocol_version=protocol_commit.sha,
         )
 
         response = client.get(
@@ -1115,7 +1204,7 @@ class TestExperimentComparisonJsonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=proto,
-            experiment__protocol_version=proto_commit.hexsha,
+            experiment__protocol_version=proto_commit.sha,
         )
 
         response = client.get(
@@ -1144,7 +1233,7 @@ class TestExperimentComparisonJsonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_commit.hexsha,
+            experiment__protocol_version=protocol_commit.sha,
         )
         version2.mkdir()
         shutil.copyfile(archive_file_path, str(version2.archive_path))
@@ -1329,9 +1418,9 @@ class TestEnforcesExperimentVersionVisibility:
         protocol_version = helpers.add_version(protocol, visibility='public')
         experiment_version = recipes.experiment_version.make(
             experiment__model=model,
-            experiment__model_version=model_version.hexsha,
+            experiment__model_version=model_version.sha,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_version.hexsha,
+            experiment__protocol_version=protocol_version.sha,
         )
 
         experiment_version.mkdir()

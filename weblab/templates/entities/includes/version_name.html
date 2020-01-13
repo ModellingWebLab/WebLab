@@ -4,5 +4,5 @@
 <b>{{ tag }}</b>{% if not forloop.last %},{% endif %}
 {% endfor %}
 {% if tags %}<small style="display: inline;">({% endif %}{% spaceless %}
-<span title="Full identifier: {{ version.hexsha }}">{{ version.hexsha|truncatechars:11 }}</span>
+<span title="Full identifier: {{ version.sha }}">{{ version.sha|truncatechars:11 }}</span>
 {% endspaceless %}{% if tags %})</small>{% endif %}

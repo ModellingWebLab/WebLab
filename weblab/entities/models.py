@@ -139,7 +139,7 @@ class Entity(UserCreatedModelMixin, models.Model):
         commit = self.repo.get_commit(commit)
         self.set_visibility_in_repo(commit, visibility)
 
-        self.repocache.get_version(commit.hexsha).set_visibility(visibility)
+        self.repocache.get_version(commit.sha).set_visibility(visibility)
 
     def get_version_visibility(self, sha, default=None):
         """
@@ -201,7 +201,7 @@ class Entity(UserCreatedModelMixin, models.Model):
         commit = self.repo.get_commit(ref)
         self.repo.tag(tagname, ref=ref)
         try:
-            self.repocache.get_version(commit.hexsha).tag(tagname)
+            self.repocache.get_version(commit.sha).tag(tagname)
         except RepoCacheMiss:
             pass
 
@@ -376,7 +376,7 @@ class ProtocolEntity(Entity):
                 doc = content[doc_start + 1:doc_end]
                 # Create ephemeral file
                 commit.add_ephemeral_file(self.README_NAME, doc)
-        submit_check_protocol_task(self, commit.hexsha)
+        submit_check_protocol_task(self, commit.sha)
 
 
 class EntityFile(models.Model):

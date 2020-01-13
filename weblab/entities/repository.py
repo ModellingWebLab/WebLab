@@ -272,13 +272,13 @@ class Commit:
 
         :return: file handle to archive
         """
-        mtime = self.committed_at
+        mtime = self.timestamp
         return ArchiveWriter().write(
             (blob.name, blob.data_stream, mtime) for blob in self.files
         )
 
     @property
-    def hexsha(self):
+    def sha(self):
         """
         SHA of the commit
 
@@ -308,7 +308,7 @@ class Commit:
         return other._commit == self._commit
 
     @property
-    def committed_at(self):
+    def timestamp(self):
         """
         Datetime representation of commit timestamp
 
@@ -337,7 +337,7 @@ class Commit:
         :param note: Textual content of the note
         """
         cmd = self._repo._repo.git
-        cmd.notes('--ref', self.NOTE_REF, 'add', '-f', '-m', note, self.hexsha)
+        cmd.notes('--ref', self.NOTE_REF, 'add', '-f', '-m', note, self.sha)
 
     def get_note(self):
         """
@@ -347,7 +347,7 @@ class Commit:
         """
         cmd = self._repo._repo.git
         try:
-            return cmd.notes('--ref', self.NOTE_REF, 'show', self.hexsha)
+            return cmd.notes('--ref', self.NOTE_REF, 'show', self.sha)
         except GitCommandError:
             return None
 
@@ -376,9 +376,9 @@ class Commit:
             # Store file in the git object DB
             obj_id = cmd.hash_object('-w', path)
             # Add this file to the list of ephemeral files for this commit
-            cmd.notes('--ref', self.FILE_LIST_REF, 'append', '-m', name, self.hexsha)
+            cmd.notes('--ref', self.FILE_LIST_REF, 'append', '-m', name, self.sha)
             # Add the file as a note
-            cmd.notes('--ref', self.FILE_REF_BASE + name, 'add', '-f', '-C', obj_id, self.hexsha)
+            cmd.notes('--ref', self.FILE_REF_BASE + name, 'add', '-f', '-C', obj_id, self.sha)
         # Clear cached properties so they get recalculated on next access
         del self.ephemeral_file_names
         del self.filenames
@@ -391,7 +391,7 @@ class Commit:
         """
         cmd = self._repo._repo.git
         try:
-            blob_hexsha = cmd.notes('--ref', self.FILE_REF_BASE + name, 'list', self.hexsha)
+            blob_hexsha = cmd.notes('--ref', self.FILE_REF_BASE + name, 'list', self.sha)
             binsha = binascii.a2b_hex(blob_hexsha)
             return Blob(self._repo._repo, binsha, path=name)
         except GitCommandError:
@@ -404,7 +404,7 @@ class Commit:
         """
         cmd = self._repo._repo.git
         try:
-            names_note = cmd.notes('--ref', self.FILE_LIST_REF, 'show', self.hexsha)
+            names_note = cmd.notes('--ref', self.FILE_LIST_REF, 'show', self.sha)
             return {n for n in names_note.split('\n') if n}
         except GitCommandError:
             return set()

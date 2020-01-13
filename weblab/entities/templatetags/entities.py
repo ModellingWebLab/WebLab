@@ -134,9 +134,9 @@ def _url_friendly_label(entity, commit):
     :param entity: Entity the commit belongs to
     :param commit: `git.Commit` object
     """
-    last_tag = str(entity.repo.tag_dict.get(commit.hexsha, ['/'])[-1])
+    last_tag = str(entity.repo.tag_dict.get(commit.sha, ['/'])[-1])
     if '/' in last_tag or last_tag in ['new', 'latest']:
-        last_tag = commit.hexsha
+        last_tag = commit.sha
     return last_tag
 
 

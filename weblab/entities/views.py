@@ -129,7 +129,7 @@ class EntityVersionMixin(VisibilityMixin):
         kwargs.update(**{
             'version': commit,
             'visibility': self.get_visibility(),
-            'tags': entity.get_tags(commit.hexsha),
+            'tags': entity.get_tags(commit.sha),
             'master_filename': commit.master_filename,
         })
         return super().get_context_data(**kwargs)
@@ -187,7 +187,7 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         entity = self._get_object()
-        visibility = entity.get_version_visibility(self.get_commit().hexsha)
+        visibility = entity.get_version_visibility(self.get_commit().sha)
         kwargs['form'] = EntityChangeVisibilityForm(
             user=self.request.user,
             initial={
@@ -207,10 +207,10 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
             'name': blob.name,
             'filetype': get_file_type(blob.name),
             'size': blob.size,
-            'created': commit.committed_at,
+            'created': commit.timestamp,
             'url': reverse(
                 ns + ':file_download',
-                args=[obj.url_type, obj.id, commit.hexsha, blob.name]
+                args=[obj.url_type, obj.id, commit.sha, blob.name]
             ),
         }
 
@@ -219,7 +219,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
         commit = self.get_commit()
         kwargs = {
             obj.entity_type: obj,
-            obj.entity_type + '_version': commit.hexsha
+            obj.entity_type + '_version': commit.sha
         }
         return list(PlannedExperiment.objects.filter(**kwargs).values(
             'model', 'protocol', 'model_version', 'protocol_version'))
@@ -240,28 +240,28 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
             planned_experiments = []
         return JsonResponse({
             'version': {
-                'id': commit.hexsha,
+                'id': commit.sha,
                 'author': commit.author.name,
                 'entityId': obj.id,
-                'visibility': obj.get_version_visibility(commit.hexsha),
-                'created': commit.committed_at,
+                'visibility': obj.get_version_visibility(commit.sha),
+                'created': commit.timestamp,
                 'name': obj.name,
-                'version': obj.repo.get_name_for_commit(commit.hexsha),
-                'parsedOk': obj.is_parsed_ok(commit.hexsha),
+                'version': obj.repo.get_name_for_commit(commit.sha),
+                'parsedOk': obj.is_parsed_ok(commit.sha),
                 'files': files,
                 'numFiles': len(files),
                 'planned_experiments': planned_experiments,
                 'url': reverse(
                     ns + ':version',
-                    args=[obj.url_type, obj.id, commit.hexsha]
+                    args=[obj.url_type, obj.id, commit.sha]
                 ),
                 'download_url': reverse(
                     ns + ':entity_archive',
-                    args=[obj.url_type, obj.id, commit.hexsha]
+                    args=[obj.url_type, obj.id, commit.sha]
                 ),
                 'change_url': reverse(
                     ns + ':change_visibility',
-                    args=[obj.url_type, obj.id, commit.hexsha]
+                    args=[obj.url_type, obj.id, commit.sha]
                 ),
             }
         })
@@ -279,7 +279,7 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
         other_type = entity.other_type
         experiments = Experiment.objects.filter(**{
             entity_type: entity.pk,
-            ('%s_version' % entity_type): commit.hexsha,
+            ('%s_version' % entity_type): commit.sha,
         }).annotate(
             version_count=Count('versions'),
         ).filter(
@@ -338,12 +338,12 @@ class EntityComparisonJsonView(EntityTypeMixin, View):
             'id': blob.name,
             'name': blob.name,
             'author': entity.author.full_name,
-            'created': commit.committed_at,
+            'created': commit.timestamp,
             'filetype': get_file_type(blob.name),
             'size': blob.size,
             'url': reverse(
                 ns + ':file_download',
-                args=[entity.url_type, entity.id, commit.hexsha, blob.name]
+                args=[entity.url_type, entity.id, commit.sha, blob.name]
             ),
         }
 
@@ -360,14 +360,14 @@ class EntityComparisonJsonView(EntityTypeMixin, View):
             if f.name not in ['manifest.xml', 'metadata.rdf']
         ]
         return {
-            'id': commit.hexsha,
+            'id': commit.sha,
             'entityId': entity.id,
             'author': entity.author.full_name,
             'parsedOk': False,
-            'visibility': entity.get_version_visibility(commit.hexsha, default=entity.DEFAULT_VISIBILITY),
-            'created': commit.committed_at,
+            'visibility': entity.get_version_visibility(commit.sha, default=entity.DEFAULT_VISIBILITY),
+            'created': commit.timestamp,
             'name': entity.name,
-            'version': entity.repo.get_name_for_commit(commit.hexsha),
+            'version': entity.repo.get_name_for_commit(commit.sha),
             'files': files,
             'commitMessage': commit.message,
             'numFiles': len(files),
@@ -436,7 +436,7 @@ class EntityTagVersionView(
             commit = self.get_commit()
             tag = form.cleaned_data['tag']
             try:
-                entity.add_tag(tag, commit.hexsha)
+                entity.add_tag(tag, commit.sha)
             except GitCommandError as e:
                 msg = e.stderr.strip().split(':', 1)[1][2:-1]
                 form.add_error('tag', msg)
@@ -507,7 +507,7 @@ class EntityAlterFileView(
 
         # Error checking
         parent = entity.repo.latest_commit
-        if parent.hexsha != params.get('parent_hexsha'):
+        if parent.sha != params.get('parent_hexsha'):
             return self.json_error('someone has saved a newer version since you started editing')
         if params.get('file_name') not in parent.filenames:
             return self.json_error('file name provided does not exist in the parent version')
@@ -532,12 +532,12 @@ class EntityAlterFileView(
         # Commit and optionally tag the repo
         commit = entity.repo.commit(params['commit_message'], request.user)
         entity.set_visibility_in_repo(commit, params['visibility'])
-        entity.repocache.add_version(commit.hexsha)
+        entity.repocache.add_version(commit.sha)
 
         tag = params.get('tag', '')
         if tag:
             try:
-                entity.add_tag(tag, commit.hexsha)
+                entity.add_tag(tag, commit.sha)
             except GitCommandError as e:
                 entity.repo.rollback()
                 return self.json_error('failed to tag version: ' + e.stderr)
@@ -552,7 +552,7 @@ class EntityAlterFileView(
         return JsonResponse({
             self.RESPONSE_OBJECT: {
                 'response': True,
-                'url': reverse(ns + ':version', args=[entity.url_type, entity.id, commit.hexsha]),
+                'url': reverse(ns + ':version', args=[entity.url_type, entity.id, commit.sha]),
             }
         })
 
@@ -646,12 +646,12 @@ class EntityNewVersionView(
 
             visibility = request.POST['visibility']
             entity.set_visibility_in_repo(commit, visibility)
-            entity.repocache.add_version(commit.hexsha)
+            entity.repocache.add_version(commit.sha)
 
             tag = request.POST['tag']
             if tag:
                 try:
-                    entity.add_tag(tag, commit.hexsha)
+                    entity.add_tag(tag, commit.sha)
                 except GitCommandError as e:
                     entity.repo.rollback()
                     return self.fail_with_git_errors([e.stderr])
@@ -670,7 +670,7 @@ class EntityNewVersionView(
             # Show the user the new version
             ns = self.request.resolver_match.namespace
             return HttpResponseRedirect(
-                reverse(ns + ':version', args=[entity.url_type, entity.id, commit.hexsha]))
+                reverse(ns + ':version', args=[entity.url_type, entity.id, commit.sha]))
         else:
             # Nothing changed, so inform the user and do nothing else.
             form = self.get_form()
@@ -733,7 +733,7 @@ class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
         commit = self.get_commit()
 
         zipfile_name = os.path.join(
-            get_valid_filename('%s_%s.zip' % (entity.name, commit.hexsha))
+            get_valid_filename('%s_%s.zip' % (entity.name, commit.sha))
         )
 
         archive = commit.write_archive()
@@ -1085,7 +1085,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
         # in get context self.object was the entity being worked with
         # here we have to retrieve it
         this_entity = self.get_object()
-        this_version = self.get_commit().hexsha
+        this_version = self.get_commit().sha
         is_latest = (this_version == this_entity.repocache.latest_version.sha)
         exclude_existing = 'rerun_expts' not in request.POST
         experiments_to_run = request.POST.getlist('model_protocol_list[]')

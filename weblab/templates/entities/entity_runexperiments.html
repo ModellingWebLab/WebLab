@@ -37,12 +37,12 @@
               {% if entity_version.latest %}
 
                 <input class="latestexperimentCheckBox" type="checkbox"
-                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.sha }}"
                        name="model_protocol_list[]"
                        checked/>
               {% else %}
                 <input class="experimentCheckBox" type="checkbox"
-                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.sha }}"
                        name="model_protocol_list[]"/>
               {% endif %}
               <strong>
@@ -51,7 +51,7 @@
                 </a>
               </strong>
               <span class="suppl"><small style="display: inline;">by <em>{{ entity_version.commit.author }}</em>
-                created <time>{{ entity_version.commit.committed_at }}</time></small></span><br/>
+                created <time>{{ entity_version.commit.timestamp }}</time></small></span><br/>
               <span class="suppl">
                 {{ entity_version.commit.message|linebreaksbr }}
               </span>
@@ -75,12 +75,12 @@
               {% if entity_version.latest %}
 
                 <input class="latestexperimentCheckBox" type="checkbox"
-                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.sha }}"
                        name="model_protocol_list[]"
                        checked/>
               {% else %}
                 <input class="experimentCheckBox" type="checkbox"
-                       value="{{ entity_object.id }}:{{ entity_version.commit.hexsha }}"
+                       value="{{ entity_object.id }}:{{ entity_version.commit.sha }}"
                        name="model_protocol_list[]"/>
               {% endif %}
               <strong>
@@ -90,7 +90,7 @@
               </strong>
               by <em>{{ entity_version.commit.author }}</em><br/>
               <span class="suppl">
-                      <small style="display: inline;">created </small> <time>{{ entity_version.commit.committed_at }}</time>
+                      <small style="display: inline;">created </small> <time>{{ entity_version.commit.timestamp }}</time>
                 {% with entity_version.commit.filenames|length as numfiles %}
                   <small style="display: inline;">containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
                 {% endwith %}

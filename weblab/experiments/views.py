@@ -5,7 +5,11 @@ import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import (
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    UserPassesTestMixin,
+)
 from django.core.urlresolvers import reverse
 from django.db.models import (
     F,
@@ -15,12 +19,12 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import TemplateView
+from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import DeleteView, FormMixin
 from guardian.shortcuts import get_objects_for_user
@@ -30,7 +34,12 @@ from entities.models import ModelEntity, ProtocolEntity
 from repocache.models import CACHED_VERSION_TYPE_MAP, CachedModelVersion, CachedProtocolVersion
 
 from .forms import ExperimentSimulateCallbackForm
-from .models import Experiment, ExperimentVersion, PlannedExperiment
+from .models import (
+    Experiment,
+    ExperimentVersion,
+    PlannedExperiment,
+    RunningExperiment,
+)
 from .processing import process_callback, submit_experiment
 
 
@@ -42,6 +51,30 @@ class ExperimentsView(TemplateView):
     Show the default experiment matrix view for this user (or the public)
     """
     template_name = 'experiments/experiments.html'
+
+
+class ExperimentTasks(LoginRequiredMixin, ListView):
+    """
+    Show running versions of all experiments
+    Delete checked versions
+    """
+    model = RunningExperiment
+    template_name = "experiments/experiment_tasks.html"
+
+    def get_queryset(self):
+        return RunningExperiment.objects.filter(
+            experiment_version__author=self.request.user
+        ).order_by(
+            'experiment_version__created_at',
+        ).select_related('experiment_version', 'experiment_version__experiment')
+
+    def post(self, request):
+        for running_exp_id in request.POST.getlist('chkBoxes[]'):
+            exp_version = ExperimentVersion.objects.get(id=running_exp_id)
+            if not exp_version.author == self.request.user:
+                raise Http404
+            exp_version.delete()
+        return redirect(reverse('experiments:tasks'))
 
 
 class ExperimentMatrixJsonView(View):
