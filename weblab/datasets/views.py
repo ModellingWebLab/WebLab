@@ -46,27 +46,6 @@ class DatasetCreateView(
         return reverse('datasets:addfiles', args=[self.object.pk])
 
 
-class DatasetListView(LoginRequiredMixin, ListView):
-    """
-    List all user's datasets
-    """
-    model = Dataset
-    template_name = 'datasets/dataset_list.html'
-
-    def get_queryset(self):
-        return Dataset.objects.filter(author=self.request.user)
-
-
-class DatasetView(VisibilityMixin, DetailView):
-    """
-    View a Dataset
-
-    """
-    model = Dataset
-    context_object_name = 'dataset'
-    template_name = 'datasets/dataset_detail.html'
-
-
 class DatasetAddFilesView(
     LoginRequiredMixin, FormMixin, DetailView
 ):
@@ -149,6 +128,27 @@ class DatasetFileUploadView(View):
 
         else:
             return HttpResponseBadRequest(form.errors)
+
+
+class DatasetListView(LoginRequiredMixin, ListView):
+    """
+    List all user's datasets
+    """
+    model = Dataset
+    template_name = 'datasets/dataset_list.html'
+
+    def get_queryset(self):
+        return self.model.objects.filter(author=self.request.user)
+
+
+class DatasetView(VisibilityMixin, DetailView):
+    """
+    View a Dataset
+
+    """
+    model = Dataset
+    context_object_name = 'dataset'
+    template_name = 'datasets/dataset_detail.html'
 
 
 class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
