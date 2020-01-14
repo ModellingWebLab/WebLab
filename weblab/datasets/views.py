@@ -158,6 +158,7 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
     model = Dataset
 
     def _file_json(self, archive_file):
+        ns = self.request.resolver_match.namespace
         dataset = self.object
         return {
             'id': archive_file.name,
@@ -168,12 +169,13 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
             'masterFile': archive_file.is_master,
             'size': archive_file.size,
             'url': reverse(
-                'datasets:file_download',
+                ns + ':file_download',
                 args=[dataset.id, urllib.parse.quote(archive_file.name)]
             )
         }
 
     def get(self, request, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
         dataset = self.object = self.get_object()
         files = [
             self._file_json(f)
@@ -192,7 +194,7 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
                 'files': files,
                 'numFiles': len(files),
                 'download_url': reverse(
-                    'datasets:archive', args=[dataset.id]
+                    ns + ':archive', args=[dataset.id]
                 ),
             }
         })
@@ -261,4 +263,5 @@ class DatasetDeleteView(UserPassesTestMixin, DeleteView):
         return self.get_object().is_deletable_by(self.request.user)
 
     def get_success_url(self, *args, **kwargs):
-        return reverse('datasets:list')
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':list')
