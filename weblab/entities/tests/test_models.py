@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from django.db.utils import IntegrityError
 
@@ -85,7 +87,7 @@ class TestEntity:
 
     def test_repo_abs_path(self, fake_repo_path):
         model = recipes.model.make()
-        path = '%s/%d/models/%d' % (fake_repo_path, model.author.pk, model.pk)
+        path = os.path.join(str(fake_repo_path), str(model.author.pk), 'models', str(model.pk))
 
         assert model.repo._root == path
         assert str(model.repo_abs_path) == path
