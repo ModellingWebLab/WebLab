@@ -3,6 +3,7 @@ from django.db import models
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
 from . import visibility
+from .combine import ArchiveReader
 
 
 class VisibilityModelMixin(models.Model):
@@ -95,3 +96,47 @@ class UserCreatedModelMixin(models.Model):
 
     class Meta:
         abstract = True
+
+
+class FileCollectionMixin:
+    """Mixin for DB models that represent collections of files backed by a COMBINE Archive.
+
+    This doesn't provide any DB fields, but does define common properties and methods for
+    such collections, ensuring they present a consistent API.
+    """
+    @property
+    def abs_path(self):
+        """The folder where the backing archive is stored on disk.
+
+        Must be defined by subclasses.
+        """
+        raise NotImplementedError
+
+    @property
+    def archive_name(self):
+        """The name of the backing archive.
+
+        Must be defined by subclasses.
+        """
+        raise NotImplementedError
+
+    @property
+    def archive_path(self):
+        """The full path to the backing archive. A ``pathlib.Path`` instance."""
+        return self.abs_path / self.archive_name
+
+    @property
+    def files(self):
+        """The list of files (``core.combine.ArchiveFile`` instances) contained in this archive."""
+        if self.archive_path.exists():
+            return ArchiveReader(str(self.archive_path)).files
+        else:
+            return []
+
+    def mkdir(self):
+        """Create the folder for the backing archive (and parents if needed)."""
+        self.abs_path.mkdir(exist_ok=True, parents=True)
+
+    def open_file(self, name):
+        """Open the given file in the archive for reading."""
+        return ArchiveReader(str(self.archive_path)).open_file(name)
