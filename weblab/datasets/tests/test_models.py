@@ -11,11 +11,6 @@ class TestDataset:
         dataset = recipes.dataset.make(name='test dataset')
         assert str(dataset) == 'test dataset'
 
-    def test_is_visible_to_user(self, user, other_user):
-        dataset = recipes.dataset.make(author=user, name='mydataset', visibility="private")
-        assert dataset.is_visible_to_user(user)
-        assert not dataset.is_visible_to_user(other_user)
-
     def test_related_protocol(self, user):
         protocol = recipes.protocol.make(author=user)
         dataset = recipes.dataset.make(author=user, name='mydataset', protocol=protocol)
