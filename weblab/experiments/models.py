@@ -50,12 +50,13 @@ class Experiment(UserCreatedModelMixin, models.Model):
         :param model_version: Whether to include model version
         :param proto_version: Whether to include protocol version
         """
-        return '{0} / {1}'.format(
-            ('{0}@{1}' if model_version else '{0}').format(
-                self.model.name, self.nice_model_version),
-            ('{0}@{1}' if proto_version else '{0}').format(
-                self.protocol.name, self.nice_protocol_version),
-        )
+        model_part = self.model.name
+        if model_version:
+            model_part += '@' + self.nice_model_version
+        proto_part = self.protocol.name
+        if proto_version:
+            proto_part += '@' + self.nice_protocol_version
+        return '{0} / {1}'.format(model_part, proto_part)
 
     @property
     def visibility(self):

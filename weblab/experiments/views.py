@@ -1,15 +1,9 @@
 import logging
-import mimetypes
-import os.path
 import urllib.parse
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    UserPassesTestMixin,
-)
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.urlresolvers import reverse
 from django.db.models import (
     F,
@@ -18,7 +12,7 @@ from django.db.models import (
     Subquery,
 )
 from django.db.models.functions import Coalesce
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
@@ -26,10 +20,11 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import DeleteView, FormMixin
+from django.views.generic.edit import FormMixin
 from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import VisibilityMixin
+from datasets import views as dataset_views
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.models import CACHED_VERSION_TYPE_MAP, CachedModelVersion, CachedProtocolVersion
 
@@ -393,33 +388,18 @@ class ExperimentVersionListView(VisibilityMixin, DetailView):
     template_name = 'experiments/experiment_versions.html'
 
 
-class ExperimentDeleteView(UserPassesTestMixin, DeleteView):
+class ExperimentDeleteView(dataset_views.DatasetDeleteView):
     """
     Delete all versions of an experiment
     """
     model = Experiment
-    # Raise a 403 error rather than redirecting to login,
-    # if the user doesn't have delete permissions.
-    raise_exception = True
-
-    def test_func(self):
-        return self.get_object().is_deletable_by(self.request.user)
-
-    def get_success_url(self, *args, **kwargs):
-        return reverse('experiments:list')
 
 
-class ExperimentVersionDeleteView(UserPassesTestMixin, DeleteView):
+class ExperimentVersionDeleteView(dataset_views.DatasetDeleteView):
     """
     Delete a single version of an experiment
     """
     model = ExperimentVersion
-    # Raise a 403 error rather than redirecting to login,
-    # if the user doesn't have delete permissions.
-    raise_exception = True
-
-    def test_func(self):
-        return self.get_object().is_deletable_by(self.request.user)
 
     def get_success_url(self, *args, **kwargs):
         return reverse('experiments:versions', args=[self.get_object().experiment.id])
@@ -584,7 +564,7 @@ class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
     model = ExperimentVersion
 
     def _file_json(self, archive_file):
-        version = self.get_object()
+        version = self.object
         return {
             'id': archive_file.name,
             'author': version.author.full_name,
@@ -600,7 +580,7 @@ class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
         }
 
     def get(self, request, *args, **kwargs):
-        version = self.get_object()
+        version = self.object = self.get_object()
         files = [
             self._file_json(f)
             for f in version.files
@@ -627,48 +607,19 @@ class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
         })
 
 
-class ExperimentFileDownloadView(VisibilityMixin, SingleObjectMixin, View):
+class ExperimentFileDownloadView(dataset_views.DatasetFileDownloadView):
     """
     Download an individual file from an experiment
     """
     model = ExperimentVersion
 
-    def get(self, request, *args, **kwargs):
-        filename = self.kwargs['filename']
-        version = self.get_object()
 
-        content_type, _ = mimetypes.guess_type(filename)
-        if content_type is None:
-            content_type = 'application/octet-stream'
-
-        with version.open_file(filename) as file_:
-            response = HttpResponse(content_type=content_type)
-            response['Content-Disposition'] = 'attachment; filename=%s' % filename
-            response.write(file_.read())
-
-        return response
-
-
-class ExperimentVersionArchiveView(VisibilityMixin, SingleObjectMixin, View):
+class ExperimentVersionArchiveView(dataset_views.DatasetArchiveView):
     """
     Download a combine archive of an experiment version
     """
     model = ExperimentVersion
 
-    def get(self, request, *args, **kwargs):
-        version = self.get_object()
-        path = version.archive_path
-
-        if not path.exists():
-            raise Http404
-
-        zipfile_name = os.path.join(
-            get_valid_filename('%s.zip' % version.experiment.name)
-        )
-
-        with path.open('rb') as archive:
-            response = HttpResponse(content_type='application/zip')
-            response['Content-Disposition'] = 'attachment; filename=%s' % zipfile_name
-            response.write(archive.read())
-
-        return response
+    def get_archive_name(self, version):
+        """For historical reasons this is different from the archive_name."""
+        return get_valid_filename('%s.zip' % version.experiment.name)

@@ -17,7 +17,6 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
@@ -231,6 +230,9 @@ class DatasetArchiveView(VisibilityMixin, SingleObjectMixin, View):
     """
     model = Dataset
 
+    def get_archive_name(self, dataset):
+        return dataset.archive_name
+
     def get(self, request, *args, **kwargs):
         dataset = self.get_object()
         path = dataset.archive_path
@@ -238,9 +240,7 @@ class DatasetArchiveView(VisibilityMixin, SingleObjectMixin, View):
         if not path.exists():
             raise Http404
 
-        zipfile_name = os.path.join(
-            get_valid_filename('%s.zip' % dataset.name)
-        )
+        zipfile_name = self.get_archive_name(dataset)
 
         with path.open('rb') as archive:
             response = HttpResponse(content_type='application/zip')

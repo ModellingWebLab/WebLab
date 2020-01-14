@@ -306,7 +306,7 @@ class TestProcessCallback:
 
         assert result == {'experiment': 'ok'}
 
-        assert (queued_experiment.abs_path / 'results.omex').exists()
+        assert queued_experiment.archive_path.exists()
 
     def test_finished_experiment_must_have_attachment(self, queued_experiment):
         result = process_callback({
@@ -371,7 +371,7 @@ class TestProcessCallback:
         assert result == {}
         queued_experiment.refresh_from_db()
         assert queued_experiment.status == 'RUNNING'
-        assert not (queued_experiment.abs_path / 'results.omex').exists()
+        assert not queued_experiment.archive_path.exists()
 
         result = process_callback({
             'signature': queued_experiment.signature,
@@ -384,4 +384,4 @@ class TestProcessCallback:
 
         queued_experiment.refresh_from_db()
         assert queued_experiment.status == 'SUCCESS'
-        assert (queued_experiment.abs_path / 'results.omex').exists()
+        assert queued_experiment.archive_path.exists()
