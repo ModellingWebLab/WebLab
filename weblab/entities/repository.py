@@ -1,5 +1,7 @@
 import binascii
+import errno
 import os
+import stat
 from datetime import datetime
 from itertools import chain
 from pathlib import Path
@@ -44,7 +46,16 @@ class Repository:
         """
         Delete the repository
         """
-        rmtree(self._root)
+        rmtree(self._root, ignore_errors=False, onerror=self.handle_remove_readonly)
+
+    @staticmethod
+    def handle_remove_readonly(func, path, exc):
+        """
+        In Windows.os repo files are marked as read only
+        """
+        if exc[1].errno == errno.EACCES:
+            os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            func(path)
 
     @cached_property
     def _repo(self):

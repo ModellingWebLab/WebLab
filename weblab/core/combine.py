@@ -46,6 +46,9 @@ class ManifestWriter:
         :path: Path of target file
         :return: namespaced mime type if identified, empty string otherwise
         """
+        # make csv mapping explicit (in windows tests, defaults to excel)
+        mimetypes.add_type('text/csv', '.csv')
+
         fmt, _ = mimetypes.guess_type(path)
         return MIME_NS + fmt if fmt else ''
 

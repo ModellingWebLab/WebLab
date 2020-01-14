@@ -239,7 +239,6 @@ def admin_user():
         password='password',
     )
     yield user
-    user.clean_up_storage()
 
 
 @pytest.fixture
@@ -251,7 +250,6 @@ def user():
         password='password',
     )
     yield user
-    user.clean_up_storage()
 
 
 @pytest.fixture
@@ -263,7 +261,6 @@ def other_user():
         password='password',
     )
     yield user
-    user.clean_up_storage()
 
 
 @pytest.fixture
