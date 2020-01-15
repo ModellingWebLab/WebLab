@@ -1,4 +1,7 @@
+import urllib.parse
+
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.db import models
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
@@ -140,3 +143,49 @@ class FileCollectionMixin:
     def open_file(self, name):
         """Open the given file in the archive for reading."""
         return ArchiveReader(str(self.archive_path)).open_file(name)
+
+    def get_file_json(self, file_, ns, url_args):
+        """Get information about a file in JSON format for use by Javascript code.
+
+        :param core.combine.ArchiveFile file_: the file to provide info about
+        :param str ns: the app namespace to use for reversing download URLs
+        :param list url_args: initial argument(s) for reverse to identify the collection the file is in
+        :return: a dictionary of file metadata
+        """
+        return {
+            'id': file_.name,
+            'author': self.author.full_name,
+            'created': self.created_at,
+            'name': file_.name,
+            'filetype': file_.fmt,
+            'masterFile': file_.is_master,
+            'size': file_.size,
+            'url': reverse(
+                ns + ':file_download',
+                args=url_args + [urllib.parse.quote(file_.name)]
+            )
+        }
+
+    def get_json(self, ns, url_args):
+        """Get information about this collection in JSON format for use by Javascript code.
+
+        :param str ns: the app namespace to use for reversing download URLs
+        :param list url_args: initial argument(s) for reverse to identify this collection
+        :return: a dictionary of collection metadata, including info about each file
+        """
+        files = [
+            self.get_file_json(f, ns, url_args)
+            for f in self.files
+            if f.name not in ['manifest.xml', 'metadata.rdf']
+        ]
+        return {
+            'id': self.id,
+            'author': self.author.full_name,
+            'parsedOk': False,
+            'visibility': self.visibility,
+            'created': self.created_at,
+            'name': self.name,
+            'files': files,
+            'numFiles': len(files),
+            'download_url': reverse(ns + ':archive', args=url_args),
+        }

@@ -1,6 +1,5 @@
 import mimetypes
 import os.path
-import urllib
 from zipfile import ZipFile
 
 from braces.views import UserFormKwargsMixin
@@ -156,46 +155,12 @@ class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
     """
     model = Dataset
 
-    def _file_json(self, archive_file):
-        ns = self.request.resolver_match.namespace
-        dataset = self.object
-        return {
-            'id': archive_file.name,
-            'author': dataset.author.full_name,
-            'created': dataset.created_at,
-            'name': archive_file.name,
-            'filetype': archive_file.fmt,
-            'masterFile': archive_file.is_master,
-            'size': archive_file.size,
-            'url': reverse(
-                ns + ':file_download',
-                args=[dataset.id, urllib.parse.quote(archive_file.name)]
-            )
-        }
-
     def get(self, request, *args, **kwargs):
         ns = self.request.resolver_match.namespace
-        dataset = self.object = self.get_object()
-        files = [
-            self._file_json(f)
-            for f in dataset.files
-            if f.name not in ['manifest.xml', 'metadata.rdf']
-        ]
-
+        dataset = self.get_object()
+        url_args = [dataset.id]
         return JsonResponse({
-            'version': {
-                'id': dataset.id,
-                'author': dataset.author.full_name,
-                'parsedOk': False,
-                'visibility': dataset.visibility,
-                'created': dataset.created_at,
-                'name': dataset.name,
-                'files': files,
-                'numFiles': len(files),
-                'download_url': reverse(
-                    ns + ':archive', args=[dataset.id]
-                ),
-            }
+            'version': dataset.get_json(ns, url_args)
         })
 
 
