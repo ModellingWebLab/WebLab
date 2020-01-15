@@ -29,6 +29,7 @@ def populate_entity_cache(entity):
                 'message': commit.message,
                 'master_filename': commit.master_filename,
                 'author': commit.author.name,
+                'numfiles': len(commit.filenames),
                 'visibility': visibility or entity.DEFAULT_VISIBILITY,
             }
         )[0]
@@ -42,6 +43,10 @@ def populate_entity_cache(entity):
         if commit.author.name != version.author:
             version.author = commit.author.name
             version.save()
+        if len(commit.filenames) != version.numfiles:
+            version.numfiles = len(commit.filenames)
+            version.save()
+
         if visibility and visibility != version.visibility:
             version.visibility = visibility
             version.save()
