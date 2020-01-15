@@ -38,7 +38,7 @@ class TestPopulate:
         assert version2.master_filename == second_commit.master_filename == 'file1.txt'
         assert version2.author != version1.author
         assert version2.author == second_commit.author.name == 'another'
-        assert version2.numfiles == len(second_commit.filenames) == 2 # manifest.xml file has been added
+        assert version2.numfiles == len(second_commit.filenames) == 2  # manifest.xml file has been added
 
     def test_removes_old_versions(self):
         model = recipes.model.make()
