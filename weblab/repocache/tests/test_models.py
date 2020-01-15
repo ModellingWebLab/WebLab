@@ -108,4 +108,5 @@ class TestEntityCacheModelsVisibility:
         assert version.message == commit.message
         assert version.master_filename == commit.master_filename
         assert version.timestamp == commit.timestamp
+        assert version.author == commit.author.name
         assert version.visibility == 'public'
