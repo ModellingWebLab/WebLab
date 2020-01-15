@@ -81,6 +81,7 @@ class CachedEntity(models.Model):
             message=commit.message,
             master_filename=commit.master_filename,
             author=commit.author.name,
+            numfiles=len(commit.filenames),
             timestamp=commit.timestamp,
             visibility=visibility,
         )
@@ -102,6 +103,7 @@ class CachedEntityVersion(VisibilityModelMixin):
     master_filename = models.TextField(help_text='Master filename', default=None, null=True)
     # author is the committer of the version not the original author of the entity
     author = models.TextField(help_text='Author full name', default=' ')
+    numfiles = models.IntegerField(blank=True, null=True)
     parsed_ok = models.BooleanField(
         default=False,
         help_text='Whether this entity version has been verified as syntactically correct'

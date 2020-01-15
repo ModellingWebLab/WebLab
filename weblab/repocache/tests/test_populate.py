@@ -21,9 +21,9 @@ class TestPopulate:
         assert version1.timestamp == latest.timestamp
         assert version1.master_filename == latest.master_filename
         assert latest.master_filename is None
-
         assert version1.author != model_with_version.author.full_name
         assert version1.author == latest.author.name
+        assert version1.numfiles == len(latest.filenames) == 1
 
         assert cached.tags.get().tag == 'v1'
 
@@ -38,6 +38,7 @@ class TestPopulate:
         assert version2.master_filename == second_commit.master_filename == 'file1.txt'
         assert version2.author != version1.author
         assert version2.author == second_commit.author.name == 'another'
+        assert version2.numfiles == len(second_commit.filenames) == 2 # manifest.xml file has been added
 
     def test_removes_old_versions(self):
         model = recipes.model.make()
