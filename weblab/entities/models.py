@@ -305,7 +305,10 @@ class Entity(UserCreatedModelMixin, models.Model):
     def get_file_json(self, commit, file_, ns):
         """Get metadata for a single file within a commit suitable for sending as JSON.
 
-        :param commit: a `Commit` instance (TODO #191 a `CachedEntityVersion` instance)
+        TODO #191 consider how to replace Commit with CachedEntityVersion here. We'd need
+        to cache the list of file names and sizes.
+
+        :param commit: a `Commit` instance
         :param git.Blob file_: the file to get metadata for
         :param str ns: the app namespace to use for reversing download URLs
         :return: a dictionary of file metadata
