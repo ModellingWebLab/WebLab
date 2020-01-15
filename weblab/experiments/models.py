@@ -140,13 +140,18 @@ class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
     )
     return_text = models.TextField(blank=True)
 
-    def __str__(self):
-        return '%s at %s: (%s)' % (self.experiment, self.created_at, self.status)
-
     class Meta:
         indexes = [
             models.Index(fields=['created_at'])
         ]
+
+    def __str__(self):
+        return '%s at %s: (%s)' % (self.parent, self.created_at, self.status)
+
+    @property
+    def parent(self):
+        """E.g. the Experiment this is a version of. Must be defined by subclasses."""
+        raise NotImplementedError
 
     @property
     def name(self):
@@ -154,19 +159,19 @@ class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
 
     @property
     def run_number(self):
-        return self.experiment.versions.filter(created_at__lte=self.created_at).count()
+        return self.parent.versions.filter(created_at__lte=self.created_at).count()
 
     @property
     def is_latest(self):
-        return not self.experiment.versions.filter(created_at__gt=self.created_at).exists()
+        return not self.parent.versions.filter(created_at__gt=self.created_at).exists()
 
     @property
     def visibility(self):
-        return self.experiment.visibility
+        return self.parent.visibility
 
     @property
     def viewers(self):
-        return self.experiment.viewers
+        return self.parent.viewers
 
     @property
     def abs_path(self):

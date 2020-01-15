@@ -3,8 +3,6 @@ from django.db import models
 
 from core.models import VisibilityModelMixin
 from core.visibility import Visibility
-from entities.models import ModelEntity, ProtocolEntity
-from fitting.models import FittingSpec
 
 from .exceptions import RepoCacheMiss
 
@@ -211,7 +209,7 @@ def _set_class_links(entity_cache_type, version_cache_type, tag_cache_type):
 
 class CachedModel(CachedEntity):
     """Cache for a CellML model's repository."""
-    entity = models.OneToOneField(ModelEntity, on_delete=models.CASCADE, related_name='cachedmodel')
+    entity = models.OneToOneField('entities.ModelEntity', on_delete=models.CASCADE, related_name='cachedmodel')
 
 
 class CachedModelVersion(CachedEntityVersion):
@@ -230,7 +228,7 @@ _set_class_links(CachedModel, CachedModelVersion, CachedModelTag)
 
 class CachedProtocol(CachedEntity):
     """Cache for a protocol's repository."""
-    entity = models.OneToOneField(ProtocolEntity, on_delete=models.CASCADE, related_name='cachedprotocol')
+    entity = models.OneToOneField('entities.ProtocolEntity', on_delete=models.CASCADE, related_name='cachedprotocol')
 
 
 class CachedProtocolVersion(CachedEntityVersion):
@@ -249,7 +247,7 @@ _set_class_links(CachedProtocol, CachedProtocolVersion, CachedProtocolTag)
 
 class CachedFittingSpec(CachedEntity):
     """Cache for a fitting specifications's repository."""
-    entity = models.OneToOneField(FittingSpec, on_delete=models.CASCADE, related_name='cachedfittingspec')
+    entity = models.OneToOneField('fitting.FittingSpec', on_delete=models.CASCADE, related_name='cachedfittingspec')
 
 
 class CachedFittingSpecVersion(CachedEntityVersion):
