@@ -80,6 +80,7 @@ class CachedEntity(models.Model):
             sha=commit.sha,
             message=commit.message,
             master_filename=commit.master_filename,
+            author=commit.author.name,
             timestamp=commit.timestamp,
             visibility=visibility,
         )
@@ -99,6 +100,8 @@ class CachedEntityVersion(VisibilityModelMixin):
     timestamp = models.DateTimeField(help_text='When this commit was made')
     message = models.TextField(help_text='Git commit message', default=' ')
     master_filename = models.TextField(help_text='Master filename', default=None, null=True)
+    # author is the committer of the version not the original author of the entity
+    author = models.TextField(help_text='Author full name', default=' ')
     parsed_ok = models.BooleanField(
         default=False,
         help_text='Whether this entity version has been verified as syntactically correct'
