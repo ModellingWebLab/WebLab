@@ -27,12 +27,16 @@ def populate_entity_cache(entity):
             defaults={
                 'timestamp': commit.timestamp,
                 'message': commit.message,
+                'master_filename': commit.master_filename,
                 'visibility': visibility or entity.DEFAULT_VISIBILITY,
             }
         )[0]
         # Check if any updates are needed to an already-present cached version
         if commit.message != version.message:
             version.message = commit.message
+            version.save()
+        if commit.master_filename != version.master_filename:
+            version.master_filename = commit.master_filename
             version.save()
         if visibility and visibility != version.visibility:
             version.visibility = visibility

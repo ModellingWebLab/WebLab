@@ -1,27 +1,37 @@
 import pytest
 
+from accounts.models import User
 from core import recipes
 from repocache.populate import populate_entity_cache
 
 
 @pytest.mark.django_db
 class TestPopulate:
-    def test_populate(self, model_with_version):
+    def test_populate(self, model_with_version, helpers):
         model_with_version.repo.tag('v1')
+        populate_entity_cache(model_with_version)
+        cached = model_with_version.cachedentity
+        assert cached is not None
+
+        latest = model_with_version.repo.latest_commit
+        version1 = cached.versions.get()
+
+        assert version1.sha == latest.sha
+        assert version1.message == latest.message
+        assert version1.timestamp == latest.timestamp
+        assert version1.master_filename == latest.master_filename
+        assert latest.master_filename is None
+        assert cached.tags.get().tag == 'v1'
+
+        model_with_version.repo.generate_manifest(master_filename='file1.txt')
+        commit = model_with_version.repo.commit('second', User(full_name=latest.author.name, email=latest.author.email))
+        assert commit.master_filename == 'file1.txt'
 
         populate_entity_cache(model_with_version)
+        version2 = cached.latest_version
 
-        cached = model_with_version.cachedentity
-
-        assert cached is not None
-        latest = model_with_version.repo.latest_commit
-
-        version = cached.versions.get()
-        assert version.sha == latest.sha
-        assert version.message == latest.message
-        assert version.timestamp == latest.timestamp
-
-        assert cached.tags.get().tag == 'v1'
+        assert version2.sha == commit.sha
+        assert version2.master_filename == commit.master_filename == 'file1.txt'
 
     def test_removes_old_versions(self):
         model = recipes.model.make()
