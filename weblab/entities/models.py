@@ -3,10 +3,12 @@ import uuid
 from pathlib import Path
 
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.urlresolvers import reverse
 from django.core.validators import MinLengthValidator
 from django.db import models
 from guardian.shortcuts import get_objects_for_user
 
+from core.filetypes import get_file_type
 from core.models import UserCreatedModelMixin
 from core.visibility import HELP_TEXT as VIS_HELP_TEXT
 from core.visibility import Visibility, visibility_check
@@ -273,6 +275,53 @@ class Entity(UserCreatedModelMixin, models.Model):
         else:
             ok = self.repocache.get_version(version).parsed_ok
         return ok
+
+    def get_version_json(self, commit, ns):
+        """Get metadata for a particular version of this entity suitable for sending as JSON.
+
+        :param commit: a `Commit` instance (TODO #191 a `CachedEntityVersion` instance)
+        :param str ns: the app namespace to use for reversing download URLs
+        :return: a dictionary of version metadata, including file info
+        """
+        files = [
+            self.get_file_json(commit, f, ns)
+            for f in commit.files
+            if f.name not in ['manifest.xml', 'metadata.rdf']
+        ]
+        return {
+            'id': commit.sha,
+            'entityId': self.id,
+            'author': commit.author.name,
+            'parsedOk': self.is_parsed_ok(commit.sha),
+            'visibility': self.get_version_visibility(commit.sha, default=self.DEFAULT_VISIBILITY),
+            'created': commit.timestamp,
+            'name': self.name,
+            'version': self.repo.get_name_for_commit(commit.sha),  # TODO #191 use repocache instead
+            'files': files,
+            'commitMessage': commit.message,
+            'numFiles': len(files),
+        }
+
+    def get_file_json(self, commit, file_, ns):
+        """Get metadata for a single file within a commit suitable for sending as JSON.
+
+        :param commit: a `Commit` instance (TODO #191 a `CachedEntityVersion` instance)
+        :param git.Blob file_: the file to get metadata for
+        :param str ns: the app namespace to use for reversing download URLs
+        :return: a dictionary of file metadata
+        """
+        return {
+            'id': file_.name,
+            'name': file_.name,
+            'author': commit.author.name,
+            'created': commit.timestamp,
+            'filetype': get_file_type(file_.name),
+            'size': file_.size,
+            'url': reverse(
+                ns + ':file_download',
+                args=[self.url_type, self.id, commit.sha, file_.name]
+            ),
+        }
 
 
 class EntityManager(models.Manager):

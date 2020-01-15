@@ -37,7 +37,6 @@ from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
-from core.filetypes import get_file_type
 from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingSpec
@@ -197,23 +196,6 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
 
 
 class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
-    def _file_json(self, blob):
-        obj = self._get_object()
-        commit = self.get_commit()
-        ns = self.request.resolver_match.namespace
-
-        return {
-            'id': blob.name,
-            'name': blob.name,
-            'filetype': get_file_type(blob.name),
-            'size': blob.size,
-            'created': commit.timestamp,
-            'url': reverse(
-                ns + ':file_download',
-                args=[obj.url_type, obj.id, commit.sha, blob.name]
-            ),
-        }
-
     def _planned_experiments(self):
         obj = self._get_object()
         commit = self.get_commit()
@@ -229,41 +211,29 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
         commit = self.get_commit()
         ns = self.request.resolver_match.namespace
 
-        files = [
-            self._file_json(f)
-            for f in commit.files
-            if f.name not in ['manifest.xml', 'metadata.rdf']
-        ]
         if request.user.has_perm('experiments.create_experiment') and obj.entity_type in ('model', 'protocol'):
             planned_experiments = self._planned_experiments()
         else:
             planned_experiments = []
+
+        details = obj.get_version_json(commit, ns)
+        details.update({
+            'planned_experiments': planned_experiments,
+            'url': reverse(
+                ns + ':version',
+                args=[obj.url_type, obj.id, commit.sha]
+            ),
+            'download_url': reverse(
+                ns + ':entity_archive',
+                args=[obj.url_type, obj.id, commit.sha]
+            ),
+            'change_url': reverse(
+                ns + ':change_visibility',
+                args=[obj.url_type, obj.id, commit.sha]
+            ),
+        })
         return JsonResponse({
-            'version': {
-                'id': commit.sha,
-                'author': commit.author.name,
-                'entityId': obj.id,
-                'visibility': obj.get_version_visibility(commit.sha),
-                'created': commit.timestamp,
-                'name': obj.name,
-                'version': obj.repo.get_name_for_commit(commit.sha),
-                'parsedOk': obj.is_parsed_ok(commit.sha),
-                'files': files,
-                'numFiles': len(files),
-                'planned_experiments': planned_experiments,
-                'url': reverse(
-                    ns + ':version',
-                    args=[obj.url_type, obj.id, commit.sha]
-                ),
-                'download_url': reverse(
-                    ns + ':entity_archive',
-                    args=[obj.url_type, obj.id, commit.sha]
-                ),
-                'change_url': reverse(
-                    ns + ':change_visibility',
-                    args=[obj.url_type, obj.id, commit.sha]
-                ),
-            }
+            'version': details,
         })
 
 
@@ -325,55 +295,8 @@ class EntityComparisonJsonView(EntityTypeMixin, View):
     """
     Serve up JSON view of multiple entity versions for comparison
     """
-    def _file_json(self, entity, commit, blob):
-        """
-        JSON for a single file in a version of the entity
-
-        :param entity: Entity object
-        :param commit: `Commit` object
-        :param blob: `git.Blob` object
-        """
-        ns = self.request.resolver_match.namespace
-        return {
-            'id': blob.name,
-            'name': blob.name,
-            'author': entity.author.full_name,
-            'created': commit.timestamp,
-            'filetype': get_file_type(blob.name),
-            'size': blob.size,
-            'url': reverse(
-                ns + ':file_download',
-                args=[entity.url_type, entity.id, commit.sha, blob.name]
-            ),
-        }
-
-    def _version_json(self, entity, commit):
-        """
-        JSON for a single entity version
-
-        :param entity: Entity object
-        :param commit: `Commit` object
-        """
-        files = [
-            self._file_json(entity, commit, f)
-            for f in commit.files
-            if f.name not in ['manifest.xml', 'metadata.rdf']
-        ]
-        return {
-            'id': commit.sha,
-            'entityId': entity.id,
-            'author': entity.author.full_name,
-            'parsedOk': False,
-            'visibility': entity.get_version_visibility(commit.sha, default=entity.DEFAULT_VISIBILITY),
-            'created': commit.timestamp,
-            'name': entity.name,
-            'version': entity.repo.get_name_for_commit(commit.sha),
-            'files': files,
-            'commitMessage': commit.message,
-            'numFiles': len(files),
-        }
-
     def get(self, request, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
         json_entities = []
         for version in self.kwargs['versions'].strip('/').split('/'):
             id, sha = version.split(':')
@@ -381,7 +304,7 @@ class EntityComparisonJsonView(EntityTypeMixin, View):
                 entity = self.model.objects.get(pk=id)
                 if entity.is_version_visible_to_user(sha, request.user):
                     json_entities.append(
-                        self._version_json(entity, entity.repo.get_commit(sha))
+                        entity.get_version_json(entity.repo.get_commit(sha), ns)
                     )
             except (RepoCacheMiss, Entity.DoesNotExist):
                 pass
