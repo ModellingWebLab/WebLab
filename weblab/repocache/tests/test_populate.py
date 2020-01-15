@@ -19,7 +19,8 @@ class TestPopulate:
         assert version1.sha == latest.sha
         assert version1.message == latest.message
         assert version1.timestamp == latest.timestamp
-        assert version1.master_filename == latest.master_filename is None
+        assert version1.master_filename == latest.master_filename
+        assert latest.master_filename is None
         assert cached.tags.get().tag == 'v1'
 
         model_with_version.repo.generate_manifest(master_filename='file1.txt')
