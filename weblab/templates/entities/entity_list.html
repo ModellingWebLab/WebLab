@@ -7,6 +7,7 @@
 
   <a class="button {% if type == 'model' %}selected{% endif %}" href="{% url 'entities:list' 'model' %}">models</a>
   <a class="button {% if type == 'protocol' %}selected{% endif %}" href="{% url 'entities:list' 'protocol' %}">protocols</a>
+  <a class="button" href="{% url 'datasets:list' %}">datasets</a>
   <a class="button {% if entity_type == 'fittingspec' %}selected{% endif %}" href="{% url 'fitting:list' 'spec' %}">fitting specifications</a>
 
   <section id="{{ entity_type }}list">

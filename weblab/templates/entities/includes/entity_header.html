@@ -22,6 +22,9 @@
       </a>
     {% endif %}
     <br>
-
+    {% if entity.protocol %}
+      Linked protocol:
+      <a href="{% url 'entities:detail' 'protocol' entity.protocol.pk %}">{{ entity.protocol.name }}</a>
+    {% endif %}
   </small>
 </div>

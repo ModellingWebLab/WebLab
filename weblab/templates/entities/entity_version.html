@@ -18,14 +18,6 @@
        data-alter-file-href="{% entity_url 'alter_file' entity %}"
        data-get-proto-interfaces-href="{% url 'entities:get_protocol_interfaces' %}"
        data-version-json-href="{% entity_version_url 'version_json' entity version %}">
-    <div class="closebtn">
-      <small>
-        <a href="{% entity_url 'version_list' entity %}">list all versions</a>
-        {% if permission %}
-          | <a href="{% entity_url 'newversion' entity %}">add new version</a>
-        {% endif %}
-      </small>
-    </div>
 
     <h2 id="entityversionname">
       <small>Version:</small>
@@ -60,7 +52,10 @@
     </div>
 
     <div id="entity-view-buttons" class="link-list">
-      <a class="button selected" href="{% entity_version_url 'version' entity version %}" title="View files associated with this {{ type }}">Files</a>
+      <a class="button" href="{% entity_url 'version_list' entity %}" title="List all versions of this {{ type }}">List versions</a>
+      {% if permission %}
+        <a class="button" href="{% entity_url 'newversion' entity %}" title="Add new version of this {{ type }}">Add version</a>
+      {% endif %}
       <div class="button hover-menu" title="Compare... (hover to see options)">Compare&hellip;<ul>
         {% if type == 'model' or type == 'protocol' %}
         <li><a href="{{ entity|url_compare_experiments:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
