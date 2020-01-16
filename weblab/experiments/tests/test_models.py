@@ -1,3 +1,4 @@
+import os
 import shutil
 from datetime import date
 from pathlib import Path
@@ -132,11 +133,11 @@ class TestExperiment:
 class TestExperimentVersion:
     def test_abs_path(self, fake_experiment_path):
         version = recipes.experiment_version.make(id=2)
-        assert str(version.abs_path) == '%s/2' % fake_experiment_path
+        assert str(version.abs_path) == os.path.join(str(fake_experiment_path), '2')
 
     def test_archive_path(self, fake_experiment_path):
         version = recipes.experiment_version.make(id=2)
-        assert str(version.archive_path) == '%s/2/results.omex' % fake_experiment_path
+        assert str(version.archive_path) == os.path.join(str(fake_experiment_path), '2', 'results.omex')
 
     def test_signature(self):
         running = recipes.running_experiment.make()
