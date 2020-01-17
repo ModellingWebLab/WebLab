@@ -1323,11 +1323,11 @@ class TestExperimentVersionJsonView:
 class TestExperimentArchiveView:
     def test_download_archive(self, client, experiment_version, archive_file_path):
         experiment_version.mkdir()
-        shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
         experiment_version.experiment.model.name = 'my_model'
         experiment_version.experiment.model.save()
         experiment_version.experiment.protocol.name = 'my_protocol'
         experiment_version.experiment.protocol.save()
+        shutil.copyfile(archive_file_path, str(experiment_version.archive_path))
 
         response = client.get(
             '/experiments/%d/versions/%d/archive' %

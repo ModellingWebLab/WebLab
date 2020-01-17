@@ -4,8 +4,7 @@ from pathlib import Path
 from django.conf import settings
 from django.db import models
 
-from core.combine import ArchiveReader
-from core.models import UserCreatedModelMixin
+from core.models import FileCollectionMixin, UserCreatedModelMixin
 from core.visibility import Visibility, get_joint_visibility, visibility_check
 from entities.models import ModelEntity, ProtocolEntity
 
@@ -51,12 +50,13 @@ class Experiment(UserCreatedModelMixin, models.Model):
         :param model_version: Whether to include model version
         :param proto_version: Whether to include protocol version
         """
-        return '{0} / {1}'.format(
-            ('{0}@{1}' if model_version else '{0}').format(
-                self.model.name, self.nice_model_version),
-            ('{0}@{1}' if proto_version else '{0}').format(
-                self.protocol.name, self.nice_protocol_version),
-        )
+        model_part = self.model.name
+        if model_version:
+            model_part += '@' + self.nice_model_version
+        proto_part = self.protocol.name
+        if proto_version:
+            proto_part += '@' + self.nice_protocol_version
+        return '{0} / {1}'.format(model_part, proto_part)
 
     @property
     def visibility(self):
@@ -119,7 +119,7 @@ class Experiment(UserCreatedModelMixin, models.Model):
             return ''
 
 
-class ExperimentVersion(UserCreatedModelMixin, models.Model):
+class ExperimentVersion(UserCreatedModelMixin, FileCollectionMixin, models.Model):
     STATUS_QUEUED = "QUEUED"
     STATUS_RUNNING = "RUNNING"
     STATUS_SUCCESS = "SUCCESS"
@@ -177,13 +177,9 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
     def abs_path(self):
         return Path(settings.EXPERIMENT_BASE, str(self.id))
 
-    def mkdir(self):
-        """Create the folder for this version's results (and parents if needed)."""
-        self.abs_path.mkdir(exist_ok=True, parents=True)
-
     @property
-    def archive_path(self):
-        return self.abs_path / 'results.omex'
+    def archive_name(self):
+        return 'results.omex'
 
     @property
     def signature(self):
@@ -208,16 +204,6 @@ class ExperimentVersion(UserCreatedModelMixin, models.Model):
         self.status = status
         self.return_text = txt
         self.save()
-
-    @property
-    def files(self):
-        if self.archive_path.exists():
-            return ArchiveReader(str(self.archive_path)).files
-        else:
-            return []
-
-    def open_file(self, name):
-        return ArchiveReader(str(self.archive_path)).open_file(name)
 
 
 class RunningExperiment(models.Model):

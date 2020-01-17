@@ -615,12 +615,13 @@ class TestEntityComparisonJsonView:
         versions = data['getEntityInfos']['entities']
         assert versions[0]['id'] == v1.sha
         assert versions[1]['id'] == v2.sha
-        assert versions[0]['author'] == model.author.full_name
+        assert versions[0]['author'] == v1.author.name
         assert versions[0]['visibility'] == 'public'
         assert versions[0]['name'] == model.name
         assert versions[0]['version'] == v1.sha
         assert versions[0]['numFiles'] == 1
         assert versions[0]['commitMessage'] == v1.message
+        assert versions[0]['url'] == '/entities/models/%d/versions/%s' % (model.pk, v1.sha)
 
     def test_cannot_compare_entities_with_no_access(self, client, helpers):
         model = recipes.model.make()
@@ -676,7 +677,7 @@ class TestEntityComparisonJsonView:
         file_ = versions[0]['files'][0]
         assert file_['id'] == filename
         assert file_['name'] == filename
-        assert file_['author'] == model.author.full_name
+        assert file_['author'] == v1.author.name
         assert file_['filetype'] == 'TXTPROTOCOL'
         assert file_['size'] == 15
         assert file_['url'] == (

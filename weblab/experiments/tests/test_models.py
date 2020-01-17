@@ -137,7 +137,7 @@ class TestExperimentVersion:
 
     def test_archive_path(self, fake_experiment_path):
         version = recipes.experiment_version.make(id=2)
-        assert str(version.archive_path) == os.path.join(str(fake_experiment_path), '2', 'results.omex')
+        assert str(version.archive_path) == os.path.join(str(fake_experiment_path), '2', version.archive_name)
 
     def test_signature(self):
         running = recipes.running_experiment.make()

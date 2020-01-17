@@ -1,6 +1,5 @@
 import mimetypes
 import os.path
-import urllib
 from zipfile import ZipFile
 
 from braces.views import UserFormKwargsMixin
@@ -17,7 +16,6 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
-from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
@@ -44,27 +42,6 @@ class DatasetCreateView(
 
     def get_success_url(self):
         return reverse('datasets:addfiles', args=[self.object.pk])
-
-
-class DatasetListView(LoginRequiredMixin, ListView):
-    """
-    List all user's datasets
-    """
-    model = Dataset
-    template_name = 'datasets/dataset_list.html'
-
-    def get_queryset(self):
-        return Dataset.objects.filter(author=self.request.user)
-
-
-class DatasetView(VisibilityMixin, DetailView):
-    """
-    View a Dataset
-
-    """
-    model = Dataset
-    context_object_name = 'dataset'
-    template_name = 'datasets/dataset_detail.html'
 
 
 class DatasetAddFilesView(
@@ -151,50 +128,39 @@ class DatasetFileUploadView(View):
             return HttpResponseBadRequest(form.errors)
 
 
+class DatasetListView(LoginRequiredMixin, ListView):
+    """
+    List all user's datasets
+    """
+    model = Dataset
+    template_name = 'datasets/dataset_list.html'
+
+    def get_queryset(self):
+        return self.model.objects.filter(author=self.request.user)
+
+
+class DatasetView(VisibilityMixin, DetailView):
+    """
+    View a Dataset
+
+    """
+    model = Dataset
+    context_object_name = 'dataset'
+    template_name = 'datasets/dataset_detail.html'
+
+
 class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
     """
     Serve up json view of files in a dataset
     """
     model = Dataset
 
-    def _file_json(self, archive_file):
-        dataset = self.object
-        return {
-            'id': archive_file.name,
-            'author': dataset.author.full_name,
-            'created': dataset.created_at,
-            'name': archive_file.name,
-            'filetype': archive_file.fmt,
-            'masterFile': archive_file.is_master,
-            'size': archive_file.size,
-            'url': reverse(
-                'datasets:file_download',
-                args=[dataset.id, urllib.parse.quote(archive_file.name)]
-            )
-        }
-
     def get(self, request, *args, **kwargs):
-        dataset = self.object = self.get_object()
-        files = [
-            self._file_json(f)
-            for f in dataset.files
-            if f.name not in ['manifest.xml', 'metadata.rdf']
-        ]
-
+        ns = self.request.resolver_match.namespace
+        dataset = self.get_object()
+        url_args = [dataset.id]
         return JsonResponse({
-            'version': {
-                'id': dataset.id,
-                'author': dataset.author.full_name,
-                'parsedOk': False,
-                'visibility': dataset.visibility,
-                'created': dataset.created_at,
-                'name': dataset.name,
-                'files': files,
-                'numFiles': len(files),
-                'download_url': reverse(
-                    'datasets:archive', args=[dataset.id]
-                ),
-            }
+            'version': dataset.get_json(ns, url_args)
         })
 
 
@@ -229,6 +195,9 @@ class DatasetArchiveView(VisibilityMixin, SingleObjectMixin, View):
     """
     model = Dataset
 
+    def get_archive_name(self, dataset):
+        return dataset.archive_name
+
     def get(self, request, *args, **kwargs):
         dataset = self.get_object()
         path = dataset.archive_path
@@ -236,9 +205,7 @@ class DatasetArchiveView(VisibilityMixin, SingleObjectMixin, View):
         if not path.exists():
             raise Http404
 
-        zipfile_name = os.path.join(
-            get_valid_filename('%s.zip' % dataset.name)
-        )
+        zipfile_name = self.get_archive_name(dataset)
 
         with path.open('rb') as archive:
             response = HttpResponse(content_type='application/zip')
@@ -261,4 +228,5 @@ class DatasetDeleteView(UserPassesTestMixin, DeleteView):
         return self.get_object().is_deletable_by(self.request.user)
 
     def get_success_url(self, *args, **kwargs):
-        return reverse('datasets:list')
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':list')
