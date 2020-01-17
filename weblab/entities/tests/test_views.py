@@ -621,6 +621,7 @@ class TestEntityComparisonJsonView:
         assert versions[0]['version'] == v1.sha
         assert versions[0]['numFiles'] == 1
         assert versions[0]['commitMessage'] == v1.message
+        assert versions[0]['url'] == '/entities/models/%d/versions/%s' % (model.pk, v1.sha)
 
     def test_cannot_compare_entities_with_no_access(self, client, helpers):
         model = recipes.model.make()

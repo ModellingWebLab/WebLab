@@ -300,6 +300,10 @@ class Entity(UserCreatedModelMixin, models.Model):
             'files': files,
             'commitMessage': commit.message,
             'numFiles': len(files),
+            'url': reverse(
+                ns + ':version',
+                args=[self.url_type, self.id, commit.sha]
+            ),
         }
 
     def get_file_json(self, commit, file_, ns):
