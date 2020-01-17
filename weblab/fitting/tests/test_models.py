@@ -66,10 +66,10 @@ def test_permissions():
 class TestRepository:
     def test_repo_path_create_and_delete(self, fake_repo_path):
         spec = recipes.fittingspec.make()
-        path = '%s/%d/fittingspecs/%d' % (fake_repo_path, spec.author.pk, spec.pk)
+        path = fake_repo_path / str(spec.author.pk) / 'fittingspecs' / str(spec.pk)
 
-        assert spec.repo._root == path
-        assert str(spec.repo_abs_path) == path
+        assert spec.repo._root == str(path)
+        assert spec.repo_abs_path == path
 
     def test_repo_is_deleted(self):
         spec = recipes.fittingspec.make()
