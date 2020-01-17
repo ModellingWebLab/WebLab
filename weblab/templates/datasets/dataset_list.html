@@ -5,6 +5,11 @@
 
 {% block content %}
 
+  <a class="button" href="{% url 'entities:list' 'model' %}">models</a>
+  <a class="button" href="{% url 'entities:list' 'protocol' %}">protocols</a>
+  <a class="button selected" href="{% url 'datasets:list' %}">datasets</a>
+  <a class="button" href="{% url 'fitting:list' 'spec' %}">fitting specifications</a>
+
   <section id="datasetlist">
     <h2>Your datasets</h2>
 

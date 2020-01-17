@@ -40,6 +40,46 @@ def test_deletion_permissions():
 
 
 @pytest.mark.django_db
+def test_visibility_and_sharing(user, other_user, admin_user, helpers):
+    """Checks the EntityManager visible_to_user and shared_with_user methods."""
+    # Own entities -> always visible
+    own_models = recipes.model.make(author=user, _quantity=3)
+    helpers.add_fake_version(own_models[0], 'moderated')
+    helpers.add_fake_version(own_models[1], 'public')
+    helpers.add_fake_version(own_models[2], 'private')
+    # Other entity type shouldn't show up
+    own_protocol = recipes.protocol.make(author=user)
+    helpers.add_fake_version(own_protocol, 'moderated')
+    # Non-shared public/moderated entities -> visible
+    other_public_models = recipes.model.make(author=other_user, _quantity=2)
+    helpers.add_fake_version(other_public_models[0], 'moderated')
+    helpers.add_fake_version(other_public_models[1], 'public')
+    # Non-shared private entities -> not visible
+    other_private_model = recipes.model.make(author=other_user)
+    helpers.add_fake_version(other_private_model, 'private')
+    # Shared public or private entities -> visible
+    other_shared_model = recipes.model.make(author=other_user)
+    helpers.add_fake_version(other_private_model, 'private')
+    other_shared_model.add_collaborator(user)
+    other_shared_protocol = recipes.protocol.make(author=other_user)
+    helpers.add_fake_version(other_shared_protocol, 'private')
+    other_shared_protocol.add_collaborator(user)
+
+    # Getting shared entities just shows those shared explicitly, of the correct type
+    assert list(ModelEntity.objects.shared_with_user(user).all()) == [other_shared_model]
+
+    # Check visible entities are correct
+    visible_models = ModelEntity.objects.visible_to_user(user).all()
+    assert visible_models.count() == 6
+    assert set(visible_models) == set(own_models + other_public_models + [other_shared_model])
+
+    # Admins don't get special visibility rights, so only see public entities
+    visible_to_admin = ModelEntity.objects.visible_to_user(admin_user).all()
+    assert visible_to_admin.count() == 4
+    assert set(visible_to_admin) == set(own_models[:2] + other_public_models)
+
+
+@pytest.mark.django_db
 class TestEntity:
     def test_str(self):
         model = recipes.model.make(name='test model')

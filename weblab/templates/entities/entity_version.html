@@ -15,17 +15,9 @@
 
   <div id="entityversion" data-entity-type="{{ entity.entity_type }}"
        data-can-edit="{% if permission %}true{% else %}false{% endif %}"
-       data-alter-file-href="{% url 'entities:alter_file' entity.entity_type entity.id %}"
+       data-alter-file-href="{% entity_url 'alter_file' entity %}"
        data-get-proto-interfaces-href="{% url 'entities:get_protocol_interfaces' %}"
-       data-version-json-href="{{ entity|url_version_json:version }}">
-    <div class="closebtn">
-      <small>
-        <a href="{{ entity|url_versions }}">list all versions</a>
-        {% if permission %}
-          | <a href="{{ entity|url_newversion }}">add new version</a>
-        {% endif %}
-      </small>
-    </div>
+       data-version-json-href="{% entity_version_url 'version_json' entity version %}">
 
     <h2 id="entityversionname">
       <small>Version:</small>
@@ -36,9 +28,9 @@
       <small>
         Created <time id="entityversiontime">{{ version.timestamp }}</time>
         by <em id="entityversionauthor">{{ version.author }}</em>.
-        <div id="versionVisibility" data-change-href="{{ entity|url_change_version_visibility:version }}">
+        <div id="versionVisibility" data-change-href="{% entity_version_url 'change_visibility' entity version %}">
           {% if permission %}
-            <a href="{{ entity|url_tag_version:version }}">Add tag</a>.
+            <a href="{% tag_version_url entity version %}">Add tag</a>.
             <form method="POST" action="" style="display: inline;">
               Change visibility: {{ form.visibility }}
               <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
@@ -48,23 +40,28 @@
             Visibility: {{ visibility }}
             <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
           {% endif %}
-          {% if perms.experiments.create_experiment %}
+          {% if perms.experiments.create_experiment %}{% if type == 'model' or type == 'protocol' %}
             Run experiments:
             <a title="Run experiments" href="{{ entity|url_run_experiments:version }}">
               <img src="{% static 'img/batch.png' %}" alt="Run experiments:"
-                   title="Run experiments using this {{ entity.entity_type }}"/>
+                   title="Run experiments using this {{ type }}"/>
             </a>
-          {% endif %}
+          {% endif %}{% endif %}
         </div>
       </small>
     </div>
 
     <div id="entity-view-buttons" class="link-list">
-      <a class="button selected" href="{{ entity|url_version:version }}" title="View files associated with this {{ entity.entity_type }}">Files</a>
+      <a class="button" href="{% entity_url 'version_list' entity %}" title="List all versions of this {{ type }}">List versions</a>
+      {% if permission %}
+        <a class="button" href="{% entity_url 'newversion' entity %}" title="Add new version of this {{ type }}">Add version</a>
+      {% endif %}
       <div class="button hover-menu" title="Compare... (hover to see options)">Compare&hellip;<ul>
+        {% if type == 'model' or type == 'protocol' %}
         <li><a href="{{ entity|url_compare_experiments:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
         <li><a href="{{ entity|url_version_comparison_matrix }}" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>
-        <!--li><a href="" title="Show differences between versions of this {{ type }}">Other versions</a></li-->
+        {% endif %}
+        <li><a href="{% entity_url 'version_list' entity %}" title="Show differences between versions of this {{ type }}">Other versions</a></li>
       </ul></div>
       <!--
       {% if type == 'model' %}

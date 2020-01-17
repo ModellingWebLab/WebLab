@@ -10,7 +10,7 @@
 
   {% can_create_version entity as permission %}
   {% if permission %}
-  <a href="{{ entity|url_newversion }}" class="button">Add new version</a>
+  <a href="{% entity_url 'newversion' entity %}" class="button">Add new version</a>
   {% endif %}
 
   <div id="entityversionlist">
@@ -21,7 +21,7 @@
         <p>
           <input class="comparisonCheckBox" type="checkbox" value="{{ entity.id }}:{{ commit.sha }}">
           <strong>
-            <a class="entityversionlink" href="{{ entity|url_version:commit }}">
+            <a class="entityversionlink" href="{% entity_version_url 'version' entity commit %}">
               {% include "./includes/version_name.html" with tags=tags version=commit only %}
             </a>
           </strong>
@@ -44,7 +44,7 @@
         [<small><a id="compareVersionsSelectorsAll">select all</a></small>]
         [<small><a id="compareVersionsSelectorsNone">select none</a></small>]
     </div>
-    <button id="compareVersions" data-base-href="{% url_entity_comparison_base entity.entity_type %}">compare selected versions</button>
+    <button id="compareVersions" data-base-href="{% url_entity_comparison_base entity.url_type %}">compare selected versions</button>
   </div>
 
 

@@ -37,7 +37,7 @@
         <td class="action">
           {% can_create_version entity as permission %}
           {% if permission %}
-            <a class="delete-file" href="{{ entity|url_newversion }}?deletefile={{ file.name }}" title="delete this file"><img src="{% static 'img/delete.png' %}" alt="delete this file" title="delete this file"/></a>
+            <a class="delete-file" href="{% entity_url 'newversion' entity %}?deletefile={{ file.name }}" title="delete this file"><img src="{% static 'img/delete.png' %}" alt="delete this file" title="delete this file"/></a>
           {% endif %}
         </td>
       </tr>

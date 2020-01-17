@@ -602,10 +602,12 @@ function parseUrl (event)
       basicurl = parts.slice(0, i+2).join('/') + '/';
       entityType = 'experiment';
       entityIds = parts.slice(i+2);
-    } else if ((parts[i] == 'models' || parts[i] == 'protocols') && parts[i+1] == 'compare') {
+      break;
+    } else if (parts[i+1] == 'compare') {
       basicurl = parts.slice(0, i+2).join('/') + '/';
       entityType = parts[i].slice(0, parts[i].length-1);
       entityIds = parts.slice(i+2);
+      break;
     }
 	}
 	

@@ -19,15 +19,28 @@ VISIBILITY_NOTE_PREFIX = 'Visibility: '
 
 
 class Entity(UserCreatedModelMixin, models.Model):
+    """
+    Base class for 'entities' - conceptual entities backed by git repositories.
+
+    Subclasses describe (CellML) models, protocols, and fitting specifications.
+
+    The entity_type column states which concrete type each DB row represents, and is fixed by each subclass.
+    In addition, other class properties defined in subclasses refer to these types in helpful ways:
+    - ``other_type`` refers to the other axis on a models vs protocols matrix
+    - ``display_type`` is used to display the type of the entity to users in templates
+    - ``url_type`` is used as a URL fragment to refer to this entity type
+    """
     DEFAULT_VISIBILITY = Visibility.PRIVATE
 
     VISIBILITY_HELP = VIS_HELP_TEXT
 
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
+    ENTITY_TYPE_FITTINGSPEC = 'fittingspec'
     ENTITY_TYPE_CHOICES = (
         (ENTITY_TYPE_MODEL, ENTITY_TYPE_MODEL),
         (ENTITY_TYPE_PROTOCOL, ENTITY_TYPE_PROTOCOL),
+        (ENTITY_TYPE_FITTINGSPEC, ENTITY_TYPE_FITTINGSPEC),
     )
 
     entity_type = models.CharField(
@@ -48,6 +61,7 @@ class Entity(UserCreatedModelMixin, models.Model):
         permissions = (
             ('create_model', 'Can create models'),
             ('create_protocol', 'Can create protocols'),
+            ('create_fittingspec', 'Can create fitting specifications'),
             # Edit entity is used as an object-level permission
             ('edit_entity', 'Can edit entity'),
             ('moderator', 'Can promote public entity versions to moderated'),
@@ -269,11 +283,36 @@ class EntityManager(models.Manager):
         kwargs['entity_type'] = self.model.entity_type
         return super().create(**kwargs)
 
+    def visible_to_user(self, user):
+        """Query over all managed entities that the given user can view.
+
+        This includes those entities of the managed ``entity_type`` for which either:
+        - the user is the author
+        - the entity has at least one non-private version
+        - or the entity is explicitly shared with the user
+        """
+        from repocache.models import CACHED_VERSION_TYPE_MAP
+        CachedEntityVersion = CACHED_VERSION_TYPE_MAP[self.model.entity_type]
+        non_private = self.annotate(
+            non_private=models.Exists(
+                CachedEntityVersion.objects.filter(
+                    entity__entity=models.OuterRef('pk'),
+                    visibility__in=['public', 'moderated'],
+                )
+            )
+        ).filter(
+            non_private=True,
+        )
+        owned = self.filter(author=user)
+        shared = self.shared_with_user(user)
+        return owned | non_private | shared
+
     def shared_with_user(self, user):
         """Query over all managed entities shared explicitly with the given user."""
         if user.is_authenticated:
-            return get_objects_for_user(user, 'entities.edit_entity', with_superuser=False).filter(
-                entity_type=self.model.entity_type)
+            shared_pks = get_objects_for_user(
+                user, 'entities.edit_entity', with_superuser=False).values_list('pk', flat=True)
+            return self.get_queryset().filter(pk__in=shared_pks)
         else:
             return self.none()
 
@@ -281,6 +320,8 @@ class EntityManager(models.Manager):
 class ModelEntity(Entity):
     entity_type = Entity.ENTITY_TYPE_MODEL
     other_type = Entity.ENTITY_TYPE_PROTOCOL
+    display_type = 'model'
+    url_type = 'model'
 
     objects = EntityManager()
 
@@ -292,6 +333,8 @@ class ModelEntity(Entity):
 class ProtocolEntity(Entity):
     entity_type = Entity.ENTITY_TYPE_PROTOCOL
     other_type = Entity.ENTITY_TYPE_MODEL
+    display_type = 'protocol'
+    url_type = 'protocol'
 
     objects = EntityManager()
 

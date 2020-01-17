@@ -5,16 +5,17 @@
 
 {% block content %}
 
-  <a class="button {% if type == 'model' %}selected{% endif %}" href="{% url "entities:list" 'model' %}" id="modelchooser">models</a>
-  <a class="button {% if type == 'protocol' %}selected{% endif %}" href="{% url "entities:list" 'protocol' %}" id="protocolchooser">protocols</a>
-  <a class="button {% if type == 'experiment' %}selected{% endif %}" href="{% url "experiments:list" 'mine' %}" id="experimentchooser">experiments</a>
+  <a class="button {% if type == 'model' %}selected{% endif %}" href="{% url 'entities:list' 'model' %}">models</a>
+  <a class="button {% if type == 'protocol' %}selected{% endif %}" href="{% url 'entities:list' 'protocol' %}">protocols</a>
+  <a class="button" href="{% url 'datasets:list' %}">datasets</a>
+  <a class="button {% if entity_type == 'fittingspec' %}selected{% endif %}" href="{% url 'fitting:list' 'spec' %}">fitting specifications</a>
 
-  <section id="{{ type }}list">
+  <section id="{{ entity_type }}list">
     <h2>Your {{ type }}s</h2>
 
-    {% can_create_entity type as permission %}
+    {% can_create_entity entity_type as permission %}
     {% if permission %}
-    <small><a href="{{ type|url_new }}" id="add{{ type }}link" class="pointer">Create a new {{ type }}</a></small>
+    <small><a href="{% ns_url 'new' url_type %}" class="pointer">Create a new {{ type }}</a></small>
     {% else %}
     <small>Your account doesn't have the authority to upload {{ type }}s; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
     {% endif %}
@@ -22,11 +23,11 @@
     <ul>
       {% for entity in object_list %}
         <li title="{{ entity.name }}">
-          <strong><a href="{{ entity|url_entity }}">{{ entity.name }}</a></strong>
+          <strong><a href="{% entity_url 'detail' entity %}">{{ entity.name }}</a></strong>
 
           {% can_create_version entity as permission %}
           {% if permission %}
-          <small>(<a href="{{ entity|url_newversion }}">add new version</a>)</small>
+          <small>(<a href="{% entity_url 'newversion' entity %}">add new version</a>)</small>
           {% endif %}
         </li>
       {% endfor %}

@@ -37,6 +37,7 @@ class MyAccountView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         perms = {
+            'entities.create_fittingspec',
             'entities.create_protocol',
             'entities.create_model',
         }

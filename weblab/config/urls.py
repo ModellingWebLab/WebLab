@@ -32,5 +32,6 @@ urlpatterns = [
     url(r'^entities/', include('entities.urls', namespace='entities')),
     url(r'^datasets/', include('datasets.urls', namespace='datasets')),
     url(r'^experiments/', include('experiments.urls', namespace='experiments')),
+    url(r'^fitting/', include('fitting.urls', namespace='fitting')),
     url(r'^admin/', admin.site.urls),
 ]

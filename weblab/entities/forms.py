@@ -15,7 +15,7 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
         name = self.cleaned_data['name']
         if self._meta.model.objects.filter(name=name).exists():
             raise ValidationError(
-                'You already have a %s named "%s"' % (self.entity_type, name))
+                'You already have a %s named "%s"' % (self._meta.model.display_type, name))
 
         return name
 
@@ -69,7 +69,9 @@ class EntityVersionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         entity_type = kwargs.pop('entity_type')
         super().__init__(*args, **kwargs)
-        self.fields['rerun_expts'].label = self.fields['rerun_expts'].label % entity_type
+        rerun_field = self.fields.get('rerun_expts', None)
+        if rerun_field:
+            rerun_field.label = rerun_field.label % entity_type
 
 
 class EntityChangeVisibilityForm(UserKwargModelFormMixin, forms.Form):

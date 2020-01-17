@@ -35,27 +35,29 @@ def test_file_type():
 def test_model_urls(model_with_version):
     model = model_with_version
     model_version = model.repo.latest_commit
+    context = {'current_namespace': 'entities'}
 
-    assert entity_tags.url_new('model') == '/entities/models/new'
-    assert entity_tags.url_entity(model) == '/entities/models/%d' % model.pk
-    assert entity_tags.url_delete(model) == '/entities/models/%d/delete' % model.pk
-    assert entity_tags.url_versions(model) == '/entities/models/%d/versions/' % model.pk
-    assert entity_tags.url_newversion(model) == '/entities/models/%d/versions/new' % model.pk
-    assert (entity_tags.url_version(model, model_version) ==
+    assert entity_tags.ns_url(context, 'new', 'model') == '/entities/models/new'
+    assert entity_tags.entity_url(context, 'detail', model) == '/entities/models/%d' % model.pk
+    assert entity_tags.entity_url(context, 'delete', model) == '/entities/models/%d/delete' % model.pk
+    assert entity_tags.entity_url(context, 'version_list', model) == '/entities/models/%d/versions/' % model.pk
+    assert entity_tags.entity_url(context, 'newversion', model) == '/entities/models/%d/versions/new' % model.pk
+    assert (entity_tags.entity_version_url(context, 'version', model, model_version) ==
             '/entities/models/%d/versions/%s' % (model.pk, model_version.sha))
-    assert (entity_tags.url_version_json(model, model_version) ==
+    assert (entity_tags.entity_version_url(context, 'version_json', model, model_version) ==
             '/entities/models/%d/versions/%s/files.json' % (model.pk, model_version.sha))
     assert (entity_tags.url_compare_experiments(model, model_version) ==
             '/entities/models/%d/versions/%s/compare' % (model.pk, model_version.sha))
 
-    assert (entity_tags.url_change_version_visibility(model, model_version) ==
+    assert (entity_tags.entity_version_url(context, 'change_visibility', model, model_version) ==
             '/entities/models/%d/versions/%s/visibility' % (model.pk, model_version.sha))
-    assert (entity_tags.url_tag_version(model, model_version) ==
+    assert (entity_tags.tag_version_url(context, model, model_version) ==
             '/entities/tag/%d/%s' % (model.pk, model_version.sha))
-    assert entity_tags.url_entity_comparison_base('model') == '/entities/models/compare'
-    assert entity_tags.url_entity_diff_base('model') == '/entities/models/diff'
 
-    assert (entity_tags.url_entity_comparison_json(['%d:%s' % (model.pk, model_version.sha)], 'model') ==
+    assert entity_tags.url_entity_comparison_base(context, 'model') == '/entities/models/compare'
+    assert entity_tags.url_entity_diff_base(context, 'model') == '/entities/models/diff'
+
+    assert (entity_tags.entity_comparison_json_url(context, ['%d:%s' % (model.pk, model_version.sha)], 'model') ==
             '/entities/models/compare/%d:%s/info' % (model.pk, model_version.sha))
 
 
@@ -63,29 +65,32 @@ def test_model_urls(model_with_version):
 def test_protocol_urls(protocol_with_version):
     protocol = protocol_with_version
     protocol_version = protocol.repo.latest_commit
+    context = {'current_namespace': 'entities'}
 
-    assert entity_tags.url_new('protocol') == '/entities/protocols/new'
-    assert entity_tags.url_entity(protocol) == '/entities/protocols/%d' % protocol.pk
-    assert entity_tags.url_delete(protocol) == '/entities/protocols/%d/delete' % protocol.pk
-    assert entity_tags.url_versions(protocol) == '/entities/protocols/%d/versions/' % protocol.pk
-    assert (entity_tags.url_newversion(protocol) ==
+    assert entity_tags.ns_url(context, 'new', 'protocol') == '/entities/protocols/new'
+    assert entity_tags.entity_url(context, 'detail', protocol) == '/entities/protocols/%d' % protocol.pk
+    assert entity_tags.entity_url(context, 'delete', protocol) == '/entities/protocols/%d/delete' % protocol.pk
+    assert entity_tags.entity_url(context, 'version_list', protocol) == '/entities/protocols/%d/versions/' % protocol.pk
+    assert (entity_tags.entity_url(context, 'newversion', protocol) ==
             '/entities/protocols/%d/versions/new' % protocol.pk)
-    assert (entity_tags.url_version(protocol, protocol_version) ==
+    assert (entity_tags.entity_version_url(context, 'version', protocol, protocol_version) ==
             '/entities/protocols/%d/versions/%s' % (protocol.pk, protocol_version.sha))
-    assert (entity_tags.url_version_json(protocol, protocol_version) ==
+    assert (entity_tags.entity_version_url(context, 'version_json', protocol, protocol_version) ==
             '/entities/protocols/%d/versions/%s/files.json' %
             (protocol.pk, protocol_version.sha))
     assert (entity_tags.url_compare_experiments(protocol, protocol_version) ==
             '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, protocol_version.sha))
-    assert (entity_tags.url_change_version_visibility(protocol, protocol_version) ==
+    assert (entity_tags.entity_version_url(context, 'change_visibility', protocol, protocol_version) ==
             '/entities/protocols/%d/versions/%s/visibility' % (protocol.pk, protocol_version.sha))
-    assert (entity_tags.url_tag_version(protocol, protocol_version) ==
+    assert (entity_tags.tag_version_url(context, protocol, protocol_version) ==
             '/entities/tag/%d/%s' % (protocol.pk, protocol_version.sha))
 
-    assert entity_tags.url_entity_comparison_base('protocol') == '/entities/protocols/compare'
-    assert entity_tags.url_entity_diff_base('protocol') == '/entities/protocols/diff'
+    assert entity_tags.url_entity_comparison_base(context, 'protocol') == '/entities/protocols/compare'
+    assert entity_tags.url_entity_diff_base(context, 'protocol') == '/entities/protocols/diff'
 
-    assert (entity_tags.url_entity_comparison_json(['%d:%s' % (protocol.pk, protocol_version.sha)], 'protocol') ==
+    assert (entity_tags.entity_comparison_json_url(context,
+                                                   ['%d:%s' % (protocol.pk, protocol_version.sha)],
+                                                   'protocol') ==
             '/entities/protocols/compare/%d:%s/info' % (protocol.pk, protocol_version.sha))
 
 
