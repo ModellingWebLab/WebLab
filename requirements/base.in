@@ -1,4 +1,4 @@
-Django==1.11.23
+Django==1.11.27
 
 # Database
 psycopg2==2.7.3
