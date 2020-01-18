@@ -2,6 +2,7 @@ import io
 import json
 import uuid
 import zipfile
+from datetime import timedelta
 from io import BytesIO
 from subprocess import SubprocessError
 from unittest.mock import patch
@@ -440,19 +441,37 @@ class TestGetProtocolInterfacesJsonView:
 
 @pytest.mark.django_db
 class TestModelEntityCompareExperimentsView:
-    def test_shows_related_experiments(self, client, experiment_version):
+    def test_shows_related_experiments(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         sha = exp.model.repo.latest_commit.sha
         recipes.experiment_version.make()  # another experiment which should not be included
         exp.model.set_version_visibility('latest', 'public')
         exp.protocol.set_version_visibility('latest', 'public')
 
+        # Add an experiment with a newer version of the protocol but that was created earlier
+        exp2 = recipes.experiment_version.make(
+            experiment__protocol=exp.protocol,
+            experiment__protocol_version=helpers.add_version(exp.protocol, visibility='public').sha,
+            experiment__model=exp.model,
+            experiment__model_version=sha,
+        ).experiment
+        exp2.created_at = exp.created_at - timedelta(seconds=10)
+        exp2.save()
+
+        # Add an experiment with a newer version of the protocol and that was created later
+        exp3 = recipes.experiment_version.make(
+            experiment__protocol=exp.protocol,
+            experiment__protocol_version=helpers.add_version(exp.protocol, visibility='public').sha,
+            experiment__model=exp.model,
+            experiment__model_version=sha,
+        ).experiment
+
         response = client.get(
             '/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha)
         )
 
         assert response.status_code == 200
-        assert response.context['comparisons'] == [(exp.protocol, [exp])]
+        assert response.context['comparisons'] == [(exp.protocol, [exp3, exp2, exp])]
 
     def test_applies_visibility(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
