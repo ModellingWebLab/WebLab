@@ -2,6 +2,7 @@ import pytest
 
 import entities.templatetags.entities as entity_tags
 from core import recipes
+from repocache.populate import populate_entity_cache
 
 
 def test_human_readable_bytes():
@@ -98,6 +99,8 @@ def test_protocol_urls(protocol_with_version):
 def test_name_of_entity_linked_to_experiment(model_with_version, protocol_with_version):
     model_with_version.repo.tag('v1')
     protocol_with_version.repo.tag('v2')
+    populate_entity_cache(model_with_version)
+    populate_entity_cache(protocol_with_version)
 
     exp = recipes.experiment_version.make(
         status='SUCCESS',

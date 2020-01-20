@@ -116,14 +116,14 @@ def url_entity_diff_base(context, entity_type):
 @register.filter
 def name_of_model(experiment):
     model = experiment.model
-    model_version = model.repo.get_name_for_commit(experiment.model_version)
+    model_version = model.repocache.get_name_for_version(experiment.model_version)
     return '%s @ %s' % (model.name, model_version)
 
 
 @register.filter
 def name_of_protocol(experiment):
     protocol = experiment.protocol
-    protocol_version = protocol.repo.get_name_for_commit(experiment.protocol_version)
+    protocol_version = protocol.repocache.get_name_for_version(experiment.protocol_version)
     return '%s @ %s' % (protocol.name, protocol_version)
 
 

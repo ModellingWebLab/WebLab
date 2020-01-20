@@ -67,13 +67,17 @@ class CachedEntity(models.Model):
         except ObjectDoesNotExist:
             raise RepoCacheMiss("Entity version not found")
 
-    def get_version_name(self, sha):
+    def get_name_for_version(self, sha):
         """Get a human-friendly display name for the given version
 
         :param sha: version sha
         :return: first cached tag for this commit, if any, or sha if not
         """
-        version = self.get_version(sha)
+        try:
+            version = self.get_version(sha)
+        except ObjectDoesNotExist:
+            raise RepoCacheMiss("Entity version not found")
+
         first_tag = version.tags.first()
         if first_tag is not None:
             return first_tag.tag

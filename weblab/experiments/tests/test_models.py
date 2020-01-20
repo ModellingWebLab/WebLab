@@ -7,6 +7,7 @@ import pytest
 
 from core import recipes
 from experiments.models import Experiment, ExperimentVersion
+from repocache.populate import populate_entity_cache
 
 
 @pytest.fixture
@@ -56,9 +57,12 @@ class TestExperiment:
         assert exp.nice_protocol_version == exp.protocol.repo.latest_commit.sha[:8] + '...'
 
         exp.model.repo.tag('v1')
+        populate_entity_cache(exp.model)
         assert exp.nice_model_version == 'v1'
 
         exp.protocol.repo.tag('v2')
+        populate_entity_cache(exp.protocol)
+
         assert exp.nice_protocol_version == 'v2'
 
     def test_visibility(self, helpers):

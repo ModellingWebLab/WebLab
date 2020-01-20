@@ -19,6 +19,7 @@ from core import recipes
 from entities.models import AnalysisTask, ModelEntity, ProtocolEntity
 from experiments.models import Experiment, PlannedExperiment
 from repocache.models import ProtocolInterface
+from repocache.populate import populate_entity_cache
 
 
 @pytest.fixture
@@ -305,6 +306,7 @@ class TestEntityVersionJsonView:
         version = helpers.add_version(model)
         model.set_version_visibility(version.sha, 'public')
         model.repo.tag('v1')
+        populate_entity_cache(model)
         planned_expt = PlannedExperiment(
             model=model, model_version=version.sha,
             protocol=recipes.protocol.make(), protocol_version=uuid.uuid4(),

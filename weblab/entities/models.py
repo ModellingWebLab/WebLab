@@ -93,7 +93,7 @@ class Entity(UserCreatedModelMixin, models.Model):
         )
 
     def nice_version(self, commit):
-        version = self.repo.get_name_for_commit(commit)
+        version = self.repocache.get_name_for_version(commit)
         if len(version) > 20:
             version = version[:8] + '...'
         return version
@@ -296,7 +296,7 @@ class Entity(UserCreatedModelMixin, models.Model):
             'visibility': self.get_version_visibility(commit.sha, default=self.DEFAULT_VISIBILITY),
             'created': commit.timestamp,
             'name': self.name,
-            'version': self.repo.get_name_for_commit(commit.sha),  # TODO #191 use repocache instead
+            'version': self.repocache.get_name_for_version(commit.sha),
             'files': files,
             'commitMessage': commit.message,
             'numFiles': len(files),
