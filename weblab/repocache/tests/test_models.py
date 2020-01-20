@@ -1,5 +1,4 @@
 import pytest
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.utils import IntegrityError
 
 from core import recipes
