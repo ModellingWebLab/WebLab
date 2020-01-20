@@ -71,7 +71,7 @@ class CachedEntity(models.Model):
         """Get a human-friendly display name for the given version
 
         :param sha: version sha
-        :return: first cached tag for this commit, if any, or sha if not
+        :return: first cached tag for this version, if any, or sha if not
         """
         try:
             version = self.get_version(sha)
