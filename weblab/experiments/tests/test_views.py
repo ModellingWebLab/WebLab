@@ -21,6 +21,7 @@ from experiments.models import (
     PlannedExperiment,
     RunningExperiment,
 )
+from repocache.populate import populate_entity_cache
 
 
 def generate_response(template='%s succ celery-task-id'):
@@ -1168,6 +1169,7 @@ class TestExperimentComparisonJsonView:
         protocol = recipes.protocol.make()
         protocol_commit = helpers.add_version(protocol, visibility='public')
         exp.protocol.repo.tag('v1')
+        populate_entity_cache(exp.protocol)
 
         version2 = recipes.experiment_version.make(
             status='SUCCESS',
