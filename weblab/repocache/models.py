@@ -73,10 +73,7 @@ class CachedEntity(models.Model):
         :param sha: version sha
         :return: first cached tag for this version, if any, or sha if not
         """
-        try:
-            version = self.get_version(sha)
-        except ObjectDoesNotExist:
-            raise RepoCacheMiss("Entity version not found")
+        version = self.get_version(sha)
 
         first_tag = version.tags.first()
         if first_tag is not None:
