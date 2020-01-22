@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import uuid
 import zipfile
 from datetime import timedelta
@@ -1967,8 +1968,8 @@ class TestEntityDiffView:
             'https://bives.bio.informatik.uni-rostock.de/',
             json={
                 'files': [
-                    'v1 contents\n',
-                    'v2 contents\n'
+                    'v1 contents' + os.linesep,
+                    'v2 contents' + os.linesep
                 ],
                 'commands': [
                     'compHierarchyJson',
