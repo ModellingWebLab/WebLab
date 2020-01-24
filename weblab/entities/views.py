@@ -123,6 +123,36 @@ class EntityVersionMixin(VisibilityMixin):
 
         return self._commit
 
+    def get_version(self):
+        """
+        Get the cached entity for this  version
+
+        :return: CachedEntityVersion object
+        :raise: Http404 if version not found
+        """
+        sha_or_tag = self.kwargs['sha']
+        cached_entity = self.object.cachedentity
+        try:
+            if sha_or_tag == 'latest':
+                latest_version = cached_entity.latest_version
+                if latest_version:
+                    self._commit = latest_version
+                    return latest_version
+
+            for version in cached_entity.versions.all():
+                if version.sha == sha_or_tag:
+                    self._commit = version
+                    return version
+
+                for tag in version.tags.all():
+                    if tag.tag == sha_or_tag:
+                        self._commit = version
+                        return version
+        except BadName:
+            raise Http404
+
+        raise Http404
+
     def _get_object(self):
         if not hasattr(self, 'object'):
             self.object = self.get_object()
@@ -192,7 +222,7 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         entity = self._get_object()
-        visibility = entity.get_version_visibility(self.get_commit().sha)
+        visibility = entity.get_version_visibility(self.get_version().sha)
         kwargs['form'] = EntityChangeVisibilityForm(
             user=self.request.user,
             initial={
@@ -204,7 +234,7 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
 class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
     def _planned_experiments(self):
         obj = self._get_object()
-        commit = self.get_commit()
+        commit = self.get_version()
         kwargs = {
             obj.entity_type: obj,
             obj.entity_type + '_version': commit.sha
@@ -249,7 +279,7 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
 
     def get_context_data(self, **kwargs):
         entity = self._get_object()
-        commit = self.get_commit()
+        commit = self.get_version()
 
         entity_type = entity.entity_type
         other_type = entity.other_type
@@ -369,7 +399,7 @@ class EntityTagVersionView(
         form = self.get_form()
         if form.is_valid():
             entity = self._get_object()
-            commit = self.get_commit()
+            commit = self.get_version()
             tag = form.cleaned_data['tag']
             try:
                 entity.add_tag(tag, commit.sha)
@@ -637,7 +667,7 @@ class EntityVersionListView(EntityTypeMixin, VisibilityMixin, DetailView):
         kwargs.update(**{
             'versions': list(
                 (list(version.tags.values_list('tag', flat=True)),
-                 entity.repo.get_commit(version.sha))
+                 entity.repocache.get_version(version.sha))
                 for version in versions.prefetch_related('tags')
             )
         })
@@ -1007,9 +1037,9 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
             version_info = []
             for version in versions.prefetch_related('tags'):
                 tag_list = list(version.tags.values_list('tag', flat=True))
-                commit = item.repo.get_commit(version.sha)
-                latest = item.repo.latest_commit
-                version_info.append({'commit': commit, 'tags': tag_list, 'latest': latest == commit})
+                ver = item.repocache.get_version(version.sha)
+                latest_version = item.repocache.latest_version
+                version_info.append({'commit': ver, 'tags': tag_list, 'latest': latest_version == ver})
             if item.author == self.request.user:
                 context['object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
             else:
@@ -1021,7 +1051,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
         # in get context self.object was the entity being worked with
         # here we have to retrieve it
         this_entity = self.get_object()
-        this_version = self.get_commit().sha
+        this_version = self.get_version().sha
         is_latest = (this_version == this_entity.repocache.latest_version.sha)
         exclude_existing = 'rerun_expts' not in request.POST
         experiments_to_run = request.POST.getlist('model_protocol_list[]')

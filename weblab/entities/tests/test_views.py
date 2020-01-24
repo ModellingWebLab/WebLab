@@ -154,43 +154,43 @@ class TestEntityVersionView:
     def test_view_entity_version(self, client, logged_in_user, helpers):
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')
-        commit = model.repo.latest_commit
-        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
-                   commit, [])
+        version = model.repocache.latest_version
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, version.sha),
+                   version, [])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
-                   commit, [])
+                   version, [])
 
         # Now add a second version with tag
-        assert len(list(model.repo.commits)) == 1
-        commit2 = helpers.add_version(model, visibility='public')
-        model.add_tag('my_tag', commit2.sha)
+        assert model.repocache.versions.count() == 1
+        version2 = helpers.add_version(model, visibility='public')
+        model.add_tag('my_tag', version2.sha)
 
         # Commits are yielded newest first
-        assert len(list(model.repo.commits)) == 2
-        assert commit == list(model.repo.commits)[-1]
-        commit = model.repo.latest_commit
+        assert model.repocache.versions.count() == 2
+        assert version == model.repocache.versions.last()
+        version = model.repocache.latest_version
 
-        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
-                   commit, ['my_tag'])
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, version.sha),
+                   version, ['my_tag'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'my_tag'),
-                   commit, ['my_tag'])
+                   version, ['my_tag'])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
-                   commit, ['my_tag'])
+                   version, ['my_tag'])
 
     def test_version_with_two_tags(self, client, helpers):
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')
-        commit = model.repo.latest_commit
-        model.add_tag('tag1', commit.sha)
-        model.add_tag('tag2', commit.sha)
-        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
-                   commit, ['tag1', 'tag2'])
+        version = model.repocache.latest_version
+        model.add_tag('tag1', version.sha)
+        model.add_tag('tag2', version.sha)
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, version.sha),
+                    version, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'),
-                   commit, ['tag1', 'tag2'])
+                    version, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag2'),
-                   commit, ['tag1', 'tag2'])
+                   version, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
-                   commit, ['tag1', 'tag2'])
+                   version, ['tag1', 'tag2'])
 
     def test_shows_correct_visibility(self, client, logged_in_user, model_with_version):
         model = model_with_version
@@ -808,19 +808,18 @@ class TestEntityVersionList:
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='moderated')
         model.add_tag('v1', commit2.sha)
-
         response = client.get('/entities/models/%d/versions/' % model.pk)
         assert response.status_code == 200
         assert response.context['versions'] == [
-            (['v1'], commit2),
-            ([], commit1),
+            (['v1'], model.repocache.get_version(commit2.sha)),
+            ([], model.repocache.get_version(commit1.sha)),
         ]
 
     def test_only_shows_visible_versions(self, client, helpers):
         model = recipes.model.make()
-        helpers.add_version(model, visibility='private')
-        commit2 = helpers.add_version(model, visibility='public')
-        helpers.add_version(model, visibility='private')
+        helpers.add_fake_version(model, visibility='private')
+        commit2 = helpers.add_fake_version(model, visibility='public')
+        helpers.add_fake_version(model, visibility='private')
 
         response = client.get('/entities/models/%d/versions/' % model.pk)
         assert response.status_code == 200
@@ -2107,13 +2106,16 @@ class TestEntityRunExperiment:
         commit2 = helpers.add_version(protocol, visibility='public')
         protocol.add_tag('v1', commit2.sha)
 
+        version1 = protocol.repocache.get_version(commit1.sha)
+        version2 = protocol.repocache.get_version(commit2.sha)
+
         response = client.get(
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'latest'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['preposition'] == 'under'
 
@@ -2132,19 +2134,25 @@ class TestEntityRunExperiment:
         other_commit2 = helpers.add_version(other_protocol, visibility='public')
         other_protocol.add_tag('v1', other_commit2.sha)
 
+        version1 = protocol.repocache.get_version(commit1.sha)
+        version2 = protocol.repocache.get_version(commit2.sha)
+
+        other_version1 = other_protocol.repocache.get_version(other_commit1.sha)
+        other_version2 = other_protocol.repocache.get_version(other_commit2.sha)
+
         response = client.get(
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'latest'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['other_object_list'] == [
             {'id': other_protocol.pk,
              'name': 'myprotocol2',
-             'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
-                          {'commit': other_commit1, 'tags': [], 'latest': False}]},
+             'versions': [{'commit': other_version2, 'tags': ['v1'], 'latest': True},
+                          {'commit': other_version1, 'tags': [], 'latest': False}]},
         ]
         assert response.context['preposition'] == 'under'
 
@@ -2158,14 +2166,17 @@ class TestEntityRunExperiment:
         commit2 = helpers.add_version(protocol, visibility='public')
         protocol.add_tag('v1', commit2.sha)
 
+        version1 = protocol.repocache.get_version(commit1.sha)
+        version2 = protocol.repocache.get_version(commit2.sha)
+
         # Test context has correct information
         response = client.get(
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
         data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.sha)],
@@ -2196,6 +2207,9 @@ class TestEntityRunExperiment:
         commit2 = helpers.add_version(protocol, visibility='public')
         protocol.add_tag('v1', commit2.sha)
 
+        version1 = protocol.repocache.get_version(commit1.sha)
+        version2 = protocol.repocache.get_version(commit2.sha)
+
         recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=model,
@@ -2209,8 +2223,8 @@ class TestEntityRunExperiment:
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
         data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit1.sha),
@@ -2247,20 +2261,26 @@ class TestEntityRunExperiment:
         other_commit2 = helpers.add_version(other_protocol, visibility='public')
         other_protocol.add_tag('v1', other_commit2.sha)
 
+        version1 = protocol.repocache.get_version(commit1.sha)
+        version2 = protocol.repocache.get_version(commit2.sha)
+
+        other_version1 = other_protocol.repocache.get_version(other_commit1.sha)
+        other_version2 = other_protocol.repocache.get_version(other_commit2.sha)
+
         # check context
         response = client.get(
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['other_object_list'] == [
             {'id': other_protocol.pk,
              'name': 'myprotocol2',
-             'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
-                          {'commit': other_commit1, 'tags': [], 'latest': False}]},
+             'versions': [{'commit': other_version2, 'tags': ['v1'], 'latest': True},
+                          {'commit': other_version1, 'tags': [], 'latest': False}]},
         ]
         # Test post returns correct response
         data = {'model_protocol_list[]': ['%d:%s' % (protocol.pk, commit2.sha),
@@ -2298,14 +2318,17 @@ class TestEntityRunExperiment:
         commit2 = helpers.add_version(protocol, visibility='public')
         protocol.add_tag('v1', commit2.sha)
 
+        version1 = protocol.repocache.get_version(commit1.sha)
+        version2 = protocol.repocache.get_version(commit2.sha)
+
         # display page using tag
         response = client.get(
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'model_v1'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['preposition'] == 'under'
 
@@ -2340,13 +2363,16 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         helpers.add_version(protocol, visibility='private')
 
+        version1 = model.repocache.get_version(commit1.sha)
+        version2 = model.repocache.get_version(commit2.sha)
+
         response = client.get(
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, 'latest'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['preposition'] == 'on'
 
@@ -2365,19 +2391,25 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         helpers.add_version(protocol, visibility='private')
 
+        version1 = model.repocache.get_version(commit1.sha)
+        version2 = model.repocache.get_version(commit2.sha)
+
+        other_version1 = other_model.repocache.get_version(other_commit1.sha)
+        other_version2 = other_model.repocache.get_version(other_commit2.sha)
+
         response = client.get(
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, 'latest'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['other_object_list'] == [
             {'id': other_model.pk,
              'name': 'mymodel2',
-             'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
-                          {'commit': other_commit1, 'tags': [], 'latest': False}]},
+             'versions': [{'commit': other_version2, 'tags': ['v1'], 'latest': True},
+                          {'commit': other_version1, 'tags': [], 'latest': False}]},
         ]
         assert response.context['preposition'] == 'on'
 
@@ -2390,13 +2422,16 @@ class TestEntityRunExperiment:
         protocol = recipes.protocol.make(author=logged_in_user)
         commit_protocol = helpers.add_version(protocol, visibility='public')
 
+        version1 = model.repocache.get_version(commit1.sha)
+        version2 = model.repocache.get_version(commit2.sha)
+
         response = client.get(
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
         data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.sha), '%d:%s' % (model.pk, commit2.sha)],
@@ -2440,14 +2475,17 @@ class TestEntityRunExperiment:
             protocol=protocol,
             protocol_version=commit_protocol.sha)
 
+        version1 = model.repocache.get_version(commit1.sha)
+        version2 = model.repocache.get_version(commit2.sha)
+
         # Test context has correct information
         response = client.get(
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
         data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.sha), '%d:%s' % (model.pk, commit2.sha)],
@@ -2474,6 +2512,7 @@ class TestEntityRunExperiment:
         commit1 = helpers.add_version(model, visibility='public')
         commit2 = helpers.add_version(model, visibility='public')
         model.add_tag('v1', commit2.sha)
+
         protocol = recipes.protocol.make(author=logged_in_user)
         commit_protocol = helpers.add_version(protocol, visibility='public')
 
@@ -2482,19 +2521,24 @@ class TestEntityRunExperiment:
         other_commit2 = helpers.add_version(other_model, visibility='public')
         other_model.add_tag('v1', other_commit2.sha)
 
+        version1 = model.repocache.get_version(commit1.sha)
+        version2 = model.repocache.get_version(commit2.sha)
+        other_version1 = other_model.repocache.get_version(other_commit1.sha)
+        other_version2 = other_model.repocache.get_version(other_commit2.sha)
+
         response = client.get(
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['other_object_list'] == [
             {'id': other_model.pk,
              'name': 'mymodel2',
-             'versions': [{'commit': other_commit2, 'tags': ['v1'], 'latest': True},
-                          {'commit': other_commit1, 'tags': [], 'latest': False}]},
+             'versions': [{'commit': other_version2, 'tags': ['v1'], 'latest': True},
+                          {'commit': other_version1, 'tags': [], 'latest': False}]},
         ]
         # Test post returns correct response
         data = {'model_protocol_list[]': ['%d:%s' % (model.pk, commit1.sha),
@@ -2529,14 +2573,17 @@ class TestEntityRunExperiment:
         commit2 = helpers.add_version(protocol, visibility='public')
         protocol.add_tag('v1', commit2.sha)
 
+        version1 = protocol.repocache.get_version(commit1.sha)
+        version2 = protocol.repocache.get_version(commit2.sha)
+
         # Test context has correct information
         response = client.get(
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
                                                     'name': 'myprotocol1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         # Test post returns correct response
         data = {'model_protocol_list[]': [],
@@ -2573,14 +2620,17 @@ class TestEntityRunExperiment:
         protocol.add_tag('p1', proto_commit1.sha)
         protocol.add_tag('p2', proto_commit2.sha)
 
+        version1 = model.repocache.get_version(commit1.sha)
+        version2 = model.repocache.get_version(commit2.sha)
+
         # display using sha
         response = client.get(
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, proto_commit1.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
                                                     'name': 'mymodel1',
-                                                    'versions': [{'commit': commit2, 'tags': ['v1'], 'latest': True},
-                                                                 {'commit': commit1, 'tags': [], 'latest': False}]},
+                                                    'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
+                                                                 {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['preposition'] == 'on'
 
