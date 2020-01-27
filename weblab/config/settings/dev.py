@@ -90,24 +90,4 @@ class InvalidStringShowWarning(str):
         return ""
 
 
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            BASE_DIR / 'templates',
-        ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'string_if_invalid': InvalidStringShowWarning("%s"),
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
-                'core.context_processors.common',
-            ],
-        },
-    },
-]
+TEMPLATES[0]['OPTIONS']['string_if_invalid'] = InvalidStringShowWarning("%s")
