@@ -2,6 +2,8 @@ from .base import TEMPLATES  # noqa
 
 
 # Settings file used by pytest, whether locally or on Travis
+SECRET_KEY = 'test-secret-key'
+
 class InvalidStringShowWarning(str):
     def __mod__(self, other):
         import logging
