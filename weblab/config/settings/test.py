@@ -1,4 +1,4 @@
-from .base import BASE_DIR  # noqa
+from . import base
 
 
 # Settings file used by pytest, whether locally or on Travis
@@ -14,7 +14,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / 'templates',
+            base.BASE_DIR / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
