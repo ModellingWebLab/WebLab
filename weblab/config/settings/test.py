@@ -1,4 +1,4 @@
-from .base import *  # noqa
+from .base import TEMPLATES  # noqa
 
 
 # Settings file used by pytest, whether locally or on Travis
