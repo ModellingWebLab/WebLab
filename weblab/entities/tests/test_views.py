@@ -183,10 +183,8 @@ class TestEntityVersionView:
         version = model.repocache.latest_version
         model.add_tag('tag1', version.sha)
         model.add_tag('tag2', version.sha)
-        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, version.sha),
-                    version, ['tag1', 'tag2'])
-        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'),
-                    version, ['tag1', 'tag2'])
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, version.sha), version, ['tag1', 'tag2'])
+        self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'), version, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag2'),
                    version, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
