@@ -658,7 +658,7 @@ class EntityVersionListView(EntityTypeMixin, VisibilityMixin, DetailView):
         kwargs.update(**{
             'versions': list(
                 (list(version.tags.values_list('tag', flat=True)),
-                 entity.repocache.get_version(version.sha))
+                 entity.repo.get_commit(version.sha))
                 for version in versions.prefetch_related('tags')
             )
         })
@@ -1028,9 +1028,9 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
             version_info = []
             for version in versions.prefetch_related('tags'):
                 tag_list = list(version.tags.values_list('tag', flat=True))
-                ver = item.repocache.get_version(version.sha)
-                latest_version = item.repocache.latest_version
-                version_info.append({'commit': ver, 'tags': tag_list, 'latest': latest_version == ver})
+                commit = item.repo.get_commit(version.sha)
+                latest = item.repo.latest_commit
+                version_info.append({'commit': commit, 'tags': tag_list, 'latest': latest == commit})
             if item.author == self.request.user:
                 context['object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
             else:
