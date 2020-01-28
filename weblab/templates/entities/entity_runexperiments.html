@@ -91,7 +91,7 @@
               by <em>{{ entity_version.commit.author }}</em><br/>
               <span class="suppl">
                       <small style="display: inline;">created </small> <time>{{ entity_version.commit.timestamp }}</time>
-                  <small style="display: inline;">containing</small> {{ commit.numfiles }} file{{ commit.numfiles|pluralize }}
+                  <small style="display: inline;">containing</small> {{ entity_version.commit.numfiles }} file{{ entity_version.commit.numfiles|pluralize }}
                   </span><br/>
               <span class="suppl">
                       {{ entity_version.commit.message|linebreaksbr }}
