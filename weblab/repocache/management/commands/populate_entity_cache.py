@@ -17,4 +17,5 @@ class Command(BaseCommand):
             entities = entities.filter(id__in=options['entity_id'])
 
         for entity in entities:
-            populate_entity_cache(entity)
+            if entity.repo_abs_path.exists():
+                populate_entity_cache(entity)
