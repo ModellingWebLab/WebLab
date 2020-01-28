@@ -15,7 +15,7 @@ from django.contrib.auth.mixins import (
     PermissionRequiredMixin,
     UserPassesTestMixin,
 )
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db.models import (
     Count,
@@ -125,33 +125,24 @@ class EntityVersionMixin(VisibilityMixin):
 
     def get_version(self):
         """
-        Get the cached entity for this  version
+        Get the cached entity for this version
 
         :return: CachedEntityVersion object
         :raise: Http404 if version not found
         """
+        if hasattr(self, '_version'):
+            return self._version
+
         sha_or_tag = self.kwargs['sha']
         cached_entity = self.object.cachedentity
         try:
-            if sha_or_tag == 'latest':
-                latest_version = cached_entity.latest_version
-                if latest_version:
-                    self._commit = latest_version
-                    return latest_version
-
-            for version in cached_entity.versions.all():
-                if version.sha == sha_or_tag:
-                    self._commit = version
-                    return version
-
-                for tag in version.tags.all():
-                    if tag.tag == sha_or_tag:
-                        self._commit = version
-                        return version
-        except BadName:
-            raise Http404
-
-        raise Http404
+            self._version = cached_entity.get_version(sha_or_tag)
+        except RepoCacheMiss:
+            try:
+                self._version = cached_entity.tags.get(tag=sha_or_tag).version
+            except ObjectDoesNotExist:
+                raise Http404
+        return self._version
 
     def _get_object(self):
         if not hasattr(self, 'object'):
@@ -160,12 +151,12 @@ class EntityVersionMixin(VisibilityMixin):
 
     def get_context_data(self, **kwargs):
         entity = self._get_object()
-        commit = self.get_commit()
+        version = self.get_version()
         kwargs.update(**{
-            'version': commit,
+            'version': version,
             'visibility': self.get_visibility(),
-            'tags': entity.get_tags(commit.sha),
-            'master_filename': commit.master_filename,
+            'tags': entity.get_tags(version.sha),
+            'master_filename': version.master_filename,
         })
         return super().get_context_data(**kwargs)
 
@@ -234,7 +225,7 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
 class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
     def _planned_experiments(self):
         obj = self._get_object()
-        commit = self.get_version()
+        commit = self.get_commit()
         kwargs = {
             obj.entity_type: obj,
             obj.entity_type + '_version': commit.sha
@@ -399,7 +390,7 @@ class EntityTagVersionView(
         form = self.get_form()
         if form.is_valid():
             entity = self._get_object()
-            commit = self.get_version()
+            commit = self.get_commit()
             tag = form.cleaned_data['tag']
             try:
                 entity.add_tag(tag, commit.sha)
