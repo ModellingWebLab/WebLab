@@ -35,7 +35,7 @@ def test_file_type():
 @pytest.mark.django_db
 def test_model_urls(model_with_version):
     model = model_with_version
-    model_version = model.repo.latest_commit
+    model_version = model.repocache.latest_version
     context = {'current_namespace': 'entities'}
 
     assert entity_tags.ns_url(context, 'new', 'model') == '/entities/models/new'
@@ -65,7 +65,7 @@ def test_model_urls(model_with_version):
 @pytest.mark.django_db
 def test_protocol_urls(protocol_with_version):
     protocol = protocol_with_version
-    protocol_version = protocol.repo.latest_commit
+    protocol_version = protocol.repocache.latest_version
     context = {'current_namespace': 'entities'}
 
     assert entity_tags.ns_url(context, 'new', 'protocol') == '/entities/protocols/new'
@@ -117,29 +117,39 @@ def test_name_of_entity_linked_to_experiment(model_with_version, protocol_with_v
 @pytest.mark.django_db
 def test_url_friendly_label(model_with_version, helpers):
     commit = model_with_version.repo.latest_commit
-    assert entity_tags._url_friendly_label(model_with_version, commit) == commit.sha
+    version = model_with_version.repocache.get_version(commit.sha)
+
+    assert entity_tags._url_friendly_label(model_with_version, version) == commit.sha
 
     model_with_version.repo.tag('v1')
-    assert entity_tags._url_friendly_label(model_with_version, commit) == 'v1'
+    populate_entity_cache(model_with_version)
+
+    assert entity_tags._url_friendly_label(model_with_version, version) == 'v1'
 
     commit2 = helpers.add_version(model_with_version)
     model_with_version.repo.tag('new')
-    assert entity_tags._url_friendly_label(model_with_version, commit2) == commit2.sha
+    populate_entity_cache(model_with_version)
+    version2 = model_with_version.repocache.get_version(commit2.sha)
+
+    assert entity_tags._url_friendly_label(model_with_version, version2) == commit2.sha
 
     commit3 = helpers.add_version(model_with_version)
     model_with_version.repo.tag('latest')
-    assert entity_tags._url_friendly_label(model_with_version, commit3) == commit3.sha
+    populate_entity_cache(model_with_version)
+    version3 = model_with_version.repocache.get_version(commit3.sha)
+
+    assert entity_tags._url_friendly_label(model_with_version, version3) == commit3.sha
 
 
 @pytest.mark.django_db
 def test_url_runexperiments(model_with_version, protocol_with_version):
     model = model_with_version
-    model_commit = model.repo.latest_commit
+    model_commit = model.repocache.latest_version
     assert (entity_tags.url_run_experiments(model, model_commit) ==
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, model_commit.sha))
 
     protocol = protocol_with_version
-    protocol_commit = protocol.repo.latest_commit
+    protocol_commit = protocol.repocache.latest_version
     assert (entity_tags.url_run_experiments(protocol, protocol_commit) ==
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, protocol_commit.sha))
 
