@@ -6,6 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.core.validators import MinLengthValidator
 from django.db import models
+from django.utils.functional import cached_property
 from guardian.shortcuts import get_objects_for_user
 
 from core.filetypes import get_file_type
@@ -72,11 +73,12 @@ class Entity(UserCreatedModelMixin, models.Model):
     def __str__(self):
         return self.name
 
-    @property
+    @cached_property
     def repo(self):
         """This entity's git repository wrapper.
 
-        Note that we do not cache this property as this can lead to too many open files.
+        Caching this property actually reduces the number of open files, but there's still a risk
+        of running out of file handles eventually.
         See also https://gitpython.readthedocs.io/en/stable/intro.html#leakage-of-system-resources
         """
         return Repository(self.repo_abs_path)
