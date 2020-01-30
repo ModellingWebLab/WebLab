@@ -2111,6 +2111,7 @@ class TestEntityRunExperiment:
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'latest'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'entity': protocol,
                                                     'name': 'myprotocol1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
@@ -2142,12 +2143,14 @@ class TestEntityRunExperiment:
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'latest'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'entity': protocol,
                                                     'name': 'myprotocol1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['other_object_list'] == [
             {'id': other_protocol.pk,
+             'entity': other_protocol,
              'name': 'myprotocol2',
              'versions': [{'commit': other_version2, 'tags': ['v1'], 'latest': True},
                           {'commit': other_version1, 'tags': [], 'latest': False}]},
@@ -2172,6 +2175,7 @@ class TestEntityRunExperiment:
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'entity': protocol,
                                                     'name': 'myprotocol1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
@@ -2220,6 +2224,7 @@ class TestEntityRunExperiment:
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'entity': protocol,
                                                     'name': 'myprotocol1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
@@ -2270,12 +2275,14 @@ class TestEntityRunExperiment:
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'entity': protocol,
                                                     'name': 'myprotocol1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['other_object_list'] == [
             {'id': other_protocol.pk,
+             'entity': other_protocol,
              'name': 'myprotocol2',
              'versions': [{'commit': other_version2, 'tags': ['v1'], 'latest': True},
                           {'commit': other_version1, 'tags': [], 'latest': False}]},
@@ -2324,6 +2331,7 @@ class TestEntityRunExperiment:
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, 'model_v1'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'entity': protocol,
                                                     'name': 'myprotocol1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
@@ -2368,6 +2376,7 @@ class TestEntityRunExperiment:
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, 'latest'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
+                                                    'entity': model,
                                                     'name': 'mymodel1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
@@ -2399,12 +2408,14 @@ class TestEntityRunExperiment:
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, 'latest'))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
+                                                    'entity': model,
                                                     'name': 'mymodel1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['other_object_list'] == [
             {'id': other_model.pk,
+             'entity': other_model,
              'name': 'mymodel2',
              'versions': [{'commit': other_version2, 'tags': ['v1'], 'latest': True},
                           {'commit': other_version1, 'tags': [], 'latest': False}]},
@@ -2427,6 +2438,7 @@ class TestEntityRunExperiment:
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
+                                                    'entity': model,
                                                     'name': 'mymodel1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
@@ -2481,6 +2493,7 @@ class TestEntityRunExperiment:
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
+                                                    'entity': model,
                                                     'name': 'mymodel1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
@@ -2528,12 +2541,14 @@ class TestEntityRunExperiment:
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, commit_protocol.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
+                                                    'entity': model,
                                                     'name': 'mymodel1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
                                                    ]
         assert response.context['other_object_list'] == [
             {'id': other_model.pk,
+             'entity': other_model,
              'name': 'mymodel2',
              'versions': [{'commit': other_version2, 'tags': ['v1'], 'latest': True},
                           {'commit': other_version1, 'tags': [], 'latest': False}]},
@@ -2579,6 +2594,7 @@ class TestEntityRunExperiment:
             '/entities/models/%d/versions/%s/runexperiments' % (model.pk, commit_model.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': protocol.pk,
+                                                    'entity': protocol,
                                                     'name': 'myprotocol1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},
@@ -2626,6 +2642,7 @@ class TestEntityRunExperiment:
             '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, proto_commit1.sha))
         assert response.status_code == 200
         assert response.context['object_list'] == [{'id': model.pk,
+                                                    'entity': model,
                                                     'name': 'mymodel1',
                                                     'versions': [{'commit': version2, 'tags': ['v1'], 'latest': True},
                                                                  {'commit': version1, 'tags': [], 'latest': False}]},

@@ -1032,9 +1032,11 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
                 latest_version = item.repocache.latest_version
                 version_info.append({'commit': ver, 'tags': tag_list, 'latest': latest_version == ver})
             if item.author == self.request.user:
-                context['object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
+                context['object_list'].append(
+                    {'entity': item, 'id': item.id, 'name': item.name, 'versions': version_info})
             else:
-                context['other_object_list'].append({'id': item.id, 'name': item.name, 'versions': version_info})
+                context['other_object_list'].append(
+                    {'entity': item, 'id': item.id, 'name': item.name, 'versions': version_info})
         return context
 
     def post(self, request, *args, **kwargs):
