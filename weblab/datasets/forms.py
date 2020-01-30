@@ -17,7 +17,6 @@ class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['protocol'].queryset = ProtocolEntity.objects.visible_to_user(self.user)
 
-
     def clean_name(self):
         name = self.cleaned_data['name']
         if self._meta.model.objects.filter(name=name).exists():
