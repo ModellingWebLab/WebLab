@@ -127,21 +127,21 @@ def name_of_protocol(experiment):
     return '%s @ %s' % (protocol.name, protocol_version)
 
 
-def _url_friendly_label(entity, commit):
+def _url_friendly_label(entity, version):
     """
     Get URL-friendly version label for a commit
 
     :param entity: Entity the commit belongs to
-    :param commit: `git.Commit` object
+    :param version: CachedEntityVersion object
     """
-    tags = commit.tags.last()
+    tags = version.tags.last()
     if tags is not None:
         tag = tags.tag
         if tag is None or tag in ['new', 'latest']:
-            return commit.sha
+            return version.sha
         else:
             return tag
-    return commit.sha
+    return version.sha
 
 
 @register.filter
