@@ -3,6 +3,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from .models import Dataset, DatasetFile
+from entities.models import ProtocolEntity
 
 
 class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -10,6 +11,12 @@ class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
     class Meta:
         model = Dataset
         fields = ['name', 'visibility', 'protocol', 'description']
+
+    def __init__(self, *args, **kwargs):
+        """Only show visible protocols in the selection."""
+        super().__init__(*args, **kwargs)
+        self.fields['protocol'].queryset = ProtocolEntity.objects.visible_to_user(self.user)
+
 
     def clean_name(self):
         name = self.cleaned_data['name']
