@@ -307,6 +307,7 @@ class TestEntityVersionJsonView:
         model.set_version_visibility(version.sha, 'public')
         model.repo.tag('v1')
         planned_expt = PlannedExperiment(
+            submitter=logged_in_user,
             model=model, model_version=version.sha,
             protocol=recipes.protocol.make(), protocol_version=uuid.uuid4(),
         )
@@ -1252,6 +1253,7 @@ class TestVersionCreation:
         ])
         assert len(expected_proto_versions) == PlannedExperiment.objects.count()
         for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.submitter == logged_in_user
             assert planned_experiment.model == model
             assert planned_experiment.model_version == new_commit.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
@@ -2180,6 +2182,7 @@ class TestEntityRunExperiment:
         ])
         assert PlannedExperiment.objects.count() == 1
         for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.submitter == logged_in_user
             assert planned_experiment.model == model
             assert planned_experiment.model_version == commit_model.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
@@ -2226,6 +2229,7 @@ class TestEntityRunExperiment:
         ])
         assert PlannedExperiment.objects.count() == 1
         for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.submitter == logged_in_user
             assert planned_experiment.model == model
             assert planned_experiment.model_version == commit_model.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
@@ -2279,6 +2283,7 @@ class TestEntityRunExperiment:
         ])
         assert PlannedExperiment.objects.count() == 3
         for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.submitter == logged_in_user
             assert planned_experiment.model == model
             assert planned_experiment.model_version == commit_model.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
@@ -2324,6 +2329,7 @@ class TestEntityRunExperiment:
         ])
         assert PlannedExperiment.objects.count() == 2
         for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.submitter == logged_in_user
             assert planned_experiment.model == model
             assert planned_experiment.model_version == model_commit1.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
@@ -2412,6 +2418,7 @@ class TestEntityRunExperiment:
         ])
         assert PlannedExperiment.objects.count() == 2
         for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.submitter == logged_in_user
             assert planned_experiment.protocol == protocol
             assert planned_experiment.protocol_version == commit_protocol.sha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
@@ -2462,6 +2469,7 @@ class TestEntityRunExperiment:
         ])
         assert PlannedExperiment.objects.count() == 1
         for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.submitter == logged_in_user
             assert planned_experiment.protocol == protocol
             assert planned_experiment.protocol_version == commit_protocol.sha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
@@ -2513,6 +2521,7 @@ class TestEntityRunExperiment:
         ])
         assert PlannedExperiment.objects.count() == 3
         for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.submitter == logged_in_user
             assert planned_experiment.protocol == protocol
             assert planned_experiment.protocol_version == commit_protocol.sha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
@@ -2598,6 +2607,7 @@ class TestEntityRunExperiment:
         ])
         assert PlannedExperiment.objects.count() == 2
         for planned_experiment in PlannedExperiment.objects.all():
+            assert planned_experiment.submitter == logged_in_user
             assert planned_experiment.protocol == protocol
             assert planned_experiment.protocol_version == proto_commit1.sha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
