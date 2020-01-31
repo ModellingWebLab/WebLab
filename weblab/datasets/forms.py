@@ -2,8 +2,9 @@ from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import Dataset, DatasetFile
 from entities.models import ProtocolEntity
+
+from .models import Dataset, DatasetFile
 
 
 class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
