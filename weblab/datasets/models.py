@@ -4,6 +4,26 @@ from django.utils.text import get_valid_filename
 
 from core.models import FileCollectionMixin, UserCreatedModelMixin, VisibilityModelMixin
 from entities.models import ProtocolEntity
+from guardian.shortcuts import get_objects_for_user
+
+
+class DatasetQuerySet(models.QuerySet):
+    def visible_to_user(self, user):
+        """Query over all datasets that the given user can view.
+        """
+        non_private = self.filter(visibility__in=['public', 'moderated'])
+        mine = self.filter(author=user)
+        shared = self.shared_with_user(user)
+        return non_private | mine | shared
+
+    def shared_with_user(self, user):
+        """Query over all datasets shared explicitly with the given user."""
+        if user.is_authenticated:
+            shared_pks = get_objects_for_user(
+                user, 'entities.edit_entity', with_superuser=False).values_list('pk', flat=True)
+            return self.filter(pk__in=shared_pks)
+        else:
+            return self.none()
 
 
 class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, models.Model):
@@ -14,6 +34,8 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
     description = models.TextField(validators=[MinLengthValidator(2)])
 
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experimental_datasets')
+
+    objects = DatasetQuerySet.as_manager()
 
     class Meta:
         ordering = ['name']

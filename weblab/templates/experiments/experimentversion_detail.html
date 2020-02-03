@@ -74,9 +74,7 @@
       <span>Overlay a dataset linked to this protocol:</span>
       <select id="dataset-link">
         <option selected value="">None</option>
-        {% for dataset in experiment.protocol.protocol_experimental_datasets.all %}
-          <option value="{% url 'datasets:version_json' dataset.id %}">{{ dataset.name }}</option>
-        {% endfor %}
+        {% dataset_options experiment %}
       </select>
     </div>
     {% endif %}
