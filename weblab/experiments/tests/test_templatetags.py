@@ -23,7 +23,7 @@ def test_dataset_options(logged_in_user, client):
     experiment = recipes.experiment.make(model=model, protocol=protocol)
     context = {'user': logged_in_user}
     assert (exp_tags.dataset_options(context, experiment) == '<option value="' +
-             reverse('datasets:version_json', args=(dataset.id,)) + '">mydataset</option>')
+            reverse('datasets:version_json', args=(dataset.id,)) + '">mydataset</option>')
 
 
 @pytest.mark.django_db
