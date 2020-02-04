@@ -164,8 +164,8 @@ def record_experiments_to_run(user, entity, commit):
         for expt in Experiment.objects.filter(**parent_kwargs):
             if expt.is_visible_to_user(user):
                 # Record the new experiment to run
-                print(expt.model.name, expt.model_version[:10], expt.protocol.name, expt.protocol_version[:10])
                 kwargs = {
+                    'submitter': user,
                     'model_id': expt.model_id,
                     'model_version': expt.model_version,
                     'protocol_id': expt.protocol_id,

@@ -223,15 +223,11 @@ class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
 
 
 class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
-    def _planned_experiments(self):
-        obj = self._get_object()
-        commit = self.get_commit()
-        kwargs = {
-            obj.entity_type: obj,
-            obj.entity_type + '_version': commit.sha
-        }
-        return list(PlannedExperiment.objects.filter(**kwargs).values(
-            'model', 'protocol', 'model_version', 'protocol_version'))
+    def _planned_experiments(self, user):
+        return list(PlannedExperiment.objects.filter(
+            # The None case is so expts planned before submitter info was added are still run
+            Q(submitter=user) | Q(submitter=None)
+        ).values('model', 'protocol', 'model_version', 'protocol_version'))
 
     def get(self, request, *args, **kwargs):
         obj = self._get_object()
@@ -239,7 +235,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
         ns = self.request.resolver_match.namespace
 
         if request.user.has_perm('experiments.create_experiment') and obj.entity_type in ('model', 'protocol'):
-            planned_experiments = self._planned_experiments()
+            planned_experiments = self._planned_experiments(request.user)
         else:
             planned_experiments = []
 
@@ -1063,6 +1059,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
                 }
                 if ExperimentVersion.objects.filter(**filter_kwargs).exists():
                     continue
+            exper_kwargs['submitter'] = request.user
             PlannedExperiment.objects.get_or_create(**exper_kwargs)
         # return to entity page
         version_to_use = 'latest'
