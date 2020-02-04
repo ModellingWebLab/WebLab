@@ -138,19 +138,6 @@ class Repository:
             tags.setdefault(tag.commit.hexsha, []).append(tag)
         return tags
 
-    def get_name_for_commit(self, version):
-        """Get a human-friendly display name for the given version
-
-        :param version: Revision specification (sha, branch name, tag etc.)
-            or 'latest' to get latest revision
-        :return: tag for this commit, if any, or version if not
-        """
-        commit = self.get_commit(version)
-        for tag in self._repo.tags:
-            if tag.commit == commit._commit:
-                return tag.name
-        return version
-
     def hard_reset(self):
         """
         Reset the working tree

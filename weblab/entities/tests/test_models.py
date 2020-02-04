@@ -97,6 +97,7 @@ class TestEntity:
         assert model_with_version.nice_version(commit) == '%s...' % commit[:8]
 
         model_with_version.repo.tag('v1')
+        populate_entity_cache(model_with_version)
         assert model_with_version.nice_version(commit) == 'v1'
 
     def test_set_and_get_version_visibility(self, model_with_version):
