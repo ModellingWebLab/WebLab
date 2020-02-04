@@ -8,6 +8,8 @@ from core.models import FileCollectionMixin, UserCreatedModelMixin
 from core.visibility import Visibility, get_joint_visibility, visibility_check
 from entities.models import ModelEntity, ProtocolEntity
 
+from repocache.models import CachedProtocolVersion, CachedModelVersion
+
 
 class Experiment(UserCreatedModelMixin, models.Model):
     """A specific version of a protocol run on a specific version of a model
@@ -22,11 +24,8 @@ class Experiment(UserCreatedModelMixin, models.Model):
     model = models.ForeignKey(ModelEntity, related_name='model_experiments')
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments')
 
-    # Note that we can't use a ForeignKey here, because versions of models and protocols
-    # are not stored in the DB - they are just commits in the associated git repo.
-    # So instead we store the full git SHA as a string.
-    model_version = models.CharField(max_length=50)
-    protocol_version = models.CharField(max_length=50)
+    model_version = models.ForeignKey(CachedModelVersion, default=None, null=False, related_name='model_ver_exps')
+    protocol_version = models.ForeignKey(CachedProtocolVersion, default=None, null=False, related_name='pro_ver_exps')
 
     class Meta:
         unique_together = ('model', 'protocol', 'model_version', 'protocol_version')
