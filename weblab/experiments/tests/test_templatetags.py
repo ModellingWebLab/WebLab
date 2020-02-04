@@ -1,8 +1,8 @@
 import pytest
+from django.urls import reverse
 
 import experiments.templatetags.experiments as exp_tags
 from core import recipes
-from django.urls import reverse
 
 
 @pytest.mark.django_db
