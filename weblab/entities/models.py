@@ -6,6 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.core.validators import MinLengthValidator
 from django.db import models
+from django.utils.functional import cached_property
 from guardian.shortcuts import get_objects_for_user
 
 from core.filetypes import get_file_type
@@ -72,11 +73,12 @@ class Entity(UserCreatedModelMixin, models.Model):
     def __str__(self):
         return self.name
 
-    @property
+    @cached_property
     def repo(self):
         """This entity's git repository wrapper.
 
-        Note that we do not cache this property as this can lead to too many open files.
+        Caching this property actually reduces the number of open files, but there's still a risk
+        of running out of file handles eventually.
         See also https://gitpython.readthedocs.io/en/stable/intro.html#leakage-of-system-resources
         """
         return Repository(self.repo_abs_path)
@@ -92,11 +94,17 @@ class Entity(UserCreatedModelMixin, models.Model):
             self.author.get_storage_dir('repo'), '%ss' % self.entity_type, str(self.id)
         )
 
-    def nice_version(self, commit):
-        version = self.repo.get_name_for_commit(commit)
-        if len(version) > 20:
-            version = version[:8] + '...'
-        return version
+    def nice_version(self, sha_or_tag):
+        """
+        Returns tag/sha with ellipses
+
+        :param sha_or_tag: version sha or tag string
+        :return version_name: string with the sha_or_tag formatted
+        """
+        version_name = self.repocache.get_name_for_version(sha_or_tag)
+        if len(version_name) > 20:
+            version_name = version_name[:8] + '...'
+        return version_name
 
     def get_visibility_from_repo(self, commit):
         """
@@ -296,7 +304,7 @@ class Entity(UserCreatedModelMixin, models.Model):
             'visibility': self.get_version_visibility(commit.sha, default=self.DEFAULT_VISIBILITY),
             'created': commit.timestamp,
             'name': self.name,
-            'version': self.repo.get_name_for_commit(commit.sha),  # TODO #191 use repocache instead
+            'version': self.repocache.get_name_for_version(commit.sha),
             'files': files,
             'commitMessage': commit.message,
             'numFiles': len(files),

@@ -214,8 +214,14 @@ class PlannedExperiment(models.Model):
 
     This is provided as part of the JSON data when displaying entity versions, so that JS code
     can submit new experiment runs automatically and notify the user of success/failure. See
-    https://github.com/ModellingWebLab/WebLab/pull/114.
+    https://github.com/ModellingWebLab/WebLab/pull/114, https://github.com/ModellingWebLab/WebLab/issues/244.
     """
+    submitter = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                  help_text='the user that requested this experiment',
+                                  null=True,  # To support migrating; new instances should provide this!
+                                  default=None,
+                                  )
+
     model = models.ForeignKey(ModelEntity, related_name='planned_model_experiments')
     protocol = models.ForeignKey(ProtocolEntity, related_name='planned_protocol_experiments')
 
@@ -223,4 +229,7 @@ class PlannedExperiment(models.Model):
     protocol_version = models.CharField(max_length=50)
 
     class Meta:
+        indexes = [
+            models.Index(fields=['submitter'])
+        ]
         unique_together = ('model', 'protocol', 'model_version', 'protocol_version')

@@ -80,3 +80,14 @@ LOGGING['loggers'].update({
     app.split('.')[0]: copy.deepcopy(local_logger_conf)
     for app in LOCAL_APPS
 })
+
+
+class InvalidStringShowWarning(str):
+    def __mod__(self, other):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning("In template, undefined variable or unknown value for: '%s'" % (other,))
+        return ""
+
+
+TEMPLATES[0]['OPTIONS']['string_if_invalid'] = InvalidStringShowWarning("%s")

@@ -450,8 +450,8 @@ class ExperimentComparisonJsonView(View):
             'versionId': version.id,
             'modelName': exp.model.name,
             'protoName': exp.protocol.name,
-            'modelVersion': exp.model.repo.get_name_for_commit(exp.model_version),  # TODO #191: Use repocache instead
-            'protoVersion': exp.protocol.repo.get_name_for_commit(exp.protocol_version),
+            'modelVersion': exp.model.repocache.get_name_for_version(exp.model_version),
+            'protoVersion': exp.protocol.repocache.get_name_for_version(exp.protocol_version),
             'runNumber': version.run_number,
         })
         return details

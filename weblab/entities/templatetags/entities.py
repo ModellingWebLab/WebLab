@@ -116,28 +116,32 @@ def url_entity_diff_base(context, entity_type):
 @register.filter
 def name_of_model(experiment):
     model = experiment.model
-    model_version = model.repo.get_name_for_commit(experiment.model_version.sha)
+    model_version = model.repocache.get_name_for_version(experiment.model_version.sha)
     return '%s @ %s' % (model.name, model_version)
 
 
 @register.filter
 def name_of_protocol(experiment):
     protocol = experiment.protocol
-    protocol_version = protocol.repo.get_name_for_commit(experiment.protocol_version.sha)
+    protocol_version = protocol.repocache.get_name_for_version(experiment.protocol_version.sha)
     return '%s @ %s' % (protocol.name, protocol_version)
 
 
-def _url_friendly_label(entity, commit):
+def _url_friendly_label(entity, version):
     """
     Get URL-friendly version label for a commit
 
     :param entity: Entity the commit belongs to
-    :param commit: `git.Commit` object
+    :param version: CachedEntityVersion object
     """
-    last_tag = str(entity.repo.tag_dict.get(commit.sha, ['/'])[-1])
-    if '/' in last_tag or last_tag in ['new', 'latest']:
-        last_tag = commit.sha
-    return last_tag
+    tags = version.tags.last()
+    if tags is not None:
+        tag = tags.tag
+        if tag is None or tag in ['new', 'latest']:
+            return version.sha
+        else:
+            return tag
+    return version.sha
 
 
 @register.filter

@@ -71,6 +71,19 @@ class CachedEntity(models.Model):
                     return version.tags.get(tag=sha).version
             raise RepoCacheMiss("Entity version not found")
 
+    def get_name_for_version(self, sha):
+        """Get a human-friendly display name for the given version
+
+        :param sha: version sha
+        :return: first cached tag for this version, if any, or sha if not
+        """
+        version = self.get_version(sha)
+
+        first_tag = version.tags.first()
+        if first_tag is not None:
+            return first_tag.tag
+        return sha
+
     def add_version(self, sha):
         """
         Add an entity version to the cache

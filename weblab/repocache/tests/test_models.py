@@ -2,7 +2,9 @@ import pytest
 from django.db.utils import IntegrityError
 
 from core import recipes
+from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedModel, CachedProtocol
+from repocache.populate import populate_entity_cache
 
 
 @pytest.mark.django_db
@@ -111,3 +113,20 @@ class TestEntityCacheModelsVisibility:
         assert version.author == commit.author.name
         assert version.numfiles == len(commit.filenames)
         assert version.visibility == 'public'
+
+    def test_get_name_for_version(self, helpers):
+        model = recipes.model.make()
+        commit = helpers.add_version(model, visibility='public', cache=False)
+        populate_entity_cache(model)
+        assert model.repocache.get_name_for_version(commit.sha) == commit.sha
+        assert model.repocache.get_name_for_version('latest') == 'latest'
+
+        model.repo.tag('v1')
+        assert model.repocache.get_name_for_version(commit.sha) == commit.sha
+        populate_entity_cache(model)
+        assert model.repocache.get_name_for_version(commit.sha) == 'v1'
+        assert model.repocache.get_name_for_version('latest') == 'v1'
+
+        # get_name_for_version must be sha or latest
+        with pytest.raises(RepoCacheMiss):
+            model.repocache.get_name_for_version('v1')
