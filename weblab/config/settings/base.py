@@ -117,7 +117,7 @@ DATABASES = {
 
 # configure db url from DATABASE_URL env var if supplied
 DATABASES['default'] = dj_database_url.config(
-    default='postgres://weblab:weblab@localhost:5432/weblab'
+    default='postgres://postgres:postgres@localhost:5432/weblab'
 )
 
 
@@ -176,7 +176,7 @@ STATICFILES_DIRS = [
 
 # Media files (Uploaded files)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = str(BASE_DIR / 'media')
+# MEDIA_ROOT = str(BASE_DIR / 'media')
 
 # Google OAuth2 - see http://code.google.com/apis/accounts/docs/OAuth2.html#Registering
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = secrets.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY

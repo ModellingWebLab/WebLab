@@ -256,12 +256,12 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
 
         q_other_type_versions = CACHED_VERSION_TYPE_MAP[other_type].objects.filter(
             entity__entity=OuterRef(other_type),
-            sha=OuterRef(other_type + '_version'),
+            pk=OuterRef(other_type + '_version'),
         )
 
         experiments = Experiment.objects.filter(**{
             entity_type: entity.pk,
-            entity_type + '_version': commit.sha,
+            entity_type + '_version': commit.pk,
         }).annotate(
             version_count=Count('versions'),
             other_version_timestamp=Subquery(q_other_type_versions.values('timestamp')[:1]),

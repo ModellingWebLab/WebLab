@@ -21,6 +21,8 @@ from entities.models import AnalysisTask, ModelEntity, ProtocolEntity
 from experiments.models import Experiment, PlannedExperiment
 from repocache.models import ProtocolInterface
 
+from repocache.populate import populate_entity_cache
+
 
 @pytest.fixture
 def analysis_task(protocol_with_version):
@@ -153,21 +155,21 @@ class TestEntityVersionView:
     def test_view_entity_version(self, client, logged_in_user, helpers):
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')
-        commit = model.repo.latest_commit
+        commit = model.repocache.latest_version
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
                    commit, [])
         self.check(client, '/entities/models/%d/versions/latest' % model.pk,
                    commit, [])
 
         # Now add a second version with tag
-        assert len(list(model.repo.commits)) == 1
+        assert len(list(model.repocache.versions.all())) == 1
         commit2 = helpers.add_version(model, visibility='public')
         model.add_tag('my_tag', commit2.sha)
-
+        populate_entity_cache(model)
         # Commits are yielded newest first
-        assert len(list(model.repo.commits)) == 2
-        assert commit == list(model.repo.commits)[-1]
-        commit = model.repo.latest_commit
+        assert len(list(model.repocache.versions.all())) == 2
+        assert commit == list(model.repocache.versions.all())[-1]
+        commit = model.repocache.latest_version
 
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
                    commit, ['my_tag'])
@@ -179,9 +181,10 @@ class TestEntityVersionView:
     def test_version_with_two_tags(self, client, helpers):
         model = recipes.model.make()
         helpers.add_version(model, visibility='public')
-        commit = model.repo.latest_commit
+        commit = model.repocache.latest_version
         model.add_tag('tag1', commit.sha)
         model.add_tag('tag2', commit.sha)
+        populate_entity_cache(model)
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, commit.sha),
                    commit, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'),
@@ -306,6 +309,7 @@ class TestEntityVersionJsonView:
         version = helpers.add_version(model)
         model.set_version_visibility(version.sha, 'public')
         model.repo.tag('v1')
+
         planned_expt = PlannedExperiment(
             model=model, model_version=version.sha,
             protocol=recipes.protocol.make(), protocol_version=uuid.uuid4(),
@@ -444,31 +448,32 @@ class TestGetProtocolInterfacesJsonView:
 class TestModelEntityCompareExperimentsView:
     def test_shows_related_experiments(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
-        sha = exp.model.repo.latest_commit.sha
+        model_version = exp.model.repocache.latest_version
         recipes.experiment_version.make()  # another experiment which should not be included
         exp.model.set_version_visibility('latest', 'public')
         exp.protocol.set_version_visibility('latest', 'public')
-
+        helpers.add_version(exp.protocol, visibility='public')
         # Add an experiment with a newer version of the protocol but that was created earlier
         exp2 = recipes.experiment_version.make(
             experiment__protocol=exp.protocol,
-            experiment__protocol_version=helpers.add_version(exp.protocol, visibility='public').sha,
+            experiment__protocol_version=exp.protocol.repocache.latest_version,
             experiment__model=exp.model,
-            experiment__model_version=sha,
+            experiment__model_version=model_version,
         ).experiment
         exp2.created_at = exp.created_at - timedelta(seconds=10)
         exp2.save()
 
         # Add an experiment with a newer version of the protocol and that was created later
+        helpers.add_version(exp.protocol, visibility='public')
         exp3 = recipes.experiment_version.make(
             experiment__protocol=exp.protocol,
-            experiment__protocol_version=helpers.add_version(exp.protocol, visibility='public').sha,
+            experiment__protocol_version=exp.protocol.repocache.latest_version,
             experiment__model=exp.model,
-            experiment__model_version=sha,
+            experiment__model_version=model_version,
         ).experiment
 
         response = client.get(
-            '/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha)
+            '/entities/models/%d/versions/%s/compare' % (exp.model.pk, model_version.sha)
         )
 
         assert response.status_code == 200
@@ -530,12 +535,13 @@ class TestProtocolEntityCompareExperimentsView:
         model = recipes.model.make()
         exp.protocol.set_version_visibility('latest', 'public')
         exp.model.set_version_visibility('latest', 'public')
-
+        helpers.add_version(exp.model, visibility='private')
+        model_version = exp.model.repocache.latest_version
         recipes.experiment_version.make(
-            experiment__protocol=exp.protocol,
+            experiment__protocol=exp.protocol.repocache.latest_version,
             experiment__protocol_version=sha,
             experiment__model=model,
-            experiment__model_version=helpers.add_version(model, visibility='private').sha,
+            experiment__model_version=exp.model.repocache.latest_version,
         )  # should not be included for visibility reasons
 
         response = client.get(
@@ -1182,9 +1188,9 @@ class TestVersionCreation:
             recipes.experiment_version.make(
                 status='SUCCESS',
                 experiment__model=model,
-                experiment__model_version=model_commit.sha,
+                experiment__model_version=model.repocache.get_version(model_commit.sha),
                 experiment__protocol=proto,
-                experiment__protocol_version=proto_commit.sha,
+                experiment__protocol_version=model.repocache.get_version(proto_commit.sha),
             )
             if shared:
                 assign_perm('edit_entity', logged_in_user, proto)

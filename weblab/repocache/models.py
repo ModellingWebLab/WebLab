@@ -63,8 +63,12 @@ class CachedEntity(models.Model):
             if sha == 'latest':
                 return self.latest_version
             else:
+
                 return self.versions.get(sha=sha)
         except ObjectDoesNotExist:
+            for version in self.versions.all():
+                if version.tags.count() > 0:
+                    return version.tags.get(tag=sha).version
             raise RepoCacheMiss("Entity version not found")
 
     def add_version(self, sha):
