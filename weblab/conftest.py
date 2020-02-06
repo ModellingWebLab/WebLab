@@ -229,9 +229,9 @@ def moderated_experiment_version(moderated_model, moderated_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=moderated_model,
-        experiment__model_version=moderated_model.repo.latest_commit.sha,
+        experiment__model_version=moderated_model.repocache.latest_version,
         experiment__protocol=moderated_protocol,
-        experiment__protocol_version=moderated_protocol.repo.latest_commit.sha,
+        experiment__protocol_version=moderated_protocol.repocache.latest_version,
     )
 
 

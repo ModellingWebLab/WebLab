@@ -49,8 +49,8 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
     experiment, _ = Experiment.objects.get_or_create(
         model=model,
         protocol=protocol,
-        model_version=model_version,
-        protocol_version=protocol_version,
+        model_version=model.repocache.get_version(model_version),
+        protocol_version=protocol.repocache.get_version(protocol_version),
         defaults={
             'author': user,
         }

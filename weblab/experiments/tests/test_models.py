@@ -20,13 +20,15 @@ class TestExperiment:
     def test_name(self, helpers):
         model = recipes.model.make(name='my model')
         protocol = recipes.protocol.make(name='my protocol')
-        helpers.add_version(model, tag_name='v1')
-        helpers.add_version(protocol, tag_name='v2')
+        model_version = helpers.add_version(model, tag_name='v1')
+        protocol_version = helpers.add_version(protocol, tag_name='v2')
+        populate_entity_cache(model)
+        populate_entity_cache(protocol)
         experiment = recipes.experiment.make(
             model=model,
-            model_version=model.repocache.latest_version,
+            model_version=model.repocache.get_version(model_version.sha),
             protocol=protocol,
-            protocol_version=protocol.repocache.latest_version,
+            protocol_version=protocol.repocache.get_version(protocol_version.sha),
         )
 
         assert str(experiment) == experiment.name == 'my model / my protocol'
@@ -76,18 +78,18 @@ class TestExperiment:
         pv2 = helpers.add_version(protocol, visibility='public')
 
         assert recipes.experiment.make(
-            model=model, model_version=mv2,
-            protocol=protocol, protocol_version=pv2
+            model=model, model_version=model.repocache.get_version(mv2.sha),
+            protocol=protocol, protocol_version=protocol.repocache.get_version(pv2.sha)
         ).visibility == 'public'
 
         assert recipes.experiment.make(
-            model=model, model_version=mv1,
-            protocol=protocol, protocol_version=pv1
+            model=model, model_version=model.repocache.get_version(mv1.sha),
+            protocol=protocol, protocol_version=protocol.repocache.get_version(pv1.sha)
         ).visibility == 'private'
 
         assert recipes.experiment.make(
-            model=model, model_version=mv1,
-            protocol=protocol, protocol_version=pv2
+            model=model, model_version=model.repocache.get_version(mv1.sha),
+            protocol=protocol, protocol_version=protocol.repocache.get_version(pv2.sha)
         ).visibility == 'private'
 
     def test_viewers(self, helpers, user):
@@ -102,8 +104,8 @@ class TestExperiment:
         exp = recipes.experiment_version.make(
             experiment__model=model,
             experiment__protocol=protocol,
-            experiment__model_version=mv.sha,
-            experiment__protocol_version=pv.sha,
+            experiment__model_version=model.repocache.get_version(mv.sha),
+            experiment__protocol_version=protocol.repocache.get_version(pv.sha),
         ).experiment
         assert user not in exp.viewers
 

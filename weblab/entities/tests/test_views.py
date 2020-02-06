@@ -481,16 +481,16 @@ class TestModelEntityCompareExperimentsView:
 
     def test_applies_visibility(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
-        sha = exp.model_version
+        sha = exp.model_version.sha
         protocol = recipes.protocol.make()
         exp.model.set_version_visibility('latest', 'public')
         exp.protocol.set_version_visibility('latest', 'public')
-
+        protocol_version = helpers.add_version(protocol, visibility='private')
         recipes.experiment_version.make(
             experiment__protocol=protocol,
-            experiment__protocol_version=helpers.add_version(protocol, visibility='private').sha,
+            experiment__protocol_version=protocol.repocache.get_version(protocol_version.sha),
             experiment__model=exp.model,
-            experiment__model_version=sha,
+            experiment__model_version=exp.model.repocache.get_version(sha),
         )  # should not be included for visibility reasons
 
         response = client.get(
@@ -531,17 +531,16 @@ class TestProtocolEntityCompareExperimentsView:
 
     def test_applies_visibility(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
-        sha = exp.protocol_version
+        sha = exp.protocol_version.sha
         model = recipes.model.make()
         exp.protocol.set_version_visibility('latest', 'public')
         exp.model.set_version_visibility('latest', 'public')
-        helpers.add_version(exp.model, visibility='private')
-        model_version = exp.model.repocache.latest_version
+        model_version = helpers.add_version(model, visibility='private')
         recipes.experiment_version.make(
-            experiment__protocol=exp.protocol.repocache.latest_version,
-            experiment__protocol_version=sha,
+            experiment__protocol=exp.protocol,
+            experiment__protocol_version=exp.protocol.repocache.get_version(sha),
             experiment__model=model,
-            experiment__model_version=exp.model.repocache.latest_version,
+            experiment__model_version=model.repocache.get_version(model_version.sha),
         )  # should not be included for visibility reasons
 
         response = client.get(
@@ -1187,24 +1186,25 @@ class TestVersionCreation:
             recipes.experiment_version.make(
                 status='SUCCESS',
                 experiment__model=model,
-                experiment__model_version=model.repocache.get_version(model_commit.sha),
+                experiment__model_version=model_commit,
                 experiment__protocol=proto,
-                experiment__protocol_version=model.repocache.get_version(proto_commit.sha),
+                experiment__protocol_version=proto_commit,
             )
             if shared:
                 assign_perm('edit_entity', logged_in_user, proto)
             return proto
 
         my_private_protocol = _add_experiment(logged_in_user, 'private')  # Re-run case 1
+
         _add_experiment(logged_in_user, 'private',  # Shouldn't be re-run
                         model=model, model_commit=model_first_commit)
         _add_experiment(logged_in_user, 'private',  # Does get re-run because same proto version as case 1
-                        proto=my_private_protocol, proto_commit=my_private_protocol.repo.latest_commit,
-                        model=model, model_commit=model_first_commit)
+                        proto=my_private_protocol, proto_commit=my_private_protocol.repocache.get_version(my_private_protocol.repo.latest_commit),
+                        model=model, model_commit=model.repocache.get_version(model_first_commit))
         public_protocol = _add_experiment(other_user, 'public')  # Re-run case 2
         _add_experiment(other_user, 'public',  # Not re-run as other model
-                        proto=public_protocol, proto_commit=public_protocol.repo.latest_commit,
-                        model=other_model, model_commit=other_model_commit)
+                        proto=public_protocol, proto_commit=public_protocol.repocache.get_version(public_protocol.repo.latest_commit),
+                        model=other_model, model_commit=other_model.repocache.get_version(other_model_commit))
         _add_experiment(other_user, 'private')  # Not re-run as can't see protocol
         visible_protocol = _add_experiment(other_user, 'private', shared=True)  # Re-run case 3
 
@@ -2223,9 +2223,9 @@ class TestEntityRunExperiment:
         recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=model,
-            experiment__model_version=commit_model.sha,
+            experiment__model_version=model.repocache.get_version(commit_model.sha),
             experiment__protocol=protocol,
-            experiment__protocol_version=commit1.sha)
+            experiment__protocol_version=protocol.repocache.get_version(commit1.sha),)
 
         # Test context has correct information
         response = client.get(

@@ -96,12 +96,12 @@ class Experiment(UserCreatedModelMixin, models.Model):
     @property
     def nice_model_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        return self.model.nice_version(self.model_version)
+        return self.model.nice_version(self.model_version.sha)
 
     @property
     def nice_protocol_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        return self.protocol.nice_version(self.protocol_version)
+        return self.protocol.nice_version(self.protocol_version.sha)
 
     @property
     def latest_result(self):

@@ -1,6 +1,5 @@
 from model_mommy.recipe import Recipe, foreign_key, seq
 
-
 user = Recipe('accounts.User', institution='UCL')
 
 model = Recipe(
@@ -23,7 +22,6 @@ protocol_file = Recipe('EntityFile', entity=foreign_key(protocol))
 analysis_task = Recipe('AnalysisTask', entity=foreign_key(protocol))
 
 
-running_experiment = Recipe('RunningExperiment')
 
 
 
@@ -44,6 +42,10 @@ experiment = Recipe(
 )
 
 experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experiment))
+
+running_experiment = Recipe('RunningExperiment',experiment_version=foreign_key(experiment_version))
+
+
 dataset = Recipe('Dataset',
                  name=seq('mydataset'),
                  protocol=foreign_key(protocol))

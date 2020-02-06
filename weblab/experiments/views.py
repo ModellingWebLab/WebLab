@@ -104,11 +104,11 @@ class ExperimentMatrixJsonView(View):
             'entity_id': version.experiment.id,
             'latestResult': version.status,
             'protocol': cls.entity_json(
-                version.experiment.protocol, version.experiment.protocol_version,
+                version.experiment.protocol, version.experiment.protocol_version.sha,
                 extend_name=True, visibility=version.protocol_visibility, author=version.protocol_author,
             ),
             'model': cls.entity_json(
-                version.experiment.model, version.experiment.model_version,
+                version.experiment.model, version.experiment.model_version.sha,
                 extend_name=True, visibility=version.model_visibility, author=version.model_author,
             ),
             'url': reverse(
@@ -268,18 +268,18 @@ class ExperimentMatrixJsonView(View):
         experiments = {}
         q_experiments = Experiment.objects.filter(
             model__in=q_models,
-            model_version__in=model_versions.keys(),
+            model_version__in=q_model_versions,
             protocol__in=q_protocols,
-            protocol_version__in=protocol_versions.keys(),
+            protocol_version__in=q_protocol_versions,
         )
-        q_cached_protocol = CachedProtocolVersion.objects.filter(
-            entity__entity=OuterRef('experiment__protocol'),
-            sha=OuterRef('experiment__protocol_version'),
-        )
-        q_cached_model = CachedModelVersion.objects.filter(
-            entity__entity=OuterRef('experiment__model'),
-            sha=OuterRef('experiment__model_version'),
-        )
+        # q_cached_protocol = CachedProtocolVersion.objects.filter(
+        #     entity__entity=OuterRef('experiment__protocol'),
+        #     sha=OuterRef('experiment__protocol_version'),
+        # )
+        # q_cached_model = CachedModelVersion.objects.filter(
+        #     entity__entity=OuterRef('experiment__model'),
+        #     sha=OuterRef('experiment__model_version'),
+        # )
         q_experiment_versions = ExperimentVersion.objects.filter(
             experiment__in=q_experiments,
         ).order_by(
@@ -292,8 +292,8 @@ class ExperimentMatrixJsonView(View):
             'experiment__protocol', 'experiment__model',
             'experiment__protocol__cachedprotocol', 'experiment__model__cachedmodel',
         ).annotate(
-            protocol_visibility=Subquery(q_cached_protocol.values('visibility')[:1]),
-            model_visibility=Subquery(q_cached_model.values('visibility')[:1]),
+            protocol_visibility=F('experiment__protocol_version__visibility'),
+            model_visibility=F('experiment__model_version__visibility'),
             protocol_author=F('experiment__protocol__author__full_name'),
             model_author=F('experiment__model__author__full_name'),
         )
@@ -450,8 +450,8 @@ class ExperimentComparisonJsonView(View):
             'versionId': version.id,
             'modelName': exp.model.name,
             'protoName': exp.protocol.name,
-            'modelVersion': exp.model.repocache.get_name_for_version(exp.model_version),
-            'protoVersion': exp.protocol.repocache.get_name_for_version(exp.protocol_version),
+            'modelVersion': exp.model.repocache.get_name_for_version(exp.model_version.sha),
+            'protoVersion': exp.protocol.repocache.get_name_for_version(exp.protocol_version.sha),
             'runNumber': version.run_number,
         })
         return details
