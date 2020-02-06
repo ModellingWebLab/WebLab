@@ -16,6 +16,30 @@ class TestDataset:
         dataset = recipes.dataset.make(author=user, name='mydataset', protocol=protocol)
         assert dataset.protocol == protocol
 
+    @pytest.mark.django_db
+    def test_visibility_and_sharing(self, logged_in_user, other_user):
+        protocol = recipes.protocol.make()
+        recipes.dataset.make(author=logged_in_user, name='mydataset', visibility='public', protocol=protocol)
+        visible = Dataset.objects.visible_to_user(logged_in_user).all()
+        assert visible.count() == 1
+        recipes.dataset.make(author=logged_in_user, name='mydataset2', visibility='private', protocol=protocol)
+        visible = Dataset.objects.visible_to_user(logged_in_user).all()
+        assert visible.count() == 2
+        recipes.dataset.make(author=other_user, name='mydataset3', visibility='public',
+                             protocol=protocol)
+        visible = Dataset.objects.visible_to_user(logged_in_user).all()
+        assert visible.count() == 3
+        recipes.dataset.make(author=other_user, name='mydataset4', visibility='moderated',
+                             protocol=protocol)
+        visible = Dataset.objects.visible_to_user(logged_in_user).all()
+        assert visible.count() == 4
+        recipes.dataset.make(author=other_user, name='mydataset5', visibility='private',
+                             protocol=protocol)
+        visible = Dataset.objects.visible_to_user(logged_in_user).all()
+        assert visible.count() == 4
+
+        # TODO - No testing of shared datasets - waiting for implementation in front end
+
 
 @pytest.mark.django_db
 class TestDatasetNameUniqueness:

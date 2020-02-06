@@ -1,5 +1,8 @@
+from html import escape
+
 from django import template
 from django.core.urlresolvers import reverse
+from django.utils.safestring import mark_safe
 
 
 register = template.Library()
@@ -27,6 +30,16 @@ def url_experiment_comparison_base():
     # between experiment versions.
     url = reverse('experiments:compare', args=['/1/1'])
     return url[:-4]
+
+
+@register.simple_tag(takes_context=True)
+def dataset_options(context, experiment):
+    html = ''
+    for dataset in experiment.protocol.protocol_experimental_datasets.visible_to_user(context['user']):
+        html += ('<option value="' +
+                 reverse('datasets:version_json', args=(dataset.id,)) + '">' + escape(dataset.name) + '</option>')
+
+    return mark_safe(html)
 
 
 @register.filter
