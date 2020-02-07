@@ -8,6 +8,10 @@ Django-based front-end for the modelling Web Lab
 The easiest way to get a complete working Web Lab setup is to use the developer version of our Ansible deployment.
 See https://github.com/ModellingWebLab/deployment for details.
 
+This VM can also be used to run experiments with a local Django server for development.
+
+If you want to install Django locally for development purposes, read on...
+
 ### Install system requirements
 
 * Python 3.5+
@@ -38,7 +42,6 @@ You can set these up via environment variables:
 * `SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET`
 * `SOCIAL_AUTH_GITHUB_KEY`
 * `SOCIAL_AUTH_GITHUB_SECRET`
-
 
 ### Create Postgres (user &) database
 
@@ -80,8 +83,15 @@ By default, `gulp` will just build the required static files.
 
 `gulp watch` will watch the files for changes and rebuild when necessary.
 
+### Install latest ontology for metadata editor
 
-### Run unit tests
+The Ansible deployment will install the XML/RDF file from https://github.com/ModellingWebLab/ontologies into the appropriate locations for both front-end and back-end on the VM, which will suffice for running experiments.
+(This is what happens on the production systems.)
+
+If you wish to have the latest annotations available in the metadata editor on your local development setup, you can copy `oxford-metadata.rdf` from that repository into `weblab/static/js/visualizers/editMetadata`.
+
+
+## Run unit tests
 
 ```
 cd weblab

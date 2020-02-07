@@ -12,6 +12,13 @@ class Command(BaseCommand):
         parser.add_argument('entity_id', nargs='*', type=int)
 
     def handle(self, *args, **options):
+        # Avoid 'too many open files' errors
+        import resource
+        soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+        print('Original limits:', soft, hard)
+        resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+        print('Now:', resource.getrlimit(resource.RLIMIT_NOFILE))
+
         entities = Entity.objects.all()
         if options.get('entity_id', []):
             entities = entities.filter(id__in=options['entity_id'])
