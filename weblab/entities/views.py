@@ -1040,26 +1040,29 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
         # in get context self.object was the entity being worked with
         # here we have to retrieve it
         this_entity = self.get_object()
-        this_version = self.get_version().sha
-        is_latest = (this_version == this_entity.repocache.latest_version.sha)
+        this_version = self.get_version()
+        is_latest = (this_version == this_entity.repocache.latest_version)
         exclude_existing = 'rerun_expts' not in request.POST
         experiments_to_run = request.POST.getlist('model_protocol_list[]')
         for version in experiments_to_run:
             ident, sha = version.split(':')
-            exper_kwargs = {
-                this_entity.other_type + '_id': ident,
-                this_entity.other_type + '_version': sha,
-                this_entity.entity_type + '_id': this_entity.id,
-                this_entity.entity_type + '_version': this_version,
-            }
+            other_version = Entity.objects.get(pk=ident).cachedentity.versions.get(sha=sha)
             if exclude_existing:
                 filter_kwargs = {
-                    'experiment__' + name: value
-                    for (name, value) in exper_kwargs.items()
+                    'experiment__' + this_entity.other_type + '_id': ident,
+                    'experiment__' + this_entity.other_type + '_version_id': other_version.id,
+                    'experiment__' + this_entity.entity_type + '_id': this_entity.id,
+                    'experiment__' + this_entity.entity_type + '_version_id': this_version.id,
                 }
                 if ExperimentVersion.objects.filter(**filter_kwargs).exists():
                     continue
-            exper_kwargs['submitter'] = request.user
+            exper_kwargs = {
+                'submitter': request.user,
+                this_entity.other_type + '_id': ident,
+                this_entity.other_type + '_version': other_version.sha,
+                this_entity.entity_type + '_id': this_entity.id,
+                this_entity.entity_type + '_version': this_version.sha,
+            }
             PlannedExperiment.objects.get_or_create(**exper_kwargs)
         # return to entity page
         version_to_use = 'latest'

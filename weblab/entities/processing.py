@@ -153,13 +153,13 @@ def record_experiments_to_run(user, entity, commit):
     """
     new_version_kwargs = {
         entity.entity_type: entity,
-        entity.entity_type + '_version': entity.repocache.get_version(commit.sha),
+        entity.entity_type + '_version': commit.sha,
     }
     for parent in commit.parents:
         # Find visible experiments involving this parent
         parent_kwargs = {
             entity.entity_type: entity,
-            entity.entity_type + '_version': parent.sha,
+            entity.entity_type + '_version': entity.repocache.get_version(parent.sha),
         }
         for expt in Experiment.objects.filter(**parent_kwargs):
             if expt.is_visible_to_user(user):
@@ -167,9 +167,9 @@ def record_experiments_to_run(user, entity, commit):
                 kwargs = {
                     'submitter': user,
                     'model_id': expt.model_id,
-                    'model_version': expt.model_version,
+                    'model_version': expt.model_version.sha,
                     'protocol_id': expt.protocol_id,
-                    'protocol_version': expt.protocol_version,
+                    'protocol_version': expt.protocol_version.sha,
                 }
                 kwargs.update(new_version_kwargs)
                 PlannedExperiment.objects.get_or_create(**kwargs)
