@@ -126,7 +126,6 @@ class TestEntityCacheModelsVisibility:
         populate_entity_cache(model)
         assert model.repocache.get_name_for_version(commit.sha) == 'v1'
         assert model.repocache.get_name_for_version('latest') == 'v1'
-
-        # get_name_for_version must be sha or latest
+        assert model.repocache.get_name_for_version('v1') == 'v1'
         with pytest.raises(RepoCacheMiss):
-            model.repocache.get_name_for_version('v1')
+            model.repocache.get_name_for_version('random value')

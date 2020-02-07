@@ -59,7 +59,7 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
     @property
     def visibility(self):
-        return get_joint_visibility(self.model_version.visibility , self.protocol_version.visibility)
+        return get_joint_visibility(self.model_version.visibility, self.protocol_version.visibility)
 
     @property
     def viewers(self):

@@ -65,10 +65,10 @@ class CachedEntity(models.Model):
             else:
                 return self.versions.get(sha=sha)
         except ObjectDoesNotExist:
-            for version in self.versions.all():
-                if version.tags.count() > 0:
-                    return version.tags.get(tag=sha).version
-            raise RepoCacheMiss("Entity version not found")
+            try:
+                return self.tags.get(tag=sha).version
+            except ObjectDoesNotExist:
+                raise RepoCacheMiss("Entity version not found")
 
     def get_name_for_version(self, sha):
         """Get a human-friendly display name for the given version

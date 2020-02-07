@@ -326,8 +326,8 @@ class NewExperimentView(PermissionRequiredMixin, View):
             exp = exp_ver.experiment
             model = exp.model
             protocol = exp.protocol
-            model_version = exp.model_version
-            protocol_version = exp.protocol_version
+            model_version = exp.model_version.sha
+            protocol_version = exp.protocol_version.sha
         else:
             model = get_object_or_404(ModelEntity, pk=request.POST['model'])
             protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])

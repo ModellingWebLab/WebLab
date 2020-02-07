@@ -1156,6 +1156,7 @@ class TestExperimentComparisonView:
     def test_no_visible_experiments(self, client, experiment_version):
         proto = experiment_version.experiment.protocol
         proto.set_version_visibility('latest', 'private')
+        experiment_version.experiment.protocol_version.refresh_from_db()
         assert experiment_version.visibility == 'private'
 
         response = client.get('/experiments/compare/%d' % (experiment_version.id))
@@ -1235,7 +1236,7 @@ class TestExperimentComparisonJsonView:
         version2 = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=exp.model,
-            experiment__model_version=exp.model.repocache.get_version(exp.model_version),
+            experiment__model_version=exp.model.repocache.get_version(exp.model_version.sha),
             experiment__protocol=protocol,
             experiment__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
         )
