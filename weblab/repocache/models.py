@@ -73,7 +73,6 @@ class CachedEntity(models.Model):
     def get_name_for_version(self, sha):
         """Get a human-friendly display name for the given version
 
-        :param version:
         :param sha: version sha
         :return: first cached tag for this version, if any, or sha if not
         """
