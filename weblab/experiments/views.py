@@ -4,12 +4,6 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.urlresolvers import reverse
-from django.db.models import (
-    F,
-    OuterRef,
-    Q,
-    Subquery,
-)
 from django.db.models.functions import Coalesce
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -25,7 +19,7 @@ from guardian.shortcuts import get_objects_for_user
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
 from entities.models import ModelEntity, ProtocolEntity
-from repocache.models import CACHED_VERSION_TYPE_MAP, CachedModelVersion, CachedProtocolVersion
+from repocache.models import CACHED_VERSION_TYPE_MAP
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import (

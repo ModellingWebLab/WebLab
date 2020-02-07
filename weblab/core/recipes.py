@@ -21,10 +21,6 @@ protocol_file = Recipe('EntityFile', entity=foreign_key(protocol))
 
 analysis_task = Recipe('AnalysisTask', entity=foreign_key(protocol))
 
-
-
-
-
 cached_model = Recipe('CachedModel')
 cached_model_version = Recipe('CachedModelVersion')
 cached_model_tag = Recipe('CachedModelTag')
@@ -43,7 +39,7 @@ experiment = Recipe(
 
 experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experiment))
 
-running_experiment = Recipe('RunningExperiment',experiment_version=foreign_key(experiment_version))
+running_experiment = Recipe('RunningExperiment', experiment_version=foreign_key(experiment_version))
 
 
 dataset = Recipe('Dataset',
