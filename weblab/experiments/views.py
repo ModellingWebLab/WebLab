@@ -270,14 +270,6 @@ class ExperimentMatrixJsonView(View):
             protocol__in=q_protocols,
             protocol_version__in=q_protocol_versions,
         )
-        # q_cached_protocol = CachedProtocolVersion.objects.filter(
-        #     entity__entity=OuterRef('experiment__protocol'),
-        #     sha=OuterRef('experiment__protocol_version'),
-        # )
-        # q_cached_model = CachedModelVersion.objects.filter(
-        #     entity__entity=OuterRef('experiment__model'),
-        #     sha=OuterRef('experiment__model_version'),
-        # )
         q_experiment_versions = ExperimentVersion.objects.filter(
             experiment__in=q_experiments,
         ).order_by(
