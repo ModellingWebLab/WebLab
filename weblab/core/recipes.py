@@ -1,5 +1,6 @@
 from model_mommy.recipe import Recipe, foreign_key, seq
 
+
 user = Recipe('accounts.User', institution='UCL')
 
 model = Recipe(
