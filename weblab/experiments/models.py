@@ -7,8 +7,7 @@ from django.db import models
 from core.models import FileCollectionMixin, UserCreatedModelMixin
 from core.visibility import Visibility, get_joint_visibility, visibility_check
 from entities.models import ModelEntity, ProtocolEntity
-
-from repocache.models import CachedProtocolVersion, CachedModelVersion
+from repocache.models import CachedModelVersion, CachedProtocolVersion
 
 
 class Experiment(UserCreatedModelMixin, models.Model):

@@ -22,8 +22,6 @@ from experiments.models import Experiment, PlannedExperiment
 from repocache.models import ProtocolInterface
 from repocache.populate import populate_entity_cache
 
-from repocache.populate import populate_entity_cache
-
 
 @pytest.fixture
 def analysis_task(protocol_with_version):
