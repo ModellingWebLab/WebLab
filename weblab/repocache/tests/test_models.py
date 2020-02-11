@@ -136,4 +136,4 @@ class TestEntityCacheModelsVisibility:
 
         model_with_version.repo.tag('v1')
         populate_entity_cache(model_with_version)
-        assert version.nice_version() =='v1'
+        assert version.nice_version() == 'v1'

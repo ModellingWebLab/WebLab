@@ -175,6 +175,7 @@ class CachedEntityVersion(VisibilityModelMixin):
             version_name = version_name[:8] + '...'
         return version_name
 
+
 class CachedEntityTag(models.Model):
     """
     Abstract class representing a cache for a tag in any entity type's repository.

@@ -94,7 +94,6 @@ class Entity(UserCreatedModelMixin, models.Model):
             self.author.get_storage_dir('repo'), '%ss' % self.entity_type, str(self.id)
         )
 
-
     def get_visibility_from_repo(self, commit):
         """
         Get the visibility of the given entity version from the repository
