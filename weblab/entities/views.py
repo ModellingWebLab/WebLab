@@ -17,13 +17,7 @@ from django.contrib.auth.mixins import (
 )
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.urlresolvers import reverse
-from django.db.models import (
-    Count,
-    F,
-    OuterRef,
-    Q,
-    Subquery,
-)
+from django.db.models import Count, F, Q
 from django.http import (
     Http404,
     HttpResponse,
@@ -47,7 +41,7 @@ from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingSpec
 from repocache.exceptions import RepoCacheMiss
-from repocache.models import CACHED_VERSION_TYPE_MAP, CachedProtocolVersion
+from repocache.models import CachedProtocolVersion
 
 from .forms import (
     EntityChangeVisibilityForm,
@@ -266,22 +260,17 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
 
     def get_context_data(self, **kwargs):
         entity = self._get_object()
-        commit = self.get_version()
+        version = self.get_version()
 
         entity_type = entity.entity_type
         other_type = entity.other_type
 
-        q_other_type_versions = CACHED_VERSION_TYPE_MAP[other_type].objects.filter(
-            entity__entity=OuterRef(other_type),
-            pk=OuterRef(other_type + '_version'),
-        )
-
         experiments = Experiment.objects.filter(**{
             entity_type: entity.pk,
-            entity_type + '_version': commit.pk,
+            entity_type + '_version': version.pk,
         }).annotate(
             version_count=Count('versions'),
-            other_version_timestamp=Subquery(q_other_type_versions.values('timestamp')[:1]),
+            other_version_timestamp=F(other_type + '_version__timestamp'),
         ).filter(
             version_count__gt=0,
         ).select_related(other_type).order_by(other_type, '-other_version_timestamp')
