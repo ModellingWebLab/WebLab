@@ -183,7 +183,7 @@ class TestEntityVersionView:
         version = model.repocache.latest_version
         model.add_tag('tag1', version.sha)
         model.add_tag('tag2', version.sha)
-        populate_entity_cache(model)
+
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, version.sha), version, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag1'), version, ['tag1', 'tag2'])
         self.check(client, '/entities/models/%d/versions/%s' % (model.pk, 'tag2'),
@@ -479,7 +479,6 @@ class TestModelEntityCompareExperimentsView:
 
     def test_applies_visibility(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
-        sha = exp.model_version.sha
         protocol = recipes.protocol.make()
         exp.model.set_version_visibility('latest', 'public')
         exp.protocol.set_version_visibility('latest', 'public')
@@ -488,11 +487,11 @@ class TestModelEntityCompareExperimentsView:
             experiment__protocol=protocol,
             experiment__protocol_version=protocol.repocache.get_version(protocol_version.sha),
             experiment__model=exp.model,
-            experiment__model_version=exp.model.repocache.get_version(sha),
+            experiment__model_version=exp.model_version,
         )  # should not be included for visibility reasons
 
         response = client.get(
-            '/entities/models/%d/versions/%s/compare' % (exp.model.pk, sha)
+            '/entities/models/%d/versions/%s/compare' % (exp.model.pk, exp.model_version.sha)
         )
 
         assert response.status_code == 200

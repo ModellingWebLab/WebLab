@@ -50,10 +50,10 @@ class Experiment(UserCreatedModelMixin, models.Model):
         """
         model_part = self.model.name
         if model_version:
-            model_part += '@' + self.nice_model_version
+            model_part += '@' + self.model_version.nice_version()
         proto_part = self.protocol.name
         if proto_version:
-            proto_part += '@' + self.nice_protocol_version
+            proto_part += '@' + self.protocol_version.nice_version()
         return '{0} / {1}'.format(model_part, proto_part)
 
     @property
@@ -95,12 +95,12 @@ class Experiment(UserCreatedModelMixin, models.Model):
     @property
     def nice_model_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        return self.model.nice_version(self.model_version.sha)
+        return self.model_version.nice_version()
 
     @property
     def nice_protocol_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        return self.protocol.nice_version(self.protocol_version.sha)
+        return self.protocol_version.nice_version()
 
     @property
     def latest_result(self):

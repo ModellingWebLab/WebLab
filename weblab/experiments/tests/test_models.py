@@ -22,8 +22,6 @@ class TestExperiment:
         protocol = recipes.protocol.make(name='my protocol')
         model_version = helpers.add_version(model, tag_name='v1')
         protocol_version = helpers.add_version(protocol, tag_name='v2')
-        populate_entity_cache(model)
-        populate_entity_cache(protocol)
         experiment = recipes.experiment.make(
             model=model,
             model_version=model.repocache.get_version(model_version.sha),

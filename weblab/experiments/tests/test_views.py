@@ -525,15 +525,15 @@ class TestExperimentMatrix:
         helpers.add_fake_version(exp.protocol)  # v3, not used
 
         exp2 = make_experiment(
-            exp.model, exp.model.repocache.get_version(exp.model_version.sha),
+            exp.model, exp.model_version,
             exp.protocol, v2,
         )
 
         # Add an experiment with a different protocol, which shouldn't appear
         other_protocol = recipes.protocol.make()
         other_protocol_version = helpers.add_fake_version(other_protocol, 'public')
-        make_experiment(exp.model, exp.model.repocache.get_version(exp.model_version.sha),
-                        other_protocol, other_protocol.repocache.get_version(other_protocol_version.sha))
+        make_experiment(exp.model, exp.model_version,
+                        other_protocol, other_protocol_version)
 
         response = client.get(
             '/experiments/matrix',
@@ -565,8 +565,8 @@ class TestExperimentMatrix:
         # Add an experiment with a different protocol, which shouldn't appear
         other_protocol = recipes.protocol.make()
         other_protocol_version = helpers.add_fake_version(other_protocol, 'public')
-        make_experiment(exp.model, exp.model.repocache.get_version(exp.model_version.sha),
-                        other_protocol, other_protocol.repocache.get_version(other_protocol_version.sha))
+        make_experiment(exp.model, exp.model_version,
+                        other_protocol, other_protocol_version)
 
         response = client.get(
             '/experiments/matrix',
@@ -1116,7 +1116,7 @@ class TestExperimentComparisonView:
         version2 = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=exp.model,
-            experiment__model_version=exp.model.repocache.get_version(exp.model_version.sha),
+            experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
             experiment__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
         )
@@ -1139,7 +1139,7 @@ class TestExperimentComparisonView:
         ver2 = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=exp.model,
-            experiment__model_version=exp.model.repocache.get_version(exp.model_version.sha),
+            experiment__model_version=exp.model_version,
             experiment__protocol=proto,
             experiment__protocol_version=proto.repocache.get_version(proto_commit.sha),
         )
@@ -1177,7 +1177,7 @@ class TestExperimentComparisonJsonView:
         version2 = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=exp.model,
-            experiment__model_version=exp.model.repocache.get_version(exp.model_version.sha),
+            experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
             experiment__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
         )
@@ -1207,7 +1207,7 @@ class TestExperimentComparisonJsonView:
         ver2 = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=exp.model,
-            experiment__model_version=exp.model.repocache.get_version(exp.model_version.sha),
+            experiment__model_version=exp.model_version,
             experiment__protocol=proto,
             experiment__protocol_version=proto.repocache.get_version(proto_commit.sha),
         )

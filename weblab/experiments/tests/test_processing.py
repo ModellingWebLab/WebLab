@@ -99,8 +99,8 @@ class TestSubmitExperiment:
                                       user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repocache.get_version(model.repo.latest_commit.sha)
-        protocol_version = protocol.repocache.get_version(protocol.repo.latest_commit.sha)
+        model_version = model.repocache.latest_version
+        protocol_version = protocol.repocache.latest_version
 
         experiment = recipes.experiment.make(model=model, model_version=model_version,
                                              protocol=protocol,
@@ -116,8 +116,8 @@ class TestSubmitExperiment:
                                                   user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repocache.get_version(model.repo.latest_commit.sha)
-        protocol_version = protocol.repocache.get_version(protocol.repo.latest_commit.sha)
+        model_version = model.repocache.latest_version
+        protocol_version = protocol.repocache.latest_version
 
         mock_post.side_effect = generate_response('something %s')
         with pytest.raises(ProcessingException):
@@ -139,8 +139,8 @@ class TestSubmitExperiment:
                                       user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repocache.get_version(model.repo.latest_commit.sha)
-        protocol_version = protocol.repocache.get_version(protocol.repo.latest_commit.sha)
+        model_version = model.repocache.latest_version
+        protocol_version = protocol.repocache.latest_version
 
         mock_post.side_effect = generate_response('%s an error occurred')
 
@@ -155,8 +155,8 @@ class TestSubmitExperiment:
                                          user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repocache.get_version(model.repo.latest_commit.sha)
-        protocol_version = protocol.repocache.get_version(protocol.repo.latest_commit.sha)
+        model_version = model.repocache.latest_version
+        protocol_version = protocol.repocache.latest_version
 
         mock_post.side_effect = generate_response('%s inapplicable')
 

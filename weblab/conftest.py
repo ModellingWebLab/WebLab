@@ -189,7 +189,6 @@ def experiment_with_result(model_with_version, protocol_with_version):
         experiment__model_version=model_with_version.repocache.latest_version,
         experiment__protocol=protocol_with_version,
         experiment__protocol_version=protocol_with_version.repocache.latest_version,
-
     )
     version.mkdir()
     with (version.abs_path / 'result.txt').open('w') as f:

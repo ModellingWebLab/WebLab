@@ -437,8 +437,8 @@ class ExperimentComparisonJsonView(View):
             'versionId': version.id,
             'modelName': exp.model.name,
             'protoName': exp.protocol.name,
-            'modelVersion': exp.model.repocache.get_name_for_version(exp.model_version.sha),
-            'protoVersion': exp.protocol.repocache.get_name_for_version(exp.protocol_version.sha),
+            'modelVersion': exp.model_version.get_name(),
+            'protoVersion': exp.protocol_version.get_name(),
             'runNumber': version.run_number,
         })
         return details
