@@ -105,9 +105,9 @@ def test_name_of_entity_linked_to_experiment(model_with_version, protocol_with_v
     exp = recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=model_with_version,
-        experiment__model_version=model_with_version.repo.latest_commit.sha,
+        experiment__model_version=model_with_version.cachedentity.latest_version,
         experiment__protocol=protocol_with_version,
-        experiment__protocol_version=protocol_with_version.repo.latest_commit.sha,
+        experiment__protocol_version=protocol_with_version.cachedentity.latest_version,
     ).experiment
 
     assert entity_tags.name_of_model(exp) == '%s @ v1' % model_with_version.name

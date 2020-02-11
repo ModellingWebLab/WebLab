@@ -173,7 +173,9 @@ def queued_experiment(model_with_version, protocol_with_version):
     version = recipes.experiment_version.make(
         status='QUEUED',
         experiment__model=model_with_version,
+        experiment__model_version=model_with_version.repocache.latest_version,
         experiment__protocol=protocol_with_version,
+        experiment__protocol_version=protocol_with_version.repocache.latest_version,
     )
     recipes.running_experiment.make(experiment_version=version)
     return version
@@ -184,7 +186,9 @@ def experiment_with_result(model_with_version, protocol_with_version):
     version = recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=model_with_version,
+        experiment__model_version=model_with_version.repocache.latest_version,
         experiment__protocol=protocol_with_version,
+        experiment__protocol_version=protocol_with_version.repocache.latest_version,
     )
     version.mkdir()
     with (version.abs_path / 'result.txt').open('w') as f:
@@ -197,9 +201,9 @@ def experiment_version(public_model, public_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=public_model,
-        experiment__model_version=public_model.repo.latest_commit.sha,
+        experiment__model_version=public_model.repocache.latest_version,
         experiment__protocol=public_protocol,
-        experiment__protocol_version=public_protocol.repo.latest_commit.sha,
+        experiment__protocol_version=public_protocol.repocache.latest_version,
     )
 
 
@@ -207,9 +211,9 @@ def experiment_version(public_model, public_protocol):
 def quick_experiment_version(helpers):
     """An experiment version that exists only in the DB - no model/proto repos, no results."""
     model = recipes.model.make()
-    model_version = str(helpers.add_fake_version(model, 'public').sha)
+    model_version = helpers.add_fake_version(model, 'public')
     protocol = recipes.protocol.make()
-    protocol_version = str(helpers.add_fake_version(protocol, 'public').sha)
+    protocol_version = helpers.add_fake_version(protocol, 'public')
     return recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=model,
@@ -224,9 +228,9 @@ def moderated_experiment_version(moderated_model, moderated_protocol):
     return recipes.experiment_version.make(
         status='SUCCESS',
         experiment__model=moderated_model,
-        experiment__model_version=moderated_model.repo.latest_commit.sha,
+        experiment__model_version=moderated_model.repocache.latest_version,
         experiment__protocol=moderated_protocol,
-        experiment__protocol_version=moderated_protocol.repo.latest_commit.sha,
+        experiment__protocol_version=moderated_protocol.repocache.latest_version,
     )
 
 

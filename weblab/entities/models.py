@@ -94,18 +94,6 @@ class Entity(UserCreatedModelMixin, models.Model):
             self.author.get_storage_dir('repo'), '%ss' % self.entity_type, str(self.id)
         )
 
-    def nice_version(self, sha_or_tag):
-        """
-        Returns tag/sha with ellipses
-
-        :param sha_or_tag: version sha or tag string
-        :return version_name: string with the sha_or_tag formatted
-        """
-        version_name = self.repocache.get_name_for_version(sha_or_tag)
-        if len(version_name) > 20:
-            version_name = version_name[:8] + '...'
-        return version_name
-
     def get_visibility_from_repo(self, commit):
         """
         Get the visibility of the given entity version from the repository

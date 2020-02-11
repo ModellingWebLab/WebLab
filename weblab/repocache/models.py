@@ -65,7 +65,10 @@ class CachedEntity(models.Model):
             else:
                 return self.versions.get(sha=sha)
         except ObjectDoesNotExist:
-            raise RepoCacheMiss("Entity version not found")
+            try:
+                return self.tags.get(tag=sha).version
+            except ObjectDoesNotExist:
+                raise RepoCacheMiss("Entity version not found")
 
     def get_name_for_version(self, sha):
         """Get a human-friendly display name for the given version
@@ -74,11 +77,9 @@ class CachedEntity(models.Model):
         :return: first cached tag for this version, if any, or sha if not
         """
         version = self.get_version(sha)
-
-        first_tag = version.tags.first()
-        if first_tag is not None:
-            return first_tag.tag
-        return sha
+        if sha == 'latest' and version.tags.count() == 0:
+            return 'latest'
+        return version.get_name()
 
     def add_version(self, sha):
         """
@@ -153,6 +154,26 @@ class CachedEntityVersion(VisibilityModelMixin):
             version=self,
             tag=tagname,
         )
+
+    def get_name(self):
+        """
+        Get name for this version
+        """
+        first_tag = self.tags.first()
+        if first_tag is not None:
+            return first_tag.tag
+        return self.sha
+
+    def nice_version(self):
+        """
+        Returns tag/sha with ellipses
+
+        :return version_name: string with the sha_or_tag formatted
+        """
+        version_name = self.get_name()
+        if len(version_name) > 20:
+            version_name = version_name[:8] + '...'
+        return version_name
 
 
 class CachedEntityTag(models.Model):

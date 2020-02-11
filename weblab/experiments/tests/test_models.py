@@ -20,11 +20,13 @@ class TestExperiment:
     def test_name(self, helpers):
         model = recipes.model.make(name='my model')
         protocol = recipes.protocol.make(name='my protocol')
+        model_version = helpers.add_version(model, tag_name='v1')
+        protocol_version = helpers.add_version(protocol, tag_name='v2')
         experiment = recipes.experiment.make(
             model=model,
-            model_version=helpers.add_version(model, tag_name='v1').sha,
+            model_version=model.repocache.get_version(model_version.sha),
             protocol=protocol,
-            protocol_version=helpers.add_version(protocol, tag_name='v2').sha,
+            protocol_version=protocol.repocache.get_version(protocol_version.sha),
         )
 
         assert str(experiment) == experiment.name == 'my model / my protocol'
@@ -53,8 +55,8 @@ class TestExperiment:
     def test_nice_versions(self, experiment_version):
         exp = experiment_version.experiment
 
-        assert exp.nice_model_version == exp.model.repo.latest_commit.sha[:8] + '...'
-        assert exp.nice_protocol_version == exp.protocol.repo.latest_commit.sha[:8] + '...'
+        assert exp.nice_model_version == exp.model.repocache.latest_version.sha[:8] + '...'
+        assert exp.nice_protocol_version == exp.protocol.repocache.latest_version.sha[:8] + '...'
 
         exp.model.repo.tag('v1')
         populate_entity_cache(exp.model)
@@ -68,24 +70,24 @@ class TestExperiment:
     def test_visibility(self, helpers):
         model = recipes.model.make()
         protocol = recipes.protocol.make()
-        mv1 = helpers.add_version(model, visibility='private').sha
-        mv2 = helpers.add_version(model, visibility='public').sha
-        pv1 = helpers.add_version(protocol, visibility='private').sha
-        pv2 = helpers.add_version(protocol, visibility='public').sha
+        mv1 = helpers.add_version(model, visibility='private')
+        mv2 = helpers.add_version(model, visibility='public')
+        pv1 = helpers.add_version(protocol, visibility='private')
+        pv2 = helpers.add_version(protocol, visibility='public')
 
         assert recipes.experiment.make(
-            model=model, model_version=mv2,
-            protocol=protocol, protocol_version=pv2
+            model=model, model_version=model.repocache.get_version(mv2.sha),
+            protocol=protocol, protocol_version=protocol.repocache.get_version(pv2.sha)
         ).visibility == 'public'
 
         assert recipes.experiment.make(
-            model=model, model_version=mv1,
-            protocol=protocol, protocol_version=pv1
+            model=model, model_version=model.repocache.get_version(mv1.sha),
+            protocol=protocol, protocol_version=protocol.repocache.get_version(pv1.sha)
         ).visibility == 'private'
 
         assert recipes.experiment.make(
-            model=model, model_version=mv1,
-            protocol=protocol, protocol_version=pv2
+            model=model, model_version=model.repocache.get_version(mv1.sha),
+            protocol=protocol, protocol_version=protocol.repocache.get_version(pv2.sha)
         ).visibility == 'private'
 
     def test_viewers(self, helpers, user):
@@ -100,8 +102,8 @@ class TestExperiment:
         exp = recipes.experiment_version.make(
             experiment__model=model,
             experiment__protocol=protocol,
-            experiment__model_version=mv.sha,
-            experiment__protocol_version=pv.sha,
+            experiment__model_version=model.repocache.get_version(mv.sha),
+            experiment__protocol_version=protocol.repocache.get_version(pv.sha),
         ).experiment
         assert user not in exp.viewers
 

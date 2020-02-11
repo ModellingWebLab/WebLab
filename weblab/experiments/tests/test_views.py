@@ -42,8 +42,8 @@ def add_permission(user, perm):
 def make_experiment(model, model_version, protocol, protocol_version):
     """Create an experiment in the DB with a single version."""
     exp = recipes.experiment.make(
-        model=model, model_version=str(model_version),
-        protocol=protocol, protocol_version=str(protocol_version))
+        model=model, model_version=model_version,
+        protocol=protocol, protocol_version=protocol_version)
     recipes.experiment_version.make(experiment=exp)
     return exp
 
@@ -137,9 +137,9 @@ class TestExperimentMatrix:
         assert 'getMatrix' in data
 
         assert len(data['getMatrix']['models']) == 1
-        assert str(exp.model_version) in data['getMatrix']['models']
+        assert str(exp.model_version.sha) in data['getMatrix']['models']
         assert len(data['getMatrix']['protocols']) == 1
-        assert str(exp.protocol_version) in data['getMatrix']['protocols']
+        assert str(exp.protocol_version.sha) in data['getMatrix']['protocols']
         assert len(data['getMatrix']['experiments']) == 1
         assert str(exp.pk) in data['getMatrix']['experiments']
 
@@ -182,22 +182,22 @@ class TestExperimentMatrix:
         my_moderated_protocol = recipes.protocol.make(author=logged_in_user)
         helpers.add_fake_version(my_moderated_protocol, visibility='moderated')
 
-        my_version = make_experiment(my_model, my_model_version.sha, my_protocol, my_protocol_version.sha)
+        my_version = make_experiment(my_model, my_model_version, my_protocol, my_protocol_version)
         with_moderated_model = make_experiment(
-            moderated_model, moderated_model.repo.latest_commit.sha,
-            my_protocol, my_protocol_version.sha,
+            moderated_model, moderated_model.repocache.latest_version,
+            my_protocol, my_protocol_version,
         )
         with_moderated_protocol = make_experiment(
-            my_model, my_model_version.sha,
-            moderated_protocol, moderated_protocol.repo.latest_commit.sha,
+            my_model, my_model_version,
+            moderated_protocol, moderated_protocol.repocache.latest_version,
         )
         with_my_moderated_model = make_experiment(
-            my_moderated_model, my_moderated_model.repocache.latest_version.sha,
-            my_protocol, my_protocol_version.sha,
+            my_moderated_model, my_moderated_model.repocache.latest_version,
+            my_protocol, my_protocol_version,
         )
         with_my_moderated_protocol = make_experiment(
-            my_model, my_model_version.sha,
-            my_moderated_protocol, my_moderated_protocol.repocache.latest_version.sha,
+            my_model, my_model_version,
+            my_moderated_protocol, my_moderated_protocol.repocache.latest_version,
         )
 
         # All my experiments plus ones involving moderated entities
@@ -256,8 +256,8 @@ class TestExperimentMatrix:
         my_protocol_private_version = helpers.add_fake_version(my_protocol_private, visibility='private')
 
         exp1 = make_experiment(
-            my_model_moderated, my_model_moderated_version.sha,
-            my_protocol_private, my_protocol_private_version.sha,
+            my_model_moderated, my_model_moderated_version,
+            my_protocol_private, my_protocol_private_version,
         )
 
         # Someone else's public model with my public protocol: should be visible
@@ -271,16 +271,16 @@ class TestExperimentMatrix:
         my_protocol_second_private_version = helpers.add_fake_version(my_protocol_public, visibility='private')
 
         exp2 = make_experiment(
-            other_model_public, other_model_public_version.sha,
-            my_protocol_public, my_protocol_public_version.sha,
+            other_model_public, other_model_public_version,
+            my_protocol_public, my_protocol_public_version,
         )
         exp2_model_private = make_experiment(  # noqa: F841
-            other_model_public, other_model_second_private_version.sha,
-            my_protocol_public, my_protocol_public_version.sha,
+            other_model_public, other_model_second_private_version,
+            my_protocol_public, my_protocol_public_version,
         )
         exp2_protocol_private = make_experiment(
-            other_model_public, other_model_public_version.sha,
-            my_protocol_public, my_protocol_second_private_version.sha,
+            other_model_public, other_model_public_version,
+            my_protocol_public, my_protocol_second_private_version,
         )
 
         # Someone else's public model and moderated protocol: should be visible
@@ -289,12 +289,12 @@ class TestExperimentMatrix:
         other_protocol_private_version = helpers.add_fake_version(other_protocol_moderated, visibility='private')
 
         exp3 = make_experiment(
-            other_model_public, other_model_public_version.sha,
-            other_protocol_moderated, other_protocol_moderated_version.sha,
+            other_model_public, other_model_public_version,
+            other_protocol_moderated, other_protocol_moderated_version,
         )
         exp3_protocol_private = make_experiment(
-            other_model_public, other_model_second_private_version.sha,
-            other_protocol_moderated, other_protocol_private_version.sha,
+            other_model_public, other_model_second_private_version,
+            other_protocol_moderated, other_protocol_private_version,
         )
 
         # Other's private model, my public protocol: should not be visible
@@ -302,8 +302,8 @@ class TestExperimentMatrix:
         other_model_private_version = helpers.add_fake_version(other_model_private, visibility='private')
 
         exp4 = make_experiment(  # noqa: F841
-            other_model_private, other_model_private_version.sha,
-            my_protocol_public, my_protocol_public_version.sha,
+            other_model_private, other_model_private_version,
+            my_protocol_public, my_protocol_public_version,
         )
 
         response = client.get('/experiments/matrix?subset=public')
@@ -347,8 +347,8 @@ class TestExperimentMatrix:
         other_protocol_public_version = helpers.add_fake_version(other_protocol_public, visibility='public')
 
         exp1 = make_experiment(
-            my_model_public, my_model_public_version.sha,
-            other_protocol_public, other_protocol_public_version.sha,
+            my_model_public, my_model_public_version,
+            other_protocol_public, other_protocol_public_version,
         )
 
         # My public model with somebody else's moderated protocol: should not be visible
@@ -356,8 +356,8 @@ class TestExperimentMatrix:
         other_protocol_moderated_version = helpers.add_fake_version(other_protocol_moderated, visibility='moderated')
 
         exp2 = make_experiment(
-            my_model_public, my_model_public_version.sha,
-            other_protocol_moderated, other_protocol_moderated_version.sha,
+            my_model_public, my_model_public_version,
+            other_protocol_moderated, other_protocol_moderated_version,
         )
 
         # Someone else's moderated model and public protocol: should not be visible
@@ -365,21 +365,21 @@ class TestExperimentMatrix:
         other_model_moderated_version = helpers.add_fake_version(other_model_moderated, visibility='moderated')
 
         exp3 = make_experiment(  # noqa: F841
-            other_model_moderated, other_model_moderated_version.sha,
-            other_protocol_public, other_protocol_public_version.sha,
+            other_model_moderated, other_model_moderated_version,
+            other_protocol_public, other_protocol_public_version,
         )
 
         # Someone else's moderated model and moderated protocol: should be visible
         exp4 = make_experiment(
-            other_model_moderated, other_model_moderated_version.sha,
-            other_protocol_moderated, other_protocol_moderated_version.sha,
+            other_model_moderated, other_model_moderated_version,
+            other_protocol_moderated, other_protocol_moderated_version,
         )
 
         # A later public version shouldn't show up
         other_model_second_public_version = helpers.add_fake_version(other_model_moderated, visibility='public')
         exp4_public = make_experiment(
-            other_model_moderated, other_model_second_public_version.sha,
-            other_protocol_moderated, other_protocol_moderated_version.sha,
+            other_model_moderated, other_model_second_public_version,
+            other_protocol_moderated, other_protocol_moderated_version,
         )
 
         response = client.get('/experiments/matrix')
@@ -408,8 +408,8 @@ class TestExperimentMatrix:
         other_protocol = recipes.protocol.make()
         other_protocol_version = helpers.add_fake_version(other_protocol)
         make_experiment(
-            other_model, other_model_version.sha,
-            other_protocol, other_protocol_version.sha,
+            other_model, other_model_version,
+            other_protocol, other_protocol_version,
         )
 
         # Throw in a non-existent protocol so we can make sure it gets ignored
@@ -429,15 +429,15 @@ class TestExperimentMatrix:
 
         models = data['getMatrix']['models']
         assert len(models) == 1
-        assert exp.model_version in models
-        assert models[exp.model_version]['id'] == exp.model_version
-        assert models[exp.model_version]['entityId'] == exp.model.pk
+        assert str(exp.model_version.sha) in models
+        assert models[str(exp.model_version.sha)]['id'] == str(exp.model_version.sha)
+        assert models[str(exp.model_version.sha)]['entityId'] == exp.model.pk
 
         protocols = data['getMatrix']['protocols']
         assert len(protocols) == 1
-        assert exp.protocol_version in protocols
-        assert protocols[exp.protocol_version]['id'] == exp.protocol_version
-        assert protocols[exp.protocol_version]['entityId'] == exp.protocol.pk
+        assert str(exp.protocol_version.sha) in protocols
+        assert protocols[str(exp.protocol_version.sha)]['id'] == str(exp.protocol_version.sha)
+        assert protocols[str(exp.protocol_version.sha)]['entityId'] == exp.protocol.pk
 
         experiments = data['getMatrix']['experiments']
         assert len(experiments) == 1
@@ -445,21 +445,21 @@ class TestExperimentMatrix:
 
     def test_submatrix_with_model_versions(self, client, helpers, quick_experiment_version):
         exp = quick_experiment_version.experiment
-        v1 = str(exp.model_version)
-        v2 = str(helpers.add_fake_version(exp.model).sha)
+        v1 = exp.model_version
+        v2 = helpers.add_fake_version(exp.model)
         helpers.add_fake_version(exp.model)  # v3, not used
 
         # Add an experiment with a different model, which shouldn't appear
         other_model = recipes.model.make()
         other_model_version = helpers.add_fake_version(other_model, 'public')
-        make_experiment(other_model, other_model_version.sha, exp.protocol, exp.protocol_version)
+        make_experiment(other_model, other_model_version, exp.protocol, exp.protocol_version)
 
         response = client.get(
             '/experiments/matrix',
             {
                 'subset': 'all',
                 'modelIds[]': [exp.model.pk],
-                'modelVersions[]': [v1, v2],
+                'modelVersions[]': [str(v1.sha), str(v2.sha)],
             }
         )
 
@@ -467,14 +467,14 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['models'].keys()) == {v1, v2}
+        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk)}
 
     def test_submatrix_with_all_model_versions(self, client, helpers, quick_experiment_version):
         exp = quick_experiment_version.experiment
-        v1 = str(exp.model_version)
-        v2 = str(helpers.add_fake_version(exp.model).sha)
-        v3 = str(helpers.add_fake_version(exp.model).sha)
+        v1 = exp.model_version
+        v2 = helpers.add_fake_version(exp.model)
+        v3 = helpers.add_fake_version(exp.model)
 
         exp2 = make_experiment(
             exp.model, v2,
@@ -484,7 +484,7 @@ class TestExperimentMatrix:
         # Add an experiment with a different model, which shouldn't appear
         other_model = recipes.model.make()
         other_model_version = helpers.add_fake_version(other_model, 'public')
-        make_experiment(other_model, other_model_version.sha, exp.protocol, exp.protocol_version)
+        make_experiment(other_model, other_model_version, exp.protocol, exp.protocol_version)
 
         response = client.get(
             '/experiments/matrix',
@@ -499,7 +499,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['models'].keys()) == {v1, v2, v3}
+        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_submatrix_with_too_many_model_ids(self, client, helpers, quick_experiment_version):
@@ -520,41 +520,9 @@ class TestExperimentMatrix:
 
     def test_submatrix_with_protocol_versions(self, client, helpers, quick_experiment_version):
         exp = quick_experiment_version.experiment
-        v1 = str(exp.protocol_version)
-        v2 = str(helpers.add_fake_version(exp.protocol).sha)
+        v1 = exp.protocol_version
+        v2 = helpers.add_fake_version(exp.protocol)
         helpers.add_fake_version(exp.protocol)  # v3, not used
-
-        exp2 = make_experiment(
-            exp.model, exp.model_version,
-            exp.protocol, v2,
-        )
-
-        # Add an experiment with a different protocol, which shouldn't appear
-        other_protocol = recipes.model.make()
-        other_protocol_version = helpers.add_fake_version(other_protocol, 'public')
-        make_experiment(exp.model, exp.model_version, other_protocol, other_protocol_version.sha)
-
-        response = client.get(
-            '/experiments/matrix',
-            {
-                'subset': 'all',
-                'protoIds[]': [exp.protocol.pk],
-                'protoVersions[]': [v1, v2],
-            }
-        )
-
-        assert response.status_code == 200
-        data = json.loads(response.content.decode())
-        assert 'getMatrix' in data
-
-        assert set(data['getMatrix']['protocols'].keys()) == {v1, v2}
-        assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
-
-    def test_submatrix_with_all_protocol_versions(self, client, helpers, quick_experiment_version):
-        exp = quick_experiment_version.experiment
-        v1 = str(exp.protocol_version)
-        v2 = str(helpers.add_fake_version(exp.protocol).sha)
-        v3 = str(helpers.add_fake_version(exp.protocol).sha)
 
         exp2 = make_experiment(
             exp.model, exp.model_version,
@@ -564,7 +532,41 @@ class TestExperimentMatrix:
         # Add an experiment with a different protocol, which shouldn't appear
         other_protocol = recipes.protocol.make()
         other_protocol_version = helpers.add_fake_version(other_protocol, 'public')
-        make_experiment(exp.model, exp.model_version, other_protocol, other_protocol_version.sha)
+        make_experiment(exp.model, exp.model_version,
+                        other_protocol, other_protocol_version)
+
+        response = client.get(
+            '/experiments/matrix',
+            {
+                'subset': 'all',
+                'protoIds[]': [exp.protocol.pk],
+                'protoVersions[]': [str(v1.sha), str(v2.sha)],
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        assert set(data['getMatrix']['protocols'].keys()) == {str(v1.sha), str(v2.sha)}
+        assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
+
+    def test_submatrix_with_all_protocol_versions(self, client, helpers, quick_experiment_version):
+        exp = quick_experiment_version.experiment
+        v1 = exp.protocol_version
+        v2 = helpers.add_fake_version(exp.protocol)
+        v3 = helpers.add_fake_version(exp.protocol)
+
+        exp2 = make_experiment(
+            exp.model, exp.model_version,
+            exp.protocol, v2,
+        )
+
+        # Add an experiment with a different protocol, which shouldn't appear
+        other_protocol = recipes.protocol.make()
+        other_protocol_version = helpers.add_fake_version(other_protocol, 'public')
+        make_experiment(exp.model, exp.model_version,
+                        other_protocol, other_protocol_version)
 
         response = client.get(
             '/experiments/matrix',
@@ -579,7 +581,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['protocols'].keys()) == {v1, v2, v3}
+        assert set(data['getMatrix']['protocols'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_submatrix_with_too_many_protocol_ids(self, client, helpers, quick_experiment_version):
@@ -600,13 +602,13 @@ class TestExperimentMatrix:
 
     def test_submatrix_with_models_and_protocols_given(self, client, helpers):
         m1, m2 = recipes.model.make(_quantity=2)
-        m1v1 = helpers.add_fake_version(m1, 'public').sha
-        m1v2 = helpers.add_fake_version(m1, 'public').sha
-        m2v1 = helpers.add_fake_version(m2, 'public').sha
+        m1v1 = helpers.add_fake_version(m1, 'public')
+        m1v2 = helpers.add_fake_version(m1, 'public')
+        m2v1 = helpers.add_fake_version(m2, 'public')
         p1, p2 = recipes.protocol.make(_quantity=2)
-        p1v1 = helpers.add_fake_version(p1, 'public').sha
-        p1v2 = helpers.add_fake_version(p1, 'public').sha
-        p2v1 = helpers.add_fake_version(p2, 'public').sha
+        p1v1 = helpers.add_fake_version(p1, 'public')
+        p1v2 = helpers.add_fake_version(p1, 'public')
+        p2v1 = helpers.add_fake_version(p2, 'public')
 
         exp1 = make_experiment(m1, m1v1, p1, p1v1)
         exp2 = make_experiment(m1, m1v2, p1, p1v2)
@@ -628,8 +630,8 @@ class TestExperimentMatrix:
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert set(data['getMatrix']['models'].keys()) == {str(m1v1), str(m1v2)}
-        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1), str(p1v2)}
+        assert set(data['getMatrix']['models'].keys()) == {str(m1v1.sha), str(m1v2.sha)}
+        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1.sha), str(p1v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk), str(exp2.pk)}
 
         # Now select only some versions
@@ -638,17 +640,17 @@ class TestExperimentMatrix:
             {
                 'subset': 'all',
                 'modelIds[]': [m1.pk],
-                'modelVersions[]': [m1v1],
+                'modelVersions[]': [str(m1v1.sha)],
                 'protoIds[]': [p1.pk],
-                'protoVersions[]': [p1v1],
+                'protoVersions[]': [str(p1v1.sha)],
             }
         )
 
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert set(data['getMatrix']['models'].keys()) == {str(m1v1)}
-        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1)}
+        assert set(data['getMatrix']['models'].keys()) == {str(m1v1.sha)}
+        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk)}
 
     def test_experiment_without_version_is_ignored(
@@ -656,9 +658,9 @@ class TestExperimentMatrix:
     ):
         recipes.experiment.make(
             model=public_model,
-            model_version=public_model.repo.latest_commit.sha,
+            model_version=public_model.repocache.latest_version,
             protocol=public_protocol,
-            protocol_version=public_protocol.repo.latest_commit.sha,
+            protocol_version=public_protocol.repocache.latest_version,
         )
 
         response = client.get('/experiments/matrix?subset=all')
@@ -676,7 +678,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert str(new_version.sha) in data['getMatrix']['models']
-        assert str(experiment_version.experiment.protocol_version) in data['getMatrix']['protocols']
+        assert str(experiment_version.experiment.protocol_version.sha) in data['getMatrix']['protocols']
         assert len(data['getMatrix']['experiments']) == 0
 
 
@@ -718,8 +720,8 @@ class TestNewExperimentView:
         # Check this has been removed from the list of planned experiments
         assert PlannedExperiment.objects.count() == planned_experiments - 1
         assert PlannedExperiment.objects.filter(
-            model=model, model_version=model_version,
-            protocol=protocol, protocol_version=protocol_version
+            model=model, model_version=model.repocache.get_version(model_version),
+            protocol=protocol, protocol_version=protocol.repocache.get_version(protocol_version)
         ).count() == 0
 
         # Check a subsequent submit gives the same experiment version back
@@ -986,18 +988,18 @@ class TestExperimentTasks:
         recipes.experiment_version.make(
             status=ExperimentVersion.STATUS_SUCCESS,
             experiment__model=model_1,
-            experiment__model_version=model_1_version.sha,
+            experiment__model_version=model_1.repocache.get_version(model_1_version.sha),
             experiment__protocol=protocol_1,
-            experiment__protocol_version=protocol_1_version.sha,
+            experiment__protocol_version=protocol_1.repocache.get_version(protocol_1_version.sha),
             author=logged_in_user,
         )
 
         exp_version_2 = recipes.experiment_version.make(
             status=ExperimentVersion.STATUS_QUEUED,
             experiment__model=model_1,
-            experiment__model_version=model_1_version.sha,
+            experiment__model_version=model_1.repocache.get_version(model_1_version.sha),
             experiment__protocol=protocol_1,
-            experiment__protocol_version=protocol_1_version2.sha,
+            experiment__protocol_version=protocol_1.repocache.get_version(protocol_1_version2.sha),
             author=logged_in_user,
         )
         running_exp_version2 = recipes.running_experiment.make(experiment_version=exp_version_2)
@@ -1005,9 +1007,9 @@ class TestExperimentTasks:
         exp_version_3 = recipes.experiment_version.make(
             status=ExperimentVersion.STATUS_RUNNING,
             experiment__model=model_1,
-            experiment__model_version=model_1_version.sha,
+            experiment__model_version=model_1.repocache.get_version(model_1_version.sha),
             experiment__protocol=protocol_2,
-            experiment__protocol_version=protocol_2_version.sha,
+            experiment__protocol_version=protocol_2.repocache.get_version(protocol_2_version.sha),
             author=logged_in_user,
         )
         running_exp_version3 = recipes.running_experiment.make(experiment_version=exp_version_3)
@@ -1116,7 +1118,7 @@ class TestExperimentComparisonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_commit.sha,
+            experiment__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
         )
 
         response = client.get(
@@ -1139,7 +1141,7 @@ class TestExperimentComparisonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=proto,
-            experiment__protocol_version=proto_commit.sha,
+            experiment__protocol_version=proto.repocache.get_version(proto_commit.sha),
         )
 
         response = client.get(
@@ -1154,6 +1156,7 @@ class TestExperimentComparisonView:
     def test_no_visible_experiments(self, client, experiment_version):
         proto = experiment_version.experiment.protocol
         proto.set_version_visibility('latest', 'private')
+        experiment_version.experiment.protocol_version.refresh_from_db()
         assert experiment_version.visibility == 'private'
 
         response = client.get('/experiments/compare/%d' % (experiment_version.id))
@@ -1176,7 +1179,7 @@ class TestExperimentComparisonJsonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_commit.sha,
+            experiment__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
         )
 
         response = client.get(
@@ -1189,7 +1192,7 @@ class TestExperimentComparisonJsonView:
         assert versions[0]['versionId'] == experiment_version.id
         assert versions[1]['versionId'] == version2.id
         assert versions[0]['modelName'] == exp.model.name
-        assert versions[0]['modelVersion'] == exp.model_version
+        assert versions[0]['modelVersion'] == exp.model_version.sha
         assert versions[0]['protoName'] == exp.protocol.name
         assert versions[0]['protoVersion'] == 'v1'
         assert versions[0]['name'] == exp.name
@@ -1206,7 +1209,7 @@ class TestExperimentComparisonJsonView:
             experiment__model=exp.model,
             experiment__model_version=exp.model_version,
             experiment__protocol=proto,
-            experiment__protocol_version=proto_commit.sha,
+            experiment__protocol_version=proto.repocache.get_version(proto_commit.sha),
         )
 
         response = client.get(
@@ -1233,9 +1236,9 @@ class TestExperimentComparisonJsonView:
         version2 = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=exp.model,
-            experiment__model_version=exp.model_version,
+            experiment__model_version=exp.model.repocache.get_version(exp.model_version.sha),
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_commit.sha,
+            experiment__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
         )
         version2.mkdir()
         shutil.copyfile(archive_file_path, str(version2.archive_path))
@@ -1420,9 +1423,9 @@ class TestEnforcesExperimentVersionVisibility:
         protocol_version = helpers.add_version(protocol, visibility='public')
         experiment_version = recipes.experiment_version.make(
             experiment__model=model,
-            experiment__model_version=model_version.sha,
+            experiment__model_version=model.repocache.get_version(model_version.sha),
             experiment__protocol=protocol,
-            experiment__protocol_version=protocol_version.sha,
+            experiment__protocol_version=protocol.repocache.get_version(protocol_version.sha),
         )
 
         experiment_version.mkdir()

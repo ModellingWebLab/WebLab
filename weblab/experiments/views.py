@@ -4,12 +4,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.urlresolvers import reverse
-from django.db.models import (
-    F,
-    OuterRef,
-    Q,
-    Subquery,
-)
+from django.db.models import F, Q
 from django.db.models.functions import Coalesce
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -25,7 +20,7 @@ from guardian.shortcuts import get_objects_for_user
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
 from entities.models import ModelEntity, ProtocolEntity
-from repocache.models import CACHED_VERSION_TYPE_MAP, CachedModelVersion, CachedProtocolVersion
+from repocache.models import CACHED_VERSION_TYPE_MAP
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import (
@@ -104,11 +99,11 @@ class ExperimentMatrixJsonView(View):
             'entity_id': version.experiment.id,
             'latestResult': version.status,
             'protocol': cls.entity_json(
-                version.experiment.protocol, version.experiment.protocol_version,
+                version.experiment.protocol, version.experiment.protocol_version.sha,
                 extend_name=True, visibility=version.protocol_visibility, author=version.protocol_author,
             ),
             'model': cls.entity_json(
-                version.experiment.model, version.experiment.model_version,
+                version.experiment.model, version.experiment.model_version.sha,
                 extend_name=True, visibility=version.model_visibility, author=version.model_author,
             ),
             'url': reverse(
@@ -268,17 +263,9 @@ class ExperimentMatrixJsonView(View):
         experiments = {}
         q_experiments = Experiment.objects.filter(
             model__in=q_models,
-            model_version__in=model_versions.keys(),
+            model_version__in=q_model_versions,
             protocol__in=q_protocols,
-            protocol_version__in=protocol_versions.keys(),
-        )
-        q_cached_protocol = CachedProtocolVersion.objects.filter(
-            entity__entity=OuterRef('experiment__protocol'),
-            sha=OuterRef('experiment__protocol_version'),
-        )
-        q_cached_model = CachedModelVersion.objects.filter(
-            entity__entity=OuterRef('experiment__model'),
-            sha=OuterRef('experiment__model_version'),
+            protocol_version__in=q_protocol_versions,
         )
         q_experiment_versions = ExperimentVersion.objects.filter(
             experiment__in=q_experiments,
@@ -292,8 +279,8 @@ class ExperimentMatrixJsonView(View):
             'experiment__protocol', 'experiment__model',
             'experiment__protocol__cachedprotocol', 'experiment__model__cachedmodel',
         ).annotate(
-            protocol_visibility=Subquery(q_cached_protocol.values('visibility')[:1]),
-            model_visibility=Subquery(q_cached_model.values('visibility')[:1]),
+            protocol_visibility=F('experiment__protocol_version__visibility'),
+            model_visibility=F('experiment__model_version__visibility'),
             protocol_author=F('experiment__protocol__author__full_name'),
             model_author=F('experiment__model__author__full_name'),
         )
@@ -326,8 +313,8 @@ class NewExperimentView(PermissionRequiredMixin, View):
             exp = exp_ver.experiment
             model = exp.model
             protocol = exp.protocol
-            model_version = exp.model_version
-            protocol_version = exp.protocol_version
+            model_version = exp.model_version.sha
+            protocol_version = exp.protocol_version.sha
         else:
             model = get_object_or_404(ModelEntity, pk=request.POST['model'])
             protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
@@ -450,8 +437,8 @@ class ExperimentComparisonJsonView(View):
             'versionId': version.id,
             'modelName': exp.model.name,
             'protoName': exp.protocol.name,
-            'modelVersion': exp.model.repocache.get_name_for_version(exp.model_version),
-            'protoVersion': exp.protocol.repocache.get_name_for_version(exp.protocol_version),
+            'modelVersion': exp.model_version.get_name(),
+            'protoVersion': exp.protocol_version.get_name(),
             'runNumber': version.run_number,
         })
         return details

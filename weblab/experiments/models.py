@@ -7,6 +7,7 @@ from django.db import models
 from core.models import FileCollectionMixin, UserCreatedModelMixin
 from core.visibility import Visibility, get_joint_visibility, visibility_check
 from entities.models import ModelEntity, ProtocolEntity
+from repocache.models import CachedModelVersion, CachedProtocolVersion
 
 
 class Experiment(UserCreatedModelMixin, models.Model):
@@ -22,11 +23,8 @@ class Experiment(UserCreatedModelMixin, models.Model):
     model = models.ForeignKey(ModelEntity, related_name='model_experiments')
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments')
 
-    # Note that we can't use a ForeignKey here, because versions of models and protocols
-    # are not stored in the DB - they are just commits in the associated git repo.
-    # So instead we store the full git SHA as a string.
-    model_version = models.CharField(max_length=50)
-    protocol_version = models.CharField(max_length=50)
+    model_version = models.ForeignKey(CachedModelVersion, default=None, null=False, related_name='model_ver_exps')
+    protocol_version = models.ForeignKey(CachedProtocolVersion, default=None, null=False, related_name='pro_ver_exps')
 
     class Meta:
         unique_together = ('model', 'protocol', 'model_version', 'protocol_version')
@@ -52,22 +50,15 @@ class Experiment(UserCreatedModelMixin, models.Model):
         """
         model_part = self.model.name
         if model_version:
-            model_part += '@' + self.nice_model_version
+            model_part += '@' + self.model_version.nice_version()
         proto_part = self.protocol.name
         if proto_version:
-            proto_part += '@' + self.nice_protocol_version
+            proto_part += '@' + self.protocol_version.nice_version()
         return '{0} / {1}'.format(model_part, proto_part)
 
     @property
     def visibility(self):
-        return get_joint_visibility(
-            self.model.get_version_visibility(
-                self.model_version,
-                default=self.model.DEFAULT_VISIBILITY),
-            self.protocol.get_version_visibility(
-                self.protocol_version,
-                default=self.protocol.DEFAULT_VISIBILITY),
-        )
+        return get_joint_visibility(self.model_version.visibility, self.protocol_version.visibility)
 
     @property
     def viewers(self):
@@ -104,12 +95,12 @@ class Experiment(UserCreatedModelMixin, models.Model):
     @property
     def nice_model_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        return self.model.nice_version(self.model_version)
+        return self.model_version.nice_version()
 
     @property
     def nice_protocol_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        return self.protocol.nice_version(self.protocol_version)
+        return self.protocol_version.nice_version()
 
     @property
     def latest_result(self):
