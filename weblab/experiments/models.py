@@ -106,11 +106,11 @@ class Experiment(UserCreatedModelMixin, models.Model):
     def latest_result(self):
         try:
             return self.latest_version.status
-        except ExperimentVersion.DoesNotExist:
+        except Runnable.DoesNotExist:
             return ''
 
 
-class ExperimentVersion(UserCreatedModelMixin, FileCollectionMixin, models.Model):
+class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
     STATUS_QUEUED = "QUEUED"
     STATUS_RUNNING = "RUNNING"
     STATUS_SUCCESS = "SUCCESS"
@@ -127,7 +127,6 @@ class ExperimentVersion(UserCreatedModelMixin, FileCollectionMixin, models.Model
         (STATUS_INAPPLICABLE, STATUS_INAPPLICABLE),
     )
 
-    experiment = models.ForeignKey(Experiment, related_name='versions')
     finished_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
         max_length=16,
@@ -197,13 +196,23 @@ class ExperimentVersion(UserCreatedModelMixin, FileCollectionMixin, models.Model
         self.save()
 
 
+class ExperimentVersion(Runnable):
+
+    experiment_key = models.CharField(max_length=50)
+
+    @property
+    def parent(self):
+        """The Experiment this is a version of."""
+        return self.experiment
+
+
 class RunningExperiment(models.Model):
     """
     A current run of an ExperimentVersion
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    experiment_version = models.ForeignKey(ExperimentVersion, related_name='running')
+    experiment_version = models.ForeignKey(Runnable, related_name='running')
 
     task_id = models.CharField(max_length=50)
 

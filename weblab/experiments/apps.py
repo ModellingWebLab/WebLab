@@ -8,7 +8,7 @@ class ExperimentsConfig(AppConfig):
     name = 'experiments'
 
     def ready(self):
-        from .models import ExperimentVersion, RunningExperiment
+        from .models import Runnable, RunningExperiment
 
-        pre_delete.connect(experiment_version_deleted, ExperimentVersion)
+        pre_delete.connect(experiment_version_deleted, Runnable)
         pre_delete.connect(running_experiment_deleted, RunningExperiment)

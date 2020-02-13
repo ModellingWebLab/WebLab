@@ -38,7 +38,7 @@ from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import Visibility, VisibilityMixin
-from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
+from experiments.models import Experiment, Runnable, PlannedExperiment
 from fitting.models import FittingSpec
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedProtocolVersion
@@ -1043,7 +1043,7 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
                     'experiment__' + this_entity.entity_type + '_id': this_entity.id,
                     'experiment__' + this_entity.entity_type + '_version_id': this_version.id,
                 }
-                if ExperimentVersion.objects.filter(**filter_kwargs).exists():
+                if Runnable.objects.filter(**filter_kwargs).exists():
                     continue
             exper_kwargs = {
                 'submitter': request.user,

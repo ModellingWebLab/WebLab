@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import ExperimentVersion
+from .models import Runnable
 from .processing import ChasteProcessingStatus
 
 
@@ -21,5 +21,5 @@ class ExperimentSimulateCallbackForm(forms.ModelForm):
     upload = forms.FileField(required=False)
 
     class Meta:
-        model = ExperimentVersion
+        model = Runnable
         fields = ()
