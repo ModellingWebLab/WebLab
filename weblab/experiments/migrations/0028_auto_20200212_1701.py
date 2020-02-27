@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from django.db import migrations
 
 
-def populate_runnable(apps, schema_editor):
+def populate_exp_version(apps, schema_editor):
     ExperimentVersion = apps.get_model('experiments', 'ExperimentVersion')
     Runnable = apps.get_model('experiments', 'Runnable')
     for runnable in Runnable.objects.all():
@@ -23,5 +23,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(populate_runnable),
+        migrations.RunPython(populate_exp_version),
     ]
