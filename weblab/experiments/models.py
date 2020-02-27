@@ -198,7 +198,7 @@ class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
 
 class ExperimentVersion(Runnable):
 
-    experiment_key = models.CharField(max_length=50)
+    experiment = models.ForeignKey(Experiment, related_name='versions')
 
     @property
     def parent(self):

@@ -25,7 +25,7 @@ from repocache.models import CACHED_VERSION_TYPE_MAP
 from .forms import ExperimentSimulateCallbackForm
 from .models import (
     Experiment,
-    Runnable,
+    ExperimentVersion,
     PlannedExperiment,
     RunningExperiment,
 )
@@ -59,7 +59,7 @@ class ExperimentTasks(LoginRequiredMixin, ListView):
 
     def post(self, request):
         for running_exp_id in request.POST.getlist('chkBoxes[]'):
-            exp_version = Runnable.objects.get(id=running_exp_id)
+            exp_version = ExperimentVersion.objects.get(id=running_exp_id)
             if not exp_version.author == self.request.user:
                 raise Http404
             exp_version.delete()
@@ -267,7 +267,7 @@ class ExperimentMatrixJsonView(View):
             protocol__in=q_protocols,
             protocol_version__in=q_protocol_versions,
         )
-        q_experiment_versions = Runnable.objects.filter(
+        q_experiment_versions = ExperimentVersion.objects.filter(
             experiment__in=q_experiments,
         ).order_by(
             'experiment__id',
@@ -309,7 +309,7 @@ class NewExperimentView(PermissionRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         if 'rerun' in request.POST:
-            exp_ver = get_object_or_404(Runnable, pk=request.POST['rerun'])
+            exp_ver = get_object_or_404(ExperimentVersion, pk=request.POST['rerun'])
             exp = exp_ver.experiment
             model = exp.model
             protocol = exp.protocol
@@ -323,8 +323,8 @@ class NewExperimentView(PermissionRequiredMixin, View):
 
         version, is_new = submit_experiment(model, model_version, protocol, protocol_version,
                                             request.user, 'rerun' in request.POST or 'planned' in request.POST)
-        queued = version.status == Runnable.STATUS_QUEUED
-        if is_new and version.status != Runnable.STATUS_FAILED:
+        queued = version.status == ExperimentVersion.STATUS_QUEUED
+        if is_new and version.status != ExperimentVersion.STATUS_FAILED:
             # Remove from planned experiments
             PlannedExperiment.objects.filter(
                 model=model, model_version=model_version,
@@ -363,7 +363,7 @@ class ExperimentCallbackView(View):
 
 
 class ExperimentVersionView(VisibilityMixin, DetailView):
-    model = Runnable
+    model = ExperimentVersion
     context_object_name = 'version'
 
 
@@ -385,7 +385,7 @@ class ExperimentVersionDeleteView(dataset_views.DatasetDeleteView):
     """
     Delete a single version of an experiment
     """
-    model = Runnable
+    model = ExperimentVersion
 
     def get_success_url(self, *args, **kwargs):
         return reverse('experiments:versions', args=[self.get_object().experiment.id])
@@ -399,7 +399,7 @@ class ExperimentComparisonView(TemplateView):
 
     def get_context_data(self, **kwargs):
         pks = set(map(int, self.kwargs['version_pks'].strip('/').split('/')))
-        versions = Runnable.objects.filter(pk__in=pks).order_by('created_at')
+        versions = ExperimentVersion.objects.filter(pk__in=pks).order_by('created_at')
         versions = [v for v in versions if v.experiment.is_visible_to_user(self.request.user)]
 
         if len(versions) < len(pks):
@@ -445,7 +445,7 @@ class ExperimentComparisonJsonView(View):
 
     def get(self, request, *args, **kwargs):
         pks = {int(pk) for pk in self.kwargs['version_pks'][1:].split('/') if pk}
-        versions = Runnable.objects.filter(pk__in=pks).order_by('created_at')
+        versions = ExperimentVersion.objects.filter(pk__in=pks).order_by('created_at')
         versions = [v for v in versions if v.experiment.is_visible_to_user(self.request.user)]
 
         models = set((v.experiment.model, v.experiment.model_version) for v in versions)
@@ -472,7 +472,7 @@ class ExperimentSimulateCallbackView(FormMixin, DetailView):
 
     This is mainly for debug purposes.
     """
-    model = Runnable
+    model = ExperimentVersion
     form_class = ExperimentSimulateCallbackForm
     template_name = 'experiments/simulate_callback_form.html'
     context_object_name = 'version'
@@ -511,7 +511,7 @@ class ExperimentVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
     """
     Serve up json view of an experiment verson
     """
-    model = Runnable
+    model = ExperimentVersion
 
     def get(self, request, *args, **kwargs):
         version = self.get_object()
@@ -532,14 +532,14 @@ class ExperimentFileDownloadView(dataset_views.DatasetFileDownloadView):
     """
     Download an individual file from an experiment
     """
-    model = Runnable
+    model = ExperimentVersion
 
 
 class ExperimentVersionArchiveView(dataset_views.DatasetArchiveView):
     """
     Download a combine archive of an experiment version
     """
-    model = Runnable
+    model = ExperimentVersion
 
     def get_archive_name(self, version):
         """For historical reasons this is different from the archive_name."""

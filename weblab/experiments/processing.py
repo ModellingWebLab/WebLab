@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from django.utils.timezone import now
 
 from .emails import send_experiment_finished_email
-from .models import Experiment, Runnable, RunningExperiment
+from .models import Experiment, Runnable, RunningExperiment, ExperimentVersion
 
 
 logger = logging.getLogger(__name__)
@@ -59,18 +59,18 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
     # Check there isn't an existing version if we're not allowed to re-run
     if not rerun_ok:
         try:
-            version, created = Runnable.objects.get_or_create(
+            version, created = ExperimentVersion.objects.get_or_create(
                 experiment=experiment,
                 defaults={
                     'author': user,
                 }
             )
         except MultipleObjectsReturned:
-            return Runnable.objects.filter(experiment=experiment).latest('created_at'), False
+            return ExperimentVersion.objects.filter(experiment=experiment).latest('created_at'), False
         if not created:
             return version, False
     else:
-        version = Runnable.objects.create(
+        version = ExperimentVersion.objects.create(
             experiment=experiment,
             author=user,
         )
