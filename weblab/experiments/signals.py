@@ -1,7 +1,7 @@
 from shutil import rmtree
 
 
-def experiment_version_deleted(sender, instance, **kwargs):
+def runnable_deleted(sender, instance, **kwargs):
     """
     Signal callback when an experiment version is about to be deleted.
 

@@ -19,7 +19,7 @@ def populate_exp_version(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('experiments', '0027_experimentversion_experiment_key'),
+        ('experiments', '0026_experimentversion'),
     ]
 
     operations = [

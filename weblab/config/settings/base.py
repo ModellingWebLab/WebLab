@@ -117,7 +117,7 @@ DATABASES = {
 
 # configure db url from DATABASE_URL env var if supplied
 DATABASES['default'] = dj_database_url.config(
-    default='postgres://weblab:weblab@localhost:5432/weblab'
+    default='postgres://postgres:postgres@localhost:5432/postgres5'
 )
 
 

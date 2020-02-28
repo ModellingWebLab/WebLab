@@ -111,6 +111,11 @@ class Experiment(UserCreatedModelMixin, models.Model):
 
 
 class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
+    """ Runnable base class
+    Represents experiments and fitting specs that have the facility to
+    run on the back-end,
+    The current status of the run is recorded as well as the and results when completed.
+    """
     STATUS_QUEUED = "QUEUED"
     STATUS_RUNNING = "RUNNING"
     STATUS_SUCCESS = "SUCCESS"
@@ -197,7 +202,11 @@ class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
 
 
 class ExperimentVersion(Runnable):
-
+    """ ExperimentVersion class
+    This records a single run of a particular Experiment.
+    The same model/protocol combination may be run more than once,
+    resulting in an Experiment having multiple versions.
+    """
     experiment = models.ForeignKey(Experiment, related_name='versions')
 
     @property
@@ -207,8 +216,10 @@ class ExperimentVersion(Runnable):
 
 
 class RunningExperiment(models.Model):
-    """
-    A current run of an ExperimentVersion
+    """ Class to track an in-progress Runnable instance.
+    It adds functionality to link to the task id on the back-end system, so that returned results
+    can be linked to the appropriate Runnable.
+    The running tasks can be cancelled by deleting using the front-end.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
