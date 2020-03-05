@@ -486,10 +486,15 @@ metadataEditor.prototype.saveNewVersion = function ()
     // Remove original RDF from model
     $(this.model.getElementsByTagNameNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "RDF")).remove();
     // Dump updated RDF back into the model, and serialize (with base URI omitted)
+    // We make some modifications to the serialized XML so it's a bit tider
     var rdf_doc = this.modelRdf.databank.dump({format: 'application/rdf+xml', serialize: false});
     this.model.documentElement.appendChild(this.model.adoptNode(rdf_doc.documentElement));
+    var tidy_regex = new RegExp('<(rdf|/rdf|bqbiol):', 'g');
     var model_str = new XMLSerializer().serializeToString(this.model.documentElement)
-                                       .replace(new RegExp(this.modelBaseUri.toString(), 'g'), '');
+                                       .replace(new RegExp(this.modelBaseUri.toString(), 'g'), '')
+                                       .replace(tidy_regex, '\n$&'); // Prepend newlines to matches
+    // Manually add the XML header, since the serializer doesn't
+    model_str = "<?xml version='1.0' encoding='UTF-8'?>\n" + model_str;
 
     // Post the updated model file to the server; any other files comprising the model will be added
     // to the new version at that end.
