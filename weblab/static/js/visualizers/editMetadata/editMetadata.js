@@ -15,18 +15,21 @@ function metadataEditor(file, div)
     // Set up main divs
     this.modelDiv = $('<div></div>', {id: 'editmeta_modelvars_div'}).text('loading model...');
     this.ontoDiv = $('<div></div>', {id: 'editmeta_ontoterms_div'});
-    otherContent = '<div class="clearer">\n'
-        + '<p><label for="id_tag">Tag:</label>\n'
-        + '<input type="text" name="tag" id="id_tag" placeholder="Optional short label for this version"/></p>\n'
-        + '<p><label for="id_commit_message">Description of this version:</label>\n'
-        + '<a class="pointer" id="dateinserter"><small>use current date</small></a>\n'
-        + '<span id="versionaction"></span><br/>\n'
-        + '<textarea cols="70" rows="3" name="commit_message" id="id_commit_message"></textarea>\n'
-        + '<span id="commitmsgaction"></span></p>\n'
-        + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
-        + '<label for="reRunExperiments">Re-run experiments involving the previous version of this model</label>\n'
-        + '</p>\n'
-        + '<p><button id="savebutton">Save model annotations</button><span id="saveaction"></span></p>';
+    if (!$('#entityversion').data('can-edit'))
+        otherContent = '';
+    else
+        otherContent = '<div class="clearer">\n'
+            + '<p><label for="id_tag">Tag:</label>\n'
+            + '<input type="text" name="tag" id="id_tag" placeholder="Optional short label for this version"/></p>\n'
+            + '<p><label for="id_commit_message">Description of this version:</label>\n'
+            + '<a class="pointer" id="dateinserter"><small>use current date</small></a>\n'
+            + '<span id="versionaction"></span><br/>\n'
+            + '<textarea cols="70" rows="3" name="commit_message" id="id_commit_message"></textarea>\n'
+            + '<span id="commitmsgaction"></span></p>\n'
+            + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
+            + '<label for="reRunExperiments">Re-run experiments involving the previous version of this model</label>\n'
+            + '</p>\n'
+            + '<p><button id="savebutton">Save model annotations</button><span id="saveaction"></span></p>';
     this.dragDiv = $('<div></div>', {'class': 'editmeta_annotation', 'style': 'position: fixed;'});
     // Set up annotation filtering divs
 	this.filterDiv = $('<div></div>', {id: 'editmeta_filter_div'}).text('loading filters...');
@@ -140,12 +143,13 @@ metadataEditor.prototype.getContentsCallback = function (succ)
                 }
                 li.html('<span class="editmeta_vname">' + v.name + '</span>');
                 clist.appendChild(li.get(0));
-                li.droppable({
-                    drop: function (event, ui) {
-                        console.log("Adding annotation " + ui.helper.data('bindings').ann + " on " + v.fullname);
-                        self.addAnnotation(v, ui.helper.data('bindings'));
-                    }
-                });
+                if ($('#entityversion').data('can-edit'))
+                    li.droppable({
+                        drop: function (event, ui) {
+                            console.log("Adding annotation " + ui.helper.data('bindings').ann + " on " + v.fullname);
+                            self.addAnnotation(v, ui.helper.data('bindings'));
+                        }
+                    });
             });
         });
         console.log("Found " + utils.keys(this.vars_by_name).length + " variables");
@@ -167,7 +171,7 @@ metadataEditor.prototype.getContentsCallback = function (succ)
         });
         console.log("Found " + rdf.databank.size() + " triples");
 //        console.log(rdf);
-        
+
         // If ontology is available too, set up linking functionality
         if (this.loadedOntology)
             this.ready();
@@ -196,7 +200,8 @@ metadataEditor.prototype.addAnnotation = function (v, bindings)
                           'class': 'editmeta_spaced pointer'});
     s.text(bindings.label === undefined ? bindings.ann.value.fragment : bindings.label.value);
     s.data('term', term);
-    s.append(del);
+    if ($('#entityversion').data('can-edit'))
+        s.append(del);
     if (bindings.comment !== undefined)
     	title = bindings.comment.value + " \n" + title;
     s.attr('title', title);
@@ -214,23 +219,26 @@ metadataEditor.prototype.addAnnotation = function (v, bindings)
     }
     var triple = '<' + v.uri + '> bqbiol:is ' + bindings.ann;
     self.modelRdf.add(triple);
-    // Add the handler for deleting this annotation
-    del.click(function (ev) {
-//        console.log("Removing annotation: <" + v.uri + '> bqbiol:is ' + bindings.ann);
-        delete v.annotations[term];
-        self.modelRdf.remove('<' + v.uri + '> bqbiol:is ' + bindings.ann);
-        s.remove();
-        $('li.editmeta_annotation').each(function() {
-        	var $this = $(this);
-        	if ($this.data('term') == term)
-        	{
-        		$this.removeClass('editmeta_annotation_used');
-        		$this.removeAttr('title');
-        		if (bindings.comment !== undefined)
-        	        $this.attr('title', bindings.comment.value);
-        	}
+    if ($('#entityversion').data('can-edit'))
+    {
+        // Add the handler for deleting this annotation
+        del.click(function (ev) {
+    //        console.log("Removing annotation: <" + v.uri + '> bqbiol:is ' + bindings.ann);
+            delete v.annotations[term];
+            self.modelRdf.remove('<' + v.uri + '> bqbiol:is ' + bindings.ann);
+            s.remove();
+            $('li.editmeta_annotation').each(function() {
+		var $this = $(this);
+		if ($this.data('term') == term)
+		{
+			$this.removeClass('editmeta_annotation_used');
+			$this.removeAttr('title');
+			if (bindings.comment !== undefined)
+		        $this.attr('title', bindings.comment.value);
+		}
+            });
         });
-    });
+    }
     // Show in the annotations pane that this term has been used
     $('li.editmeta_annotation').each(function() {
     	var $this = $(this);
@@ -267,7 +275,7 @@ metadataEditor.prototype.ready = function ()
  * Given a parent HTML element (as a jQuery object) and an rdfQuery collection representing the members of a Category
  * in our ontology, create an unordered list representation of these members (if there are any) and append it to the parent.
  * We recurse for any members that are not Annotations, since these represent sub-categories.
- * 
+ *
  * @param acceptableUris  a 'set' of URIs that are allowed to appear in the list, used to filter the annotations displayed so only
  *     those used by particular protocols appear.  (It's actually an object with the terms as keys.)
  * @return  the ul element containing the list of annotations (as a jQuery object)
@@ -321,6 +329,7 @@ metadataEditor.prototype.fillCategoryList = function (parent, rdf_, acceptableUr
 				li.attr('title', bindings.comment.value);
 			self.terms.push({uri: bindings.ann.value, li: li});
 			ul.append(li);
+            if ($('#entityversion').data('can-edit'))
 			li.draggable({
 				containment: self.div,
 				cursor: 'move',
@@ -466,6 +475,8 @@ metadataEditor.prototype.filtersLoaded = function (data)
  */
 metadataEditor.prototype.saveNewVersion = function ()
 {
+    if (!$('#entityversion').data('can-edit'))
+        return; // Just in case!
     console.log('Save new version tagged "' + $('#id_tag').val() + '"');
     var self = this,
         $div = $(this.div),
@@ -563,8 +574,6 @@ function editMetadata()
  */
 editMetadata.prototype.canRead = function (file)
 {
-    if (!$('#entityversion').data('can-edit'))
-        return false;
     if (file.type == 'CellML')
         return true;
     var ext = file.name.split('.').pop();
