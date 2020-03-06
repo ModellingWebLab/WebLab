@@ -585,6 +585,9 @@ metadataEditor.prototype.saveNewVersion = function ()
 metadataEditor.prototype.show = function ()
 {
     var self = this;
+    if (!this.loadedFilters)
+        $.getJSON($('#entityversion').data('get-proto-interfaces-href'), '',
+                  function(data) {self.filtersLoaded(data);});
     if (!this.loadedModel)
         this.file.getContents(this);
     if (!this.loadedOntology)
@@ -593,9 +596,6 @@ metadataEditor.prototype.show = function ()
                 cache: false,
                 success: function(d,s,j) {self.ontologyLoaded(d,s,j);}
                });
-    if (!this.loadedFilters)
-        $.getJSON($('#entityversion').data('get-proto-interfaces-href'), '',
-                  function(data) {self.filtersLoaded(data);});
 
     // Initialise some event handlers
     $('#dateinserter').click(function() {
