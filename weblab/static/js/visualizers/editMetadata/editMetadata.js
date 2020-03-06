@@ -541,6 +541,7 @@ metadataEditor.prototype.show = function ()
     if (!this.loadedOntology)
         $.ajax(staticPath + 'js/visualizers/editMetadata/oxford-metadata.rdf',
                {dataType: 'xml',
+                cache: false,
                 success: function(d,s,j) {self.ontologyLoaded(d,s,j);}
                });
     if (!this.loadedFilters)
