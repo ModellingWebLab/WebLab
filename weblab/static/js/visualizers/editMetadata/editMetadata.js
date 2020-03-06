@@ -358,19 +358,48 @@ metadataEditor.prototype.ontologyLoaded = function (data, status, jqXHR)
         return;
     console.log("Ontology loaded");
     this.loadedOntology = true;
-    this.mainAnnotDiv.empty();
 
     // Parse XML
     this.ontoRdf.load(data, {});
 
     // Show available terms
-    this.mainAnnotDiv.append("<h4>Available annotations</h4>");
-    this.terms = [];
-    this.fillCategoryList(this.mainAnnotDiv, this.rdf.where('?ann a oxmeta:Category'));
+    this.fillMainAnnotationTree();
 
     // If model is available too, set up linking functionality
     if (this.loadedModel)
         this.ready();
+}
+
+/**
+ * Fill the main annotation div with the available terms
+ */
+metadataEditor.prototype.fillMainAnnotationTree = function ()
+{
+    this.mainAnnotDiv.empty();
+    this.mainAnnotDiv.append("<h4>Available annotations</h4>");
+    this.terms = [];
+    this.fillCategoryList(this.mainAnnotDiv, this.rdf.where('?ann a oxmeta:Category'));
+}
+
+/**
+ * If the given term (appearing in a protocol interface) is not in the oxmeta ontology,
+ * add it as a custom annotation term for use in annotating models.
+ *
+ * @param term string giving the URI for a potential annotation term
+ * @return true iff the term was added
+ */
+metadataEditor.prototype.addCustomAnnotationTerm = function (term)
+{
+    var oxmeta_uri = this.rdf.prefix('oxmeta')
+        non_oxmeta = !term.startsWith(oxmeta_uri);
+    if (non_oxmeta)
+    {
+        // Make this non-oxmeta term recognised as an annotation in the custom category
+        this.rdf.add('<' + term + '> a oxmeta:Annotation');
+        this.rdf.add('<' + term + '> a oxmeta:CustomAnnotations');
+        console.log('Adding custom annotation', term);
+    }
+    return non_oxmeta;
 }
 
 /**
@@ -406,6 +435,26 @@ metadataEditor.prototype.filtersLoaded = function (data)
     content_div.append('<button style="float:left;" id="editmeta_filter_set">Filter annotations</button>\n'
             + '<button style="margin-left:5px; float:left;" id="editmeta_filter_clear">Clear filters</button>\n'
             + '<br style="clear:left;"/>');
+
+    // Add any non-oxmeta terms referenced by protocols to those available for use as annotations
+    var found_custom_term = false;
+    for (var i=0; i<this.protocolInterfaces.length; i++)
+    {
+        var iface = this.protocolInterfaces[i];
+        for (var j=0; j<iface.required.length; j++)
+        {
+            found_custom_term = this.addCustomAnnotationTerm(iface.required[j]) || found_custom_term;
+        }
+        for (var j=0; j<iface.optional.length; j++)
+        {
+            found_custom_term = this.addCustomAnnotationTerm(iface.optional[j]) || found_custom_term;
+        }
+    }
+    if (found_custom_term && this.mainAnnotDiv.children('ul').length > 0)
+    {
+        // The annotation term list has already been constructed, so we'll need to repopulate it
+        this.fillMainAnnotationTree();
+    }
 
     // Visibility toggle handler
     $('#editmeta_filter_header').click(function() {
