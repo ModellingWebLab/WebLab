@@ -11,7 +11,7 @@ def populate_exp_version(apps, schema_editor):
     for runnable in Runnable.objects.all():
 
         experiment_version = ExperimentVersion(runnable_ptr=runnable,
-                                               experiment_id=runnable.experiment_id)
+                                               experiment_key_id=runnable.experiment_id)
         experiment_version.save_base(raw=True)
 
 

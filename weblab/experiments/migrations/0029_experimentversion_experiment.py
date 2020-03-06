@@ -11,12 +11,16 @@ class Migration(migrations.Migration):
     dependencies = [
         ('experiments', '0028_remove_runnable_experiment'),
     ]
-
-    operations = [
-        migrations.AddField(
-            model_name='experimentversion',
-            name='experiment',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, related_name='versions', to='experiments.Experiment'),
-            preserve_default=False,
-        ),
-    ]
+operations = [
+    migrations.RenameField(
+        model_name='ExperimentVersion',
+        old_name='experiment_key',
+        new_name='experiment',
+    ),
+    migrations.AlterField(
+        model_name='ExperimentVersion',
+        name='experiment',
+        field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='versions',
+                                to='experiments.Experiment'),
+    ),
+]

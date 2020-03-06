@@ -23,4 +23,11 @@ class Migration(migrations.Migration):
             },
             bases=('experiments.runnable',),
         ),
+
+        migrations.AddField(
+            model_name='ExperimentVersion',
+            name='experiment_key',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='experiments.Experiment',
+                                    related_name='versions_copy'),
+        ),
     ]
