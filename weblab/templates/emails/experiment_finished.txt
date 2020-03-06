@@ -4,7 +4,7 @@ An experiment you submitted has finished.
 
 Status: {{ experiment_version.status }}
 
-The resulting files can be viewed at: {{ base_url }}{% url 'experiments:version' experiment_version.experiment.id experiment_version.id %}
+The resulting files can be viewed at: {{ base_url }}{% url 'experiments:version' experiment_version.experimentversion.experiment.id experiment_version.id %}
 
 Your sincerely,
 Cardiac Web Lab website
