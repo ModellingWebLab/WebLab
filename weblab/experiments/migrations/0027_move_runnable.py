@@ -9,12 +9,10 @@ def populate_exp_version(apps, schema_editor):
     ExperimentVersion = apps.get_model('experiments', 'ExperimentVersion')
     Runnable = apps.get_model('experiments', 'Runnable')
     for runnable in Runnable.objects.all():
-        experiment_version = ExperimentVersion(id=runnable.id,
-                                               created_at=runnable.created_at,
-                                               author_id=runnable.author_id,
-                                               experiment_id=runnable.experiment_id,
-                                               experiment_key=runnable.experiment_id)
-        experiment_version.save()
+
+        experiment_version = ExperimentVersion(runnable_ptr=runnable,
+                                               experiment_id=runnable.experiment_id)
+        experiment_version.save_base(raw=True)
 
 
 class Migration(migrations.Migration):
