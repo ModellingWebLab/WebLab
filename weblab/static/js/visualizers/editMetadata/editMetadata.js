@@ -15,27 +15,30 @@ function metadataEditor(file, div)
     // Set up main divs
     this.modelDiv = $('<div></div>', {id: 'editmeta_modelvars_div'}).text('loading model...');
     this.ontoDiv = $('<div></div>', {id: 'editmeta_ontoterms_div'});
-    otherContent = '<div class="clearer">\n'
-        + '<p><label for="id_tag">Tag:</label>\n'
-        + '<input type="text" name="tag" id="id_tag" placeholder="Optional short label for this version"/></p>\n'
-        + '<p><label for="id_commit_message">Description of this version:</label>\n'
-        + '<a class="pointer" id="dateinserter"><small>use current date</small></a>\n'
-        + '<span id="versionaction"></span><br/>\n'
-        + '<textarea cols="70" rows="3" name="commit_message" id="id_commit_message"></textarea>\n'
-        + '<span id="commitmsgaction"></span></p>\n'
-        + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
-        + '<label for="reRunExperiments">Re-run experiments involving the previous version of this model</label>\n'
-        + '</p>\n'
-        + '<p><button id="savebutton">Save model annotations</button><span id="saveaction"></span></p>';
+    if (!$('#entityversion').data('can-edit'))
+        otherContent = '';
+    else
+        otherContent = '<div class="clearer">\n'
+            + '<p><label for="id_tag">Tag:</label>\n'
+            + '<input type="text" name="tag" id="id_tag" placeholder="Optional short label for this version"/></p>\n'
+            + '<p><label for="id_commit_message">Description of this version:</label>\n'
+            + '<a class="pointer" id="dateinserter"><small>use current date</small></a>\n'
+            + '<span id="versionaction"></span><br/>\n'
+            + '<textarea cols="70" rows="3" name="commit_message" id="id_commit_message"></textarea>\n'
+            + '<span id="commitmsgaction"></span></p>\n'
+            + '<p><input type="checkbox" name="reRunExperiments" id="reRunExperiments"/>\n'
+            + '<label for="reRunExperiments">Re-run experiments involving the previous version of this model</label>\n'
+            + '</p>\n'
+            + '<p><button id="savebutton">Save model annotations</button><span id="saveaction"></span></p>';
     this.dragDiv = $('<div></div>', {'class': 'editmeta_annotation', 'style': 'position: fixed;'});
     // Set up annotation filtering divs
-	this.filterDiv = $('<div></div>', {id: 'editmeta_filter_div'}).text('loading filters...');
-	this.mainAnnotDiv = $('<div></div>').text('loading available annotations...');
-	this.filtAnnotDiv = $('<div></div>').hide();
-	this.ontoDiv.append(this.filterDiv, this.mainAnnotDiv, this.filtAnnotDiv);
-	// Add everything to the page
-	$(div).append(this.modelDiv, this.ontoDiv, otherContent, this.dragDiv);
-	this.initRdf();
+    this.filterDiv = $('<div></div>', {id: 'editmeta_filter_div'}).text('loading filters...');
+    this.mainAnnotDiv = $('<div></div>').text('loading available annotations...');
+    this.filtAnnotDiv = $('<div></div>').hide();
+    this.ontoDiv.append(this.filterDiv, this.mainAnnotDiv, this.filtAnnotDiv);
+    // Add everything to the page
+    $(div).append(this.modelDiv, this.ontoDiv, otherContent, this.dragDiv);
+    this.initRdf();
 };
 
 /**
@@ -140,12 +143,13 @@ metadataEditor.prototype.getContentsCallback = function (succ)
                 }
                 li.html('<span class="editmeta_vname">' + v.name + '</span>');
                 clist.appendChild(li.get(0));
-                li.droppable({
-                    drop: function (event, ui) {
-                        console.log("Adding annotation " + ui.helper.data('bindings').ann + " on " + v.fullname);
-                        self.addAnnotation(v, ui.helper.data('bindings'));
-                    }
-                });
+                if ($('#entityversion').data('can-edit'))
+                    li.droppable({
+                        drop: function (event, ui) {
+                            console.log("Adding annotation " + ui.helper.data('bindings').ann + " on " + v.fullname);
+                            self.addAnnotation(v, ui.helper.data('bindings'));
+                        }
+                    });
             });
         });
         console.log("Found " + utils.keys(this.vars_by_name).length + " variables");
@@ -167,7 +171,7 @@ metadataEditor.prototype.getContentsCallback = function (succ)
         });
         console.log("Found " + rdf.databank.size() + " triples");
 //        console.log(rdf);
-        
+
         // If ontology is available too, set up linking functionality
         if (this.loadedOntology)
             this.ready();
@@ -181,7 +185,7 @@ metadataEditor.prototype.getContentsCallback = function (succ)
  */
 metadataEditor.prototype.addAnnotation = function (v, bindings)
 {
-	var term = bindings.ann.value.toString();
+    var term = bindings.ann.value.toString();
     if (v.annotations[term] !== undefined)
     {
         console.log("Ignoring duplicate annotation " + bindings.ann + " on " + v.fullname);
@@ -196,9 +200,10 @@ metadataEditor.prototype.addAnnotation = function (v, bindings)
                           'class': 'editmeta_spaced pointer'});
     s.text(bindings.label === undefined ? bindings.ann.value.fragment : bindings.label.value);
     s.data('term', term);
-    s.append(del);
+    if ($('#entityversion').data('can-edit'))
+        s.append(del);
     if (bindings.comment !== undefined)
-    	title = bindings.comment.value + " \n" + title;
+        title = bindings.comment.value + " \n" + title;
     s.attr('title', title);
     v.annotations[term] = {ann: bindings.ann, span: s};
     v.li.append(s);
@@ -214,31 +219,34 @@ metadataEditor.prototype.addAnnotation = function (v, bindings)
     }
     var triple = '<' + v.uri + '> bqbiol:is ' + bindings.ann;
     self.modelRdf.add(triple);
-    // Add the handler for deleting this annotation
-    del.click(function (ev) {
-//        console.log("Removing annotation: <" + v.uri + '> bqbiol:is ' + bindings.ann);
-        delete v.annotations[term];
-        self.modelRdf.remove('<' + v.uri + '> bqbiol:is ' + bindings.ann);
-        s.remove();
-        $('li.editmeta_annotation').each(function() {
-        	var $this = $(this);
-        	if ($this.data('term') == term)
-        	{
-        		$this.removeClass('editmeta_annotation_used');
-        		$this.removeAttr('title');
-        		if (bindings.comment !== undefined)
-        	        $this.attr('title', bindings.comment.value);
-        	}
+    if ($('#entityversion').data('can-edit'))
+    {
+        // Add the handler for deleting this annotation
+        del.click(function (ev) {
+    //        console.log("Removing annotation: <" + v.uri + '> bqbiol:is ' + bindings.ann);
+            delete v.annotations[term];
+            self.modelRdf.remove('<' + v.uri + '> bqbiol:is ' + bindings.ann);
+            s.remove();
+            $('li.editmeta_annotation').each(function() {
+                var $this = $(this);
+                if ($this.data('term') == term)
+                {
+                    $this.removeClass('editmeta_annotation_used');
+                    $this.removeAttr('title');
+                    if (bindings.comment !== undefined)
+                        $this.attr('title', bindings.comment.value);
+                }
+            });
         });
-    });
+    }
     // Show in the annotations pane that this term has been used
     $('li.editmeta_annotation').each(function() {
-    	var $this = $(this);
-    	if ($this.data('term') == term)
-    	{
-    		$this.addClass('editmeta_annotation_used');
-    		$this.attr('title', 'This term has been used');
-    	}
+        var $this = $(this);
+        if ($this.data('term') == term)
+        {
+            $this.addClass('editmeta_annotation_used');
+            $this.attr('title', 'This term has been used');
+        }
     });
 }
 
@@ -267,76 +275,77 @@ metadataEditor.prototype.ready = function ()
  * Given a parent HTML element (as a jQuery object) and an rdfQuery collection representing the members of a Category
  * in our ontology, create an unordered list representation of these members (if there are any) and append it to the parent.
  * We recurse for any members that are not Annotations, since these represent sub-categories.
- * 
+ *
  * @param acceptableUris  a 'set' of URIs that are allowed to appear in the list, used to filter the annotations displayed so only
  *     those used by particular protocols appear.  (It's actually an object with the terms as keys.)
  * @return  the ul element containing the list of annotations (as a jQuery object)
  */
 metadataEditor.prototype.fillCategoryList = function (parent, rdf_, acceptableUris)
 {
-	if (rdf_.length > 0)
-	{
-		var self = this,
-			ul = $('<ul></ul>'),
-			rdf = rdf_.optional('?ann rdfs:label ?label').optional('?ann rdfs:comment ?comment'),
-			annotations = rdf.where('?ann a oxmeta:Annotation');
-		parent.append(ul);
-//		console.log("Number of annotations: " + annotations.length);
-//		console.log("Number of categories: " + rdf.except(annotations).length);
-		// First, process sub-categories
-		rdf.except(annotations).each(function (i, bindings, triples) {
-			var li = $('<li></li>').addClass("editmeta_category"),
-				span = $('<span></span>').addClass("editmeta_category_name editmeta_content_hidden");
-			span.text(bindings.label === undefined ? bindings.ann.value.fragment : bindings.label.value);
-			if (bindings.comment !== undefined)
-				span.attr('title', bindings.comment.value);
-			li.append(span);
-			ul.append(li);
-			// Process the sub-category's members
-			self.fillCategoryList(li, self.rdf.where('?ann a ' + bindings.ann.toString()), acceptableUris);
-			// If there were no members, don't show the category
-			if (li.find("li").length == 0)
-			{
-				li.remove();
-			}
-			else
-			{
-				// Toggle display of the sub-category's members on click of the category name
-				span.click(function (ev) {
-					var $this = $(this);
-					$this.toggleClass("editmeta_content_shown editmeta_content_hidden");
-					$this.next().toggle();
-				});
-				span.next().hide();
-			}
-		});
-		// Second, process annotations
-		annotations.each(function (i, bindings, triples) {
-			if (acceptableUris !== undefined && acceptableUris.indexOf(bindings.ann.value.toString()) == -1)
-				return; // Skip this annotation; it does not appear in the filter
-			var li = $('<li></li>').addClass("editmeta_annotation");
-			li.text(bindings.label === undefined ? bindings.ann.value.fragment : bindings.label.value);
-			li.data('term', bindings.ann.value.toString());
-			if (bindings.comment !== undefined)
-				li.attr('title', bindings.comment.value);
-			self.terms.push({uri: bindings.ann.value, li: li});
-			ul.append(li);
-			li.draggable({
-				containment: self.div,
-				cursor: 'move',
-				helper: function (event) {
-					self.dragDiv.text(li.text())
-								.data('bindings', bindings);
-					return self.dragDiv;
-				},
-				scroll: false
-			});
-		});
-		// Finally, sort the list
-		var items = ul.children('li').get();
-		items.sort(function(a,b) { return $(a).text().localeCompare($(b).text()); });
-		$.each(items, function(i, li) { ul.append(li); });
-	}
+    if (rdf_.length > 0)
+    {
+        var self = this,
+            ul = $('<ul></ul>'),
+            rdf = rdf_.optional('?ann rdfs:label ?label').optional('?ann rdfs:comment ?comment'),
+            annotations = rdf.where('?ann a oxmeta:Annotation');
+        parent.append(ul);
+//        console.log("Number of annotations: " + annotations.length);
+//        console.log("Number of categories: " + rdf.except(annotations).length);
+        // First, process sub-categories
+        rdf.except(annotations).each(function (i, bindings, triples) {
+            var li = $('<li></li>').addClass("editmeta_category"),
+                span = $('<span></span>').addClass("editmeta_category_name editmeta_content_hidden");
+            span.text(bindings.label === undefined ? bindings.ann.value.fragment : bindings.label.value);
+            if (bindings.comment !== undefined)
+                span.attr('title', bindings.comment.value);
+            li.append(span);
+            ul.append(li);
+            // Process the sub-category's members
+            self.fillCategoryList(li, self.rdf.where('?ann a ' + bindings.ann.toString()), acceptableUris);
+            // If there were no members, don't show the category
+            if (li.find("li").length == 0)
+            {
+                li.remove();
+            }
+            else
+            {
+                // Toggle display of the sub-category's members on click of the category name
+                span.click(function (ev) {
+                    var $this = $(this);
+                    $this.toggleClass("editmeta_content_shown editmeta_content_hidden");
+                    $this.next().toggle();
+                });
+                span.next().hide();
+            }
+        });
+        // Second, process annotations
+        annotations.each(function (i, bindings, triples) {
+            if (acceptableUris !== undefined && acceptableUris.indexOf(bindings.ann.value.toString()) == -1)
+                return; // Skip this annotation; it does not appear in the filter
+            var li = $('<li></li>').addClass("editmeta_annotation");
+            li.text(bindings.label === undefined ? bindings.ann.value.fragment : bindings.label.value);
+            li.data('term', bindings.ann.value.toString());
+            if (bindings.comment !== undefined)
+                li.attr('title', bindings.comment.value);
+            self.terms.push({uri: bindings.ann.value, li: li});
+            ul.append(li);
+            if ($('#entityversion').data('can-edit'))
+                li.draggable({
+                    containment: self.div,
+                    cursor: 'move',
+                    helper: function (event) {
+                        self.dragDiv.text(li.text())
+                                    .data('bindings', bindings);
+                        return self.dragDiv;
+                    },
+                    scroll: false
+                });
+        });
+        // Finally, sort the list
+        var items = ul.children('li').get();
+        items.sort(function(a,b) { return $(a).text().localeCompare($(b).text()); });
+        $.each(items, function(i, li) { ul.append(li); });
+    }
 }
 
 /**
@@ -349,19 +358,48 @@ metadataEditor.prototype.ontologyLoaded = function (data, status, jqXHR)
         return;
     console.log("Ontology loaded");
     this.loadedOntology = true;
-    this.mainAnnotDiv.empty();
 
     // Parse XML
     this.ontoRdf.load(data, {});
 
     // Show available terms
-    this.mainAnnotDiv.append("<h4>Available annotations</h4>");
-    this.terms = [];
-    this.fillCategoryList(this.mainAnnotDiv, this.rdf.where('?ann a oxmeta:Category'));
+    this.fillMainAnnotationTree();
 
     // If model is available too, set up linking functionality
     if (this.loadedModel)
         this.ready();
+}
+
+/**
+ * Fill the main annotation div with the available terms
+ */
+metadataEditor.prototype.fillMainAnnotationTree = function ()
+{
+    this.mainAnnotDiv.empty();
+    this.mainAnnotDiv.append("<h4>Available annotations</h4>");
+    this.terms = [];
+    this.fillCategoryList(this.mainAnnotDiv, this.rdf.where('?ann a oxmeta:Category'));
+}
+
+/**
+ * If the given term (appearing in a protocol interface) is not in the oxmeta ontology,
+ * add it as a custom annotation term for use in annotating models.
+ *
+ * @param term string giving the URI for a potential annotation term
+ * @return true iff the term was added
+ */
+metadataEditor.prototype.addCustomAnnotationTerm = function (term)
+{
+    var oxmeta_uri = this.rdf.prefix('oxmeta')
+        non_oxmeta = !term.startsWith(oxmeta_uri);
+    if (non_oxmeta)
+    {
+        // Make this non-oxmeta term recognised as an annotation in the custom category
+        this.rdf.add('<' + term + '> a oxmeta:Annotation');
+        this.rdf.add('<' + term + '> a oxmeta:CustomAnnotations');
+        console.log('Adding custom annotation', term);
+    }
+    return non_oxmeta;
 }
 
 /**
@@ -370,95 +408,115 @@ metadataEditor.prototype.ontologyLoaded = function (data, status, jqXHR)
 metadataEditor.prototype.filtersLoaded = function (data)
 {
     console.log("Interfaces loaded");
-	this.filterDiv.empty();
-	// Extract required & optional terms for each (visible) protocol.
-	// This is an array of {name: string, optional: array, required: array}.
-	if (data.interfaces === undefined)
-	{
-		this.filterDiv.append('Error loading filters');
-		return;
-	}
-	this.protocolInterfaces = data.interfaces;
-	this.protocolInterfaces.sort(function(p1,p2){ return p1.name.localeCompare(p2.name); });
+    this.filterDiv.empty();
+    // Extract required & optional terms for each (visible) protocol.
+    // This is an array of {name: string, optional: array, required: array}.
+    if (data.interfaces === undefined)
+    {
+        this.filterDiv.append('Error loading filters');
+        return;
+    }
+    this.protocolInterfaces = data.interfaces;
+    this.protocolInterfaces.sort(function(p1,p2){ return p1.name.localeCompare(p2.name); });
 
-	// Create the filter controls
-	this.filterDiv.append('<h4 class="editmeta_content_hidden" id="editmeta_filter_header">Filter visible annotations</h4>\n'
-			+ '<div id="editmeta_filter_content">\n'
-			+ 'Show only terms used by:<br/>\n'
-			+ '<input type="checkbox" name="all" id="editmeta_input_all" value="1"/><label for="editmeta_input_all"> any protocol</label><br/>\n'
-			+ '</div>\n');
-	var self = this,
-		content_div = $('#editmeta_filter_content');
-	for (var i=0; i<this.protocolInterfaces.length; i++)
-	{
-		var name = this.protocolInterfaces[i].name;
-		content_div.append('<label><input type="checkbox" name="' + i + '" class="editmeta_input" value="1"/> "' + name + '" protocol</label><br/>\n');
-	}
-	content_div.append('<button style="float:left;" id="editmeta_filter_set">Filter annotations</button>\n'
-			+ '<button style="margin-left:5px; float:left;" id="editmeta_filter_clear">Clear filters</button>\n'
-			+ '<br style="clear:left;"/>');
+    // Create the filter controls
+    this.filterDiv.append('<h4 class="editmeta_content_hidden" id="editmeta_filter_header">Filter visible annotations</h4>\n'
+            + '<div id="editmeta_filter_content">\n'
+            + 'Show only terms used by:<br/>\n'
+            + '<input type="checkbox" name="all" id="editmeta_input_all" value="1"/><label for="editmeta_input_all"> any protocol</label><br/>\n'
+            + '</div>\n');
+    var self = this,
+        content_div = $('#editmeta_filter_content');
+    for (var i=0; i<this.protocolInterfaces.length; i++)
+    {
+        var name = this.protocolInterfaces[i].name;
+        content_div.append('<label><input type="checkbox" name="' + i + '" class="editmeta_input" value="1"/> "' + name + '" protocol</label><br/>\n');
+    }
+    content_div.append('<button style="float:left;" id="editmeta_filter_set">Filter annotations</button>\n'
+            + '<button style="margin-left:5px; float:left;" id="editmeta_filter_clear">Clear filters</button>\n'
+            + '<br style="clear:left;"/>');
 
-	// Visibility toggle handler
-	$('#editmeta_filter_header').click(function() {
-		$(this).toggleClass("editmeta_content_shown editmeta_content_hidden");
-		$('#editmeta_filter_content').toggle();
-	});
-	$('#editmeta_filter_content').hide();
-	// Update selections if the 'all protocols' checkbox changes
-	$('#editmeta_input_all').change(function() {
-		$('.editmeta_input').prop('checked', $(this).prop('checked'));
-	});
+    // Add any non-oxmeta terms referenced by protocols to those available for use as annotations
+    var found_custom_term = false;
+    for (var i=0; i<this.protocolInterfaces.length; i++)
+    {
+        var iface = this.protocolInterfaces[i];
+        for (var j=0; j<iface.required.length; j++)
+        {
+            found_custom_term = this.addCustomAnnotationTerm(iface.required[j]) || found_custom_term;
+        }
+        for (var j=0; j<iface.optional.length; j++)
+        {
+            found_custom_term = this.addCustomAnnotationTerm(iface.optional[j]) || found_custom_term;
+        }
+    }
+    if (found_custom_term && this.mainAnnotDiv.children('ul').length > 0)
+    {
+        // The annotation term list has already been constructed, so we'll need to repopulate it
+        this.fillMainAnnotationTree();
+    }
 
-	// Handler that applies filters when requested
-	$('#editmeta_filter_set').click(function() {
-		// Figure out which terms are required/optional
-		var required_terms = [], optional_terms = [];
-		$('.editmeta_input:checked').each(function() {
-			var iface = self.protocolInterfaces[this.name];
-//			console.log(iface);
-			for (var i=0; i<iface.required.length; i++)
-			{
-				term = iface.required[i];
-				if (required_terms.indexOf(term) == -1)
-					required_terms.push(term);
-			}
-			for (var i=0; i<iface.optional.length; i++)
-			{
-				term = iface.optional[i];
-				if (optional_terms.indexOf(term) == -1)
-					optional_terms.push(term);
-			}
-		});
-//		console.log(required_terms);
-//		console.log(optional_terms);
-		// Create annotation lists accordingly
-		self.mainAnnotDiv.hide();
-		self.filtAnnotDiv.empty();
-		self.filtAnnotDiv.append('<h4>Required annotations</h4>')
-		self.fillCategoryList(self.filtAnnotDiv, self.rdf.where('?ann a oxmeta:Category'), required_terms);
-		self.filtAnnotDiv.append('<h4>Optional annotations</h4>')
-		self.fillCategoryList(self.filtAnnotDiv, self.rdf.where('?ann a oxmeta:Category'), optional_terms);
-		self.filtAnnotDiv.show();
-		// Shade those annotations that are already used
-		$('span.editmeta_annotation').each(function() {
-			var $span = $(this);
-			$('li.editmeta_annotation').each(function() {
-				var $li = $(this);
-				if ($span.data('term') == $li.data('term'))
-				{
-					$li.addClass('editmeta_annotation_used');
-					$li.attr('title', 'This term has been used');
-				}
-			});
-		});
-	});
+    // Visibility toggle handler
+    $('#editmeta_filter_header').click(function() {
+        $(this).toggleClass("editmeta_content_shown editmeta_content_hidden");
+        $('#editmeta_filter_content').toggle();
+    });
+    $('#editmeta_filter_content').hide();
+    // Update selections if the 'all protocols' checkbox changes
+    $('#editmeta_input_all').change(function() {
+        $('.editmeta_input').prop('checked', $(this).prop('checked'));
+    });
 
-	// Clear filters handler
-	$('#editmeta_filter_clear').click(function() {
-		self.filtAnnotDiv.hide();
-		self.filtAnnotDiv.empty(); // No need to keep it around - will be recreated afresh if needed
-		self.mainAnnotDiv.show();
-	});
+    // Handler that applies filters when requested
+    $('#editmeta_filter_set').click(function() {
+        // Figure out which terms are required/optional
+        var required_terms = [], optional_terms = [];
+        $('.editmeta_input:checked').each(function() {
+            var iface = self.protocolInterfaces[this.name];
+//            console.log(iface);
+            for (var i=0; i<iface.required.length; i++)
+            {
+                term = iface.required[i];
+                if (required_terms.indexOf(term) == -1)
+                    required_terms.push(term);
+            }
+            for (var i=0; i<iface.optional.length; i++)
+            {
+                term = iface.optional[i];
+                if (optional_terms.indexOf(term) == -1)
+                    optional_terms.push(term);
+            }
+        });
+//        console.log(required_terms);
+//        console.log(optional_terms);
+        // Create annotation lists accordingly
+        self.mainAnnotDiv.hide();
+        self.filtAnnotDiv.empty();
+        self.filtAnnotDiv.append('<h4>Required annotations</h4>')
+        self.fillCategoryList(self.filtAnnotDiv, self.rdf.where('?ann a oxmeta:Category'), required_terms);
+        self.filtAnnotDiv.append('<h4>Optional annotations</h4>')
+        self.fillCategoryList(self.filtAnnotDiv, self.rdf.where('?ann a oxmeta:Category'), optional_terms);
+        self.filtAnnotDiv.show();
+        // Shade those annotations that are already used
+        $('span.editmeta_annotation').each(function() {
+            var $span = $(this);
+            $('li.editmeta_annotation').each(function() {
+                var $li = $(this);
+                if ($span.data('term') == $li.data('term'))
+                {
+                    $li.addClass('editmeta_annotation_used');
+                    $li.attr('title', 'This term has been used');
+                }
+            });
+        });
+    });
+
+    // Clear filters handler
+    $('#editmeta_filter_clear').click(function() {
+        self.filtAnnotDiv.hide();
+        self.filtAnnotDiv.empty(); // No need to keep it around - will be recreated afresh if needed
+        self.mainAnnotDiv.show();
+    });
 }
 
 /**
@@ -466,6 +524,8 @@ metadataEditor.prototype.filtersLoaded = function (data)
  */
 metadataEditor.prototype.saveNewVersion = function ()
 {
+    if (!$('#entityversion').data('can-edit'))
+        return; // Just in case!
     console.log('Save new version tagged "' + $('#id_tag').val() + '"');
     var self = this,
         $div = $(this.div),
@@ -475,10 +535,15 @@ metadataEditor.prototype.saveNewVersion = function ()
     // Remove original RDF from model
     $(this.model.getElementsByTagNameNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "RDF")).remove();
     // Dump updated RDF back into the model, and serialize (with base URI omitted)
+    // We make some modifications to the serialized XML so it's a bit tider
     var rdf_doc = this.modelRdf.databank.dump({format: 'application/rdf+xml', serialize: false});
     this.model.documentElement.appendChild(this.model.adoptNode(rdf_doc.documentElement));
+    var tidy_regex = new RegExp('<(rdf|/rdf|bqbiol):', 'g');
     var model_str = new XMLSerializer().serializeToString(this.model.documentElement)
-                                       .replace(new RegExp(this.modelBaseUri.toString(), 'g'), '');
+                                       .replace(new RegExp(this.modelBaseUri.toString(), 'g'), '')
+                                       .replace(tidy_regex, '\n$&'); // Prepend newlines to matches
+    // Manually add the XML header, since the serializer doesn't
+    model_str = "<?xml version='1.0' encoding='UTF-8'?>\n" + model_str;
 
     // Post the updated model file to the server; any other files comprising the model will be added
     // to the new version at that end.
@@ -520,16 +585,17 @@ metadataEditor.prototype.saveNewVersion = function ()
 metadataEditor.prototype.show = function ()
 {
     var self = this;
+    if (!this.loadedFilters)
+        $.getJSON($('#entityversion').data('get-proto-interfaces-href'), '',
+                  function(data) {self.filtersLoaded(data);});
     if (!this.loadedModel)
         this.file.getContents(this);
     if (!this.loadedOntology)
         $.ajax(staticPath + 'js/visualizers/editMetadata/oxford-metadata.rdf',
                {dataType: 'xml',
+                cache: false,
                 success: function(d,s,j) {self.ontologyLoaded(d,s,j);}
                });
-	if (!this.loadedFilters)
-		$.getJSON($('#entityversion').data('get-proto-interfaces-href'), '',
-                  function(data) {self.filtersLoaded(data);});
 
     // Initialise some event handlers
     $('#dateinserter').click(function() {
@@ -563,8 +629,6 @@ function editMetadata()
  */
 editMetadata.prototype.canRead = function (file)
 {
-    if (!$('#entityversion').data('can-edit'))
-        return false;
     if (file.type == 'CellML')
         return true;
     var ext = file.name.split('.').pop();
