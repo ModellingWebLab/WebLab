@@ -75,7 +75,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
             author=user,
         )
 
-    run = RunningExperiment.objects.create(experiment_version=version)
+    run = RunningExperiment.objects.create(runnable=version)
     signature = version.signature
 
     model_url = reverse(
@@ -161,7 +161,7 @@ def process_callback(data, files):
 
     try:
         run = RunningExperiment.objects.get(id=signature)
-        exp = run.experiment_version
+        exp = run.runnable
     except RunningExperiment.DoesNotExist:
         return {'error': 'invalid signature'}
 

@@ -177,7 +177,7 @@ def queued_experiment(model_with_version, protocol_with_version):
         experiment__protocol=protocol_with_version,
         experiment__protocol_version=protocol_with_version.repocache.latest_version,
     )
-    recipes.running_experiment.make(experiment_version=version)
+    recipes.running_experiment.make(runnable=version)
     return version
 
 

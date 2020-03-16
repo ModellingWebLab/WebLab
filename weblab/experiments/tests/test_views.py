@@ -970,7 +970,7 @@ class TestExperimentTasks:
     def test_get_queryset_other_user(self, other_user, client, experiment_version):
         experiment_version.author = other_user
         experiment_version.save()
-        recipes.running_experiment.make(experiment_version=experiment_version)
+        recipes.running_experiment.make(runnable=experiment_version)
         assert RunningExperiment.objects.count() == 1
         response = client.get('/experiments/tasks')
         assert len(response.context['runningexperiment_list']) == 0
@@ -1002,7 +1002,7 @@ class TestExperimentTasks:
             experiment__protocol_version=protocol_1.repocache.get_version(protocol_1_version2.sha),
             author=logged_in_user,
         )
-        running_exp_version2 = recipes.running_experiment.make(experiment_version=exp_version_2)
+        running_exp_version2 = recipes.running_experiment.make(runnable=exp_version_2)
 
         exp_version_3 = recipes.experiment_version.make(
             status=ExperimentVersion.STATUS_RUNNING,
@@ -1012,7 +1012,7 @@ class TestExperimentTasks:
             experiment__protocol_version=protocol_2.repocache.get_version(protocol_2_version.sha),
             author=logged_in_user,
         )
-        running_exp_version3 = recipes.running_experiment.make(experiment_version=exp_version_3)
+        running_exp_version3 = recipes.running_experiment.make(runnable=exp_version_3)
 
         assert ExperimentVersion.objects.count() == 3
         assert RunningExperiment.objects.count() == 2
@@ -1022,7 +1022,7 @@ class TestExperimentTasks:
         assert set(response.context['runningexperiment_list']) == {running_exp_version2, running_exp_version3}
 
         # Cancel one of the running versions check the other one is still present
-        client.post('/experiments/tasks', {'chkBoxes[]': [running_exp_version2.experiment_version.id]})
+        client.post('/experiments/tasks', {'chkBoxes[]': [running_exp_version2.runnable.id]})
         response = client.get('/experiments/tasks')
         assert set(response.context['runningexperiment_list']) == {running_exp_version3}
         assert RunningExperiment.objects.count() == 1
@@ -1031,9 +1031,9 @@ class TestExperimentTasks:
     def test_returns_404_incorrect_owner(self, other_user, client, experiment_version):
         experiment_version.author = other_user
         experiment_version.save()
-        running_exp = recipes.running_experiment.make(experiment_version=experiment_version)
+        running_exp = recipes.running_experiment.make(runnable=experiment_version)
         assert RunningExperiment.objects.count() == 1
-        response = client.post('/experiments/tasks', {'chkBoxes[]': [running_exp.experiment_version.id]})
+        response = client.post('/experiments/tasks', {'chkBoxes[]': [running_exp.runnable.id]})
         assert RunningExperiment.objects.count() == 1
         assert response.status_code == 404
 

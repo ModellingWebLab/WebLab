@@ -483,7 +483,7 @@ class TestModelEntityCompareExperimentsView:
         exp.model.set_version_visibility('latest', 'public')
         exp.protocol.set_version_visibility('latest', 'public')
         protocol_version = helpers.add_version(protocol, visibility='private')
-        recipes.experiment_version.make(
+        recipes.runnable.make(
             experiment__protocol=protocol,
             experiment__protocol_version=protocol.repocache.get_version(protocol_version.sha),
             experiment__model=exp.model,

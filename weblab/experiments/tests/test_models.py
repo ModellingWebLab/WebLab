@@ -147,7 +147,7 @@ class TestExperimentVersion:
 
     def test_signature(self):
         running = recipes.running_experiment.make()
-        assert running.experiment_version.signature == str(running.id)
+        assert running.runnable.signature == str(running.id)
 
     @pytest.mark.parametrize('status, is_running', [
         ('QUEUED', False),

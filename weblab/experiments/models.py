@@ -223,7 +223,7 @@ class RunningExperiment(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    experiment_version = models.ForeignKey(Runnable, related_name='running')
+    runnable = models.ForeignKey(Runnable, related_name='running')
 
     task_id = models.CharField(max_length=50)
 

@@ -3,15 +3,15 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
 
-def send_experiment_finished_email(experiment_version):
-    author = experiment_version.author
+def send_experiment_finished_email(runnable):
+    author = runnable.author
 
     if author.receive_emails:
         body = render_to_string(
             'emails/experiment_finished.txt',
             {
                 'user': author,
-                'experiment_version': experiment_version,
+                'runnable': runnable,
                 'base_url': settings.BASE_URL,
             }
         )

@@ -2,9 +2,9 @@ Hi {{ user.full_name }}
 
 An experiment you submitted has finished.
 
-Status: {{ experiment_version.status }}
+Status: {{ runnable.status }}
 
-The resulting files can be viewed at: {{ base_url }}{% url 'experiments:version' experiment_version.experimentversion.experiment.id experiment_version.id %}
+The resulting files can be viewed at: {{ base_url }}{% url 'experiments:version' runnable.experimentversion.experiment.id runnable.id %}
 
 Your sincerely,
 Cardiac Web Lab website

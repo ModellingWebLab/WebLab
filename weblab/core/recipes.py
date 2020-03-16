@@ -38,9 +38,11 @@ experiment = Recipe(
     protocol_version=foreign_key(cached_protocol_version),
 )
 
+runnable = Recipe('Runnable')
+
 experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experiment))
 
-running_experiment = Recipe('RunningExperiment', experiment_version=foreign_key(experiment_version))
+running_experiment = Recipe('RunningExperiment', runnable=foreign_key(runnable))
 
 
 dataset = Recipe('Dataset',
