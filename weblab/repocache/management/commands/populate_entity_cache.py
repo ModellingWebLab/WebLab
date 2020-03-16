@@ -16,7 +16,10 @@ class Command(BaseCommand):
         import resource
         soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
         print('Original limits:', soft, hard)
-        resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+        try:
+            resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
+        except ValueError:
+            pass  # Can easily fail while testing on Mac OS, which isn't critical!
         print('Now:', resource.getrlimit(resource.RLIMIT_NOFILE))
 
         entities = Entity.objects.all()
