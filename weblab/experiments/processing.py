@@ -9,7 +9,12 @@ from django.core.urlresolvers import reverse
 from django.utils.timezone import now
 
 from .emails import send_experiment_finished_email
-from .models import Experiment, Runnable, RunningExperiment, ExperimentVersion
+from .models import (
+    Experiment,
+    ExperimentVersion,
+    Runnable,
+    RunningExperiment,
+)
 
 
 logger = logging.getLogger(__name__)
