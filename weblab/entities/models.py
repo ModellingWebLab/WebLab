@@ -355,7 +355,7 @@ class EntityManager(models.Manager):
         ).filter(
             non_private=True,
         )
-        owned = self.filter(author=user)
+        owned = self.filter(author=user) if user.is_authenticated else self.none()
         shared = self.shared_with_user(user)
         return owned | non_private | shared
 
