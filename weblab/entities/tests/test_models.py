@@ -40,7 +40,7 @@ def test_deletion_permissions():
 
 
 @pytest.mark.django_db
-def test_visibility_and_sharing(user, other_user, admin_user, helpers):
+def test_visibility_and_sharing(user, anon_user, other_user, admin_user, helpers):
     """Checks the EntityManager visible_to_user and shared_with_user methods."""
     # Own entities -> always visible
     own_models = recipes.model.make(author=user, _quantity=3)
@@ -72,6 +72,11 @@ def test_visibility_and_sharing(user, other_user, admin_user, helpers):
     visible_models = ModelEntity.objects.visible_to_user(user).all()
     assert visible_models.count() == 6
     assert set(visible_models) == set(own_models + other_public_models + [other_shared_model])
+
+    # Anonymous users only see public things
+    visible_to_anon = ModelEntity.objects.visible_to_user(anon_user).all()
+    assert visible_to_anon.count() == 4
+    assert set(visible_to_anon) == set(own_models[:2] + other_public_models)
 
     # Admins don't get special visibility rights, so only see public entities
     visible_to_admin = ModelEntity.objects.visible_to_user(admin_user).all()
