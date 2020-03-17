@@ -12,7 +12,7 @@ class DatasetQuerySet(models.QuerySet):
         """Query over all datasets that the given user can view.
         """
         non_private = self.filter(visibility__in=['public', 'moderated'])
-        mine = self.filter(author=user)
+        mine = self.filter(author=user) if user.is_authenticated else self.none()
         shared = self.shared_with_user(user)
         return non_private | mine | shared
 
