@@ -55,8 +55,8 @@ class ExperimentTasks(LoginRequiredMixin, ListView):
             runnable__author=self.request.user
         ).order_by(
             'runnable__created_at',
-        ).select_related('runnable'
-                         '', 'runnable__experimentversion__experiment')
+        ).select_related('runnable',
+                         'runnable__experimentversion__experiment')
 
     def post(self, request):
         for running_exp_id in request.POST.getlist('chkBoxes[]'):

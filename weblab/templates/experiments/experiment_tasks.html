@@ -39,7 +39,7 @@
                     <li>
                         <div id="taskDisplay">
                             <input class="taskCancelCheckBox" type="checkbox" name="chkBoxes[]"
-                                   value="{{ runnable.id }}">
+                                   value="{{ runnable.experimentversion.id }}">
                             <div class="experiment-{{ runnable.status }}" id="taskDetailBox">
                                {{ runnable.experimentversion.experiment.name }} Version: {{ runnable.name }}
                             </div>
