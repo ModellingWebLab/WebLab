@@ -954,8 +954,6 @@ class TestExperimentVersionView:
         assert response.context['version'] == experiment_version
         assertTemplateUsed(response, 'experiments/experimentversion_detail.html')
         assertContains(response, 'Download archive of all files')
-        print(response.content)
-        assert False
 
 
 @pytest.mark.django_db
