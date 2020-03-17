@@ -13,6 +13,7 @@ from django.contrib.messages import get_messages
 from django.core.urlresolvers import reverse
 from django.test import Client
 from django.utils.dateparse import parse_datetime
+from pytest_django.asserts import assertContains, assertTemplateUsed
 
 from core import recipes
 from experiments.models import (
@@ -950,8 +951,11 @@ class TestExperimentVersionView:
                                               experiment_version.pk))
         )
 
-        assert response.status_code == 200
         assert response.context['version'] == experiment_version
+        assertTemplateUsed(response, 'experiments/experimentversion_detail.html')
+        assertContains(response, 'Download archive of all files')
+        print(response.content)
+        assert False
 
 
 @pytest.mark.django_db

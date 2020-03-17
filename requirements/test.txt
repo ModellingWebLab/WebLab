@@ -28,8 +28,8 @@ pycodestyle==2.5.0        # via flake8
 pyflakes==2.1.1           # via flake8
 pyjwt==1.7.1              # via social-auth-core
 pytest-cov==2.5.1
-pytest-django==3.1.2
-pytest==3.2.0
+pytest-django==3.8.0
+pytest==3.6.0
 python3-openid==3.1.0     # via social-auth-core
 pytz==2018.9              # via django
 requests-oauthlib==1.2.0  # via social-auth-core
