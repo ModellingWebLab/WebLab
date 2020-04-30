@@ -33,18 +33,20 @@
             {% endif %}
 
             {% for running_experiment in object_list %}
+                {% with running_experiment.runnable as runnable %}
 
                 <ul id="taskList">
                     <li>
                         <div id="taskDisplay">
                             <input class="taskCancelCheckBox" type="checkbox" name="chkBoxes[]"
-                                   value="{{ running_experiment.experiment_version.id }}">
-                            <div class="experiment-{{ running_experiment.experiment_version.status }}" id="taskDetailBox">
-                               {{ running_experiment.experiment_version.experiment.name }} Version: {{ running_experiment.experiment_version.name }}
+                                   value="{{ runnable.experimentversion.id }}">
+                            <div class="experiment-{{ runnable.status }}" id="taskDetailBox">
+                               {{ runnable.experimentversion.experiment.name }} Version: {{ runnable.name }}
                             </div>
                         </div>
                     </li>
                 </ul>
+                {% endwith %}
             {% endfor %}
             </c:forEach>
         </div>

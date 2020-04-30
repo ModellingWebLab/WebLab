@@ -9,7 +9,12 @@ from django.core.urlresolvers import reverse
 from django.utils.timezone import now
 
 from .emails import send_experiment_finished_email
-from .models import Experiment, ExperimentVersion, RunningExperiment
+from .models import (
+    Experiment,
+    ExperimentVersion,
+    Runnable,
+    RunningExperiment,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -23,11 +28,11 @@ class ChasteProcessingStatus:
     INAPPLICABLE = "inapplicable"
 
     MODEL_STATUSES = {
-        SUCCESS: ExperimentVersion.STATUS_SUCCESS,
-        RUNNING: ExperimentVersion.STATUS_RUNNING,
-        PARTIAL: ExperimentVersion.STATUS_PARTIAL,
-        FAILED: ExperimentVersion.STATUS_FAILED,
-        INAPPLICABLE: ExperimentVersion.STATUS_INAPPLICABLE,
+        SUCCESS: Runnable.STATUS_SUCCESS,
+        RUNNING: Runnable.STATUS_RUNNING,
+        PARTIAL: Runnable.STATUS_PARTIAL,
+        FAILED: Runnable.STATUS_FAILED,
+        INAPPLICABLE: Runnable.STATUS_INAPPLICABLE,
     }
 
     @classmethod
@@ -75,7 +80,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
             author=user,
         )
 
-    run = RunningExperiment.objects.create(experiment_version=version)
+    run = RunningExperiment.objects.create(runnable=version)
     signature = version.signature
 
     model_url = reverse(
@@ -102,7 +107,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
         response = requests.post(settings.CHASTE_URL, body)
     except requests.exceptions.ConnectionError:
         run.delete()
-        version.status = ExperimentVersion.STATUS_FAILED
+        version.status = Runnable.STATUS_FAILED
         version.return_text = 'Unable to connect to experiment runner service'
         version.save()
         logger.exception(version.return_text)
@@ -113,7 +118,7 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
 
     if not res.startswith(signature):
         run.delete()
-        version.status = ExperimentVersion.STATUS_FAILED
+        version.status = Runnable.STATUS_FAILED
         version.return_text = 'Chaste backend answered with something unexpected: %s' % res
         version.save()
         logger.error(version.return_text)
@@ -126,11 +131,11 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
         run.save()
     elif status == 'inapplicable':
         run.delete()
-        version.status = ExperimentVersion.STATUS_INAPPLICABLE
+        version.status = Runnable.STATUS_INAPPLICABLE
     else:
         run.delete()
         logger.error('Chaste backend answered with error: %s' % status)
-        version.status = ExperimentVersion.STATUS_FAILED
+        version.status = Runnable.STATUS_FAILED
         version.return_text = status
 
     version.save()
@@ -161,7 +166,7 @@ def process_callback(data, files):
 
     try:
         run = RunningExperiment.objects.get(id=signature)
-        exp = run.experiment_version
+        exp = run.runnable
     except RunningExperiment.DoesNotExist:
         return {'error': 'invalid signature'}
 
@@ -187,7 +192,7 @@ def process_callback(data, files):
 
     exp.save()
 
-    if exp.is_finished or exp.status == ExperimentVersion.STATUS_INAPPLICABLE:
+    if exp.is_finished or exp.status == Runnable.STATUS_INAPPLICABLE:
         # We unset the task_id to ensure the delete() below doesn't send a message to the back-end cancelling
         # the task, causing it to be killed while still sending us its 'finished' message!
         run.task_id = ''
@@ -197,7 +202,7 @@ def process_callback(data, files):
         send_experiment_finished_email(exp)
 
         if not files.get('experiment'):
-            exp.update(ExperimentVersion.STATUS_FAILED,
+            exp.update(Runnable.STATUS_FAILED,
                        '%s (backend returned no archive)' % exp.return_text)
             return {'error': 'no archive found'}
 
@@ -210,7 +215,7 @@ def process_callback(data, files):
         try:
             zipfile.ZipFile(str(exp.archive_path))
         except zipfile.BadZipFile as e:
-            exp.update(ExperimentVersion.STATUS_FAILED, 'error reading archive: %s' % e)
+            exp.update(Runnable.STATUS_FAILED, 'error reading archive: %s' % e)
             return {'experiment': 'failed'}
 
         return {'experiment': 'ok'}

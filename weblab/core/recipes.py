@@ -1,19 +1,19 @@
 from model_mommy.recipe import Recipe, foreign_key, seq
 
 
-user = Recipe('accounts.User', institution='UCL')
+user = Recipe('accounts.User', institution='UCL', full_name=seq('test user '))
 
 model = Recipe(
     'ModelEntity',
-    entity_type='model', name=seq('mymodel')
+    entity_type='model', name=seq('my model')
 )
 protocol = Recipe(
     'ProtocolEntity',
-    entity_type='protocol', name=seq('myprotocol')
+    entity_type='protocol', name=seq('my protocol')
 )
 fittingspec = Recipe(
     'FittingSpec',
-    entity_type='fittingspec', name=seq('myspec'),
+    entity_type='fittingspec', name=seq('my spec'),
     protocol=foreign_key(protocol),
 )
 
@@ -38,13 +38,15 @@ experiment = Recipe(
     protocol_version=foreign_key(cached_protocol_version),
 )
 
+runnable = Recipe('Runnable')
+
 experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experiment))
 
-running_experiment = Recipe('RunningExperiment', experiment_version=foreign_key(experiment_version))
+running_experiment = Recipe('RunningExperiment', runnable=foreign_key(runnable))
 
 
 dataset = Recipe('Dataset',
-                 name=seq('mydataset'),
+                 name=seq('my dataset'),
                  protocol=foreign_key(protocol))
 
 dataset_file = Recipe('DatasetFile',

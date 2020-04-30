@@ -52,10 +52,11 @@ class ExperimentTasks(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return RunningExperiment.objects.filter(
-            experiment_version__author=self.request.user
+            runnable__author=self.request.user
         ).order_by(
-            'experiment_version__created_at',
-        ).select_related('experiment_version', 'experiment_version__experiment')
+            'runnable__created_at',
+        ).select_related('runnable',
+                         'runnable__experimentversion__experiment')
 
     def post(self, request):
         for running_exp_id in request.POST.getlist('chkBoxes[]'):

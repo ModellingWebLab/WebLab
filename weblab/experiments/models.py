@@ -106,11 +106,16 @@ class Experiment(UserCreatedModelMixin, models.Model):
     def latest_result(self):
         try:
             return self.latest_version.status
-        except ExperimentVersion.DoesNotExist:
+        except Runnable.DoesNotExist:
             return ''
 
 
-class ExperimentVersion(UserCreatedModelMixin, FileCollectionMixin, models.Model):
+class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
+    """ Runnable base class
+    Represents experiments and fitting specs that have the facility to
+    run on the back-end,
+    The current status of the run is recorded as well as the and results when completed.
+    """
     STATUS_QUEUED = "QUEUED"
     STATUS_RUNNING = "RUNNING"
     STATUS_SUCCESS = "SUCCESS"
@@ -127,7 +132,6 @@ class ExperimentVersion(UserCreatedModelMixin, FileCollectionMixin, models.Model
         (STATUS_INAPPLICABLE, STATUS_INAPPLICABLE),
     )
 
-    experiment = models.ForeignKey(Experiment, related_name='versions')
     finished_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
         max_length=16,
@@ -197,13 +201,29 @@ class ExperimentVersion(UserCreatedModelMixin, FileCollectionMixin, models.Model
         self.save()
 
 
-class RunningExperiment(models.Model):
+class ExperimentVersion(Runnable):
+    """ ExperimentVersion class
+    This records a single run of a particular Experiment.
+    The same model/protocol combination may be run more than once,
+    resulting in an Experiment having multiple versions.
     """
-    A current run of an ExperimentVersion
+    experiment = models.ForeignKey(Experiment, related_name='versions')
+
+    @property
+    def parent(self):
+        """The Experiment this is a version of."""
+        return self.experiment
+
+
+class RunningExperiment(models.Model):
+    """ Class to track an in-progress Runnable instance.
+    It adds functionality to link to the task id on the back-end system, so that returned results
+    can be linked to the appropriate Runnable.
+    The running tasks can be cancelled by deleting using the front-end.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    experiment_version = models.ForeignKey(ExperimentVersion, related_name='running')
+    runnable = models.ForeignKey(Runnable, related_name='running')
 
     task_id = models.CharField(max_length=50)
 
