@@ -30,6 +30,10 @@ cached_protocol = Recipe('CachedProtocol')
 cached_protocol_version = Recipe('CachedProtocolVersion')
 cached_protocol_tag = Recipe('CachedProtocolTag')
 
+cached_fittingspec = Recipe('CachedFittingSpec')
+cached_fittingspec_version = Recipe('CachedFittingSpecVersion')
+cached_fittingspec_tag = Recipe('CachedFittingSpecTag')
+
 experiment = Recipe(
     'Experiment',
     model=foreign_key(model),
@@ -51,3 +55,16 @@ dataset = Recipe('Dataset',
 
 dataset_file = Recipe('DatasetFile',
                       dataset=foreign_key(dataset))
+
+fittingresult = Recipe(
+    'FittingResult',
+    model=foreign_key(model),
+    model_version=foreign_key(cached_model_version),
+    protocol=foreign_key(protocol),
+    protocol_version=foreign_key(cached_protocol_version),
+    fittingspec=foreign_key(fittingspec),
+    fittingspec_version=foreign_key(cached_fittingspec_version),
+    dataset=foreign_key(dataset),
+)
+
+fittingresult_version = Recipe('FittingResultVersion', fittingresult=foreign_key(fittingresult))

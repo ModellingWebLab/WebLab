@@ -10,6 +10,7 @@ from entities.models import (
     ProtocolEntity,
 )
 from experiments.models import Runnable
+from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion
 
 
 class FittingSpec(Entity):
@@ -75,13 +76,12 @@ class FittingResult(UserCreatedModelMixin, models.Model):
     model = models.ForeignKey(ModelEntity, related_name='model_fitting_results')
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_fitting_results')
 
-    # Note that we can't use a ForeignKey here, because versions of models, protocols & fitting
-    # specs are not stored in the DB - they are just commits in the associated git repo.
-    # We could link to the repocache tables, but those aren't guaranteed to exist or be permanent.
-    # So instead we store the full git SHA as a string.
-    fittingspec_version = models.CharField(max_length=50)
-    model_version = models.CharField(max_length=50)
-    protocol_version = models.CharField(max_length=50)
+    model_version = models.ForeignKey(CachedModelVersion, default=None, null=False, related_name='model_ver_fitres')
+    protocol_version = models.ForeignKey(CachedProtocolVersion, default=None, null=False, related_name='pro_ver_fitres')
+    fittingspec_version = models.ForeignKey(
+        CachedFittingSpecVersion,
+        default=None, null=False, related_name='fit_ver_fitres',
+    )
 
     class Meta:
         unique_together = ('fittingspec', 'dataset', 'model', 'protocol',
@@ -102,16 +102,10 @@ class FittingResult(UserCreatedModelMixin, models.Model):
     @property
     def visibility(self):
         return get_joint_visibility(
-            self.fittingspec.get_version_visibility(
-                self.fittingspec_version,
-                default=self.fittingspec.DEFAULT_VISIBILITY),
+            self.fittingspec_version.visibility,
             self.dataset.visibility,
-            self.model.get_version_visibility(
-                self.model_version,
-                default=self.model.DEFAULT_VISIBILITY),
-            self.protocol.get_version_visibility(
-                self.protocol_version,
-                default=self.protocol.DEFAULT_VISIBILITY),
+            self.model_version.visibility,
+            self.protocol_version.visibility,
         )
 
     @property
@@ -148,18 +142,18 @@ class FittingResult(UserCreatedModelMixin, models.Model):
     @property
     def nice_model_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        return self.model.nice_version(self.model_version)
+        return self.model_version.nice_version()
 
     @property
     def nice_protocol_version(self):
         """Use tags to give a nicer representation of the commit id"""
-        return self.protocol.nice_version(self.protocol_version)
+        return self.protocol_version.nice_version()
 
     @property
     def latest_result(self):
         try:
             return self.latest_version.status
-        except FittingResultVersion.DoesNotExist:
+        except Runnable.DoesNotExist:
             return ''
 
 
