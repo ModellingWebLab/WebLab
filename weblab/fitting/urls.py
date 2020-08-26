@@ -145,4 +145,10 @@ urlpatterns = [
         name='result_version',
     ),
 
+
+    url(
+        r'^result/(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/archive$',
+        views.FittingResultVersionArchiveView.as_view(),
+        name='archive',
+    ),
 ]

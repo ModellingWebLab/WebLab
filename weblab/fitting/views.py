@@ -13,10 +13,12 @@ by removing the hardcoded 'entities:' namespace from reverse() calls.
 from braces.views import UserFormKwargsMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse
+from django.utils.text import get_valid_filename
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView
 
 from core.visibility import VisibilityMixin
+from datasets import views as dataset_views
 from entities.views import EntityNewVersionView, EntityTypeMixin
 
 from .forms import FittingSpecForm, FittingSpecVersionForm
@@ -55,3 +57,13 @@ class FittingResultVersionListView(VisibilityMixin, DetailView):
 class FittingResultVersionView(VisibilityMixin, DetailView):
     model = FittingResultVersion
     context_object_name = 'version'
+
+
+class FittingResultVersionArchiveView(dataset_views.DatasetArchiveView):
+    """
+    Download a combine archive of an experiment version
+    """
+    model = FittingResultVersion
+
+    def get_archive_name(self, version):
+        return get_valid_filename('%s.zip' % version.fittingresult.name)
