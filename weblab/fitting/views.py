@@ -12,9 +12,11 @@ by removing the hardcoded 'entities:' namespace from reverse() calls.
 
 from braces.views import UserFormKwargsMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.text import get_valid_filename
-from django.views.generic.detail import DetailView
+from django.views import View
+from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView
 
 from core.visibility import VisibilityMixin
@@ -74,3 +76,24 @@ class FittingResultFileDownloadView(dataset_views.DatasetFileDownloadView):
     Download an individual file from a fitting result
     """
     model = FittingResultVersion
+
+
+class FittingResultVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
+    """
+    Serve up json view of a fitting result verson
+    """
+    model = FittingResultVersion
+
+    def get(self, request, *args, **kwargs):
+        version = self.get_object()
+        ns = self.request.resolver_match.namespace
+        url_args = [version.fittingresult.id, version.id]
+        details = version.get_json(ns, url_args)
+        details.update({
+            'status': version.status,
+            'version': version.id,
+            'fittingResultId': version.fittingresult.id,
+        })
+        return JsonResponse({
+            'version': details,
+        })

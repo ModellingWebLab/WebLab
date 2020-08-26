@@ -14,7 +14,7 @@
 
   <div id="entityversion"
        data-version-href="{% url 'fitting:result_version' fittingresult.id version.id %}"
-       data-version-json-href="{#% url 'experiments:version_json' experiment.id version.id %#}">
+       data-version-json-href="{% url 'fitting:result_version_json' fittingresult.id version.id %}">
     <div class="closebtn">
       <small>
         <a href="{% url 'fitting:result_versions' fittingresult.id %}">list all versions</a>

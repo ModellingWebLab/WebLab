@@ -156,4 +156,10 @@ urlpatterns = [
         views.FittingResultFileDownloadView.as_view(),
         name='file_download',
     ),
+
+    url(
+        r'^results/(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/files.json$',
+        views.FittingResultVersionJsonView.as_view(),
+        name='result_version_json',
+    ),
 ]

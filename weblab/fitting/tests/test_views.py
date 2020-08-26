@@ -1,11 +1,12 @@
+import json
 import shutil
 import zipfile
 from io import BytesIO
 from pathlib import Path
 
-from django.core.urlresolvers import reverse
-
 import pytest
+from django.core.urlresolvers import reverse
+from django.utils.dateparse import parse_datetime
 from pytest_django.asserts import assertContains, assertTemplateUsed
 
 
@@ -114,3 +115,60 @@ class TestFittingResultFileDownloadView:
                     fittingresult_version.fittingresult.pk, fittingresult_version.pk, filename)
             )
             assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestFittingResultVersionJsonView:
+    def test_fittingresult_json(self, client, logged_in_user, fittingresult_version):
+        version = fittingresult_version
+
+        version.author.full_name = 'test user'
+        version.author.save()
+        version.status = 'SUCCESS'
+
+        response = client.get(
+            ('/fitting/results/%d/versions/%d/files.json' % (version.fittingresult.pk, version.pk))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        ver = data['version']
+        assert ver['id'] == version.pk
+        assert ver['author'] == 'test user'
+        assert ver['status'] == 'SUCCESS'
+        assert ver['visibility'] == 'public'
+        assert (
+            parse_datetime(ver['created']).replace(microsecond=0) ==
+            version.created_at.replace(microsecond=0)
+        )
+        assert ver['name'] == '{:%Y-%m-%d %H:%M:%S}'.format(version.created_at)
+        assert ver['fittingResultId'] == version.fittingresult.id
+        assert ver['version'] == version.id
+        assert ver['files'] == []
+        assert ver['numFiles'] == 0
+        assert ver['download_url'] == (
+            '/fitting/results/%d/versions/%d/archive' % (version.fittingresult.pk, version.pk)
+        )
+
+    def test_file_json(self, client, archive_file_path, fittingresult_version):
+        version = fittingresult_version
+        version.author.full_name = 'test user'
+        version.author.save()
+        version.mkdir()
+        shutil.copyfile(archive_file_path, str(version.archive_path))
+
+        response = client.get(
+            ('/fitting/results/%d/versions/%d/files.json' % (version.fittingresult.pk, version.pk))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        file1 = data['version']['files'][0]
+        assert file1['author'] == 'test user'
+        assert file1['name'] == 'stdout.txt'
+        assert file1['filetype'] == 'http://purl.org/NET/mediatypes/text/plain'
+        assert not file1['masterFile']
+        assert file1['size'] == 27
+        assert file1['url'] == (
+            '/fitting/results/%d/versions/%d/download/stdout.txt' % (version.fittingresult.pk, version.pk)
+        )
