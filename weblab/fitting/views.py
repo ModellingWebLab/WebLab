@@ -61,9 +61,16 @@ class FittingResultVersionView(VisibilityMixin, DetailView):
 
 class FittingResultVersionArchiveView(dataset_views.DatasetArchiveView):
     """
-    Download a combine archive of an experiment version
+    Download a combine archive of a fitting result version
     """
     model = FittingResultVersion
 
     def get_archive_name(self, version):
         return get_valid_filename('%s.zip' % version.fittingresult.name)
+
+
+class FittingResultFileDownloadView(dataset_views.DatasetFileDownloadView):
+    """
+    Download an individual file from a fitting result
+    """
+    model = FittingResultVersion

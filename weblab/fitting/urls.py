@@ -134,21 +134,26 @@ urlpatterns = [
     ),
 
     url(
-        r'^result/(?P<pk>\d+)/versions/$',
+        r'^results/(?P<pk>\d+)/versions/$',
         views.FittingResultVersionListView.as_view(),
         name='result_versions',
     ),
 
     url(
-        r'^result/(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)(?:/%s)?$' % _FILEVIEW,
+        r'^results/(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)(?:/%s)?$' % _FILEVIEW,
         views.FittingResultVersionView.as_view(),
         name='result_version',
     ),
 
-
     url(
-        r'^result/(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/archive$',
+        r'^results/(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/archive$',
         views.FittingResultVersionArchiveView.as_view(),
         name='archive',
+    ),
+
+    url(
+        r'^results/(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/download/%s$' % _FILENAME,
+        views.FittingResultFileDownloadView.as_view(),
+        name='file_download',
     ),
 ]
