@@ -136,6 +136,13 @@ urlpatterns = [
     url(
         r'^result/(?P<pk>\d+)/versions/$',
         views.FittingResultVersionListView.as_view(),
-        name='versions',
+        name='result_versions',
     ),
+
+    url(
+        r'^result/(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)(?:/%s)?$' % _FILEVIEW,
+        views.FittingResultVersionView.as_view(),
+        name='result_version',
+    ),
+
 ]

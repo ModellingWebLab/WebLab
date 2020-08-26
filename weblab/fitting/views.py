@@ -20,7 +20,7 @@ from core.visibility import VisibilityMixin
 from entities.views import EntityNewVersionView, EntityTypeMixin
 
 from .forms import FittingSpecForm, FittingSpecVersionForm
-from .models import FittingResult
+from .models import FittingResult, FittingResultVersion
 
 
 class FittingSpecCreateView(
@@ -50,3 +50,8 @@ class FittingResultVersionListView(VisibilityMixin, DetailView):
     model = FittingResult
     context_object_name = 'fittingresult'
     template_name = 'fitting/fittingresult_versions.html'
+
+
+class FittingResultVersionView(VisibilityMixin, DetailView):
+    model = FittingResultVersion
+    context_object_name = 'version'
