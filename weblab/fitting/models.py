@@ -119,11 +119,12 @@ class FittingResult(UserCreatedModelMixin, models.Model):
 
         :return: `set` of `User` objects
         """
-        relevant_viewers = []
-        for obj in (self.fittingspec, self.dataset, self.model, self.protocol):
-            if obj.visibility == Visibility.PRIVATE:
-                relevant_viewers.append(obj.viewers)
-        return set.intersection(*relevant_viewers)
+        viewers = [
+            obj.viewers
+            for obj in (self.fittingspec, self.dataset, self.model, self.protocol)
+            if obj.visibility == Visibility.PRIVATE
+        ]
+        return set.intersection(*viewers) if viewers else {}
 
     def is_visible_to_user(self, user):
         """

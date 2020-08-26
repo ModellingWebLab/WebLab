@@ -13,11 +13,14 @@ by removing the hardcoded 'entities:' namespace from reverse() calls.
 from braces.views import UserFormKwargsMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse
+from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView
 
+from core.visibility import VisibilityMixin
 from entities.views import EntityNewVersionView, EntityTypeMixin
 
 from .forms import FittingSpecForm, FittingSpecVersionForm
+from .models import FittingResult
 
 
 class FittingSpecCreateView(
@@ -40,3 +43,10 @@ class FittingSpecNewVersionView(EntityNewVersionView):
     This is almost identical to other entities, except that we can't re-run experiments.
     """
     form_class = FittingSpecVersionForm
+
+
+class FittingResultVersionListView(VisibilityMixin, DetailView):
+    """Show all versions of a fitting result"""
+    model = FittingResult
+    context_object_name = 'fittingresult'
+    template_name = 'fitting/fittingresult_versions.html'

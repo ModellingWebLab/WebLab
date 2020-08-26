@@ -132,4 +132,10 @@ urlpatterns = [
         entity_views.EntityDiffView.as_view(),
         name='diff',
     ),
+
+    url(
+        r'^result/(?P<pk>\d+)/versions/$',
+        views.FittingResultVersionListView.as_view(),
+        name='versions',
+    ),
 ]

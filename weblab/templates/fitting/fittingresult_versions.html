@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block title %}Fitting result versions - {% endblock title %}
+
+{% block content %}
+  {% include "./includes/fittingresult_header.html" %}
+
+  <h2>Versions</h2>
+
+  <div id="entityversionlist_content">
+    <ul>
+    {% for version in fittingresult.versions.all|dictsortreversed:"created_at" %}
+    <li>
+      <p class="experiment-{{ version.status }}">
+        <strong>
+          <a class="entityversionlink" href="{#% url 'experiments:version' experiment.id version.id %#}">
+            {{ version.name }}
+          </a>
+        </strong>
+        by <em>{{ version.author.full_name }}</em>
+        <!-- TODO: Add delete version link -->
+        <br />
+        <span class="suppl">
+          <small>created </small> <time>{{ version.created_at }}</time>
+          {% with version.files|length as numfiles %}
+          <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
+          {% endwith %}
+        </span><br />
+        <span class="suppl">
+          {{ version.return_text|safe|linebreaksbr }}
+        </span>
+      </p>
+    </li>
+    {% endfor %}
+    </ul>
+
+    <p id='expversioncolorlegend'>
+      Status Legend:
+      <span class="experiment-QUEUED">queued</span>
+      <span class="experiment-RUNNING">running</span>
+      <span class="experiment-INAPPLICABLE">inapplicable</span>
+      <span class="experiment-FAILED">failed</span>
+      <span class="experiment-PARTIAL">partial failure</span>
+      <span class="experiment-SUCCESS">success</span>
+    </p>
+  </div>
+{% endblock %}

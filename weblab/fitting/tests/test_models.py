@@ -248,3 +248,20 @@ class TestFittingResult:
         fr.fittingspec.add_collaborator(user)
         assert user in fr.viewers
         assert fr.is_visible_to_user(user)
+
+    def test_viewers_of_public_fittingresult(self, helpers, user):
+        model = recipes.model.make()
+        protocol = recipes.protocol.make()
+        fittingspec = recipes.fittingspec.make()
+        dataset = recipes.dataset.make(visibility='public')
+        mv = helpers.cached_version(model, visibility='public')
+        pv = helpers.cached_version(protocol, visibility='public')
+        fv = helpers.cached_version(fittingspec, visibility='public')
+
+        fr = recipes.fittingresult.make(
+            model=model, model_version=mv,
+            protocol=protocol, protocol_version=pv,
+            fittingspec=fittingspec, fittingspec_version=fv,
+            dataset=dataset,
+        )
+        assert fr.viewers == {}

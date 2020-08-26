@@ -1,0 +1,21 @@
+
+{% load staticfiles %}
+{% load experiments %}
+
+<h1 id="entityname">
+  <small>Fitting result: </small><span>{{ fittingresult.name }}</span>
+</h1>
+
+<div class="suppl">
+  <small>Created <time>{{fittingresult.created_at}}</time> by <em>{{fittingresult.author.full_name}}</em>.
+    {% comment %}
+    {% can_delete_entity fittingresult as can_delete %}
+    {% if can_delete %}
+      Delete fitting result:
+      <a title="delete all versions of this fitting result" href="{% url 'fittingresult:delete' experiment.id %}">
+        <img src="{% static 'img/delete.png' %}" alt="delete all versions of this experiment"
+            title="delete all versions of this experiment"/></a>
+    {% endif %}
+    {% endcomment %}
+  </small>
+</div>
