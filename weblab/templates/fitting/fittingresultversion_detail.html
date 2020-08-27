@@ -32,19 +32,17 @@
         <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
         <span id="exptStatus"></span>
 
-        {% comment %}
         {% if perms.create_experiment %}
           <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
         {% can_delete_entity version as can_delete %}
         {% if can_delete %}
-          Delete experiment version:
-          <a title="delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
-            <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
-                title="delete this version of this experiment"/></a>
+          Delete fitting result version:
+          <a title="delete this version of this fitting result" href="{% url 'fitting:result:delete_version' fittingresult.id version.id %}">
+            <img src="{% static 'img/delete.png' %}" alt="delete this version of this fitting result"
+                title="delete this version of this fitting result"/></a>
         {% endif %}
-        {% endcomment %}
 
         <br/>Corresponding model:
         <a href="{% url 'entities:version' 'model' fittingresult.model.pk fittingresult.model_version.sha %}">{{ fittingresult.model.name }} @ {{ fittingresult.nice_model_version }}</a>
@@ -71,8 +69,7 @@
       </p>
     </div>
 
-    {% comment %}
-    {% if experiment.protocol.protocol_experimental_datasets.exists %}
+    {% if fittingresult.protocol.protocol_experimental_datasets.exists %}
     <div id="dataset-link-div">
       <span>Overlay a dataset linked to this protocol:</span>
       <select id="dataset-link">
@@ -81,7 +78,6 @@
       </select>
     </div>
     {% endif %}
-    {% endcomment %}
 
     <div id="entityversiondetails">
       <div id="entityversionfiledetails">
