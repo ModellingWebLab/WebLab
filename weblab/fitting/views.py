@@ -97,3 +97,23 @@ class FittingResultVersionJsonView(VisibilityMixin, SingleObjectMixin, View):
         return JsonResponse({
             'version': details,
         })
+
+
+class FittingResultDeleteView(dataset_views.DatasetDeleteView):
+    """
+    Delete all versions of a fitting result
+    """
+    model = FittingResult
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('experiments:list') + '?show_fits=true'
+
+
+class FittingResultVersionDeleteView(dataset_views.DatasetDeleteView):
+    """
+    Delete a single version of a fitting result
+    """
+    model = FittingResultVersion
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('fitting:result_versions', args=[self.get_object().fittingresult.id])

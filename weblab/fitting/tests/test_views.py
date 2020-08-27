@@ -9,6 +9,8 @@ from django.core.urlresolvers import reverse
 from django.utils.dateparse import parse_datetime
 from pytest_django.asserts import assertContains, assertTemplateUsed
 
+from fitting.models import FittingResult, FittingResultVersion
+
 
 @pytest.fixture
 def archive_file_path():
@@ -172,3 +174,71 @@ class TestFittingResultVersionJsonView:
         assert file1['url'] == (
             '/fitting/results/%d/versions/%d/download/stdout.txt' % (version.fittingresult.pk, version.pk)
         )
+
+
+@pytest.mark.django_db
+class TestFittingResultDeletion:
+    def test_owner_can_delete_fittingresult(
+        self, logged_in_user, client, fittingresult_with_result
+    ):
+        fittingresult = fittingresult_with_result.fittingresult
+        fittingresult.author = logged_in_user
+        fittingresult.save()
+        exp_ver_path = fittingresult_with_result.abs_path
+        assert FittingResult.objects.filter(pk=fittingresult.pk).exists()
+
+        response = client.post('/fitting/results/%d/delete' % fittingresult.pk)
+
+        assert response.status_code == 302
+        assert response.url == '/experiments/?show_fits=true'
+
+        assert not FittingResult.objects.filter(pk=fittingresult.pk).exists()
+        assert not exp_ver_path.exists()
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_non_owner_cannot_delete_fittingresult(
+        self, other_user, client, fittingresult_with_result
+    ):
+        fittingresult = fittingresult_with_result.fittingresult
+        fittingresult.author = other_user
+        fittingresult.save()
+        exp_ver_path = fittingresult_with_result.abs_path
+
+        response = client.post('/fitting/results/%d/delete' % fittingresult.pk)
+
+        assert response.status_code == 403
+        assert FittingResult.objects.filter(pk=fittingresult.pk).exists()
+        assert exp_ver_path.exists()
+
+    def test_owner_can_delete_fittingresult_version(
+        self, logged_in_user, client, fittingresult_with_result
+    ):
+        fittingresult = fittingresult_with_result.fittingresult
+        fittingresult_with_result.author = logged_in_user
+        fittingresult_with_result.save()
+        exp_ver_path = fittingresult_with_result.abs_path
+
+        response = client.post('/fitting/results/%d/versions/%d/delete' % (fittingresult.pk, fittingresult_with_result.pk))
+
+        assert response.status_code == 302
+        assert response.url == '/fitting/results/%d/versions/' % fittingresult.pk
+
+        assert not FittingResultVersion.objects.filter(pk=fittingresult_with_result.pk).exists()
+        assert not exp_ver_path.exists()
+        assert FittingResult.objects.filter(pk=fittingresult.pk).exists()
+
+    @pytest.mark.usefixtures('logged_in_user')
+    def test_non_owner_cannot_delete_fittingresult_version(
+        self, other_user, client, fittingresult_with_result
+    ):
+        fittingresult = fittingresult_with_result.fittingresult
+        fittingresult_with_result.author = other_user
+        fittingresult_with_result.save()
+        exp_ver_path = fittingresult_with_result.abs_path
+
+        response = client.post('/fitting/results/%d/versions/%d/delete' % (fittingresult.pk, fittingresult_with_result.pk))
+
+        assert response.status_code == 403
+        assert FittingResultVersion.objects.filter(pk=fittingresult_with_result.pk).exists()
+        assert FittingResult.objects.filter(pk=fittingresult.pk).exists()
+        assert exp_ver_path.exists()

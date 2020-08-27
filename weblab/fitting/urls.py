@@ -152,7 +152,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^results/(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/download/%s$' % _FILENAME,
+        r'^results/(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/download/%s$' % _FILENAME,
         views.FittingResultFileDownloadView.as_view(),
         name='file_download',
     ),
@@ -162,4 +162,17 @@ urlpatterns = [
         views.FittingResultVersionJsonView.as_view(),
         name='result_version_json',
     ),
+
+    url(
+        r'^results/(?P<pk>\d+)/delete$',
+        views.FittingResultDeleteView.as_view(),
+        name='result_delete',
+    ),
+
+    url(
+        r'^results/(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/delete$',
+        views.FittingResultVersionDeleteView.as_view(),
+        name='result_delete_version',
+    ),
+
 ]

@@ -365,3 +365,18 @@ def fittingresult_version(public_model, public_protocol, public_fittingspec, pub
         fittingresult__fittingspec_version=public_fittingspec.repocache.latest_version,
         fittingresult__dataset=public_dataset,
     )
+
+
+@pytest.fixture
+def fittingresult_with_result(model_with_version, protocol_with_version):
+    version = recipes.fittingresult_version.make(
+        status='SUCCESS',
+        fittingrseult__model=model_with_version,
+        fittingrseult__model_version=model_with_version.repocache.latest_version,
+        fittingrseult__protocol=protocol_with_version,
+        fittingrseult__protocol_version=protocol_with_version.repocache.latest_version,
+    )
+    version.mkdir()
+    with (version.abs_path / 'result.txt').open('w') as f:
+        f.write('fitting results')
+    return version
