@@ -148,6 +148,13 @@ def protocol_with_version():
 
 
 @pytest.fixture
+def fittingspec_with_version():
+    fittingspec = recipes.fittingspec.make()
+    Helpers.add_version(fittingspec, visibility='private')
+    return fittingspec
+
+
+@pytest.fixture
 def public_model(helpers):
     model = recipes.model.make()
     helpers.add_version(model, visibility='public')
@@ -371,10 +378,10 @@ def fittingresult_version(public_model, public_protocol, public_fittingspec, pub
 def fittingresult_with_result(model_with_version, protocol_with_version):
     version = recipes.fittingresult_version.make(
         status='SUCCESS',
-        fittingrseult__model=model_with_version,
-        fittingrseult__model_version=model_with_version.repocache.latest_version,
-        fittingrseult__protocol=protocol_with_version,
-        fittingrseult__protocol_version=protocol_with_version.repocache.latest_version,
+        fittingresult__model=model_with_version,
+        fittingresult__model_version=model_with_version.repocache.latest_version,
+        fittingresult__protocol=protocol_with_version,
+        fittingresult__protocol_version=protocol_with_version.repocache.latest_version,
     )
     version.mkdir()
     with (version.abs_path / 'result.txt').open('w') as f:
