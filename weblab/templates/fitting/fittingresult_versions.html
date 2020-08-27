@@ -14,7 +14,7 @@
     <li>
       <p class="experiment-{{ version.status }}">
         <strong>
-          <a class="entityversionlink" href="{% url 'fitting:result_version' fittingresult.id version.id %}">
+          <a class="entityversionlink" href="{% url 'fitting:result:version' fittingresult.id version.id %}">
             {{ version.name }}
           </a>
         </strong>

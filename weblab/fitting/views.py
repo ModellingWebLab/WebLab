@@ -116,4 +116,4 @@ class FittingResultVersionDeleteView(dataset_views.DatasetDeleteView):
     model = FittingResultVersion
 
     def get_success_url(self, *args, **kwargs):
-        return reverse('fitting:result_versions', args=[self.get_object().fittingresult.id])
+        return reverse('fitting:result:versions', args=[self.get_object().fittingresult.id])

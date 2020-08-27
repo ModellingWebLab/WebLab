@@ -13,11 +13,11 @@
   <div id="entitydetails"></div>
 
   <div id="entityversion"
-       data-version-href="{% url 'fitting:result_version' fittingresult.id version.id %}"
-       data-version-json-href="{% url 'fitting:result_version_json' fittingresult.id version.id %}">
+       data-version-href="{% url 'fitting:result:version' fittingresult.id version.id %}"
+       data-version-json-href="{% url 'fitting:result:version_json' fittingresult.id version.id %}">
     <div class="closebtn">
       <small>
-        <a href="{% url 'fitting:result_versions' fittingresult.id %}">list all versions</a>
+        <a href="{% url 'fitting:result:versions' fittingresult.id %}">list all versions</a>
       </small>
     </div>
     <h2 id="entityversionname">
@@ -56,7 +56,7 @@
 
     {% if not version.is_latest %}
       <p class="info">
-        Note: there is a <a href="{% url 'fitting:result_version' fittingresult.id fittingresult.latest_version.id %}">later version of this fitting</a>.
+        Note: there is a <a href="{% url 'fitting:result:version' fittingresult.id fittingresult.latest_version.id %}">later version of this fitting</a>.
       </p>
     {% endif %}
 

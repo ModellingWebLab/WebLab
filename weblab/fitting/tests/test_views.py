@@ -96,7 +96,7 @@ class TestFittingResultFileDownloadView:
         filename = 'oxmeta:membrane%3Avoltage - space.csv'
 
         response = client.get(
-            reverse('fitting:file_download',
+            reverse('fitting:result:file_download',
                     args=[fittingresult_version.fittingresult.pk, fittingresult_version.pk, filename])
         )
 
@@ -218,7 +218,9 @@ class TestFittingResultDeletion:
         fittingresult_with_result.save()
         exp_ver_path = fittingresult_with_result.abs_path
 
-        response = client.post('/fitting/results/%d/versions/%d/delete' % (fittingresult.pk, fittingresult_with_result.pk))
+        response = client.post(
+            '/fitting/results/%d/versions/%d/delete' %
+            (fittingresult.pk, fittingresult_with_result.pk))
 
         assert response.status_code == 302
         assert response.url == '/fitting/results/%d/versions/' % fittingresult.pk
@@ -236,7 +238,9 @@ class TestFittingResultDeletion:
         fittingresult_with_result.save()
         exp_ver_path = fittingresult_with_result.abs_path
 
-        response = client.post('/fitting/results/%d/versions/%d/delete' % (fittingresult.pk, fittingresult_with_result.pk))
+        response = client.post(
+            '/fitting/results/%d/versions/%d/delete' %
+            (fittingresult.pk, fittingresult_with_result.pk))
 
         assert response.status_code == 403
         assert FittingResultVersion.objects.filter(pk=fittingresult_with_result.pk).exists()
