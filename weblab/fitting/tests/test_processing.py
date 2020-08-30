@@ -7,8 +7,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core import recipes
 from experiments.models import RunningExperiment
+from experiments.processing import ProcessingException
 from fitting.models import FittingResult, FittingResultVersion
-from fitting.processing import ProcessingException, submit_fitting
+from fitting.processing import submit_fitting
 
 
 def generate_response(template='%s succ celery-task-id', field='signature'):
