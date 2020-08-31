@@ -242,7 +242,7 @@ metadataEditor.prototype.addAnnotation = function (v, bindings)
     // Show in the annotations pane that this term has been used
     $('li.editmeta_annotation').each(function() {
         var $this = $(this);
-        if ($this.data('term') == term)
+        if ($this.data('term') == term && !$this.data('multiple-uses-allowed'))
         {
             $this.addClass('editmeta_annotation_used');
             $this.attr('title', 'This term has been used');
@@ -325,6 +325,8 @@ metadataEditor.prototype.fillCategoryList = function (parent, rdf_, acceptableUr
             var li = $('<li></li>').addClass("editmeta_annotation");
             li.text(bindings.label === undefined ? bindings.ann.value.fragment : bindings.label.value);
             li.data('term', bindings.ann.value.toString());
+            li.data('multiple-uses-allowed',
+                    rdf.where(bindings.ann.toString() + ' a oxmeta:MultipleUsesAllowed').length > 0);
             if (bindings.comment !== undefined)
                 li.attr('title', bindings.comment.value);
             self.terms.push({uri: bindings.ann.value, li: li});
@@ -499,10 +501,10 @@ metadataEditor.prototype.filtersLoaded = function (data)
         self.filtAnnotDiv.show();
         // Shade those annotations that are already used
         $('span.editmeta_annotation').each(function() {
-            var $span = $(this);
+            var $span = $(this); // Each annotated variable
             $('li.editmeta_annotation').each(function() {
-                var $li = $(this);
-                if ($span.data('term') == $li.data('term'))
+                var $li = $(this); // Each available annotation
+                if ($span.data('term') == $li.data('term') && !$li.data('multiple-uses-allowed'))
                 {
                     $li.addClass('editmeta_annotation_used');
                     $li.attr('title', 'This term has been used');
