@@ -154,7 +154,22 @@ metadataEditor.prototype.getContentsCallback = function (succ)
             });
         });
         console.log("Found " + utils.keys(this.vars_by_name).length + " variables");
-        this.modelDiv.append("<h4>Model variables</h4>", var_list);
+        this.modelDiv.append(
+            "<h4>Model variables</h4>",
+            "<div class='ui-widget'><label for='editmeta_search_var'>Search: </label><input id='editmeta_search_var'/></div>",
+            var_list);
+
+        // Set up the autocomplete variable search
+        $('#editmeta_search_var').autocomplete({
+            source: utils.keys(self.vars_by_name),
+            select: function (event, ui) {
+                // Show only the selected variable's component
+                var li = self.vars_by_name[ui.item.value].li;
+                $('.editmeta_content_shown').click();
+                li.parent().prev('.editmeta_content_hidden').click();
+                // self.modelDiv.animate({scrollTop: self.modelDiv.scrollTop - self.modelDiv.offset().top + li.offset().top - 20});
+            }
+        });
 
         // Find the existing annotations
         var rdf_nodes = this.model.getElementsByTagNameNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "RDF"),

@@ -11,6 +11,15 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     overflow: auto;
+    position: relative;
+
+    /* Autocomplete search boxes for variables / terms */
+    .ui-autocomplete {
+        max-height: 6em;
+        overflow-y: auto;
+        /* prevent horizontal scrollbar */
+        overflow-x: hidden;
+    }
 }
 
 #editmeta_modelvars_div {
