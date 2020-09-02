@@ -31,6 +31,12 @@
 .editmeta_vname {
 }
 
+/* When an annotation is hovering over this variable */
+li.ui-droppable-hover {
+    color: #ccc;
+    font-weight: bold;
+}
+
 /* An annotation for a variable */
 .editmeta_annotation {
     padding-left: 2px;

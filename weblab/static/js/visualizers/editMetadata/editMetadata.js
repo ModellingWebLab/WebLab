@@ -148,7 +148,8 @@ metadataEditor.prototype.getContentsCallback = function (succ)
                         drop: function (event, ui) {
                             console.log("Adding annotation " + ui.helper.data('bindings').ann + " on " + v.fullname);
                             self.addAnnotation(v, ui.helper.data('bindings'));
-                        }
+                        },
+                        hoverClass: "ui-droppable-hover"
                     });
             });
         });
