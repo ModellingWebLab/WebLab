@@ -31,7 +31,7 @@ gulp.task('sass', () =>
 );
 
 gulp.task('watch:sass', () =>
-  gulp.watch(config.sass.src, gulp.series('sass'))
+  gulp.watch([config.sass.src, './js/visualizers/*/*.scss'], gulp.series('sass'))
 );
 
 
