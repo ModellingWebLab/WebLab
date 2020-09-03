@@ -352,7 +352,7 @@ metadataEditor.prototype.fillCategoryList = function (parent, rdf_, acceptableUr
                     rdf.where(bindings.ann.toString() + ' a oxmeta:MultipleUsesAllowed').length > 0);
             if (bindings.comment !== undefined)
                 li.attr('title', bindings.comment.value);
-            self.terms.push({uri: bindings.ann.value, li: li});
+            self.terms[bindings.ann.value.toString()] = {uri: bindings.ann.value, li: li};
             ul.append(li);
             if ($('#entityversion').data('can-edit'))
                 li.draggable({
@@ -401,9 +401,33 @@ metadataEditor.prototype.ontologyLoaded = function (data, status, jqXHR)
 metadataEditor.prototype.fillMainAnnotationTree = function ()
 {
     this.mainAnnotDiv.empty();
-    this.mainAnnotDiv.append("<h4>Available annotations</h4>");
-    this.terms = [];
+    this.mainAnnotDiv.append(
+        "<h4>Available annotations</h4>",
+        "<div class='ui-widget'><label for='editmeta_search_term'>Search: </label><input id='editmeta_search_term'/></div>",
+        );
+    this.terms = {};
     this.fillCategoryList(this.mainAnnotDiv, this.rdf.where('?ann a oxmeta:Category'));
+
+    // Set up the autocomplete term search
+    var self = this;
+    $('#editmeta_search_term').autocomplete({
+        source: $.map(self.terms, function(obj, key) {
+            return {label: obj.li.text(), value: key};
+        }),
+        select: function (event, ui) {
+            // Show only the selected term's branch of the tree
+            var li = self.terms[ui.item.value].li;
+            $('#editmeta_ontoterms_div .editmeta_content_shown').click();
+            li.parents().prev('.editmeta_content_hidden').click();
+            // Blink the term to highlight it visually
+            li.fadeTo(200, 0.33).fadeTo(800, 1);
+            li.addClass('ui-droppable-hover');
+            window.setTimeout(function() { li.removeClass('ui-droppable-hover'); }, 5000);
+            // Fill the input with the label, not the full URI
+            $('#editmeta_search_term').val(ui.item.label);
+            return false;
+        }
+    });
 }
 
 /**
