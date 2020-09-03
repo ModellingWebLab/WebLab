@@ -42,7 +42,7 @@
 
 /* When an annotation is hovering over this variable */
 li.ui-droppable-hover {
-    color: #ccc;
+    color: #39578e;
     font-weight: bold;
 }
 
@@ -90,4 +90,22 @@ li.editmeta_annotation {
 
 #editmeta_modelvars_div > ul, #editmeta_ontoterms_div > ul {
     padding-left: 5px;
+}
+
+/* Autocomplete menu styling */
+.ui-autocomplete {
+    width: 20em;
+}
+
+.ui-widget-content {
+    border: 1px solid;
+    background: #ffffff;
+    color: #333333;
+}
+
+.ui-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    outline: 0;
 }

@@ -165,11 +165,18 @@ metadataEditor.prototype.getContentsCallback = function (succ)
             select: function (event, ui) {
                 // Show only the selected variable's component
                 var li = self.vars_by_name[ui.item.value].li;
-                $('.editmeta_content_shown').click();
+                $('#editmeta_modelvars_div .editmeta_content_shown').click();
                 li.parent().prev('.editmeta_content_hidden').click();
+                // Blink the variable to highlight it visually
+                li.fadeTo(200, 0.33).fadeTo(800, 1);
+                li.addClass('ui-droppable-hover');
+                window.setTimeout(function() { li.removeClass('ui-droppable-hover'); }, 5000);
+                // Couldn't get scrolling to work
                 // self.modelDiv.animate({scrollTop: self.modelDiv.scrollTop - self.modelDiv.offset().top + li.offset().top - 20});
             }
-        });
+        }).autocomplete("instance")._resizeMenu = function() {
+            this.menu.element.outerWidth(this.element.outerWidth());
+        };
 
         // Find the existing annotations
         var rdf_nodes = this.model.getElementsByTagNameNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "RDF"),
