@@ -11,6 +11,7 @@ from pytest_django.asserts import assertContains, assertTemplateUsed
 
 from core import recipes
 from fitting.models import FittingResult, FittingResultVersion
+from repocache.populate import populate_entity_cache
 
 
 @pytest.fixture
@@ -312,3 +313,111 @@ class TestFittingResultComparisonView:
 
         assert response.status_code == 200
         assert len(response.context['fittingresult_versions']) == 0
+
+
+@pytest.mark.django_db
+class TestFittingResultComparisonJsonView:
+    def test_compare_fittingresults(self, client, fittingresult_version, helpers):
+        fitres = fittingresult_version.fittingresult
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol, visibility='public')
+        fitres.protocol.repo.tag('v1')
+        populate_entity_cache(fitres.protocol)
+
+        version2 = recipes.fittingresult_version.make(
+            status='SUCCESS',
+            fittingresult__model=fitres.model,
+            fittingresult__model_version=fitres.model_version,
+            fittingresult__protocol=protocol,
+            fittingresult__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
+            fittingresult__fittingspec=fitres.fittingspec,
+            fittingresult__fittingspec_version=fitres.fittingspec_version,
+            fittingresult__dataset=fitres.dataset,
+        )
+
+        response = client.get(
+            ('/fitting/results/compare/%d/%d/info' % (fittingresult_version.id, version2.id))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert versions[0]['versionId'] == fittingresult_version.id
+        assert versions[1]['versionId'] == version2.id
+        assert versions[0]['modelName'] == fitres.model.name
+        assert versions[0]['modelVersion'] == fitres.model_version.sha
+        assert versions[0]['protoName'] == fitres.protocol.name
+        assert versions[0]['protoVersion'] == 'v1'
+        assert versions[0]['name'] == fitres.name
+        assert versions[0]['runNumber'] == 1
+
+    def test_only_compare_visible_fittingresults(self, client, fittingresult_version, helpers):
+        ver1 = fittingresult_version
+        fitres = ver1.fittingresult
+
+        proto = recipes.protocol.make()
+        proto_commit = helpers.add_version(proto, visibility='private')
+        ver2 = recipes.fittingresult_version.make(
+            status='SUCCESS',
+            fittingresult__model=fitres.model,
+            fittingresult__model_version=fitres.model_version,
+            fittingresult__protocol=proto,
+            fittingresult__protocol_version=proto.repocache.get_version(proto_commit.sha),
+            fittingresult__fittingspec=fitres.fittingspec,
+            fittingresult__fittingspec_version=fitres.fittingspec_version,
+            fittingresult__dataset=fitres.dataset,
+        )
+
+        response = client.get(
+            ('/fitting/results/compare/%d/%d/info' % (ver1.id, ver2.id))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert len(versions) == 1
+        assert versions[0]['versionId'] == ver1.id
+
+    def test_file_json(self, client, archive_file_path, helpers, fittingresult_version):
+        fittingresult_version.author.full_name = 'test user'
+        fittingresult_version.author.save()
+        fittingresult_version.mkdir()
+        shutil.copyfile(archive_file_path, str(fittingresult_version.archive_path))
+        fitres = fittingresult_version.fittingresult
+        fitres.model.set_version_visibility('latest', 'public')
+        fitres.protocol.set_version_visibility('latest', 'public')
+
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol, visibility='public')
+        version2 = recipes.fittingresult_version.make(
+            status='SUCCESS',
+            fittingresult__model=fitres.model,
+            fittingresult__model_version=fitres.model.repocache.get_version(fitres.model_version.sha),
+            fittingresult__protocol=protocol,
+            fittingresult__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
+        )
+        version2.mkdir()
+        shutil.copyfile(archive_file_path, str(version2.archive_path))
+
+        response = client.get(
+            ('/fitting/results/compare/%d/%d/info' % (fittingresult_version.pk, version2.pk))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        file1 = data['getEntityInfos']['entities'][0]['files'][0]
+        assert file1['author'] == 'test user'
+        assert file1['name'] == 'stdout.txt'
+        assert file1['filetype'] == 'http://purl.org/NET/mediatypes/text/plain'
+        assert not file1['masterFile']
+        assert file1['size'] == 27
+        assert file1['url'] == (
+            '/fitting/results/%d/versions/%d/download/stdout.txt' % (fitres.pk, fittingresult_version.pk)
+        )
+
+    def test_empty_fittingresult_list(self, client, fittingresult_version):
+        response = client.get('/fitting/results/compare/info')
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert len(data['getEntityInfos']['entities']) == 0
