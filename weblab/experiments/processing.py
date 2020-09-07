@@ -145,6 +145,9 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
         'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
     }
 
+    if protocol.is_fitting_spec:
+        body['dataset'] = body['fittingSpec'] = body['protocol']
+
     return submit_runnable(version, body, user)
 
 

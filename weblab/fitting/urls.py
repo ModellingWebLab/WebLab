@@ -54,6 +54,18 @@ result_patterns = [
         views.FittingResultVersionDeleteView.as_view(),
         name='delete_version',
     ),
+
+    url(
+        r'^compare(?P<version_pks>(/\d+){1,})(?:/show/%s)?$' % _FILEVIEW,
+        views.FittingResultComparisonView.as_view(),
+        name='compare',
+    ),
+
+    url(
+        r'^compare(?P<version_pks>(/\d+)*)/info$',
+        views.FittingResultComparisonJsonView.as_view(),
+        name='compare_json',
+    ),
 ]
 
 urlpatterns = [

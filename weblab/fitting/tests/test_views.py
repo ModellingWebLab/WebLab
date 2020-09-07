@@ -9,6 +9,7 @@ from django.core.urlresolvers import reverse
 from django.utils.dateparse import parse_datetime
 from pytest_django.asserts import assertContains, assertTemplateUsed
 
+from core import recipes
 from fitting.models import FittingResult, FittingResultVersion
 
 
@@ -246,3 +247,68 @@ class TestFittingResultDeletion:
         assert FittingResultVersion.objects.filter(pk=fittingresult_with_result.pk).exists()
         assert FittingResult.objects.filter(pk=fittingresult.pk).exists()
         assert exp_ver_path.exists()
+
+
+@pytest.mark.django_db
+class TestFittingResultComparisonView:
+    def test_compare_fittingresults(self, client, fittingresult_version, helpers):
+        fit = fittingresult_version.fittingresult
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol, visibility='public')
+
+        version2 = recipes.fittingresult_version.make(
+            status='SUCCESS',
+            fittingresult__model=fit.model,
+            fittingresult__model_version=fit.model_version,
+            fittingresult__protocol=protocol,
+            fittingresult__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
+            fittingresult__fittingspec=fit.fittingspec,
+            fittingresult__fittingspec_version=fit.fittingspec_version,
+            fittingresult__dataset=fit.dataset,
+        )
+
+        response = client.get(
+            ('/fitting/results/compare/%d/%d' % (fittingresult_version.id, version2.id))
+        )
+
+        assert response.status_code == 200
+        assert set(response.context['fittingresult_versions']) == {
+            fittingresult_version, version2
+        }
+
+    def test_only_compare_visible_fittingresults(self, client, fittingresult_version, helpers):
+        ver1 = fittingresult_version
+        fit = ver1.fittingresult
+
+        proto = recipes.protocol.make()
+        proto_commit = helpers.add_version(proto, visibility='private')
+        ver2 = recipes.fittingresult_version.make(
+            status='SUCCESS',
+            fittingresult__model=fit.model,
+            fittingresult__model_version=fit.model_version,
+            fittingresult__protocol=proto,
+            fittingresult__protocol_version=proto.repocache.get_version(proto_commit.sha),
+            fittingresult__fittingspec=fit.fittingspec,
+            fittingresult__fittingspec_version=fit.fittingspec_version,
+            fittingresult__dataset=fit.dataset,
+        )
+
+        response = client.get(
+            ('/fitting/results/compare/%d/%d' % (ver1.id, ver2.id))
+        )
+
+        assert response.status_code == 200
+        assert set(response.context['fittingresult_versions']) == {ver1}
+
+        assert len(response.context['ERROR_MESSAGES']) == 1
+
+    def test_no_visible_fittingresults(self, client, fittingresult_version):
+        proto = fittingresult_version.fittingresult.protocol
+        proto.set_version_visibility('latest', 'private')
+        fittingresult_version.fittingresult.protocol_version.refresh_from_db()
+        assert fittingresult_version.visibility == 'private'
+
+        response = client.get('/fitting/results/compare/%d' % (fittingresult_version.id))
+
+        assert response.status_code == 200
+        assert len(response.context['fittingresult_versions']) == 0
