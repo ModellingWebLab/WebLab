@@ -19,7 +19,7 @@ def submit_fitting(
     fittingspec, fittingspec_version,
     dataset, user, rerun_ok,
 ):
-    """Submit a Celery task to run a fitting
+    """Submit a Celery task to run a fitting experiment
 
     @param rerun_ok  if False and a FittingResultVersion already exists, will just return that.
         Otherwise will create a new version of the fitting result.

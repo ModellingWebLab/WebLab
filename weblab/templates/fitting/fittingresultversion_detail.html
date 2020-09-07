@@ -32,7 +32,7 @@
         <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
         <span id="exptStatus"></span>
 
-        {% if perms.create_experiment %}
+        {% if perms.run_fits %}
           <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
@@ -54,7 +54,7 @@
 
     {% if not version.is_latest %}
       <p class="info">
-        Note: there is a <a href="{% url 'fitting:result:version' fittingresult.id fittingresult.latest_version.id %}">later version of this fitting</a>.
+        Note: there is a <a href="{% url 'fitting:result:version' fittingresult.id fittingresult.latest_version.id %}">newer run of this fitting experiment</a>.
       </p>
     {% endif %}
 
@@ -64,17 +64,17 @@
 
     <div id="running-experiment-note" style="display:none;">
       <p>
-        This fitting has not yet finished running, and so no result files are available.
+        This fitting experiment has not yet finished running, and so no result files are available.
         You can refresh the page to see if it has completed.
       </p>
     </div>
 
     {% if fittingresult.protocol.protocol_experimental_datasets.exists %}
     <div id="dataset-link-div">
-      <span>Overlay a dataset linked to this protocol:</span>
+      <span>Overlay a dataset linked to the associated protocol:</span>
       <select id="dataset-link">
         <option selected value="">None</option>
-        {% dataset_options experiment %}
+        {% dataset_options fittingresult %}
       </select>
     </div>
     {% endif %}
