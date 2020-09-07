@@ -160,8 +160,17 @@ metadataEditor.prototype.getContentsCallback = function (succ)
             var_list);
 
         // Set up the autocomplete variable search
+        var completion_data = $.map(self.vars_by_name, function(obj, key) {
+            return {label: key, value: key, match: key.replace(/[^a-zA-Z0-9\s]/, " ")};
+        });
         $('#editmeta_search_var').autocomplete({
-            source: utils.keys(self.vars_by_name),
+            source: function (request, response) {
+                var term = request.term.replace(/[^a-zA-Z0-9\s]/, " "),
+                    reg = new RegExp($.ui.autocomplete.escapeRegex(term), "i");
+                response($.grep(completion_data, function (option) {
+                    return option.match.match(reg) !== null;
+                }));
+            },
             select: function (event, ui) {
                 // Show only the selected variable's component
                 var li = self.vars_by_name[ui.item.value].li;
@@ -409,11 +418,19 @@ metadataEditor.prototype.fillMainAnnotationTree = function ()
     this.fillCategoryList(this.mainAnnotDiv, this.rdf.where('?ann a oxmeta:Category'));
 
     // Set up the autocomplete term search
-    var self = this;
+    var self = this,
+        completion_data = $.map(self.terms, function(obj, key) {
+            var label = obj.li.text();
+            return {label: label, value: key, match: label.replace(/[^a-zA-Z0-9\s]/, " ")};
+        });
     $('#editmeta_search_term').autocomplete({
-        source: $.map(self.terms, function(obj, key) {
-            return {label: obj.li.text(), value: key};
-        }),
+        source: function (request, response) {
+            var term = request.term.replace(/[^a-zA-Z0-9\s]/, " "),
+                reg = new RegExp($.ui.autocomplete.escapeRegex(term), "i");
+            response($.grep(completion_data, function (option) {
+                return option.match.match(reg) !== null;
+            }));
+        },
         select: function (event, ui) {
             // Show only the selected term's branch of the tree
             var li = self.terms[ui.item.value].li;
