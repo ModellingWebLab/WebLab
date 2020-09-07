@@ -183,9 +183,7 @@ metadataEditor.prototype.getContentsCallback = function (succ)
                 // Couldn't get scrolling to work
                 // self.modelDiv.animate({scrollTop: self.modelDiv.scrollTop - self.modelDiv.offset().top + li.offset().top - 20});
             }
-        }).autocomplete("instance")._resizeMenu = function() {
-            this.menu.element.outerWidth(this.element.outerWidth());
-        };
+        });
 
         // Find the existing annotations
         var rdf_nodes = this.model.getElementsByTagNameNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "RDF"),
