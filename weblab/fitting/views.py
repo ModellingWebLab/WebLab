@@ -167,11 +167,11 @@ class FittingResultComparisonJsonView(View):
             'versionId': version.id,
             'modelName': exp.model.name,
             'protoName': exp.protocol.name,
-            'fitSpecName': exp.fittingspec.name,
+            'fittingSpecName': exp.fittingspec.name,
             'datasetName': exp.dataset.name,
             'modelVersion': exp.model_version.get_name(),
             'protoVersion': exp.protocol_version.get_name(),
-            'fitSpecVersion': exp.fittingspec_version.get_name(),
+            'fittingSpecVersion': exp.fittingspec_version.get_name(),
             'runNumber': version.run_number,
         })
         return details

@@ -348,8 +348,8 @@ class TestFittingResultComparisonJsonView:
         assert versions[0]['modelVersion'] == fitres.model_version.sha
         assert versions[0]['protoName'] == fitres.protocol.name
         assert versions[0]['protoVersion'] == 'v1'
-        assert versions[0]['fitSpecName'] == fitres.fittingspec.name
-        assert versions[0]['fitSpecVersion'] == fitres.fittingspec_version.sha
+        assert versions[0]['fittingSpecName'] == fitres.fittingspec.name
+        assert versions[0]['fittingSpecVersion'] == fitres.fittingspec_version.sha
         assert versions[0]['datasetName'] == fitres.dataset.name
         assert versions[0]['name'] == fitres.name
         assert versions[0]['runNumber'] == 1
