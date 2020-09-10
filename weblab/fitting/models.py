@@ -1,7 +1,7 @@
 from django.db import models
 
 from core.models import UserCreatedModelMixin
-from core.visibility import Visibility, get_joint_visibility, visibility_check
+from core.visibility import get_joint_visibility
 from datasets.models import Dataset
 from entities.models import (
     Entity,
@@ -9,7 +9,7 @@ from entities.models import (
     ModelEntity,
     ProtocolEntity,
 )
-from experiments.models import Runnable
+from experiments.models import ExperimentMixin, Runnable
 from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion
 
 
@@ -59,7 +59,7 @@ class FittingSpec(Entity):
         return self.entity_ptr.collaborators
 
 
-class FittingResult(UserCreatedModelMixin, models.Model):
+class FittingResult(ExperimentMixin, UserCreatedModelMixin, models.Model):
     """Represents the result of running a parameter fitting experiment.
 
     This class essentially just stores the links to (particular versions of) a fitting spec,
@@ -69,7 +69,6 @@ class FittingResult(UserCreatedModelMixin, models.Model):
     There will only ever be one FittingResult for a given combination of model, protocol,
     dataset and fitting spec versions.
 
-    TODO: Consider creating a mixin for fields/methods shared with Experiment.
     """
     fittingspec = models.ForeignKey(FittingSpec, related_name='fitting_results')
     dataset = models.ForeignKey(Dataset, related_name='fitting_results')
@@ -91,9 +90,6 @@ class FittingResult(UserCreatedModelMixin, models.Model):
             ('run_fits', 'Can run parameter fitting experiments'),
         )
 
-    def __str__(self):
-        return self.name
-
     @property
     def name(self):
         """There isn't an obvious easy naming for fitting results..."""
@@ -109,53 +105,8 @@ class FittingResult(UserCreatedModelMixin, models.Model):
         )
 
     @property
-    def viewers(self):
-        """
-        Get users which have special permissions to view this experiment.
-
-        We take the intersection of users with special permissions to view each object
-        (model, fitting spec, etc) involved, if that object is private. If it's public,
-        we can ignore it because everyone can see it.
-
-        :return: `set` of `User` objects
-        """
-        viewers = [
-            obj.viewers
-            for obj in (self.fittingspec, self.dataset, self.model, self.protocol)
-            if obj.visibility == Visibility.PRIVATE
-        ]
-        return set.intersection(*viewers) if viewers else {}
-
-    def is_visible_to_user(self, user):
-        """
-        Can the user view the experiment?
-
-        :param user: user to test against
-
-        :returns: True if the user is allowed to view the experiment, False otherwise
-        """
-        return visibility_check(self.visibility, self.viewers, user)
-
-    @property
-    def latest_version(self):
-        return self.versions.latest('created_at')
-
-    @property
-    def nice_model_version(self):
-        """Use tags to give a nicer representation of the commit id"""
-        return self.model_version.nice_version()
-
-    @property
-    def nice_protocol_version(self):
-        """Use tags to give a nicer representation of the commit id"""
-        return self.protocol_version.nice_version()
-
-    @property
-    def latest_result(self):
-        try:
-            return self.latest_version.status
-        except Runnable.DoesNotExist:
-            return ''
+    def entities(self):
+        return (self.fittingspec, self.dataset, self.model, self.protocol)
 
 
 class FittingResultVersion(Runnable):

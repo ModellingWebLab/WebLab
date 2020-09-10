@@ -45,6 +45,12 @@ class ProcessingException(Exception):
 
 
 def submit_runnable(runnable, body, user):
+    """Submit a Celery task to the Chaste backend
+
+    @param runnable Runnable object to submit
+    @param body dict of extra parameters to post to the request
+    @param user user making the request
+    """
     run = RunningExperiment.objects.create(runnable=runnable)
     signature = runnable.signature
 
@@ -92,8 +98,6 @@ def submit_runnable(runnable, body, user):
         runnable.return_text = status
 
     runnable.save()
-
-    return runnable, True
 
 
 def submit_experiment(model, model_version, protocol, protocol_version, user, rerun_ok):
@@ -144,11 +148,11 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
         'model': urljoin(settings.CALLBACK_BASE_URL, model_url),
         'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
     }
-
     if protocol.is_fitting_spec:
         body['dataset'] = body['fittingSpec'] = body['protocol']
 
-    return submit_runnable(version, body, user)
+    submit_runnable(version, body, user)
+    return version, True
 
 
 def cancel_experiment(task_id):

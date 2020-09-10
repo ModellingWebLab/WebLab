@@ -80,4 +80,5 @@ def submit_fitting(
         'dataset': urljoin(settings.CALLBACK_BASE_URL, dataset_url),
     }
 
-    return submit_runnable(version, body, user)
+    submit_runnable(version, body, user)
+    return version, True
