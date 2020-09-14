@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from entities.forms import EntityForm, EntityVersionForm
 from entities.models import ProtocolEntity
 
-from .models import FittingSpec, FittingResult
+from .models import FittingResult, FittingSpec
 
 
 class FittingSpecForm(EntityForm):
@@ -44,3 +44,9 @@ class FittingResultCreateForm(forms.ModelForm):
 
         if self.cleaned_data['fittingspec_version'].fittingspec != self.cleaned_data['fittingspec']:
             raise ValidationError({'fittingspec_version': 'Fitting spec version must belong to fitting spec'})
+
+        if self.cleaned_data['dataset'].protocol != self.cleaned_data['protocol']:
+            raise ValidationError({'protocol': 'Protocol and dataset must match'})
+
+        if self.cleaned_data['fittingspec'].protocol != self.cleaned_data['protocol']:
+            raise ValidationError({'protocol': 'Protocol and fitting spec must match'})

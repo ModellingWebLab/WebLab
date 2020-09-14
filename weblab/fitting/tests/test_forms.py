@@ -16,10 +16,22 @@ class TestFittingResultCreateForm:
         assert 'fittingspec_version' in form.fields
         assert 'dataset' in form.fields
 
+    def _link_to_protocol(self, protocol, *objects):
+        """
+        Link given objects to protocol (fitting specs or datasets)
+        @param protocol - protocol to link to
+        @param objects - list of objects to link to the protocol
+        """
+        for obj in objects:
+            obj.protocol = protocol
+            obj.save()
+
     def test_valid_form(
         self, model_with_version, protocol_with_version,
         fittingspec_with_version, public_dataset
     ):
+        self._link_to_protocol(protocol_with_version, public_dataset, fittingspec_with_version)
+
         form = FittingResultCreateForm({
             'model': model_with_version.pk,
             'model_version': model_with_version.repocache.latest_version.pk,
@@ -35,6 +47,8 @@ class TestFittingResultCreateForm:
         self, model_with_version, protocol_with_version,
         fittingspec_with_version, public_dataset
     ):
+        self._link_to_protocol(protocol_with_version, public_dataset, fittingspec_with_version)
+
         invalid_version = recipes.cached_model_version.make()
         form = FittingResultCreateForm({
             'model': model_with_version.pk,
@@ -52,6 +66,8 @@ class TestFittingResultCreateForm:
         self, model_with_version, protocol_with_version,
         fittingspec_with_version, public_dataset
     ):
+        self._link_to_protocol(protocol_with_version, public_dataset, fittingspec_with_version)
+
         invalid_version = recipes.cached_protocol_version.make()
         form = FittingResultCreateForm({
             'model': model_with_version.pk,
@@ -69,6 +85,9 @@ class TestFittingResultCreateForm:
         self, model_with_version, protocol_with_version,
         fittingspec_with_version, public_dataset
     ):
+
+        self._link_to_protocol(protocol_with_version, public_dataset, fittingspec_with_version)
+
         invalid_version = recipes.cached_fittingspec_version.make()
         form = FittingResultCreateForm({
             'model': model_with_version.pk,
@@ -81,3 +100,40 @@ class TestFittingResultCreateForm:
         })
         assert not form.is_valid()
         assert 'fittingspec_version' in form.errors
+
+    def test_protocol_and_fittingspec_must_be_linked(
+        self, model_with_version, protocol_with_version,
+        fittingspec_with_version, public_dataset
+    ):
+        self._link_to_protocol(protocol_with_version, public_dataset)
+
+        form = FittingResultCreateForm({
+            'model': model_with_version.pk,
+            'model_version': model_with_version.repocache.latest_version.pk,
+            'protocol': protocol_with_version.pk,
+            'protocol_version': protocol_with_version.repocache.latest_version.pk,
+            'fittingspec': fittingspec_with_version.pk,
+            'fittingspec_version': fittingspec_with_version.repocache.latest_version.pk,
+            'dataset': public_dataset.pk,
+        })
+        assert not form.is_valid()
+        assert 'protocol' in form.errors
+
+    def test_protocol_and_dataset_must_be_linked(
+        self, model_with_version, protocol_with_version,
+        fittingspec_with_version, public_dataset
+    ):
+
+        self._link_to_protocol(protocol_with_version, fittingspec_with_version)
+
+        form = FittingResultCreateForm({
+            'model': model_with_version.pk,
+            'model_version': model_with_version.repocache.latest_version.pk,
+            'protocol': protocol_with_version.pk,
+            'protocol_version': protocol_with_version.repocache.latest_version.pk,
+            'fittingspec': fittingspec_with_version.pk,
+            'fittingspec_version': fittingspec_with_version.repocache.latest_version.pk,
+            'dataset': public_dataset.pk,
+        })
+        assert not form.is_valid()
+        assert 'protocol' in form.errors
