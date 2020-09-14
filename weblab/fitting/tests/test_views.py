@@ -453,3 +453,23 @@ class TestCreateFittingResultView:
         response = client.get('/fitting/results/new')
         assert response.status_code == 200
         assert 'form' in response.context
+
+    def test_with_preselected_model(self, client, fits_user, public_model):
+        response = client.get('/fitting/results/new', {'model': public_model.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['model'] == public_model
+
+    def test_with_preselected_protocol(self, client, fits_user, public_protocol):
+        response = client.get('/fitting/results/new', {'protocol': public_protocol.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['protocol'] == public_protocol
+
+    def test_with_preselected_fittingspec(self, client, fits_user, public_fittingspec):
+        response = client.get('/fitting/results/new', {'fittingspec': public_fittingspec.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['fittingspec'] == public_fittingspec
+
+    def test_with_preselected_dataset(self, client, fits_user, public_dataset):
+        response = client.get('/fitting/results/new', {'dataset': public_dataset.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['dataset'] == public_dataset

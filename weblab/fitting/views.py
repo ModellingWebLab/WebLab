@@ -14,6 +14,7 @@ from braces.views import UserFormKwargsMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.text import get_valid_filename
 from django.views import View
@@ -23,10 +24,12 @@ from django.views.generic.edit import CreateView, FormView
 
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
+from datasets.models import Dataset
+from entities.models import ModelEntity, ProtocolEntity
 from entities.views import EntityNewVersionView, EntityTypeMixin
 
 from .forms import FittingResultCreateForm, FittingSpecForm, FittingSpecVersionForm
-from .models import FittingResult, FittingResultVersion
+from .models import FittingResult, FittingResultVersion, FittingSpec
 
 
 class FittingSpecCreateView(
@@ -204,3 +207,17 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormV
     form_class = FittingResultCreateForm
 
     template_name = 'fitting/fittingresult_create_form.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        if 'model' in self.request.GET:
+            initial['model'] = get_object_or_404(ModelEntity, pk=self.request.GET['model'])
+        elif 'protocol' in self.request.GET:
+            initial['protocol'] = get_object_or_404(ProtocolEntity, pk=self.request.GET['protocol'])
+        elif 'fittingspec' in self.request.GET:
+            initial['fittingspec'] = get_object_or_404(FittingSpec, pk=self.request.GET['fittingspec'])
+        elif 'dataset' in self.request.GET:
+            initial['dataset'] = get_object_or_404(Dataset, pk=self.request.GET['dataset'])
+
+
+        return initial
