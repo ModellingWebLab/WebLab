@@ -216,6 +216,10 @@ class CachedModelVersion(CachedEntityVersion):
     """Cache for a single version / commit in a CellML model's repository."""
     entity = models.ForeignKey(CachedModel, on_delete=models.CASCADE, related_name='versions')
 
+    @property
+    def model(self):
+        return self.entity.entity
+
 
 class CachedModelTag(CachedEntityTag):
     """Cache for a tag in a CellML model's repository."""
@@ -235,6 +239,10 @@ class CachedProtocolVersion(CachedEntityVersion):
     """Cache for a single version / commit in a protocol's repository."""
     entity = models.ForeignKey(CachedProtocol, on_delete=models.CASCADE, related_name='versions')
 
+    @property
+    def protocol(self):
+        return self.entity.entity
+
 
 class CachedProtocolTag(CachedEntityTag):
     """Cache for a tag in a protocol's repository."""
@@ -253,6 +261,10 @@ class CachedFittingSpec(CachedEntity):
 class CachedFittingSpecVersion(CachedEntityVersion):
     """Cache for a single version / commit in a fitting specifications's repository."""
     entity = models.ForeignKey(CachedFittingSpec, on_delete=models.CASCADE, related_name='versions')
+
+    @property
+    def fittingspec(self):
+        return self.entity.entity
 
 
 class CachedFittingSpecTag(CachedEntityTag):

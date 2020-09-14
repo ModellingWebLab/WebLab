@@ -3,7 +3,7 @@ from django.db.utils import IntegrityError
 
 from core import recipes
 from repocache.exceptions import RepoCacheMiss
-from repocache.models import CachedModel, CachedProtocol
+from repocache.models import CachedFittingSpec, CachedModel, CachedProtocol
 from repocache.populate import populate_entity_cache
 
 
@@ -12,6 +12,7 @@ class TestEntityCacheModels:
     @pytest.mark.parametrize("recipe,manager", [
         (recipes.cached_model, CachedModel.objects),
         (recipes.cached_protocol, CachedProtocol.objects),
+        (recipes.cached_fittingspec, CachedFittingSpec.objects),
     ])
     def test_cachedentity_is_deleted_when_entity_is_deleted(self, recipe, manager):
         cached = recipe.make()
@@ -21,6 +22,7 @@ class TestEntityCacheModels:
     @pytest.mark.parametrize("recipe", [
         (recipes.cached_model_version),
         (recipes.cached_protocol_version),
+        (recipes.cached_fittingspec_version),
     ])
     def test_related_names_for_versions(self, recipe):
         version = recipe.make()
@@ -29,6 +31,7 @@ class TestEntityCacheModels:
     @pytest.mark.parametrize("recipe", [
         (recipes.cached_model_tag),
         (recipes.cached_protocol_tag),
+        (recipes.cached_fittingspec_tag),
     ])
     def test_related_names_for_tags(self, recipe):
         tag = recipe.make()
@@ -37,6 +40,7 @@ class TestEntityCacheModels:
     @pytest.mark.parametrize("recipe", [
         (recipes.cached_model_version),
         (recipes.cached_protocol_version),
+        (recipes.cached_fittingspec_version),
     ])
     def test_uniqueness_of_entity_and_version_sha(self, recipe):
         version = recipe.make()
@@ -46,6 +50,7 @@ class TestEntityCacheModels:
     @pytest.mark.parametrize("recipe", [
         (recipes.cached_model_tag),
         (recipes.cached_protocol_tag),
+        (recipes.cached_fittingspec_tag),
     ])
     def test_uniqueness_of_entity_and_tag(self, recipe):
         version = recipe.make()
@@ -55,11 +60,21 @@ class TestEntityCacheModels:
     @pytest.mark.parametrize("recipe", [
         (recipes.cached_model),
         (recipes.cached_protocol),
+        (recipes.cached_fittingspec),
     ])
     def test_uniqueness_of_entity(self, recipe):
         cached = recipe.make()
         with pytest.raises(IntegrityError):
             recipe.make(entity=cached.entity)
+
+    @pytest.mark.parametrize("recipe,property_name", [
+        (recipes.cached_model_version, 'model'),
+        (recipes.cached_protocol_version, 'protocol'),
+        (recipes.cached_fittingspec_version, 'fittingspec'),
+    ])
+    def test_entity_property(self, recipe, property_name):
+        cached = recipe.make()
+        assert getattr(cached, property_name) == cached.entity.entity
 
 
 @pytest.mark.django_db

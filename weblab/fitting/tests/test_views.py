@@ -5,6 +5,8 @@ from io import BytesIO
 from pathlib import Path
 
 import pytest
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.utils.dateparse import parse_datetime
 from pytest_django.asserts import assertContains, assertTemplateUsed
@@ -12,6 +14,17 @@ from pytest_django.asserts import assertContains, assertTemplateUsed
 from core import recipes
 from fitting.models import FittingResult, FittingResultVersion
 from repocache.populate import populate_entity_cache
+
+
+@pytest.fixture
+def fits_user(logged_in_user):
+    content_type = ContentType.objects.get_for_model(FittingResult)
+    permission = Permission.objects.get(
+        codename='run_fits',
+        content_type=content_type,
+    )
+    logged_in_user.user_permissions.add(permission)
+    return logged_in_user
 
 
 @pytest.fixture
@@ -424,3 +437,19 @@ class TestFittingResultComparisonJsonView:
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert len(data['getEntityInfos']['entities']) == 0
+
+
+@pytest.mark.django_db
+class TestCreateFittingResultView:
+    def test_requires_login(self, client):
+        response = client.get('/fitting/results/new')
+        assert response.status_code == 302
+
+    def test_requires_permission(self, client, logged_in_user):
+        response = client.get('/fitting/results/new')
+        assert response.status_code == 302
+
+    def test_basic_page(self, client, fits_user):
+        response = client.get('/fitting/results/new')
+        assert response.status_code == 200
+        assert 'form' in response.context

@@ -19,13 +19,13 @@ from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import CreateView
+from django.views.generic.edit import CreateView, FormView
 
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
 from entities.views import EntityNewVersionView, EntityTypeMixin
 
-from .forms import FittingSpecForm, FittingSpecVersionForm
+from .forms import FittingResultCreateForm, FittingSpecForm, FittingSpecVersionForm
 from .models import FittingResult, FittingResultVersion
 
 
@@ -197,3 +197,10 @@ class FittingResultComparisonJsonView(View):
         }
 
         return JsonResponse(response)
+
+
+class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormView):
+    permission_required = 'fitting.run_fits'
+    form_class = FittingResultCreateForm
+
+    template_name = 'fitting/fittingresult_create_form.html'

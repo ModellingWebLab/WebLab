@@ -1,7 +1,10 @@
+from django import forms
+from django.core.exceptions import ValidationError
+
 from entities.forms import EntityForm, EntityVersionForm
 from entities.models import ProtocolEntity
 
-from .models import FittingSpec
+from .models import FittingSpec, FittingResult
 
 
 class FittingSpecForm(EntityForm):
@@ -24,3 +27,20 @@ class FittingSpecVersionForm(EntityVersionForm):
     This works almost the same as other entities, except we can't re-run experiments.
     """
     rerun_expts = None
+
+
+class FittingResultCreateForm(forms.ModelForm):
+    class Meta:
+        model = FittingResult
+        fields = ('model', 'model_version', 'protocol', 'protocol_version',
+                  'fittingspec', 'fittingspec_version', 'dataset')
+
+    def clean(self):
+        if self.cleaned_data['model_version'].model != self.cleaned_data['model']:
+            raise ValidationError({'model_version': 'Model version must belong to model'})
+
+        if self.cleaned_data['protocol_version'].protocol != self.cleaned_data['protocol']:
+            raise ValidationError({'protocol_version': 'Protocol version must belong to protocol'})
+
+        if self.cleaned_data['fittingspec_version'].fittingspec != self.cleaned_data['fittingspec']:
+            raise ValidationError({'fittingspec_version': 'Fitting spec version must belong to fitting spec'})
