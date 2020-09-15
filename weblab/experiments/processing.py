@@ -100,7 +100,7 @@ def submit_runnable(runnable, body, user):
     runnable.save()
 
 
-def submit_experiment(model, model_version, protocol, protocol_version, user, rerun_ok):
+def submit_experiment(model_version, protocol_version, user, rerun_ok):
     """Submit a Celery task to run an experiment.
 
     @param rerun_ok  if False and an ExperimentVersion already exists, will just return that.
@@ -108,10 +108,10 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
     @return the ExperimentVersion for the run
     """
     experiment, _ = Experiment.objects.get_or_create(
-        model=model,
-        protocol=protocol,
-        model_version=model.repocache.get_version(model_version),
-        protocol_version=protocol.repocache.get_version(protocol_version),
+        model=model_version.model,
+        protocol=protocol_version.protocol,
+        model_version=model_version,
+        protocol_version=protocol_version,
         defaults={
             'author': user,
         }
@@ -138,17 +138,17 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
 
     model_url = reverse(
         'entities:entity_archive',
-        args=['model', model.pk, model_version]
+        args=['model', model_version.model.pk, model_version.sha]
     )
     protocol_url = reverse(
         'entities:entity_archive',
-        args=['protocol', protocol.pk, protocol_version]
+        args=['protocol', protocol_version.protocol.pk, protocol_version.sha]
     )
     body = {
         'model': urljoin(settings.CALLBACK_BASE_URL, model_url),
         'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
     }
-    if protocol.is_fitting_spec:
+    if protocol_version.protocol.is_fitting_spec:
         body['dataset'] = body['fittingSpec'] = body['protocol']
 
     submit_runnable(version, body, user)

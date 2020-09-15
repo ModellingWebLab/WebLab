@@ -314,22 +314,24 @@ class NewExperimentView(PermissionRequiredMixin, View):
             exp = exp_ver.experiment
             model = exp.model
             protocol = exp.protocol
-            model_version = exp.model_version.sha
-            protocol_version = exp.protocol_version.sha
+            model_sha = exp.model_version.sha
+            protocol_sha = exp.protocol_version.sha
         else:
             model = get_object_or_404(ModelEntity, pk=request.POST['model'])
             protocol = get_object_or_404(ProtocolEntity, pk=request.POST['protocol'])
-            model_version = request.POST['model_version']
-            protocol_version = request.POST['protocol_version']
+            model_sha = request.POST['model_version']
+            protocol_sha = request.POST['protocol_version']
 
-        version, is_new = submit_experiment(model, model_version, protocol, protocol_version,
+        model_version = model.repocache.get_version(model_sha)
+        protocol_version = protocol.repocache.get_version(protocol_sha)
+        version, is_new = submit_experiment(model_version, protocol_version,
                                             request.user, 'rerun' in request.POST or 'planned' in request.POST)
         queued = version.status == ExperimentVersion.STATUS_QUEUED
         if is_new and version.status != ExperimentVersion.STATUS_FAILED:
             # Remove from planned experiments
             PlannedExperiment.objects.filter(
-                model=model, model_version=model_version,
-                protocol=protocol, protocol_version=protocol_version
+                model=model, model_version=model_sha,
+                protocol=protocol, protocol_version=protocol_sha
             ).delete()
 
         version_url = reverse('experiments:version',
