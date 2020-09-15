@@ -2,8 +2,17 @@
 
 {% block title %}Submit fitting experiment - {% endblock title %}
 
+{% block body_id %}fitting-result-submit{% endblock body_id %}
+
 {% block content %}
 
-{{ form }}
+<form method="POST" action="">
+  {% csrf_token %}
+  {{ form.as_p }}
+
+    <p>
+    <button id="submitbutton">Submit</button>
+    </p>
+</form>
 
 {% endblock content %}
