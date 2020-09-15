@@ -3,6 +3,7 @@ import shutil
 import zipfile
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth.models import Permission
@@ -473,3 +474,34 @@ class TestCreateFittingResultView:
         response = client.get('/fitting/results/new', {'dataset': public_dataset.pk})
         assert response.status_code == 200
         assert response.context['form'].initial['dataset'] == public_dataset
+
+    @patch('fitting.views.submit_fitting')
+    def test_submits_to_backend(self, mock_submit, client, fits_user, public_model, public_protocol,
+                                public_fittingspec, public_dataset, helpers):
+        model_version = public_model.repocache.latest_version
+        protocol_version = public_protocol.repocache.latest_version
+        fittingspec_version = public_fittingspec.repocache.latest_version
+        helpers.link_to_protocol(public_protocol, public_fittingspec, public_dataset)
+
+        runnable = recipes.fittingresult_version.make()
+        mock_submit.return_value = (runnable, False)
+
+        response = client.post('/fitting/results/new', {
+            'model': public_model.pk,
+            'model_version': model_version.pk,
+            'protocol': public_protocol.pk,
+            'protocol_version': protocol_version.pk,
+            'fittingspec': public_fittingspec.pk,
+            'fittingspec_version': fittingspec_version.pk,
+            'dataset': public_dataset.pk,
+        })
+
+        assert response.status_code == 302
+        mock_submit.assert_called_with(
+            public_model, model_version.sha,
+            public_protocol, protocol_version.sha,
+            public_fittingspec, fittingspec_version.sha,
+            public_dataset, fits_user, False
+        )
+
+        assert response.url == '/fitting/results/%d/versions/%d' % (runnable.fittingresult.pk, runnable.pk)

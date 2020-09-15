@@ -30,6 +30,7 @@ from entities.views import EntityNewVersionView, EntityTypeMixin
 
 from .forms import FittingResultCreateForm, FittingSpecForm, FittingSpecVersionForm
 from .models import FittingResult, FittingResultVersion, FittingSpec
+from .processing import submit_fitting
 
 
 class FittingSpecCreateView(
@@ -219,5 +220,30 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormV
         elif 'dataset' in self.request.GET:
             initial['dataset'] = get_object_or_404(Dataset, pk=self.request.GET['dataset'])
 
-
         return initial
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        self.runnable, is_new = submit_fitting(
+            form.cleaned_data['model'],
+            form.cleaned_data['model_version'].sha,
+            form.cleaned_data['protocol'],
+            form.cleaned_data['protocol_version'].sha,
+            form.cleaned_data['fittingspec'],
+            form.cleaned_data['fittingspec_version'].sha,
+            form.cleaned_data['dataset'],
+            self.request.user,
+            False,
+        )
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        if hasattr(self, 'runnable'):
+            return reverse('fitting:result:version', args=[self.runnable.fittingresult.pk, self.runnable.pk])

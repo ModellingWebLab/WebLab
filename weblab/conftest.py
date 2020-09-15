@@ -99,6 +99,17 @@ class Helpers:
     def login(client, user):
         client.login(username=user.email, password='password')
 
+    @staticmethod
+    def link_to_protocol(protocol, *objects):
+        """
+        Link given objects to protocol (fitting specs or datasets)
+        @param protocol - protocol to link to
+        @param objects - list of objects to link to the protocol
+        """
+        for obj in objects:
+            obj.protocol = protocol
+            obj.save()
+
 
 @pytest.fixture
 def helpers():
