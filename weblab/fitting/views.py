@@ -231,12 +231,9 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormV
 
     def form_valid(self, form):
         self.runnable, is_new = submit_fitting(
-            form.cleaned_data['model'],
-            form.cleaned_data['model_version'].sha,
-            form.cleaned_data['protocol'],
-            form.cleaned_data['protocol_version'].sha,
-            form.cleaned_data['fittingspec'],
-            form.cleaned_data['fittingspec_version'].sha,
+            form.cleaned_data['model_version'],
+            form.cleaned_data['protocol_version'],
+            form.cleaned_data['fittingspec_version'],
             form.cleaned_data['dataset'],
             self.request.user,
             False,

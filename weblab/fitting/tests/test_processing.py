@@ -41,19 +41,16 @@ class TestSubmitFitting:
         protocol = protocol_with_version
         fittingspec = fittingspec_with_version
         dataset = public_dataset
-        model_version = model.repo.latest_commit.sha
-        protocol_version = protocol.repo.latest_commit.sha
-        fittingspec_version = fittingspec.repo.latest_commit.sha
+        model_version = model.repocache.latest_version
+        protocol_version = protocol.repocache.latest_version
+        fittingspec_version = fittingspec.repocache.latest_version
 
         assert FittingResult.objects.count() == 0
         assert RunningExperiment.objects.count() == 0
 
         version, is_new = submit_fitting(
-            model,
             model_version,
-            protocol,
             protocol_version,
-            fittingspec,
             fittingspec_version,
             dataset,
             user,
@@ -68,20 +65,20 @@ class TestSubmitFitting:
         assert version.fittingresult.fittingspec == fittingspec
         assert version.fittingresult.dataset == dataset
         assert version.author == user
-        assert version.fittingresult.model_version.sha == model_version
-        assert version.fittingresult.protocol_version.sha == protocol_version
-        assert version.fittingresult.fittingspec_version.sha == fittingspec_version
+        assert version.fittingresult.model_version == model_version
+        assert version.fittingresult.protocol_version == protocol_version
+        assert version.fittingresult.fittingspec_version == fittingspec_version
         assert version.fittingresult.author == user
         assert version.status == FittingResultVersion.STATUS_QUEUED
 
         # Check it did submit to the webservice
-        model_url = '/entities/models/%d/versions/%s/archive' % (model.pk, model_version)
+        model_url = '/entities/models/%d/versions/%s/archive' % (model.pk, model_version.sha)
         protocol_url = (
             '/entities/protocols/%d/versions/%s/archive' %
-            (protocol.pk, protocol_version))
+            (protocol.pk, protocol_version.sha))
         fittingspec_url = (
             '/fitting/specs/%d/versions/%s/archive' %
-            (fittingspec.pk, fittingspec_version))
+            (fittingspec.pk, fittingspec_version.sha))
         dataset_url = '/datasets/%d/archive' % (dataset.pk)
 
         assert mock_post.call_count == 1
@@ -137,12 +134,9 @@ class TestSubmitFitting:
         )
 
         version, is_new = submit_fitting(
-            fittingresult.model,
-            fittingresult.model_version.sha,
-            fittingresult.protocol,
-            fittingresult.protocol_version.sha,
-            fittingresult.fittingspec,
-            fittingresult.fittingspec_version.sha,
+            fittingresult.model_version,
+            fittingresult.protocol_version,
+            fittingresult.fittingspec_version,
             fittingresult.dataset,
             user,
             False,
@@ -166,9 +160,9 @@ class TestSubmitFitting:
         mock_post.side_effect = generate_response('something %s')
         with pytest.raises(ProcessingException):
             submit_fitting(
-                model, model_version.sha,
-                protocol, protocol_version.sha,
-                fittingspec, fittingspec_version.sha,
+                model_version,
+                protocol_version,
+                fittingspec_version,
                 dataset,
                 user,
                 False
@@ -201,9 +195,9 @@ class TestSubmitFitting:
         mock_post.side_effect = generate_response('%s an error occurred')
 
         version, is_new = submit_fitting(
-            model, model_version.sha,
-            protocol, protocol_version.sha,
-            fittingspec, fittingspec_version.sha,
+            model_version,
+            protocol_version,
+            fittingspec_version,
             dataset,
             user,
             False
@@ -229,9 +223,9 @@ class TestSubmitFitting:
         mock_post.side_effect = generate_response('%s inapplicable')
 
         version, is_new = submit_fitting(
-            model, model_version.sha,
-            protocol, protocol_version.sha,
-            fittingspec, fittingspec_version.sha,
+            model_version,
+            protocol_version,
+            fittingspec_version,
             dataset,
             user,
             False

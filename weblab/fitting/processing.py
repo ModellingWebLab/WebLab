@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 def submit_fitting(
-    model, model_version,
-    protocol, protocol_version,
-    fittingspec, fittingspec_version,
+    model_version,
+    protocol_version,
+    fittingspec_version,
     dataset, user, rerun_ok,
 ):
     """Submit a Celery task to run a fitting experiment
@@ -26,13 +26,13 @@ def submit_fitting(
     @return the FittingResultVersion for the run
     """
     fittingresult, _ = FittingResult.objects.get_or_create(
-        model=model,
-        protocol=protocol,
-        fittingspec=fittingspec,
+        model=model_version.model,
+        protocol=protocol_version.protocol,
+        fittingspec=fittingspec_version.fittingspec,
         dataset=dataset,
-        model_version=model.repocache.get_version(model_version),
-        protocol_version=protocol.repocache.get_version(protocol_version),
-        fittingspec_version=fittingspec.repocache.get_version(fittingspec_version),
+        model_version=model_version,
+        protocol_version=protocol_version,
+        fittingspec_version=fittingspec_version,
         defaults={
             'author': user,
         }
@@ -59,15 +59,15 @@ def submit_fitting(
 
     model_url = reverse(
         'entities:entity_archive',
-        args=['model', model.pk, model_version]
+        args=['model', model_version.model.pk, model_version.sha]
     )
     protocol_url = reverse(
         'entities:entity_archive',
-        args=['protocol', protocol.pk, protocol_version]
+        args=['protocol', protocol_version.protocol.pk, protocol_version.sha]
     )
     fittingspec_url = reverse(
         'fitting:entity_archive',
-        args=['spec', fittingspec.pk, fittingspec_version]
+        args=['spec', fittingspec_version.fittingspec.pk, fittingspec_version.sha]
     )
     dataset_url = reverse(
         'datasets:archive',

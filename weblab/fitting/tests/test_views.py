@@ -498,9 +498,9 @@ class TestCreateFittingResultView:
 
         assert response.status_code == 302
         mock_submit.assert_called_with(
-            public_model, model_version.sha,
-            public_protocol, protocol_version.sha,
-            public_fittingspec, fittingspec_version.sha,
+            model_version,
+            protocol_version,
+            fittingspec_version,
             public_dataset, fits_user, False
         )
 
