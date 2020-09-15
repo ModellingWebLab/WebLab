@@ -236,7 +236,7 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormV
             form.cleaned_data['fittingspec_version'],
             form.cleaned_data['dataset'],
             self.request.user,
-            False,
+            True,
         )
 
         queued = self.runnable.status == FittingResultVersion.STATUS_QUEUED

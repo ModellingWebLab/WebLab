@@ -501,7 +501,7 @@ class TestCreateFittingResultView:
             model_version,
             protocol_version,
             fittingspec_version,
-            public_dataset, fits_user, False
+            public_dataset, fits_user, True
         )
 
         assert response.url == '/fitting/results/%d/versions/%d' % (runnable.fittingresult.pk, runnable.pk)
