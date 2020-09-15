@@ -239,6 +239,16 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormV
             False,
         )
 
+        queued = self.runnable.status == FittingResultVersion.STATUS_QUEUED
+
+        if is_new:
+            if queued:
+                messages.info(self.request, "Fitting experiment submitted to the queue.")
+            else:
+                messages.error(self.request, "Fitting experiment could not be run: " + self.runnable.return_text)
+        else:
+            messages.info(self.request, "Fitting experiment was already run.")
+
         return super().form_valid(form)
 
     def get_success_url(self):
