@@ -7,7 +7,7 @@ from django.core.urlresolvers import reverse
 from django.db import IntegrityError
 
 from experiments.models import Experiment, PlannedExperiment
-from repocache.models import ProtocolInterface
+from repocache.models import ProtocolInterface, ProtocolIoputs
 
 from .models import AnalysisTask
 
@@ -27,14 +27,15 @@ def submit_check_protocol_task(protocol, protocol_version):
 
     At present, these check the syntax is correct, and if it is, extract
     the protocol's 'interface', i.e. the set of ontology terms by which
-    it expects to interact with models.
+    it expects to interact with models, and the inputs and outputs for the
+    protocol itself.
 
     :param protocol: the ``Protocol`` object
     :param protocol_version: the new version SHA just created
     """
     # If we've already analysed this protocol, this should be a no-op
     cached_version = protocol.repocache.get_version(protocol_version)
-    if ProtocolInterface.objects.filter(protocol_version=cached_version).exists():
+    if ProtocolIoputs.objects.filter(protocol_version=cached_version, kind=ProtocolIoputs.FLAG).exists():
         return
 
     # Submit the analysis task
@@ -80,6 +81,8 @@ def process_check_protocol_callback(data):
         * ``returnmsg``: if failed, an error string formatted with simple HTML (`br` tags only)
         * ``required``: if success, a list of strings (the required ontology terms in the protocol's interface)
         * ``optional``: if success, a list of strings (the optional ontology terms in the protocol's interface)
+        * ``ioputs``: if success, a list of {'name', 'units', 'kind'} objects detailing the inputs & outputs to
+          the protocol
     :returns: a JSON callback response object, with fields:
         * ``error``: an error message iff there was a problem
     """
@@ -101,7 +104,7 @@ def process_check_protocol_callback(data):
 
     if success:
         # Store protocol interface in the repocache
-        if 'required' not in data or 'optional' not in data:
+        if 'required' not in data or 'optional' not in data or 'ioputs' not in data:
             return {'error': 'missing terms'}
         cached_version = entity.repocache.get_version(version)
         cached_version.parsed_ok = True
@@ -113,13 +116,25 @@ def process_check_protocol_callback(data):
             ProtocolInterface(protocol_version=cached_version, term=term, optional=True)
             for term in data['optional']
         ]
-        if not terms:
-            # Store a blank term so we know the interface has been analysed
-            terms.append(ProtocolInterface(protocol_version=cached_version, term='', optional=True))
         try:
             ProtocolInterface.objects.bulk_create(terms)
         except IntegrityError as e:
             return {'error': 'duplicate term provided: ' + str(e)}
+        kinds = {name: value for value, name in ProtocolIoputs.KIND_CHOICES}
+        ioputs = [
+            ProtocolIoputs(
+                protocol_version=cached_version,
+                name=ioput['name'],
+                units=ioput['units'],
+                kind=kinds[ioput['kind']])
+            for ioput in data['ioputs']
+        ]
+        # Store a flag so we know the interface has been analysed
+        ioputs.append(ProtocolIoputs(protocol_version=cached_version, name=' ', kind=ProtocolIoputs.FLAG))
+        try:
+            ProtocolIoputs.objects.bulk_create(ioputs)
+        except IntegrityError as e:
+            return {'error': 'duplicate input or output provided: ' + str(e)}
     else:
         # Store error message as an ephemeral file
         error_message = data.get('returnmsg', '').replace('<br/>', '\n')
@@ -136,7 +151,7 @@ def process_check_protocol_callback(data):
         cached_version = entity.repocache.get_version(version)
         cached_version.parsed_ok = False
         cached_version.save()
-        ProtocolInterface(protocol_version=cached_version, term='', optional=True).save()
+        ProtocolIoputs(protocol_version=cached_version, name=' ', kind=ProtocolIoputs.FLAG).save()
 
     return {}
 

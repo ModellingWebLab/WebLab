@@ -19,7 +19,7 @@ from guardian.shortcuts import assign_perm
 from core import recipes
 from entities.models import AnalysisTask, ModelEntity, ProtocolEntity
 from experiments.models import Experiment, PlannedExperiment
-from repocache.models import ProtocolInterface
+from repocache.models import ProtocolInterface, ProtocolIoputs
 from repocache.populate import populate_entity_cache
 
 
@@ -1424,6 +1424,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface initially
         assert not version.interface.exists()
+        assert not version.ioputs.exists()
         assert not protocol.is_parsed_ok(version)
 
         # Submit the fake task response
@@ -1432,16 +1433,18 @@ class TestCheckProtocolCallbackView:
             'returntype': 'success',
             'required': [],
             'optional': [],
+            'ioputs': [],
         }), content_type='application/json')
         assert response.status_code == 200
 
         # Check the analysis task has been deleted
         assert not AnalysisTask.objects.filter(id=task_id).exists()
 
-        # Check there is a blank interface term
-        assert version.interface.count() == 1
-        assert version.interface.get().term == ''
-        assert version.interface.get().optional
+        # Check there is an analysed flag, and nothing else
+        assert version.interface.count() == 0
+        assert version.ioputs.count() == 1
+        flag = version.ioputs.get()
+        assert flag.kind == ProtocolIoputs.FLAG
 
         # Check parsing is treated as having happened OK
         version.refresh_from_db()
@@ -1467,11 +1470,16 @@ class TestCheckProtocolCallbackView:
         # Submit the fake task response
         req = ['r1', 'r2']
         opt = ['o1']
+        io = [  # You can have an input & output with the same name
+            {'name': 'n', 'units': 'u', 'kind': 'output'},
+            {'name': 'n', 'units': 'u', 'kind': 'input'},
+        ]
         response = client.post('/entities/callback/check-proto', json.dumps({
             'signature': task_id,
             'returntype': 'success',
             'required': req,
             'optional': opt,
+            'ioputs': io,
         }), content_type='application/json')
         assert response.status_code == 200
 
@@ -1491,6 +1499,12 @@ class TestCheckProtocolCallbackView:
             else:
                 assert term.term in req
                 assert not term.optional
+        assert version.ioputs.count() == len(io) + 1
+        for item in io:
+            kind = ProtocolIoputs.INPUT if item['kind'] == 'input' else ProtocolIoputs.OUTPUT
+            db_item = version.ioputs.get(name=item['name'], kind=kind)
+            assert db_item.units == item['units']
+        assert version.ioputs.filter(kind=ProtocolIoputs.FLAG).count() == 1
 
     @patch('requests.post')
     def test_stores_error_response(self, mock_post, client, analysis_task):
@@ -1501,6 +1515,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface or error file initially
         assert not version.interface.exists()
+        assert not version.ioputs.exists()
         assert not protocol.is_parsed_ok(version)
         commit = protocol.repo.get_commit(hexsha)
         assert 'errors.txt' not in commit.filenames
@@ -1542,10 +1557,45 @@ class TestCheckProtocolCallbackView:
             'returntype': 'success',
             'required': req,
             'optional': opt,
+            'ioputs': [],
         }), content_type='application/json')
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert data['error'].startswith('duplicate term provided: ')
+
+    def test_errors_on_duplicate_outputs(self, client, analysis_task):
+        # Submit the fake task response
+        io = [
+            {'name': 'o', 'units': 'u', 'kind': 'output'},
+            {'name': 'o', 'units': 'u', 'kind': 'output'},
+        ]
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': str(analysis_task.id),
+            'returntype': 'success',
+            'required': [],
+            'optional': [],
+            'ioputs': io,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error'].startswith('duplicate input or output provided: ')
+
+    def test_errors_on_duplicate_inputs(self, client, analysis_task):
+        # Submit the fake task response
+        io = [
+            {'name': 'o', 'units': 'u', 'kind': 'input'},
+            {'name': 'o', 'units': 'u', 'kind': 'input'},
+        ]
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': str(analysis_task.id),
+            'returntype': 'success',
+            'required': [],
+            'optional': [],
+            'ioputs': io,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error'].startswith('duplicate input or output provided: ')
 
     def test_errors_on_no_signature(self, client):
         response = client.post('/entities/callback/check-proto', json.dumps({
