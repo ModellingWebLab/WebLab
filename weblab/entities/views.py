@@ -46,12 +46,13 @@ from repocache.models import CachedProtocolVersion
 from .forms import (
     EntityChangeVisibilityForm,
     EntityCollaboratorFormSet,
+    EntityRenameForm,
     EntityTagVersionForm,
     EntityVersionForm,
     FileUploadForm,
     ModelEntityForm,
     ProtocolEntityForm,
-    EntityRenameForm)
+)
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
 
