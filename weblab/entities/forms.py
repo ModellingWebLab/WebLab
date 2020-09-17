@@ -6,7 +6,7 @@ from django.forms import formset_factory
 from accounts.models import User
 from core import visibility
 
-from .models import EntityFile, ModelEntity, ProtocolEntity
+from .models import EntityFile, ModelEntity, ProtocolEntity, Entity
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -102,6 +102,14 @@ class EntityRenameForm(forms.Form):
         label='New Name',
         help_text='',
         required=True)
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if Entity.objects.filter(name=name).exists():
+            raise ValidationError(
+                'You already have a model or protocol named "%s"' % name)
+
+        return name
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
