@@ -505,3 +505,175 @@ class TestCreateFittingResultView:
         )
 
         assert response.url == '/fitting/results/%d/versions/%d' % (runnable.fittingresult.pk, runnable.pk)
+
+
+@pytest.mark.django_db
+class TestFittingResultFilterJsonView:
+    def test_requires_login(self, client):
+        response = client.get('/fitting/results/new/filter')
+        assert response.status_code == 302
+
+    def test_requires_permission(self, client, logged_in_user):
+        response = client.get('/fitting/results/new/filter')
+        assert response.status_code == 302
+
+    def test_all_models_and_versions(self, client, fits_user, helpers):
+        model1 = recipes.model.make()
+        model2 = recipes.model.make()
+        m1v1 = helpers.cached_version(model1)
+        m2v1 = helpers.cached_version(model2)
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert 'fittingResultOptions' in data
+        options = data['fittingResultOptions']
+        assert set(options['models']) == {model1.id, model2.id}
+        assert set(options['model_versions']) == {m1v1.id, m2v1.id}
+
+    def test_all_protocols_and_versions(self, client, fits_user, helpers):
+        protocol1 = recipes.protocol.make()
+        protocol2 = recipes.protocol.make()
+        p1v1 = helpers.cached_version(protocol1)
+        p2v1 = helpers.cached_version(protocol2)
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert set(options['protocols']) == {protocol1.id, protocol2.id}
+        assert set(options['protocol_versions']) == {p1v1.id, p2v1.id}
+
+    def test_all_fittingspecs_and_versions(self, client, fits_user, helpers):
+        fittingspec1 = recipes.fittingspec.make()
+        fittingspec2 = recipes.fittingspec.make()
+        f1v1 = helpers.cached_version(fittingspec1)
+        f2v1 = helpers.cached_version(fittingspec2)
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert set(options['fittingspecs']) == {fittingspec1.id, fittingspec2.id}
+        assert set(options['fittingspec_versions']) == {f1v1.id, f2v1.id}
+
+    def test_all_datasets(self, client, fits_user):
+        dataset1 = recipes.dataset.make()
+        dataset2 = recipes.dataset.make()
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert set(options['datasets']) == {dataset1.id, dataset2.id}
+
+    def test_model_and_versions_restricted_when_model_selected(self, client, fits_user, helpers):
+        model1 = recipes.model.make()
+        model2 = recipes.model.make()
+        m1v1 = helpers.cached_version(model1)
+        m2v1 = helpers.cached_version(model2)  # noqa:  F841
+
+        response = client.get('/fitting/results/new/filter', {'model': model1.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['models'] == [model1.id]
+        assert options['model_versions'] == [m1v1.id]
+
+    def test_protocol_and_versions_restricted_when_protocol_selected(self, client, fits_user, helpers):
+        protocol1 = recipes.protocol.make()
+        protocol2 = recipes.protocol.make()
+        p1v1 = helpers.cached_version(protocol1)
+        p2v1 = helpers.cached_version(protocol2)  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {'protocol': protocol1.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['protocols'] == [protocol1.id]
+        assert options['protocol_versions'] == [p1v1.id]
+
+    def test_fittingspec_and_versions_restricted_when_fittingspec_selected(self, client, fits_user, helpers):
+        fittingspec1 = recipes.fittingspec.make()
+        fittingspec2 = recipes.fittingspec.make()
+        f1v1 = helpers.cached_version(fittingspec1)
+        f2v1 = helpers.cached_version(fittingspec2)  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {'fittingspec': fittingspec1.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['fittingspecs'] == [fittingspec1.id]
+        assert options['fittingspec_versions'] == [f1v1.id]
+
+    def test_dataset_restricted_when_selected(self, client, fits_user, helpers):
+        dataset1 = recipes.dataset.make()
+        dataset2 = recipes.dataset.make()  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {'dataset': dataset1.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert 'fittingResultOptions' in data
+        options = data['fittingResultOptions']
+        assert options['datasets'] == [dataset1.id]
+
+    def test_dataset_and_fittingspec_restricted_when_protocol_selected(self, client, fits_user, helpers):
+        protocol = recipes.protocol.make()
+        fittingspec1 = recipes.fittingspec.make(protocol=protocol)
+        fittingspec2 = recipes.fittingspec.make()
+        f1v1 = helpers.cached_version(fittingspec1)
+        f2v1 = helpers.cached_version(fittingspec2)  # noqa: F841
+        dataset1 = recipes.dataset.make(protocol=protocol)
+        dataset2 = recipes.dataset.make()  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {'protocol': protocol.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['datasets'] == [dataset1.id]
+        assert options['fittingspecs'] == [fittingspec1.id]
+        assert options['fittingspec_versions'] == [f1v1.id]
+
+    def test_protocol_and_fittingspec_restricted_when_dataset_selected(self, client, fits_user, helpers):
+        protocol1 = recipes.protocol.make()
+        protocol2 = recipes.protocol.make()
+        p1v1 = helpers.cached_version(protocol1)
+        p2v1 = helpers.cached_version(protocol2)  # noqa: F841
+
+        dataset = recipes.dataset.make(protocol=protocol1)
+
+        response = client.get('/fitting/results/new/filter', {'dataset': dataset.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['protocols'] == [protocol1.id]
+        assert options['protocol_versions'] == [p1v1.id]
+
+    def test_protocol_and_dataset_restricted_when_fittingspec_selected(self, client, fits_user, helpers):
+        protocol1 = recipes.protocol.make()
+        protocol2 = recipes.protocol.make()
+        p1v1 = helpers.cached_version(protocol1)
+        p2v1 = helpers.cached_version(protocol2)  # noqa: F841
+        dataset1 = recipes.dataset.make(protocol=protocol1)
+        dataset2 = recipes.dataset.make()  # noqa: F841
+
+        fittingspec = recipes.fittingspec.make(protocol=protocol1)
+
+        response = client.get('/fitting/results/new/filter', {'fittingspec': fittingspec.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['protocols'] == [protocol1.id]
+        assert options['protocol_versions'] == [p1v1.id]
+        assert options['datasets'] == [dataset1.id]

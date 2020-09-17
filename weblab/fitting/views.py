@@ -13,6 +13,7 @@ by removing the hardcoded 'entities:' namespace from reverse() calls.
 from braces.views import UserFormKwargsMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -27,6 +28,7 @@ from datasets import views as dataset_views
 from datasets.models import Dataset
 from entities.models import ModelEntity, ProtocolEntity
 from entities.views import EntityNewVersionView, EntityTypeMixin
+from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion
 
 from .forms import FittingResultCreateForm, FittingSpecForm, FittingSpecVersionForm
 from .models import FittingResult, FittingResultVersion, FittingSpec
@@ -254,3 +256,75 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormV
     def get_success_url(self):
         if hasattr(self, 'runnable'):
             return reverse('fitting:result:version', args=[self.runnable.fittingresult.pk, self.runnable.pk])
+
+
+class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'fitting.run_fits'
+
+    def get(self, request, *args, **kwargs):
+        options = {}
+
+        models = ModelEntity.objects.all()
+        model_versions = CachedModelVersion.objects.all()
+        protocols = ProtocolEntity.objects.all()
+        protocol_versions = CachedProtocolVersion.objects.all()
+        fittingspecs = FittingSpec.objects.all()
+        fittingspec_versions = CachedFittingSpecVersion.objects.all()
+        datasets = Dataset.objects.all()
+
+        def _get_int_param(fieldname, _model):
+            try:
+                pk = int(request.GET.get(fieldname, ''))
+                return _model.objects.get(pk=pk)
+            except ValueError:
+                pass
+            except ObjectDoesNotExist:
+                pass
+
+        model = _get_int_param('model', ModelEntity)
+        protocol = _get_int_param('protocol', ProtocolEntity)
+        fittingspec = _get_int_param('fittingspec', FittingSpec)
+        dataset = _get_int_param('dataset', Dataset)
+
+        if not protocol:
+            if fittingspec:
+                protocol = fittingspec.protocol
+            elif dataset:
+                protocol = dataset.protocol
+
+        if model:
+            models = [model]
+            model_versions = model_versions.filter(entity__entity=model)
+
+        if fittingspec:
+            fittingspecs = [fittingspec]
+            fittingspec_versions = fittingspec_versions.filter(entity__entity=fittingspec.id)
+
+        if dataset:
+            datasets = [dataset]
+
+        if protocol:
+            protocols = [protocol]
+            protocol_versions = protocol_versions.filter(entity__entity=protocol.id)
+
+            if not fittingspec:
+                fittingspecs = fittingspecs.filter(protocol=protocol.id)
+                fittingspec_versions = fittingspec_versions.filter(entity__entity__in=fittingspecs)
+
+            if not dataset:
+                datasets = datasets.filter(protocol=protocol.id)
+
+        def _get_ids(qs):
+            return [item.id for item in qs]
+
+        options['models'] = _get_ids(models)
+        options['model_versions'] = _get_ids(model_versions)
+        options['protocols'] = _get_ids(protocols)
+        options['protocol_versions'] = _get_ids(protocol_versions)
+        options['fittingspecs'] = _get_ids(fittingspecs)
+        options['fittingspec_versions'] = _get_ids(fittingspec_versions)
+        options['datasets'] = _get_ids(datasets)
+
+        return JsonResponse({
+            'fittingResultOptions': options
+        })

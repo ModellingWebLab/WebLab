@@ -72,6 +72,13 @@ result_patterns = [
         views.FittingResultCreateView.as_view(),
         name='new'
     ),
+
+    url(
+        r'^new/filter$',
+        views.FittingResultFilterJsonView.as_view(),
+        name='filter_json',
+    ),
+
 ]
 
 urlpatterns = [
