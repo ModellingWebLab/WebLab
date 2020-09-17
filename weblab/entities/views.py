@@ -663,7 +663,7 @@ class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
         """
         from entities.models import AnalysisTask
         from experiments.models import RunningExperiment
-        entity_field = 'experiment_version__experiment__%s' % self.kwargs['entity_type']
+        entity_field = 'runnable__experimentversion__experiment__%s' % self.kwargs['entity_type']
         self_id = self._get_object().id
         return (RunningExperiment.objects.filter(
             id=token,
