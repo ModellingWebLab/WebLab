@@ -777,6 +777,7 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
 
         return response
 
+
 class RenameView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, EntityTypeMixin, DetailView):
     template_name = 'entities/entity_rename_form.html'
     context_object_name = 'entity'
