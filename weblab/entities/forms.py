@@ -97,6 +97,43 @@ class EntityTagVersionForm(forms.Form):
         required=True)
 
 
+class EntityRenameForm(forms.Form):
+    name = forms.CharField(
+        label='New Name',
+        help_text='',
+        required=True)
+
+
+class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for creating an entirely new entity."""
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if self._meta.model.objects.filter(name=name).exists():
+            raise ValidationError(
+                'You already have a %s named "%s"' % (self._meta.model.display_type, name))
+
+        return name
+
+    def save(self, **kwargs):
+        entity = super().save(commit=False)
+        entity.author = self.user
+        entity.entity_type = self.entity_type
+        entity.save()
+        self.save_m2m()
+        return entity
+
+    @property
+    def entity_type(self):
+        return self._meta.model.entity_type
+
+
+class ModelEntityForm(EntityForm):
+    class Meta:
+        model = ModelEntity
+        fields = ['name']
+
+
+
 class EntityCollaboratorForm(forms.Form):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})

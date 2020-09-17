@@ -51,7 +51,7 @@ from .forms import (
     FileUploadForm,
     ModelEntityForm,
     ProtocolEntityForm,
-)
+    EntityRenameForm)
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
 
@@ -663,7 +663,7 @@ class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
         """
         from entities.models import AnalysisTask
         from experiments.models import RunningExperiment
-        entity_field = 'runnable__experimentversion__experiment__%s' % self.kwargs['entity_type']
+        entity_field = 'experiment_version__experiment__%s' % self.kwargs['entity_type']
         self_id = self._get_object().id
         return (RunningExperiment.objects.filter(
             id=token,
@@ -776,6 +776,41 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
             raise Http404
 
         return response
+
+class RenameView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, EntityTypeMixin, DetailView):
+    template_name = 'entities/entity_rename_form.html'
+    context_object_name = 'entity'
+    form_class = EntityRenameForm
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def test_func(self):
+        return self._get_object().is_managed_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """Check the form and possibly add the tag in the repo.
+
+        Called by Django when a form is submitted.
+        """
+        form = self.get_form()
+
+        if form.is_valid():
+            new_name = form.cleaned_data['name']
+            entity = self._get_object()
+            entity.name = new_name
+            entity.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':detail', args=[entity.url_type, entity.id])
 
 
 class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTypeMixin, DetailView):
