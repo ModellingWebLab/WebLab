@@ -25,6 +25,38 @@ function init() {
     $modelVersion.prop('disabled', isNaN(modelId));
     $protocolVersion.prop('disabled', isNaN(protocolId));
     $fittingSpecVersion.prop('disabled', isNaN(fittingSpecId));
+
+    function restrictIds(idList, $dropdown) {
+      $dropdown.find("option").each(function(i, opt) {
+        if (opt.value.length > 0) {
+          $(opt).toggle(
+              idList.includes(parseInt(opt.value, 10))
+          );
+        }
+      });
+    }
+
+    $.getJSON("/fitting/results/new/filter",
+        {
+          'model': modelId,
+          'protocol': protocolId,
+          'fittingspec': fittingSpecId,
+          'dataset': datasetId,
+        },
+        function(json) {
+          if (json.fittingResultOptions) {
+            var results = json.fittingResultOptions;
+
+            restrictIds(results.models, $model);
+            restrictIds(results.model_versions, $modelVersion);
+            restrictIds(results.protocols, $protocol);
+            restrictIds(results.protocol_versions, $protocolVersion);
+            restrictIds(results.fittingspecs, $fittingSpec);
+            restrictIds(results.fittingspec_versions, $fittingSpecVersion);
+            restrictIds(results.datasets, $dataset);
+          }
+        }
+    );
   }
 
   $("form select").change(updateDropdowns);
