@@ -205,7 +205,7 @@ class FittingResultComparisonJsonView(View):
         return JsonResponse(response)
 
 
-class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormView):
+class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, FormView):
     permission_required = 'fitting.run_fits'
     form_class = FittingResultCreateForm
 

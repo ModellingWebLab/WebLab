@@ -13,6 +13,7 @@ from accounts.models import User
 from core import recipes
 from datasets.models import Dataset
 from entities.models import Entity
+from fitting.models import FittingResult
 from repocache.populate import populate_entity_cache
 
 
@@ -167,28 +168,28 @@ def fittingspec_with_version():
 
 @pytest.fixture
 def public_model(helpers):
-    model = recipes.model.make()
+    model = recipes.model.make(name='public model')
     helpers.add_version(model, visibility='public')
     return model
 
 
 @pytest.fixture
 def public_protocol(helpers):
-    protocol = recipes.protocol.make()
+    protocol = recipes.protocol.make(name='public protocol')
     helpers.add_version(protocol, visibility='public')
     return protocol
 
 
 @pytest.fixture
 def public_fittingspec(helpers):
-    fittingspec = recipes.fittingspec.make()
+    fittingspec = recipes.fittingspec.make(name='public fitting spec')
     helpers.add_version(fittingspec, visibility='public')
     return fittingspec
 
 
 @pytest.fixture
-def public_dataset(helpers):
-    dataset = recipes.dataset.make(visibility='public')
+def public_dataset():
+    dataset = recipes.dataset.make(visibility='public', name='public dataset')
     return dataset
 
 
@@ -204,6 +205,32 @@ def moderated_protocol(helpers):
     protocol = recipes.protocol.make()
     helpers.add_version(protocol, visibility='moderated')
     return protocol
+
+
+@pytest.fixture
+def private_model(helpers):
+    model = recipes.model.make(name='private model')
+    helpers.add_version(model, visibility='private')
+    return model
+
+
+@pytest.fixture
+def private_protocol(helpers):
+    protocol = recipes.protocol.make(name='private protocol')
+    helpers.add_version(protocol, visibility='private')
+    return protocol
+
+
+@pytest.fixture
+def private_fittingspec(helpers):
+    fittingspec = recipes.fittingspec.make(name='private fittingspec')
+    helpers.add_version(fittingspec, visibility='private')
+    return fittingspec
+
+
+@pytest.fixture
+def private_dataset():
+    return recipes.dataset.make(visibility='private')
 
 
 @pytest.fixture
@@ -332,6 +359,17 @@ def model_creator(user, helpers):
 def moderator(user, helpers):
     helpers.add_permission(user, 'moderator')
     return user
+
+
+@pytest.fixture
+def fits_user(logged_in_user):
+    content_type = ContentType.objects.get_for_model(FittingResult)
+    permission = Permission.objects.get(
+        codename='run_fits',
+        content_type=content_type,
+    )
+    logged_in_user.user_permissions.add(permission)
+    return logged_in_user
 
 
 @pytest.fixture

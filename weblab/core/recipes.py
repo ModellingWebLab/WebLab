@@ -22,17 +22,17 @@ protocol_file = Recipe('EntityFile', entity=foreign_key(protocol))
 
 analysis_task = Recipe('AnalysisTask', entity=foreign_key(protocol))
 
-cached_model = Recipe('CachedModel')
-cached_model_version = Recipe('CachedModelVersion')
-cached_model_tag = Recipe('CachedModelTag')
+cached_model = Recipe('CachedModel', entity=foreign_key(model))
+cached_model_version = Recipe('CachedModelVersion', entity=foreign_key(cached_model))
+cached_model_tag = Recipe('CachedModelTag', entity=foreign_key(cached_model))
 
-cached_protocol = Recipe('CachedProtocol')
-cached_protocol_version = Recipe('CachedProtocolVersion')
-cached_protocol_tag = Recipe('CachedProtocolTag')
+cached_protocol = Recipe('CachedProtocol', entity=foreign_key(protocol))
+cached_protocol_version = Recipe('CachedProtocolVersion', entity=foreign_key(cached_protocol))
+cached_protocol_tag = Recipe('CachedProtocolTag', entity=foreign_key(cached_protocol))
 
-cached_fittingspec = Recipe('CachedFittingSpec')
-cached_fittingspec_version = Recipe('CachedFittingSpecVersion')
-cached_fittingspec_tag = Recipe('CachedFittingSpecTag')
+cached_fittingspec = Recipe('CachedFittingSpec', entity=foreign_key(fittingspec))
+cached_fittingspec_version = Recipe('CachedFittingSpecVersion', entity=foreign_key(cached_fittingspec))
+cached_fittingspec_tag = Recipe('CachedFittingSpecTag', entity=foreign_key(cached_fittingspec))
 
 experiment = Recipe(
     'Experiment',

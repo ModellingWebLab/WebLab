@@ -575,7 +575,7 @@ class TestFittingResultFilterJsonView:
         model1 = recipes.model.make()
         model2 = recipes.model.make()
         m1v1 = helpers.cached_version(model1)
-        m2v1 = helpers.cached_version(model2)  # noqa:  F841
+        m2v1 = helpers.cached_version(model2)  # noqa: F841
 
         response = client.get('/fitting/results/new/filter', {'model': model1.id})
         assert response.status_code == 200
