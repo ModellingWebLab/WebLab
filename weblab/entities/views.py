@@ -52,7 +52,7 @@ from .forms import (
     FileUploadForm,
     ModelEntityForm,
     ProtocolEntityForm,
-)
+    ModelEntityRenameForm, ProtocolEntityRenameForm)
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
 
@@ -760,6 +760,7 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
     """
     Download an individual file from an entity version
     """
+
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
         version = self.get_commit()
@@ -782,7 +783,13 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
 class RenameView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, EntityTypeMixin, DetailView):
     template_name = 'entities/entity_rename_form.html'
     context_object_name = 'entity'
-    form_class = EntityRenameForm
+
+    @property
+    def form_class(self):
+        if self.model is ModelEntity:
+            return ModelEntityRenameForm
+        elif self.model is ProtocolEntity:
+            return ProtocolEntityRenameForm
 
     def _get_object(self):
         if not hasattr(self, 'object'):
@@ -790,7 +797,7 @@ class RenameView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, EntityTypeM
         return self.object
 
     def test_func(self):
-        return self._get_object().is_managed_by(self.request.user)
+        return self._get_object().is_editable_by(self.request.user)
 
     def post(self, request, *args, **kwargs):
         """Check the form and possibly add the tag in the repo.
@@ -801,7 +808,7 @@ class RenameView(LoginRequiredMixin, UserPassesTestMixin, FormMixin, EntityTypeM
 
         if form.is_valid():
             new_name = form.cleaned_data['name']
-            entity = self._get_object()
+            entity = self.get_object()
             entity.name = new_name
             entity.save()
             return self.form_valid(form)
@@ -882,6 +889,7 @@ class GetProtocolInterfacesJsonView(View):
     where ``name`` contains a ``Protocol.name`` and the ``required`` and ``optional`` arrays list
     the terms in that protocol's interface.
     """
+
     def get(self, request, *args, **kwargs):
         # Base where clause: don't show private versions
         where = ~Q(visibility='private')
@@ -973,8 +981,8 @@ class EntityDiffView(View):
                 result['response'] = True
         else:
             result['responseText'] = (
-                'bives request failed: %d (%s)' %
-                (bives_response.status_code, bives_response.content.decode())
+                    'bives request failed: %d (%s)' %
+                    (bives_response.status_code, bives_response.content.decode())
             )
 
         return result

@@ -36,6 +36,29 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
     def entity_type(self):
         return self._meta.model.entity_type
 
+class EntityRenameForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for renaming an existing entity."""
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if self._meta.model.objects.filter(name=name).exists():
+            raise ValidationError(
+                'You already have a %s named "%s"' % (self._meta.model.display_type, name))
+
+        return name
+
+
+class ModelEntityRenameForm(EntityRenameForm):
+    class Meta:
+        model = ModelEntity
+        fields = ['name']
+
+
+class ProtocolEntityRenameForm(EntityRenameForm):
+    class Meta:
+        model = ProtocolEntity
+        fields = ['name']
+
 
 class ModelEntityForm(EntityForm):
     class Meta:
@@ -101,20 +124,6 @@ class EntityTagVersionForm(forms.Form):
         help_text='Short label for this version',
         required=True)
 
-
-class EntityRenameForm(forms.Form):
-    name = forms.CharField(
-        label='New Name',
-        help_text='',
-        required=True)
-
-    def clean_name(self):
-        name = self.cleaned_data['name']
-        if Entity.objects.filter(name=name).exists():
-            raise ValidationError(
-                'You already have a model or protocol named "%s"' % name)
-
-        return name
 
 
 class EntityCollaboratorForm(forms.Form):
