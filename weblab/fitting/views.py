@@ -264,13 +264,13 @@ class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, V
     def get(self, request, *args, **kwargs):
         options = {}
 
-        models = ModelEntity.objects.all()
-        model_versions = CachedModelVersion.objects.all()
-        protocols = ProtocolEntity.objects.all()
-        protocol_versions = CachedProtocolVersion.objects.all()
-        fittingspecs = FittingSpec.objects.all()
-        fittingspec_versions = CachedFittingSpecVersion.objects.all()
-        datasets = Dataset.objects.all()
+        models = ModelEntity.objects.visible_to_user(request.user)
+        model_versions = CachedModelVersion.objects.visible_to_user(request.user)
+        protocols = ProtocolEntity.objects.visible_to_user(request.user)
+        protocol_versions = CachedProtocolVersion.objects.visible_to_user(request.user)
+        fittingspecs = FittingSpec.objects.visible_to_user(request.user)
+        fittingspec_versions = CachedFittingSpecVersion.objects.visible_to_user(request.user)
+        datasets = Dataset.objects.visible_to_user(request.user)
 
         def _get_int_param(fieldname, _model):
             try:
@@ -309,7 +309,8 @@ class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, V
 
             if not fittingspec:
                 fittingspecs = fittingspecs.filter(protocol=protocol.id)
-                fittingspec_versions = fittingspec_versions.filter(entity__entity__in=fittingspecs)
+                fsids = [fs.pk for fs in fittingspecs.filter(protocol=protocol.id)]
+                fittingspec_versions = fittingspec_versions.filter(entity__entity__in=fsids)
 
             if not dataset:
                 datasets = datasets.filter(protocol=protocol.id)
