@@ -760,7 +760,6 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
     """
     Download an individual file from an entity version
     """
-
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
         version = self.get_commit()
@@ -889,7 +888,6 @@ class GetProtocolInterfacesJsonView(View):
     where ``name`` contains a ``Protocol.name`` and the ``required`` and ``optional`` arrays list
     the terms in that protocol's interface.
     """
-
     def get(self, request, *args, **kwargs):
         # Base where clause: don't show private versions
         where = ~Q(visibility='private')

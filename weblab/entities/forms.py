@@ -125,7 +125,6 @@ class EntityTagVersionForm(forms.Form):
         required=True)
 
 
-
 class EntityCollaboratorForm(forms.Form):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
