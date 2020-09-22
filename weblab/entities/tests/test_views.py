@@ -84,11 +84,78 @@ class TestEntityCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
+@pytest.mark.django_db
+class TestEntityRenaming:
+    def test_model_renaming_success(self, client, logged_in_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+
+        model2 = recipes.model.make(name='test model 2')
+        assert model.name == 'my model1'
+        assert model2.name == 'test model 2'
+
+        response = client.post(
+            '/entities/models/%d/rename' % model.pk,
+            data={
+                     'name': 'new name'
+                 })
+        assert response.status_code == 302
+        entity = ModelEntity.objects.first()
+        assert entity.name == 'new name'
+
+    def test_model_renaming_failure(self, client, logged_in_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+
+        model2 = recipes.model.make(name='test model 2')
+        assert model.name == 'my model1'
+        assert model2.name == 'test model 2'
+
+        response = client.post(
+            '/entities/models/%d/rename' % model.pk,
+            data={
+                     'name': 'test model 2'
+                 })
+        assert response.status_code == 200
+        entity = ModelEntity.objects.first()
+        assert entity.name == 'my model1'
+
+    def test_model_and_protocol_renaming_success(self, client, logged_in_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+
+        protocol = recipes.protocol.make(name='test protocol')
+        assert model.name == 'my model1'
+
+        response = client.post(
+            '/entities/models/%d/rename' % model.pk,
+            data={
+                     'name': 'test protocol'
+                 })
+        assert response.status_code == 302
+        entity = ModelEntity.objects.first()
+        assert entity.name == 'test protocol'
+
+    def test_model_abs_path_the_same(self, client, logged_in_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        commit = helpers.add_version(model, visibility='private')
+
+        abs_path = model.repo_abs_path
+        response = client.post(
+            '/entities/models/%d/rename' % model.pk,
+            data={
+                     'name': 'test protocol'
+                 })
+        assert response.status_code == 302
+        assert abs_path == model.repo_abs_path
+        entity = ModelEntity.objects.first()
+        assert entity.name == 'test protocol'
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("recipe,url,list_url", [
     (recipes.model, '/entities/models/%d/delete', '/entities/models/'),
-    (recipes.protocol, '/entities/protocols/%d/delete', '/entities/protocols/'),
+    (recipes.protocol, '/entities/protocols/%d/delete', '/entit`1ies/protocols/'),
 ])
 class TestEntityDeletion:
     def test_owner_can_delete_entity(
