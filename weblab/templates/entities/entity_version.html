@@ -63,10 +63,14 @@
         {% endif %}
         <li><a href="{% entity_url 'version_list' entity %}" title="Show differences between versions of this {{ type }}">Other versions</a></li>
       </ul></div>
-      <!--
-      {% if type == 'model' %}
-        <a class="button" href="" title="Fit the parameters of this model to data">Fit</a>
+      {% if entity.entity_type == 'model' %}
+        <a class="button" href="{% url "fitting:result:new" %}?model={{entity.pk}}" title="Fit the parameters of this model to data">Fit</a>
+      {% elif entity.entity_type == 'protocol' %}
+        <a class="button" href="{% url "fitting:result:new" %}?protocol={{entity.pk}}" title="Run fitting experiment using this protocol">Fit</a>
+      {% elif entity.entity_type == 'fittingspec' %}
+        <a class="button" href="{% url "fitting:result:new" %}?fittingspec={{entity.pk}}" title="Run fitting experiment using this specification">Fit</a>
       {% endif %}
+      <!--
       <a class="button" href="" title="Show results of parameter fitting experiments run {% if type == 'model' %}on this model{% else %}using this protocol{% endif %}">Fittings</a>
       -->
     </div>
