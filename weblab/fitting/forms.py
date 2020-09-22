@@ -40,6 +40,14 @@ class FittingResultCreateForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Disable fields with preselected values
+        if not self.is_bound:
+            self.fields['model'].disabled = bool(self.initial.get('model'))
+            self.fields['protocol'].disabled = bool(self.initial.get('protocol'))
+            self.fields['fittingspec'].disabled = bool(self.initial.get('fittingspec'))
+            self.fields['dataset'].disabled = bool(self.initial.get('dataset'))
+
         # Ensure only visible entities and versions are available to user
         self.fields['model'].queryset = ModelEntity.objects.visible_to_user(self.user)
         self.fields['protocol'].queryset = ProtocolEntity.objects.visible_to_user(self.user)

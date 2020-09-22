@@ -6,7 +6,7 @@ from fitting.forms import FittingResultCreateForm
 
 @pytest.mark.django_db
 class TestFittingResultCreateForm:
-    def test_fields(self, fits_user):
+    def test_fields_exist(self, fits_user):
         form = FittingResultCreateForm(user=fits_user)
         assert 'model' in form.fields
         assert 'model_version' in form.fields
@@ -15,6 +15,29 @@ class TestFittingResultCreateForm:
         assert 'fittingspec' in form.fields
         assert 'fittingspec_version' in form.fields
         assert 'dataset' in form.fields
+
+    def test_fields_enabled_by_default(self, fits_user):
+        form = FittingResultCreateForm(user=fits_user)
+        assert not form.fields['model'].disabled
+        assert not form.fields['protocol'].disabled
+        assert not form.fields['fittingspec'].disabled
+        assert not form.fields['dataset'].disabled
+
+    def test_disables_preselected_model(self, public_model, fits_user):
+        form = FittingResultCreateForm(initial={'model': public_model.pk}, user=fits_user)
+        assert form.fields['model'].disabled
+
+    def test_disables_preselected_protocol(self, public_protocol, fits_user):
+        form = FittingResultCreateForm(initial={'protocol': public_protocol.pk}, user=fits_user)
+        assert form.fields['protocol'].disabled
+
+    def test_disables_preselected_fittingspec(self, public_fittingspec, fits_user):
+        form = FittingResultCreateForm(initial={'fittingspec': public_fittingspec.pk}, user=fits_user)
+        assert form.fields['fittingspec'].disabled
+
+    def test_disables_preselected_dataset(self, public_dataset, fits_user):
+        form = FittingResultCreateForm(initial={'dataset': public_dataset.pk}, user=fits_user)
+        assert form.fields['dataset'].disabled
 
     def test_valid_form(
         self, public_model, public_protocol,

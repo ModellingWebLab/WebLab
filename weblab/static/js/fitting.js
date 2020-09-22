@@ -61,6 +61,13 @@ function init() {
 
   $("form select").change(updateDropdowns);
 
+  // Disabled form fields will not be submitted - re-enable before the form is posted
+  $('form').submit(function() {
+    $(':disabled').each(function() {
+      $(this).removeAttr('disabled');
+    })
+  });
+
   updateDropdowns();
 }
 
