@@ -38,6 +38,9 @@
 
       </small>
     </div>
+    <div id="entity-view-buttons" class="link-list">
+      <a class="button" href="{% url "fitting:result:new" %}?dataset={{dataset.pk}}" title="Run fitting experiment using this dataset">Fit</a>
+    </div>
 
     <p id="description">
       {{ dataset.description }}
