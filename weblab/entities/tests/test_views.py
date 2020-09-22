@@ -89,10 +89,7 @@ class TestEntityRenaming:
     def test_model_renaming_success(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
         model = recipes.model.make(author=logged_in_user)
-
-        model2 = recipes.model.make(name='test model 2')
         assert model.name == 'my model1'
-        assert model2.name == 'test model 2'
 
         response = client.post(
             '/entities/models/%d/rename' % model.pk,
