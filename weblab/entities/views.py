@@ -979,8 +979,8 @@ class EntityDiffView(View):
                 result['response'] = True
         else:
             result['responseText'] = (
-                    'bives request failed: %d (%s)' %
-                    (bives_response.status_code, bives_response.content.decode())
+                'bives request failed: %d (%s)' %
+                (bives_response.status_code, bives_response.content.decode())
             )
 
         return result
