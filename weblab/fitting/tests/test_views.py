@@ -520,8 +520,8 @@ class TestFittingResultFilterJsonView:
     def test_all_models_and_versions(self, client, fits_user, helpers):
         model1 = recipes.model.make()
         model2 = recipes.model.make()
-        m1v1 = helpers.cached_version(model1, visibility='public')
-        m2v1 = helpers.cached_version(model2, visibility='public')
+        m1v1 = helpers.add_cached_version(model1, visibility='public')
+        m2v1 = helpers.add_cached_version(model2, visibility='public')
 
         response = client.get('/fitting/results/new/filter', {})
         assert response.status_code == 200
@@ -535,8 +535,8 @@ class TestFittingResultFilterJsonView:
     def test_model_and_version_must_be_visible_to_user(self, client, fits_user, helpers):
         model1 = recipes.model.make()
         model2 = recipes.model.make()
-        m1v1 = helpers.cached_version(model1, visibility='public')
-        m2v1 = helpers.cached_version(model2, visibility='private')  # noqa: F841
+        m1v1 = helpers.add_cached_version(model1, visibility='public')
+        m2v1 = helpers.add_cached_version(model2, visibility='private')  # noqa: F841
 
         response = client.get('/fitting/results/new/filter', {})
         assert response.status_code == 200
@@ -550,8 +550,8 @@ class TestFittingResultFilterJsonView:
     def test_all_protocols_and_versions(self, client, fits_user, helpers):
         protocol1 = recipes.protocol.make()
         protocol2 = recipes.protocol.make()
-        p1v1 = helpers.cached_version(protocol1, visibility='public')
-        p2v1 = helpers.cached_version(protocol2, visibility='public')
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='public')
 
         response = client.get('/fitting/results/new/filter', {})
         assert response.status_code == 200
@@ -564,8 +564,8 @@ class TestFittingResultFilterJsonView:
     def test_protocol_and_version_must_be_visible_to_user(self, client, fits_user, helpers):
         protocol1 = recipes.protocol.make()
         protocol2 = recipes.protocol.make()
-        p1v1 = helpers.cached_version(protocol1, visibility='public')
-        p2v1 = helpers.cached_version(protocol2, visibility='private')  # noqa: F841
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='private')  # noqa: F841
 
         response = client.get('/fitting/results/new/filter', {})
         assert response.status_code == 200
@@ -579,8 +579,8 @@ class TestFittingResultFilterJsonView:
     def test_all_fittingspecs_and_versions(self, client, fits_user, helpers):
         fittingspec1 = recipes.fittingspec.make()
         fittingspec2 = recipes.fittingspec.make()
-        f1v1 = helpers.cached_version(fittingspec1, visibility='public')
-        f2v1 = helpers.cached_version(fittingspec2, visibility='public')
+        f1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        f2v1 = helpers.add_cached_version(fittingspec2, visibility='public')
 
         response = client.get('/fitting/results/new/filter', {})
         assert response.status_code == 200
@@ -593,8 +593,8 @@ class TestFittingResultFilterJsonView:
     def test_fittingspec_and_version_must_be_visible_to_user(self, client, fits_user, helpers):
         fittingspec1 = recipes.fittingspec.make()
         fittingspec2 = recipes.fittingspec.make()
-        p1v1 = helpers.cached_version(fittingspec1, visibility='public')
-        p2v1 = helpers.cached_version(fittingspec2, visibility='private')  # noqa: F841
+        p1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        p2v1 = helpers.add_cached_version(fittingspec2, visibility='private')  # noqa: F841
 
         response = client.get('/fitting/results/new/filter', {})
         assert response.status_code == 200
@@ -631,8 +631,8 @@ class TestFittingResultFilterJsonView:
     def test_model_and_versions_restricted_when_model_selected(self, client, fits_user, helpers):
         model1 = recipes.model.make()
         model2 = recipes.model.make()
-        m1v1 = helpers.cached_version(model1, visibility='public')
-        m2v1 = helpers.cached_version(model2, visibility='public')  # noqa: F841
+        m1v1 = helpers.add_cached_version(model1, visibility='public')
+        m2v1 = helpers.add_cached_version(model2, visibility='public')  # noqa: F841
 
         response = client.get('/fitting/results/new/filter', {'model': model1.id})
         assert response.status_code == 200
@@ -645,8 +645,8 @@ class TestFittingResultFilterJsonView:
     def test_protocol_and_versions_restricted_when_protocol_selected(self, client, fits_user, helpers):
         protocol1 = recipes.protocol.make()
         protocol2 = recipes.protocol.make()
-        p1v1 = helpers.cached_version(protocol1, visibility='public')
-        p2v1 = helpers.cached_version(protocol2, visibility='public')  # noqa: F841
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='public')  # noqa: F841
 
         response = client.get('/fitting/results/new/filter', {'protocol': protocol1.id})
         assert response.status_code == 200
@@ -659,8 +659,8 @@ class TestFittingResultFilterJsonView:
     def test_fittingspec_and_versions_restricted_when_fittingspec_selected(self, client, fits_user, helpers):
         fittingspec1 = recipes.fittingspec.make()
         fittingspec2 = recipes.fittingspec.make()
-        f1v1 = helpers.cached_version(fittingspec1, visibility='public')
-        f2v1 = helpers.cached_version(fittingspec2, visibility='public')  # noqa: F841
+        f1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        f2v1 = helpers.add_cached_version(fittingspec2, visibility='public')  # noqa: F841
 
         response = client.get('/fitting/results/new/filter', {'fittingspec': fittingspec1.id})
         assert response.status_code == 200
@@ -684,11 +684,11 @@ class TestFittingResultFilterJsonView:
 
     def test_dataset_and_fittingspec_restricted_when_protocol_selected(self, client, fits_user, helpers):
         protocol = recipes.protocol.make()
-        helpers.cached_version(protocol, visibility='public')
+        helpers.add_cached_version(protocol, visibility='public')
         fittingspec1 = recipes.fittingspec.make(protocol=protocol)
         fittingspec2 = recipes.fittingspec.make()
-        f1v1 = helpers.cached_version(fittingspec1, visibility='public')
-        f2v1 = helpers.cached_version(fittingspec2, visibility='public')  # noqa: F841
+        f1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        f2v1 = helpers.add_cached_version(fittingspec2, visibility='public')  # noqa: F841
         dataset1 = recipes.dataset.make(protocol=protocol, visibility='public')
         dataset2 = recipes.dataset.make(visibility='public')  # noqa: F841
 
@@ -704,12 +704,12 @@ class TestFittingResultFilterJsonView:
     def test_protocol_and_fittingspec_restricted_when_dataset_selected(self, client, fits_user, helpers):
         protocol1 = recipes.protocol.make()
         protocol2 = recipes.protocol.make()
-        p1v1 = helpers.cached_version(protocol1, visibility='public')
-        p2v1 = helpers.cached_version(protocol2, visibility='public')  # noqa: F841
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='public')  # noqa: F841
         fittingspec1 = recipes.fittingspec.make(protocol=protocol1)
         fittingspec2 = recipes.fittingspec.make()
-        f1v1 = helpers.cached_version(fittingspec1, visibility='public')
-        f2v1 = helpers.cached_version(fittingspec2, visibility='public')  # noqa: F841
+        f1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        f2v1 = helpers.add_cached_version(fittingspec2, visibility='public')  # noqa: F841
 
         dataset = recipes.dataset.make(protocol=protocol1, visibility='public')
 
@@ -726,8 +726,8 @@ class TestFittingResultFilterJsonView:
     def test_protocol_and_dataset_restricted_when_fittingspec_selected(self, client, fits_user, helpers):
         protocol1 = recipes.protocol.make()
         protocol2 = recipes.protocol.make()
-        p1v1 = helpers.cached_version(protocol1, visibility='public')
-        p2v1 = helpers.cached_version(protocol2, visibility='public')  # noqa: F841
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='public')  # noqa: F841
         dataset1 = recipes.dataset.make(protocol=protocol1, visibility='public')
         dataset2 = recipes.dataset.make(visibility='public')  # noqa: F841
 

@@ -44,8 +44,11 @@ class Helpers:
         return commit
 
     @staticmethod
-    def cached_version(entity, **kwargs):
-        """Add a single commit/version to an entity and return the relevant repocache entry"""
+    def add_cached_version(entity, **kwargs):
+        """
+        Add a single commit/version to an entity along with a repocache entry.
+        @return the relevant repocache entry
+        """
         assert kwargs.get('cache', True), "Cache must be true for cached version"
         version = Helpers.add_version(entity, **kwargs)
         return entity.repocache.get_version(version.sha)
