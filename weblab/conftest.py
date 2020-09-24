@@ -233,7 +233,7 @@ def private_fittingspec(helpers):
 
 @pytest.fixture
 def private_dataset():
-    return recipes.dataset.make(visibility='private')
+    return recipes.dataset.make(name='private dataset', visibility='private')
 
 
 @pytest.fixture
@@ -366,6 +366,7 @@ def moderator(user, helpers):
 
 @pytest.fixture
 def fits_user(logged_in_user):
+    """User with permission to run fittings"""
     content_type = ContentType.objects.get_for_model(FittingResult)
     permission = Permission.objects.get(
         codename='run_fits',

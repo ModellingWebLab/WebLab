@@ -65,6 +65,7 @@ class FittingResultVersionListView(VisibilityMixin, DetailView):
 
 
 class FittingResultVersionView(VisibilityMixin, DetailView):
+    """Show a version of a fitting result"""
     model = FittingResultVersion
     context_object_name = 'version'
 
@@ -206,6 +207,10 @@ class FittingResultComparisonJsonView(View):
 
 
 class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, FormView):
+    """
+    Create and submit a fitting result from models, protocols, fitting specs and datasets
+    and (where relevant) their versions.
+    """
     permission_required = 'fitting.run_fits'
     form_class = FittingResultCreateForm
 
@@ -259,6 +264,16 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
 
 
 class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    """
+    JSON view of valid fitting result input values based on those already selected
+
+    For example, if a model id is specified (as a GET param), only versions of that model
+    (which are visible to the user) will be included in the results. Otherwise all visible
+    models and versions will be in the results (which are simply a list of database
+    IDs of the relevant objects)
+
+    Connections between protocols, fitting specs and datasets are also enforced.
+    """
     permission_required = 'fitting.run_fits'
 
     def get(self, request, *args, **kwargs):
@@ -292,29 +307,36 @@ class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, V
             elif dataset:
                 protocol = dataset.protocol
 
+        # Restrict to specified model and its versions
         if model:
             models = [model]
             model_versions = model_versions.filter(entity__entity=model)
 
+        # Restrict to specified fitting spec and its versions
         if fittingspec:
             fittingspecs = [fittingspec]
             fittingspec_versions = fittingspec_versions.filter(entity__entity=fittingspec.id)
 
+        # Restrict to specified dataset
         if dataset:
             datasets = [dataset]
 
+        # Restrict to specified protocol and its versions
         if protocol:
             protocols = [protocol]
             protocol_versions = protocol_versions.filter(entity__entity=protocol.id)
 
+            # If no fitting spec was chosen yet, restrict to those linked to this protocol
             if not fittingspec:
                 fittingspecs = fittingspecs.filter(protocol=protocol.id)
                 fsids = [fs.pk for fs in fittingspecs.filter(protocol=protocol.id)]
                 fittingspec_versions = fittingspec_versions.filter(entity__entity__in=fsids)
 
+            # If no dataset was chosen yet, restrict to those linked to this protocol
             if not dataset:
                 datasets = datasets.filter(protocol=protocol.id)
 
+        # These might be either querysets or ID lists
         def _get_ids(qs):
             return [item.id for item in qs]
 

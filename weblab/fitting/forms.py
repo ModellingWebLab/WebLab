@@ -33,6 +33,7 @@ class FittingSpecVersionForm(EntityVersionForm):
 
 
 class FittingResultCreateForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for creating and running a new fitting result"""
     class Meta:
         model = FittingResult
         fields = ('model', 'model_version', 'protocol', 'protocol_version',
@@ -42,6 +43,8 @@ class FittingResultCreateForm(UserKwargModelFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # Disable fields with preselected values
+        # But only when there is no data bound - otherwise we will lose the
+        # posted values of these fields from the submitted form.
         if not self.is_bound:
             self.fields['model'].disabled = bool(self.initial.get('model'))
             self.fields['protocol'].disabled = bool(self.initial.get('protocol'))

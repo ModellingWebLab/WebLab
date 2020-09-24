@@ -205,6 +205,13 @@ def _set_class_links(entity_cache_type, version_cache_type, tag_cache_type):
 
 class CachedEntityVersionManager(models.Manager):
     def visible_to_user(self, user):
+        """Query over all cached entity versions that the given user can view.
+
+        This includes those versions of entities of the relevant type for which either:
+        - the user is the author of the related entity
+        - the entity version is non-private
+        - or the entity is explicitly shared with the user
+        """
         non_private = self.filter(visibility__in=['public', 'moderated'])
 
         if user.is_authenticated:
