@@ -659,16 +659,19 @@ class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
     def check_access_token(self, token):
         """
         Override to allow token based access to entity archive downloads -
-        must match a `RunningExperiment` or `AnalysisTask` object set up against the entity
+        must match a `RunningExperiment` or `AnalysisTask` object set up against the entity.
+
+        We support both simulation and fitting experiments.
         """
         from entities.models import AnalysisTask
         from experiments.models import RunningExperiment
-        entity_field = 'runnable__experimentversion__experiment__%s' % self.kwargs['entity_type']
         self_id = self._get_object().id
-        return (RunningExperiment.objects.filter(
-            id=token,
-            **{entity_field: self_id}
-        ).exists() or AnalysisTask.objects.filter(id=token, entity=self_id).exists())
+        if AnalysisTask.objects.filter(id=token, entity=self_id).exists():
+            return True
+        query_tpl = 'runnable__{subclass}version__{subclass}__{entity_type}'
+        q_experiment = Q(**{query_tpl.format(subclass='experiment', entity_type=self.kwargs['entity_type']): self_id})
+        q_fit = Q(**{query_tpl.format(subclass='fittingresult', entity_type=self.kwargs['entity_type']): self_id})
+        return RunningExperiment.objects.filter(Q(id=token) & (q_experiment | q_fit)).exists()
 
     def get(self, request, *args, **kwargs):
         entity = self._get_object()
