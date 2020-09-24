@@ -116,7 +116,7 @@ class TestEntityRenaming:
         entity = ModelEntity.objects.first()
         assert entity.name == 'new name'
 
-    def test_model_renaming_different_users_suceeds(self, client, logged_in_user, helpers):
+    def test_model_renaming_different_users_succeeds(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
         model = recipes.model.make(author=logged_in_user)
 
@@ -146,9 +146,9 @@ class TestEntityRenaming:
             data={
                      'name': 'test model 2'
                  })
-        assert response.status_code == 302
+        assert response.status_code == 200
         entity = ModelEntity.objects.first()
-        assert entity.name == 'test model 2'
+        assert entity.name == 'my model1'
 
     def test_model_and_protocol_renaming_success(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -186,7 +186,7 @@ class TestEntityRenaming:
 @pytest.mark.django_db
 @pytest.mark.parametrize("recipe,url,list_url", [
     (recipes.model, '/entities/models/%d/delete', '/entities/models/'),
-    (recipes.protocol, '/entities/protocols/%d/delete', '/entit1ies/protocols/'),
+    (recipes.protocol, '/entities/protocols/%d/delete', '/entities/protocols/'),
 ])
 class TestEntityDeletion:
     def test_owner_can_delete_entity(

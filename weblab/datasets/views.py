@@ -24,7 +24,7 @@ from django.views.generic.list import ListView
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
 
-from .forms import DatasetAddFilesForm, DatasetFileUploadForm, DatasetForm
+from .forms import DatasetAddFilesForm, DatasetFileUploadForm, DatasetForm, DatasetRenameForm
 from .models import Dataset
 
 
@@ -226,6 +226,44 @@ class DatasetDeleteView(UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':list')
+
+
+class DatasetRenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin, FormMixin, DetailView):
+    template_name = 'datasets/dataset_rename_form.html'
+    context_object_name = 'dataset'
+    """
+    Delete dataset
+    """
+    model = Dataset
+
+    @property
+    def form_class(self):
+        if self.model is Dataset:
+            return DatasetRenameForm
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def test_func(self):
+        return self._get_object().is_deletable_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+
+        if form.is_valid():
+            new_name = form.cleaned_data['name']
+            dataset = self.get_object()
+            dataset.name = new_name
+            dataset.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace

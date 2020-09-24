@@ -32,6 +32,24 @@ class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
         self.save_m2m()
         return dataset
 
+class EntityRenameForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for renaming an existing entity."""
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+
+        if self._meta.model.objects.filter(author=self.user, name=name).exists():
+            raise ValidationError(
+                'You already have a dataset named "%s"' % name)
+
+        return name
+
+
+class DatasetRenameForm(EntityRenameForm):
+    class Meta:
+        model = Dataset
+        fields = ['name']
+
 
 class DatasetAddFilesForm(forms.Form):
     """Used to add files to a new dataset."""

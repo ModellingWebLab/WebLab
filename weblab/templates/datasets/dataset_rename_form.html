@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load entities %}
+
+{% block title %}Dataset rename {% endblock title %}
+
+{% block content %}
+  {% include "./includes/dataset_header.html" %}
+
+  <h2><small>Rename dataset</small></h2>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button>Rename</button>
+  </form>
+
+{% endblock content %}
