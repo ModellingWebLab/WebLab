@@ -475,6 +475,22 @@ class TestCreateFittingResultView:
         assert response.status_code == 200
         assert response.context['form'].initial['dataset'] == public_dataset
 
+    def test_with_non_visible_model(self, client, fits_user, private_model):
+        response = client.get('/fitting/results/new', {'model': private_model.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_protocol(self, client, fits_user, private_protocol):
+        response = client.get('/fitting/results/new', {'protocol': private_protocol.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_fittingspec(self, client, fits_user, private_fittingspec):
+        response = client.get('/fitting/results/new', {'fittingspec': private_fittingspec.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_dataset(self, client, fits_user, private_dataset):
+        response = client.get('/fitting/results/new', {'dataset': private_dataset.pk})
+        assert response.status_code == 404
+
     @patch('fitting.views.submit_fitting')
     def test_submits_to_backend(self, mock_submit, client, fits_user, public_model, public_protocol,
                                 public_fittingspec, public_dataset, helpers):

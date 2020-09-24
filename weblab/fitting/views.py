@@ -219,13 +219,21 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
     def get_initial(self):
         initial = super().get_initial()
         if 'model' in self.request.GET:
-            initial['model'] = get_object_or_404(ModelEntity, pk=self.request.GET['model'])
+            initial['model'] = get_object_or_404(
+                ModelEntity.objects.visible_to_user(self.request.user),
+                pk=self.request.GET['model'])
         elif 'protocol' in self.request.GET:
-            initial['protocol'] = get_object_or_404(ProtocolEntity, pk=self.request.GET['protocol'])
+            initial['protocol'] = get_object_or_404(
+                ProtocolEntity.objects.visible_to_user(self.request.user),
+                pk=self.request.GET['protocol'])
         elif 'fittingspec' in self.request.GET:
-            initial['fittingspec'] = get_object_or_404(FittingSpec, pk=self.request.GET['fittingspec'])
+            initial['fittingspec'] = get_object_or_404(
+                FittingSpec.objects.visible_to_user(self.request.user),
+                pk=self.request.GET['fittingspec'])
         elif 'dataset' in self.request.GET:
-            initial['dataset'] = get_object_or_404(Dataset, pk=self.request.GET['dataset'])
+            initial['dataset'] = get_object_or_404(
+                Dataset.objects.visible_to_user(self.request.user),
+                pk=self.request.GET['dataset'])
 
         return initial
 
