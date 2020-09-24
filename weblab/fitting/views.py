@@ -237,13 +237,6 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
 
         return initial
 
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        if form.is_valid():
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
-
     def form_valid(self, form):
         self.runnable, is_new = submit_fitting(
             form.cleaned_data['model_version'],
@@ -267,8 +260,7 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
         return super().form_valid(form)
 
     def get_success_url(self):
-        if hasattr(self, 'runnable'):
-            return reverse('fitting:result:version', args=[self.runnable.fittingresult.pk, self.runnable.pk])
+        return reverse('fitting:result:version', args=[self.runnable.fittingresult.pk, self.runnable.pk])
 
 
 class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, View):
