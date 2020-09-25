@@ -32,8 +32,17 @@ class FittingSpecVersionForm(EntityVersionForm):
     rerun_expts = None
 
 
+class VersionChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.nice_version()
+
+
 class FittingResultCreateForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating and running a new fitting result"""
+    model_version = VersionChoiceField(queryset=CachedModelVersion.objects.all())
+    protocol_version = VersionChoiceField(queryset=CachedProtocolVersion.objects.all())
+    fittingspec_version = VersionChoiceField(queryset=CachedFittingSpecVersion.objects.all())
+
     class Meta:
         model = FittingResult
         fields = ('model', 'model_version', 'protocol', 'protocol_version',
