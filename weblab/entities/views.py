@@ -50,8 +50,10 @@ from .forms import (
     EntityVersionForm,
     FileUploadForm,
     ModelEntityForm,
+    ModelEntityRenameForm,
     ProtocolEntityForm,
-    ModelEntityRenameForm, ProtocolEntityRenameForm)
+    ProtocolEntityRenameForm,
+)
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
 

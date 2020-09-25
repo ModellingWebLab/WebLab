@@ -1,8 +1,10 @@
 from braces.forms import UserKwargModelFormMixin
-from django.core.exceptions import ValidationError
-from entities.forms import EntityForm, EntityVersionForm, EntityRenameForm
-from entities.models import ProtocolEntity
 from django import forms
+from django.core.exceptions import ValidationError
+
+from entities.forms import EntityForm, EntityRenameForm, EntityVersionForm
+from entities.models import ProtocolEntity
+
 from .models import FittingSpec
 
 

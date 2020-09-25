@@ -3,6 +3,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from entities.models import ProtocolEntity
+
 from .models import Dataset, DatasetFile
 
 
@@ -64,5 +65,3 @@ class DatasetRenameForm(UserKwargModelFormMixin, forms.ModelForm):
                 'You already have a dataset named "%s"' % name)
 
         return name
-
-

@@ -6,11 +6,7 @@ from django.forms import formset_factory
 from accounts.models import User
 from core import visibility
 
-from .models import (
-    EntityFile,
-    ModelEntity,
-    ProtocolEntity,
-)
+from .models import EntityFile, ModelEntity, ProtocolEntity
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):

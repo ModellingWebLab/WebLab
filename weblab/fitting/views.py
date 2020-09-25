@@ -17,7 +17,7 @@ from django.views.generic.edit import CreateView
 
 from entities.views import EntityNewVersionView, EntityTypeMixin, RenameView
 
-from .forms import FittingSpecForm, FittingSpecVersionForm, FittingSpecRenameForm
+from .forms import FittingSpecForm, FittingSpecRenameForm, FittingSpecVersionForm
 
 
 class FittingSpecCreateView(

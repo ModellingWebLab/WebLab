@@ -24,7 +24,12 @@ from django.views.generic.list import ListView
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
 
-from .forms import DatasetAddFilesForm, DatasetFileUploadForm, DatasetForm, DatasetRenameForm
+from .forms import (
+    DatasetAddFilesForm,
+    DatasetFileUploadForm,
+    DatasetForm,
+    DatasetRenameForm,
+)
 from .models import Dataset
 
 
