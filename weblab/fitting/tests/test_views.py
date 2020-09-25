@@ -475,16 +475,52 @@ class TestCreateFittingResultView:
         assert response.status_code == 200
         assert response.context['form'].initial['dataset'] == public_dataset
 
+    def test_with_preselected_model_version(self, client, fits_user, public_model):
+        version = public_model.repocache.latest_version
+        response = client.get('/fitting/results/new', {'model_version': version.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['model'] == public_model
+        assert response.context['form'].initial['model_version'] == version
+
+    def test_with_preselected_protocol_version(self, client, fits_user, public_protocol):
+        version = public_protocol.repocache.latest_version
+        response = client.get('/fitting/results/new', {'protocol_version': version.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['protocol'] == public_protocol
+        assert response.context['form'].initial['protocol_version'] == version
+
+    def test_with_preselected_fittingspec_version(self, client, fits_user, public_fittingspec):
+        version = public_fittingspec.repocache.latest_version
+        response = client.get('/fitting/results/new', {'fittingspec_version': version.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['fittingspec'] == public_fittingspec
+        assert response.context['form'].initial['fittingspec_version'] == version
+
     def test_with_non_visible_model(self, client, fits_user, private_model):
         response = client.get('/fitting/results/new', {'model': private_model.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_model_version(self, client, fits_user, private_model):
+        version = private_model.repocache.latest_version
+        response = client.get('/fitting/results/new', {'model_version': version.pk})
         assert response.status_code == 404
 
     def test_with_non_visible_protocol(self, client, fits_user, private_protocol):
         response = client.get('/fitting/results/new', {'protocol': private_protocol.pk})
         assert response.status_code == 404
 
+    def test_with_non_visible_protocol_version(self, client, fits_user, private_protocol):
+        version = private_protocol.repocache.latest_version
+        response = client.get('/fitting/results/new', {'protocol_version': version.pk})
+        assert response.status_code == 404
+
     def test_with_non_visible_fittingspec(self, client, fits_user, private_fittingspec):
         response = client.get('/fitting/results/new', {'fittingspec': private_fittingspec.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_fittingspec_version(self, client, fits_user, private_fittingspec):
+        version = private_fittingspec.repocache.latest_version
+        response = client.get('/fitting/results/new', {'fittingspec_version': version.pk})
         assert response.status_code == 404
 
     def test_with_non_visible_dataset(self, client, fits_user, private_dataset):

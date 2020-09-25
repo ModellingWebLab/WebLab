@@ -218,22 +218,48 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
 
     def get_initial(self):
         initial = super().get_initial()
-        if 'model' in self.request.GET:
+        model_id = self.request.GET.get('model')
+        model_version_id = self.request.GET.get('model_version')
+        protocol_id = self.request.GET.get('protocol')
+        protocol_version_id = self.request.GET.get('protocol_version')
+        fittingspec_id = self.request.GET.get('fittingspec')
+        fittingspec_version_id = self.request.GET.get('fittingspec_version')
+        dataset_id = self.request.GET.get('dataset')
+
+        if model_version_id:
+            initial['model_version'] = get_object_or_404(
+                CachedModelVersion.objects.visible_to_user(self.request.user),
+                pk=model_version_id)
+            initial['model'] = initial['model_version'].model
+        elif model_id:
             initial['model'] = get_object_or_404(
                 ModelEntity.objects.visible_to_user(self.request.user),
-                pk=self.request.GET['model'])
-        elif 'protocol' in self.request.GET:
+                pk=model_id)
+
+        elif protocol_version_id:
+            initial['protocol_version'] = get_object_or_404(
+                CachedProtocolVersion.objects.visible_to_user(self.request.user),
+                pk=protocol_version_id)
+            initial['protocol'] = initial['protocol_version'].protocol
+        elif protocol_id:
             initial['protocol'] = get_object_or_404(
                 ProtocolEntity.objects.visible_to_user(self.request.user),
-                pk=self.request.GET['protocol'])
-        elif 'fittingspec' in self.request.GET:
+                pk=protocol_id)
+
+        elif fittingspec_version_id:
+            initial['fittingspec_version'] = get_object_or_404(
+                CachedFittingSpecVersion.objects.visible_to_user(self.request.user),
+                pk=fittingspec_version_id)
+            initial['fittingspec'] = initial['fittingspec_version'].fittingspec
+        elif fittingspec_id:
             initial['fittingspec'] = get_object_or_404(
                 FittingSpec.objects.visible_to_user(self.request.user),
-                pk=self.request.GET['fittingspec'])
-        elif 'dataset' in self.request.GET:
+                pk=fittingspec_id)
+
+        elif dataset_id:
             initial['dataset'] = get_object_or_404(
                 Dataset.objects.visible_to_user(self.request.user),
-                pk=self.request.GET['dataset'])
+                pk=dataset_id)
 
         return initial
 
@@ -286,7 +312,6 @@ class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, V
         fittingspec_versions = CachedFittingSpecVersion.objects.visible_to_user(request.user)
         fittingspecs = FittingSpec.objects.filter(cachedfittingspec__versions__in=fittingspec_versions)
         datasets = Dataset.objects.visible_to_user(request.user)
-
 
         def _get_int_param(fieldname, _model):
             try:
