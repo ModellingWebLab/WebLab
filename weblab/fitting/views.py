@@ -236,7 +236,7 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
                 ModelEntity.objects.visible_to_user(self.request.user),
                 pk=model_id)
 
-        elif protocol_version_id:
+        if protocol_version_id:
             initial['protocol_version'] = get_object_or_404(
                 CachedProtocolVersion.objects.visible_to_user(self.request.user),
                 pk=protocol_version_id)
@@ -246,7 +246,7 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
                 ProtocolEntity.objects.visible_to_user(self.request.user),
                 pk=protocol_id)
 
-        elif fittingspec_version_id:
+        if fittingspec_version_id:
             initial['fittingspec_version'] = get_object_or_404(
                 CachedFittingSpecVersion.objects.visible_to_user(self.request.user),
                 pk=fittingspec_version_id)
@@ -256,7 +256,7 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
                 FittingSpec.objects.visible_to_user(self.request.user),
                 pk=fittingspec_id)
 
-        elif dataset_id:
+        if dataset_id:
             initial['dataset'] = get_object_or_404(
                 Dataset.objects.visible_to_user(self.request.user),
                 pk=dataset_id)
