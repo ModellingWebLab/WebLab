@@ -112,6 +112,7 @@ class TestDatasetCreation:
             with dataset.open_file(f.name) as fp:
                 assert fp.read() == file_map[f.name]
 
+
 @pytest.mark.django_db
 class TestEntityRenaming:
     def test_dataset_renaming_success(self, client, logged_in_user, helpers):
@@ -122,8 +123,8 @@ class TestEntityRenaming:
         response = client.post(
             '/datasets/%d/rename' % dataset.pk,
             data={
-                     'name': 'new name'
-                 })
+                'name': 'new name'
+            })
         assert response.status_code == 302
         dataset = Dataset.objects.first()
         assert dataset.name == 'new name'
@@ -138,8 +139,8 @@ class TestEntityRenaming:
         response = client.post(
             '/datasets/%d/rename' % dataset.pk,
             data={
-                     'name': 'test dataset 2'
-                 })
+                'name': 'test dataset 2'
+            })
         assert response.status_code == 302
         dataset = Dataset.objects.first()
         assert dataset.name == 'test dataset 2'
@@ -154,11 +155,12 @@ class TestEntityRenaming:
         response = client.post(
             '/datasets/%d/rename' % dataset.pk,
             data={
-                     'name': 'test dataset 2'
-                 })
+                'name': 'test dataset 2'
+            })
         assert response.status_code == 200
         dataset = Dataset.objects.first()
         assert dataset.name == 'my dataset1'
+
 
 @pytest.mark.django_db
 class TestDatasetDeletion:

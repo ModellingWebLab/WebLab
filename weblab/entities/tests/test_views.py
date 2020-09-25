@@ -67,6 +67,7 @@ class TestEntityCreation:
         assert entity.author == logged_in_user
 
         assert entity.repo_abs_path.exists()
+
     def test_create_model_requires_permissions(self, logged_in_user, client):
         response = client.post(
             '/entities/models/new',
@@ -100,6 +101,7 @@ class TestEntityCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
+
 @pytest.mark.django_db
 class TestEntityRenaming:
     def test_model_renaming_success(self, client, logged_in_user, helpers):
@@ -110,8 +112,8 @@ class TestEntityRenaming:
         response = client.post(
             '/entities/models/%d/rename' % model.pk,
             data={
-                     'name': 'new name'
-                 })
+                'name': 'new name'
+            })
         assert response.status_code == 302
         entity = ModelEntity.objects.first()
         assert entity.name == 'new name'
@@ -127,8 +129,8 @@ class TestEntityRenaming:
         response = client.post(
             '/entities/models/%d/rename' % model.pk,
             data={
-                     'name': 'test model 2'
-                 })
+                'name': 'test model 2'
+            })
         assert response.status_code == 302
         entity = ModelEntity.objects.first()
         assert entity.name == 'test model 2'
@@ -144,8 +146,8 @@ class TestEntityRenaming:
         response = client.post(
             '/entities/models/%d/rename' % model.pk,
             data={
-                     'name': 'test model 2'
-                 })
+                'name': 'test model 2'
+            })
         assert response.status_code == 200
         entity = ModelEntity.objects.first()
         assert entity.name == 'my model1'
@@ -160,8 +162,8 @@ class TestEntityRenaming:
         response = client.post(
             '/entities/models/%d/rename' % model.pk,
             data={
-                     'name': 'test protocol'
-                 })
+                'name': 'test protocol'
+            })
         assert response.status_code == 302
         entity = ModelEntity.objects.first()
         assert entity.name == 'test protocol'
@@ -175,13 +177,14 @@ class TestEntityRenaming:
         response = client.post(
             '/entities/models/%d/rename' % model.pk,
             data={
-                     'name': 'test protocol'
-                 })
+                'name': 'test protocol'
+            })
         assert response.status_code == 302
 
         entity = ModelEntity.objects.first()
         assert entity.name == 'test protocol'
         assert abs_path == entity.repo_abs_path
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("recipe,url,list_url", [

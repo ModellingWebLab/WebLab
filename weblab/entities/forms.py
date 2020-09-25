@@ -7,7 +7,6 @@ from accounts.models import User
 from core import visibility
 
 from .models import (
-    Entity,
     EntityFile,
     ModelEntity,
     ProtocolEntity,

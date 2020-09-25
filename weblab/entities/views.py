@@ -46,7 +46,6 @@ from repocache.models import CachedProtocolVersion
 from .forms import (
     EntityChangeVisibilityForm,
     EntityCollaboratorFormSet,
-    EntityRenameForm,
     EntityTagVersionForm,
     EntityVersionForm,
     FileUploadForm,

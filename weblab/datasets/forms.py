@@ -6,7 +6,6 @@ from entities.models import ProtocolEntity
 from .models import Dataset, DatasetFile
 
 
-
 class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating an entirely new Dataset."""
     class Meta:
@@ -31,8 +30,6 @@ class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
         dataset.save()
         self.save_m2m()
         return dataset
-
-
 
 
 class DatasetAddFilesForm(forms.Form):

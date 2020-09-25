@@ -11,10 +11,9 @@ by removing the hardcoded 'entities:' namespace from reverse() calls.
 """
 
 from braces.views import UserFormKwargsMixin
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse
-from django.views.generic import DetailView
-from django.views.generic.edit import CreateView, FormMixin
+from django.views.generic.edit import CreateView
 
 from entities.views import EntityNewVersionView, EntityTypeMixin, RenameView
 
