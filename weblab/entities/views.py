@@ -800,7 +800,7 @@ class RenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin, F
         return self._get_object().is_editable_by(self.request.user)
 
     def post(self, request, *args, **kwargs):
-        """Check the form and possibly add the tag in the repo.
+        """Check the form and possibly rename the entity.
 
         Called by Django when a form is submitted.
         """
