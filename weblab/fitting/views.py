@@ -279,13 +279,14 @@ class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, V
     def get(self, request, *args, **kwargs):
         options = {}
 
-        models = ModelEntity.objects.visible_to_user(request.user)
         model_versions = CachedModelVersion.objects.visible_to_user(request.user)
-        protocols = ProtocolEntity.objects.visible_to_user(request.user)
+        models = ModelEntity.objects.filter(cachedmodel__versions__in=model_versions)
         protocol_versions = CachedProtocolVersion.objects.visible_to_user(request.user)
-        fittingspecs = FittingSpec.objects.visible_to_user(request.user)
+        protocols = ProtocolEntity.objects.filter(cachedprotocol__versions__in=protocol_versions)
         fittingspec_versions = CachedFittingSpecVersion.objects.visible_to_user(request.user)
+        fittingspecs = FittingSpec.objects.filter(cachedfittingspec__versions__in=fittingspec_versions)
         datasets = Dataset.objects.visible_to_user(request.user)
+
 
         def _get_int_param(fieldname, _model):
             try:
@@ -315,7 +316,7 @@ class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, V
         # Restrict to specified fitting spec and its versions
         if fittingspec:
             fittingspecs = [fittingspec]
-            fittingspec_versions = fittingspec_versions.filter(entity__entity=fittingspec.id)
+            fittingspec_versions = fittingspec_versions.filter(entity__entity=fittingspec)
 
         # Restrict to specified dataset
         if dataset:
@@ -324,7 +325,7 @@ class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, V
         # Restrict to specified protocol and its versions
         if protocol:
             protocols = [protocol]
-            protocol_versions = protocol_versions.filter(entity__entity=protocol.id)
+            protocol_versions = protocol_versions.filter(entity__entity=protocol)
 
             # If no fitting spec was chosen yet, restrict to those linked to this protocol
             if not fittingspec:
