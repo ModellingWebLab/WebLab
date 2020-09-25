@@ -3,8 +3,8 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from entities.models import ProtocolEntity
-
 from .models import Dataset, DatasetFile
+
 
 
 class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -32,23 +32,7 @@ class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
         self.save_m2m()
         return dataset
 
-class EntityRenameForm(UserKwargModelFormMixin, forms.ModelForm):
-    """Used for renaming an existing entity."""
 
-    def clean_name(self):
-        name = self.cleaned_data['name']
-
-        if self._meta.model.objects.filter(author=self.user, name=name).exists():
-            raise ValidationError(
-                'You already have a dataset named "%s"' % name)
-
-        return name
-
-
-class DatasetRenameForm(EntityRenameForm):
-    class Meta:
-        model = Dataset
-        fields = ['name']
 
 
 class DatasetAddFilesForm(forms.Form):
@@ -68,3 +52,20 @@ class DatasetFileUploadForm(forms.ModelForm):
     class Meta:
         model = DatasetFile
         fields = ['upload']
+
+
+class DatasetRenameForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for renaming an existing entity."""
+    class Meta:
+        model = Dataset
+        fields = ['name']
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if self._meta.model.objects.filter(author=self.user, name=name).exists():
+            raise ValidationError(
+                'You already have a dataset named "%s"' % name)
+
+        return name
+
+

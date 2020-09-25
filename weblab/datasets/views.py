@@ -239,11 +239,7 @@ class DatasetRenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestM
     Delete dataset
     """
     model = Dataset
-
-    @property
-    def form_class(self):
-        if self.model is Dataset:
-            return DatasetRenameForm
+    form_class = DatasetRenameForm
 
     def _get_object(self):
         if not hasattr(self, 'object'):
@@ -251,7 +247,7 @@ class DatasetRenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestM
         return self.object
 
     def test_func(self):
-        return self._get_object().is_deletable_by(self.request.user)
+        return self._get_object().is_managed_by(self.request.user)
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()

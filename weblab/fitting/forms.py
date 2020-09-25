@@ -1,6 +1,6 @@
 from braces.forms import UserKwargModelFormMixin
 from django.core.exceptions import ValidationError
-from entities.forms import EntityForm, EntityVersionForm
+from entities.forms import EntityForm, EntityVersionForm, EntityRenameForm
 from entities.models import ProtocolEntity
 from django import forms
 from .models import FittingSpec
@@ -27,19 +27,9 @@ class FittingSpecVersionForm(EntityVersionForm):
     """
     rerun_expts = None
 
-class EntityRenameForm(UserKwargModelFormMixin, forms.ModelForm):
-    """Used for renaming an existing entity."""
-
-    def clean_name(self):
-        name = self.cleaned_data['name']
-        if self._meta.model.objects.filter(author=self.user, name=name).exists():
-            raise ValidationError(
-                'You already have a %s named "%s"' % (self._meta.model.display_type, name))
-
-        return name
-
 
 class FittingSpecRenameForm(EntityRenameForm):
+    """Used for renaming an existing entity."""
     class Meta:
         model = FittingSpec
         fields = ['name']

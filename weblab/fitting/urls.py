@@ -132,10 +132,10 @@ urlpatterns = [
         entity_views.EntityDiffView.as_view(),
         name='diff',
     ),
+
     url(
         r'^%s/(?P<pk>\d+)/rename$' % _ENTITY_TYPE,
-        views.RenameView.as_view(),
+        views.FittingSpecRenameView.as_view(),
         name='rename',
     ),
-
 ]
