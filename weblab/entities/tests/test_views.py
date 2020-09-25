@@ -51,23 +51,6 @@ class TestEntityCreation:
 
         assert entity.repo_abs_path.exists()
 
-    def test_create_model_same_name(self, logged_in_user, other_user, client, helpers):
-        helpers.add_permission(logged_in_user, 'create_model')
-        response = client.post('/entities/models/new', data={
-            'name': 'mymodel',
-            'visibility': 'private',
-        })
-        assert response.status_code == 302
-
-        assert ModelEntity.objects.count() == 1
-
-        entity = ModelEntity.objects.first()
-        assert response.url == '/entities/models/%d/versions/new' % entity.id
-        assert entity.name == 'mymodel'
-        assert entity.author == logged_in_user
-
-        assert entity.repo_abs_path.exists()
-
     def test_create_model_requires_permissions(self, logged_in_user, client):
         response = client.post(
             '/entities/models/new',
