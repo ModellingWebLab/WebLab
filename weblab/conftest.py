@@ -250,6 +250,22 @@ def queued_experiment(model_with_version, protocol_with_version):
 
 
 @pytest.fixture
+def queued_fittingresult(public_model, public_protocol, public_fittingspec, public_dataset):
+    version = recipes.fittingresult_version.make(
+        status='QUEUED',
+        fittingresult__model=public_model,
+        fittingresult__model_version=public_model.repocache.latest_version,
+        fittingresult__protocol=public_protocol,
+        fittingresult__protocol_version=public_protocol.repocache.latest_version,
+        fittingresult__fittingspec=public_fittingspec,
+        fittingresult__fittingspec_version=public_fittingspec.repocache.latest_version,
+        fittingresult__dataset=public_dataset,
+    )
+    recipes.running_experiment.make(runnable=version)
+    return version
+
+
+@pytest.fixture
 def experiment_with_result(model_with_version, protocol_with_version):
     version = recipes.experiment_version.make(
         status='SUCCESS',

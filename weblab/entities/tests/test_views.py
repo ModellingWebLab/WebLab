@@ -1702,6 +1702,27 @@ class TestEntityArchiveView:
         archive = zipfile.ZipFile(BytesIO(response.content))
         assert archive.filelist[0].filename == 'file1.txt'
 
+    @pytest.mark.parametrize("entity_type,url_fragment", [
+        ('model', '/entities/models'),
+        ('protocol', '/entities/protocols'),
+        ('fittingspec', '/fitting/specs'),
+    ])
+    def test_anonymous_entity_download_for_running_fittingresult(
+        self, client, queued_fittingresult, entity_type, url_fragment
+    ):
+        entity = getattr(queued_fittingresult.fittingresult, entity_type)
+        sha = entity.repo.latest_commit.sha
+        entity.set_version_visibility(sha, 'private')
+
+        response = client.get(
+            '%s/%d/versions/latest/archive' % (url_fragment, entity.pk),
+            HTTP_AUTHORIZATION='Token {}'.format(queued_fittingresult.signature)
+        )
+
+        assert response.status_code == 200
+        archive = zipfile.ZipFile(BytesIO(response.content))
+        assert archive.filelist[0].filename == 'file1.txt'
+
     def test_anonymous_protocol_download_for_analysis_task(self, client, analysis_task):
         protocol = analysis_task.entity
         protocol.set_version_visibility('latest', 'private')

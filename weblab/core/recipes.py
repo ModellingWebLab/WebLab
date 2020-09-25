@@ -48,7 +48,6 @@ experiment_version = Recipe('ExperimentVersion', experiment=foreign_key(experime
 
 running_experiment = Recipe('RunningExperiment', runnable=foreign_key(runnable))
 
-
 dataset = Recipe('Dataset',
                  name=seq('my dataset'),
                  protocol=foreign_key(protocol))
