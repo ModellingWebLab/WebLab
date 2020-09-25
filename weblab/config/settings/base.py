@@ -117,7 +117,7 @@ DATABASES = {
 
 # configure db url from DATABASE_URL env var if supplied
 DATABASES['default'] = dj_database_url.config(
-    default='postgres://postgres:postgres@localhost:5432/postgres'
+    default='postgres://weblab:weblab@localhost:5432/weblab'
 )
 
 
@@ -190,7 +190,7 @@ SOCIAL_AUTH_GITHUB_SCOPE = ['user:email']
 
 SOCIAL_AUTH_PIPELINE = (
     'social_core.pipeline.social_auth.social_details',
-    'social_core.pipeline.social_auth.social_uid'+
+    'social_core.pipeline.social_auth.social_uid',
     'social_core.pipeline.social_auth.social_user',
     'social_core.pipeline.social_auth.associate_by_email',
     'social_core.pipeline.user.get_username',

@@ -156,7 +156,7 @@ class TestEntityRenaming:
         helpers.add_permission(logged_in_user, 'create_model')
         model = recipes.model.make(author=logged_in_user)
 
-        protocol = recipes.protocol.make(author=logged_in_user, name='test protocol')
+        recipes.protocol.make(author=logged_in_user, name='test protocol')
         assert model.name == 'my model1'
 
         response = client.post(
@@ -171,7 +171,7 @@ class TestEntityRenaming:
     def test_model_abs_path_the_same(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
         model = recipes.model.make(author=logged_in_user)
-        commit = helpers.add_version(model, visibility='private')
+        helpers.add_version(model, visibility='private')
 
         abs_path = model.repo_abs_path
         response = client.post(
