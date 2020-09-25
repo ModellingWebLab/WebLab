@@ -268,4 +268,4 @@ class DatasetRenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestM
 
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
-        return reverse(ns + ':list')
+        return reverse(ns + ':detail', args=[self._get_object().id])
