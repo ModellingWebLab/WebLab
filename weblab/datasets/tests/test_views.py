@@ -115,10 +115,11 @@ class TestDatasetCreation:
 
 @pytest.mark.django_db
 class TestDatasetRenaming:
-    def test_dataset_renaming_success(self, client, logged_in_user, helpers):
+    def test_dataset_renaming_success(self, client, my_dataset_with_file):
 
-        dataset = recipes.dataset.make(author=logged_in_user)
-        assert dataset.name == 'my dataset1'
+        dataset = my_dataset_with_file
+        assert dataset.archive_path.exists()
+        assert dataset.name == 'mydataset'
 
         response = client.post(
             '/datasets/%d/rename' % dataset.pk,
@@ -126,8 +127,11 @@ class TestDatasetRenaming:
                 'name': 'new name'
             })
         assert response.status_code == 302
+
         dataset = Dataset.objects.first()
+        assert dataset.archive_path.exists()
         assert dataset.name == 'new name'
+
 
     def test_dataset_renaming_different_users_succeeds(self, client, logged_in_user, helpers):
         dataset = recipes.dataset.make(author=logged_in_user)
