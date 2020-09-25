@@ -114,7 +114,7 @@ class TestDatasetCreation:
 
 
 @pytest.mark.django_db
-class TestEntityRenaming:
+class TestDatasetRenaming:
     def test_dataset_renaming_success(self, client, logged_in_user, helpers):
 
         dataset = recipes.dataset.make(author=logged_in_user)
