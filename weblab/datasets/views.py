@@ -260,7 +260,10 @@ class DatasetRenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestM
         if form.is_valid():
             new_name = form.cleaned_data['name']
             dataset = self._get_object()
+            old_archive_path = dataset.archive_path
             dataset.name = new_name
+            if old_archive_path.exists():
+                old_archive_path.rename(dataset.archive_path)
             dataset.save()
             return self.form_valid(form)
         else:
