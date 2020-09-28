@@ -130,6 +130,7 @@ class TestDatasetRenaming:
         assert response.status_code == 302
 
         dataset = Dataset.objects.first()
+        assert not old_path.exists()
         assert dataset.archive_path.exists()
         assert dataset.name == 'new name'
 
