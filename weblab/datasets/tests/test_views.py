@@ -132,7 +132,6 @@ class TestDatasetRenaming:
         assert dataset.archive_path.exists()
         assert dataset.name == 'new name'
 
-
     def test_dataset_renaming_different_users_succeeds(self, client, logged_in_user, helpers):
         dataset = recipes.dataset.make(author=logged_in_user)
 
