@@ -118,7 +118,8 @@ class TestDatasetRenaming:
     def test_dataset_renaming_success(self, client, my_dataset_with_file):
 
         dataset = my_dataset_with_file
-        assert dataset.archive_path.exists()
+        old_path = dataset.archive_path
+        assert old_path.exists()
         assert dataset.name == 'mydataset'
 
         response = client.post(
