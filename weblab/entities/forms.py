@@ -158,3 +158,9 @@ class FileUploadForm(forms.ModelForm):
     class Meta:
         model = EntityFile
         fields = ['upload']
+
+class EntityTransferForm(UserKwargModelFormMixin, forms.Form):
+    """Used for transferring an existing entity."""
+
+    email = forms.CharField(max_length=100)
+

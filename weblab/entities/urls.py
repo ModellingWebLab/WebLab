@@ -137,6 +137,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/(?P<pk>\d+)/transfer$' % _ENTITY_TYPE,
+        views.TransferView.as_view(),
+        name='transfer',
+    ),
+
+    url(
         r'^%s/diff(?P<versions>(/\d+:%s){2})/%s$' % (_ENTITY_TYPE, _COMMIT, _FILENAME),
         views.EntityDiffView.as_view(),
         name='diff',

@@ -15,6 +15,8 @@ from django.contrib.auth.mixins import (
     PermissionRequiredMixin,
     UserPassesTestMixin,
 )
+
+
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db.models import Count, F, Q
@@ -51,9 +53,10 @@ from .forms import (
     FileUploadForm,
     ModelEntityForm,
     ProtocolEntityForm,
-)
+    EntityTransferForm)
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
+
 
 
 class EntityTypeMixin:
@@ -778,6 +781,38 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
         return response
 
 
+class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin, FormMixin, EntityTypeMixin, DetailView):
+    template_name = 'entities/entity_transfer_ownership.html'
+    context_object_name = 'entity'
+    form_class = EntityTransferForm
+
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def test_func(self):
+        return self._get_object().is_managed_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """Check the form and possibly rename the entity.
+
+        Called by Django when a form is submitted.
+        """
+        form = self.get_form()
+
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            entity = self.get_object()
+            user = User.objects.filter(email=email).first()
+            entity.author = user
+            entity.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+
 class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTypeMixin, DetailView):
     formset_class = EntityCollaboratorFormSet
     template_name = 'entities/entity_collaborators_form.html'
@@ -829,6 +864,7 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTyp
             kwargs['formset'] = self.get_formset()
         kwargs['type'] = self.object.entity_type
         return super().get_context_data(**kwargs)
+
 
 
 @method_decorator(csrf_exempt, name='dispatch')
