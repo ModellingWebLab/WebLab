@@ -668,10 +668,21 @@ class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
         self_id = self._get_object().id
         if AnalysisTask.objects.filter(id=token, entity=self_id).exists():
             return True
+
         query_tpl = 'runnable__{subclass}version__{subclass}__{entity_type}'
-        q_experiment = Q(**{query_tpl.format(subclass='experiment', entity_type=self.kwargs['entity_type']): self_id})
-        q_fit = Q(**{query_tpl.format(subclass='fittingresult', entity_type=self.kwargs['entity_type']): self_id})
-        return RunningExperiment.objects.filter(Q(id=token) & (q_experiment | q_fit)).exists()
+        entity_type = self.kwargs['entity_type']
+
+        # Look for all experiments linked to the given entity
+        # Fitting specs are not valid for simulation experiments, and go by
+        # a different field name for fitting experiments.
+        q_expt = RunningExperiment.objects.none()
+        if entity_type == 'spec':
+            entity_type = 'fittingspec'
+        else:
+            q_expt |= Q(**{query_tpl.format(subclass='experiment', entity_type=entity_type): self_id})
+
+        q_expt |= Q(**{query_tpl.format(subclass='fittingresult', entity_type=entity_type): self_id})
+        return RunningExperiment.objects.filter(Q(id=token) & q_expt).exists()
 
     def get(self, request, *args, **kwargs):
         entity = self._get_object()
