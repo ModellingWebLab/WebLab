@@ -82,6 +82,11 @@ class FittingResult(ExperimentMixin, UserCreatedModelMixin, models.Model):
         default=None, null=False, related_name='fit_ver_fitres',
     )
 
+    @property
+    def nice_fittingspec_version(self):
+        """Use tags to give a nicer representation of the commit id"""
+        return self.fittingspec_version.nice_version()
+
     class Meta:
         unique_together = ('fittingspec', 'dataset', 'model', 'protocol',
                            'fittingspec_version', 'model_version', 'protocol_version')

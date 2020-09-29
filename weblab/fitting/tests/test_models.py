@@ -139,6 +139,7 @@ class TestFittingResult:
 
         assert fitres.nice_model_version == fitres.model.repocache.latest_version.sha[:8] + '...'
         assert fitres.nice_protocol_version == fitres.protocol.repocache.latest_version.sha[:8] + '...'
+        assert fitres.nice_fittingspec_version == fitres.fittingspec.repocache.latest_version.sha[:8] + '...'
 
         fitres.model.repo.tag('v1')
         populate_entity_cache(fitres.model)
@@ -146,8 +147,11 @@ class TestFittingResult:
 
         fitres.protocol.repo.tag('v2')
         populate_entity_cache(fitres.protocol)
-
         assert fitres.nice_protocol_version == 'v2'
+
+        fitres.fittingspec.repo.tag('v3')
+        populate_entity_cache(fitres.fittingspec)
+        assert fitres.nice_fittingspec_version == 'v3'
 
     def test_visibility(self, helpers):
         model = recipes.model.make()
