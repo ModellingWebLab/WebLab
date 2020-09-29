@@ -15,9 +15,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.urls import reverse
 from django.views.generic.edit import CreateView
 
-from entities.views import EntityNewVersionView, EntityTypeMixin
+from entities.views import EntityNewVersionView, EntityTypeMixin, RenameView
 
-from .forms import FittingSpecForm, FittingSpecVersionForm
+from .forms import FittingSpecForm, FittingSpecRenameForm, FittingSpecVersionForm
 
 
 class FittingSpecCreateView(
@@ -40,3 +40,8 @@ class FittingSpecNewVersionView(EntityNewVersionView):
     This is almost identical to other entities, except that we can't re-run experiments.
     """
     form_class = FittingSpecVersionForm
+
+
+class FittingSpecRenameView(RenameView):
+
+    form_class = FittingSpecRenameForm
