@@ -3,6 +3,7 @@ import pytest
 from weblab.core import recipes
 from fitting.models import FittingSpec
 
+
 @pytest.mark.django_db
 class TestFittingSpecRenaming:
     def test_fittingspec_renaming_success(self, client, logged_in_user, helpers):
