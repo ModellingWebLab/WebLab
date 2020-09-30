@@ -162,5 +162,8 @@ class FileUploadForm(forms.ModelForm):
 class EntityTransferForm(UserKwargModelFormMixin, forms.Form):
     """Used for transferring an existing entity."""
 
-    email = forms.CharField(max_length=100)
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
+    )
+
 

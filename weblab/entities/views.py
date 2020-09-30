@@ -814,16 +814,16 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
                 user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
                 os.rename(str(old_path), str(new_path))
 
-
             return self.form_valid(form)
         else:
+            form.add_error("error")
             return self.form_invalid(form)
 
     def get_success_url(self):
-        """What page to show when the form was processed OK."""
-        entity = self.object
         ns = self.request.resolver_match.namespace
-        return reverse(ns + ':list')
+        entity = self.object
+        return reverse(ns + ':list', args=[entity.entity_type])
+
 
 class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTypeMixin, DetailView):
     formset_class = EntityCollaboratorFormSet

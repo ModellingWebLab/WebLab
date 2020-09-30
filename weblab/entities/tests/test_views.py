@@ -842,6 +842,24 @@ class TestEntityList:
         assert response.status_code == 200
         assert list(response.context['object_list']) == protocols
 
+@pytest.mark.django_db
+class TestTransfer:
+    def test_transfer(self, client, logged_in_user, other_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        commit = helpers.add_version(model, visibility='public')
+
+        assert model.author.email == 'test@example.com'
+        response = client.post(
+            '/entities/models/%d/transfer' % model.pk,
+            data={
+                'email': other_user.email,
+            },
+        )
+        assert response.status_code == 302
+        model2 = ModelEntity.objects.first()
+        assert model2.author.email == 'other@example.com'
+        assert model2.repocache.latest_version.sha == commit.sha
 
 @pytest.mark.django_db
 class TestVersionCreation:
