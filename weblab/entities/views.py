@@ -56,7 +56,7 @@ from .forms import (
     EntityTransferForm)
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
-
+from accounts.models import User
 
 
 class EntityTypeMixin:
@@ -806,12 +806,24 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
             email = form.cleaned_data['email']
             entity = self.get_object()
             user = User.objects.filter(email=email).first()
-            entity.author = user
-            entity.save()
+            if user is not None:
+                old_path = entity.repo_abs_path
+                entity.author = user
+                entity.save()
+                new_path = entity.repo_abs_path
+                user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
+                os.rename(str(old_path), str(new_path))
+
+
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
 
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':list')
 
 class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTypeMixin, DetailView):
     formset_class = EntityCollaboratorFormSet
