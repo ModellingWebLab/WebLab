@@ -810,8 +810,8 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
                 old_path = entity.repo_abs_path
                 entity.author = user
                 entity.save()
-                new_path = entity.repo_abs_path
                 user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
+                new_path = entity.repo_abs_path
                 os.rename(str(old_path), str(new_path))
 
             return self.form_valid(form)
