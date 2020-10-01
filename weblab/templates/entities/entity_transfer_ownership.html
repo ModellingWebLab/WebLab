@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load entities %}
 
-{% block title %}{{ entity.display_type|capfirst }} rename {% endblock title %}
+{% block title %}Change owner for {{ entity.display_type }}{% endblock title %}
 
 {% block content %}
   {% include "./includes/entity_header.html" %}
