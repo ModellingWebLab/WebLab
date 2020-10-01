@@ -14,7 +14,7 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating an entirely new entity."""
     def clean_name(self):
         name = self.cleaned_data['name']
-        if self._meta.model.objects.filter(name=name, author=self.user).exists():
+        if self._meta.model.objects.filter(name=name).exists():
             raise ValidationError(
                 'You already have a %s named "%s"' % (self._meta.model.display_type, name))
 
