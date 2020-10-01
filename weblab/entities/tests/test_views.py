@@ -849,6 +849,7 @@ class TestTransfer:
         helpers.add_permission(logged_in_user, 'create_model')
         model = recipes.model.make(author=logged_in_user)
         commit = helpers.add_version(model, visibility='public')
+        oldpath = model.repo_abs_path
 
         assert model.author.email == 'test@example.com'
         response = client.post(
@@ -859,6 +860,8 @@ class TestTransfer:
         )
         assert response.status_code == 302
         model.refresh_from_db()
+        newpath = model.repo_abs_path
+        assert not oldpath == newpath
         assert model.author == other_user
         assert model.repocache.latest_version.sha == commit.sha
 
