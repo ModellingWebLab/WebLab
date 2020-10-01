@@ -18,7 +18,7 @@ class Command(BaseCommand):
                 entities = entities.filter(id__in=options['entity_id'])
 
             for entity in entities:
-                for commit in entity.repo.commits:
+                for version in entity.repocache.versions.all():
                     self.stdout.write('Analysing commit {} in {} {}'.format(
-                        commit.sha[:10], entity.entity_type, entity.name))
-                    entity.analyse_new_version(commit)
+                        version.sha[:10], entity.entity_type, entity.name))
+                    entity.analyse_new_version(version)

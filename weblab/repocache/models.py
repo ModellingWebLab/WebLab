@@ -99,6 +99,7 @@ class CachedEntity(models.Model):
             numfiles=len(commit.filenames),
             timestamp=commit.timestamp,
             visibility=visibility,
+            has_readme=self.CachedVersionClass.README_NAME in commit.filenames,
         )
 
 
@@ -123,6 +124,13 @@ class CachedEntityVersion(VisibilityModelMixin):
         default=False,
         help_text='Whether this entity version has been verified as syntactically correct'
     )
+    has_readme = models.BooleanField(
+        default=False,
+        help_text='Whether this entity version has a README file'
+    )
+
+    # The name of a (possibly ephemeral) file containing documentation for the entity version
+    README_NAME = 'readme.md'
 
     class Meta:
         abstract = True

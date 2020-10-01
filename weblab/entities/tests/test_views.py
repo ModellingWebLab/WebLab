@@ -19,7 +19,7 @@ from guardian.shortcuts import assign_perm
 from core import recipes
 from entities.models import AnalysisTask, ModelEntity, ProtocolEntity
 from experiments.models import Experiment, PlannedExperiment
-from repocache.models import ProtocolInterface, ProtocolIoputs
+from repocache.models import CachedProtocolVersion, ProtocolInterface, ProtocolIoputs
 from repocache.populate import populate_entity_cache
 
 
@@ -1083,8 +1083,8 @@ class TestVersionCreation:
         commit = protocol.repo.latest_commit
         assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.sha)
         # Check documentation parsing
-        assert ProtocolEntity.README_NAME in commit.filenames
-        readme = commit.get_blob(ProtocolEntity.README_NAME)
+        assert CachedProtocolVersion.README_NAME in commit.filenames
+        readme = commit.get_blob(CachedProtocolVersion.README_NAME)
         assert readme.data_stream.read() == doc
         # Check new version analysis "happened"
         assert mock_check.called
@@ -1117,8 +1117,8 @@ class TestVersionCreation:
         commit = protocol.repo.latest_commit
         assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.sha)
         # Check documentation parsing
-        assert ProtocolEntity.README_NAME in commit.filenames
-        readme = commit.get_blob(ProtocolEntity.README_NAME)
+        assert CachedProtocolVersion.README_NAME in commit.filenames
+        readme = commit.get_blob(CachedProtocolVersion.README_NAME)
         assert readme.data_stream.read() == doc
         # Check new version analysis "happened" but failed cleanly
         assert mock_post.called
