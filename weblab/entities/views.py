@@ -806,18 +806,22 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
             email = form.cleaned_data['email']
             entity = self.get_object()
             user = User.objects.filter(email=email).first()
-            if user is not None:
-                old_path = entity.repo_abs_path
-                entity.author = user
-                entity.save()
-                user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
-                new_path = entity.repo_abs_path
-                os.rename(str(old_path), str(new_path))
 
+            if user is None:
+                form.add_error(None, "Unknown user")
+                return self.form_invalid(form)
+
+            if self.model.objects.filter(name=entity.name, author=user).exists():
+                form.add_error(None, "User already has a %s called %s" %( self.model.display_type, entity.name ))
+                return self.form_invalid(form)
+
+            old_path = entity.repo_abs_path
+            entity.author = user
+            entity.save()
+            user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
+            new_path = entity.repo_abs_path
+            """shutil.move(str(old_path), str(new_path))"""
             return self.form_valid(form)
-        else:
-            form.add_error("error")
-            return self.form_invalid(form)
 
     def get_success_url(self):
         ns = self.request.resolver_match.namespace
