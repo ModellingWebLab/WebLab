@@ -861,6 +861,8 @@ class TestTransfer:
         assert response.status_code == 302
         model.refresh_from_db()
         newpath = model.repo_abs_path
+        assert newpath.exists()
+        assert not oldpath.exists()
         assert not oldpath == newpath
         assert model.author == other_user
         assert model.repocache.latest_version.sha == commit.sha
