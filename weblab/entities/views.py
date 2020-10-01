@@ -15,8 +15,6 @@ from django.contrib.auth.mixins import (
     PermissionRequiredMixin,
     UserPassesTestMixin,
 )
-
-
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.urlresolvers import reverse
 from django.db.models import Count, F, Q
@@ -39,6 +37,7 @@ from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
+from accounts.models import User
 from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingSpec
@@ -49,14 +48,14 @@ from .forms import (
     EntityChangeVisibilityForm,
     EntityCollaboratorFormSet,
     EntityTagVersionForm,
+    EntityTransferForm,
     EntityVersionForm,
     FileUploadForm,
     ModelEntityForm,
     ProtocolEntityForm,
-    EntityTransferForm)
+)
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
-from accounts.models import User
 
 
 class EntityTypeMixin:
@@ -781,11 +780,11 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
         return response
 
 
-class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin, FormMixin, EntityTypeMixin, DetailView):
+class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
+                   FormMixin, EntityTypeMixin, DetailView):
     template_name = 'entities/entity_transfer_ownership.html'
     context_object_name = 'entity'
     form_class = EntityTransferForm
-
 
     def _get_object(self):
         if not hasattr(self, 'object'):
@@ -812,7 +811,7 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
                 return self.form_invalid(form)
 
             if self.model.objects.filter(name=entity.name, author=user).exists():
-                form.add_error(None, "User already has a %s called %s" %( self.model.display_type, entity.name ))
+                form.add_error(None, "User already has a %s called %s" % (self.model.display_type, entity.name))
                 return self.form_invalid(form)
 
             old_path = entity.repo_abs_path
@@ -820,7 +819,7 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
             entity.save()
             user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
             new_path = entity.repo_abs_path
-            """shutil.move(str(old_path), str(new_path))"""
+            shutil.move(str(old_path), str(new_path))
             return self.form_valid(form)
 
     def get_success_url(self):
@@ -880,7 +879,6 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTyp
             kwargs['formset'] = self.get_formset()
         kwargs['type'] = self.object.entity_type
         return super().get_context_data(**kwargs)
-
 
 
 @method_decorator(csrf_exempt, name='dispatch')

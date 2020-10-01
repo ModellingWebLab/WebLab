@@ -60,7 +60,7 @@ class EntityVersionForm(forms.Form):
         help_text='Optional short label for this version',
         required=False,
         validators=[RegexValidator(r'[-_A-Za-z0-9]', 'Please enter a valid tag name. '
-                                                     'Only letters, numbers, dashes or underscores are allowed.' )])
+                                                     'Only letters, numbers, dashes or underscores are allowed.')])
     commit_message = forms.CharField(
         label='Description of this version',
         widget=forms.Textarea)
@@ -159,10 +159,10 @@ class FileUploadForm(forms.ModelForm):
         model = EntityFile
         fields = ['upload']
 
+
 class EntityTransferForm(UserKwargModelFormMixin, forms.Form):
     """Used for transferring an existing entity."""
 
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
     )
-

@@ -842,6 +842,7 @@ class TestEntityList:
         assert response.status_code == 200
         assert list(response.context['object_list']) == protocols
 
+
 @pytest.mark.django_db
 class TestTransfer:
     def test_transfer(self, client, logged_in_user, other_user, helpers):
@@ -855,11 +856,11 @@ class TestTransfer:
             data={
                 'email': other_user.email,
             },
-            )
+        )
         assert response.status_code == 302
-        model2 = ModelEntity.objects.first()
-        assert model2.author.email == 'other@example.com'
-        assert model2.repocache.latest_version.sha == commit.sha
+        model.refresh_from_db()
+        assert model.author == other_user
+        assert model.repocache.latest_version.sha == commit.sha
 
     def test_transfer_invalid_user(self, client, logged_in_user, other_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -873,11 +874,12 @@ class TestTransfer:
             data={
                 'email': 'invalid@example.com',
             },
-            )
+        )
         assert response.status_code == 200
-        model2 = ModelEntity.objects.first()
-        assert model2.author.email == 'test@example.com'
-        assert model2.repocache.latest_version.sha == commit.sha
+        model.refresh_from_db()
+        assert model.author == logged_in_user
+        assert model.repocache.latest_version.sha == commit.sha
+
 
 @pytest.mark.django_db
 class TestVersionCreation:
