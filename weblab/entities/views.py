@@ -55,7 +55,6 @@ from .forms import (
 )
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
-from accounts.models import User
 
 
 class EntityTypeMixin:
