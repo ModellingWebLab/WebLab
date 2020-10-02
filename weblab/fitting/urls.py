@@ -204,6 +204,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/(?P<pk>\d+)/rename$' % _ENTITY_TYPE,
+        views.FittingSpecRenameView.as_view(),
+        name='rename',
+    ),
+
+    url(
         r'^results/', include(result_patterns, namespace='result')
     ),
 ]

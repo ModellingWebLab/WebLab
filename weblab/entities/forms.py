@@ -1,6 +1,7 @@
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.forms import formset_factory
 
 from accounts.models import User
@@ -32,6 +33,30 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
         return self._meta.model.entity_type
 
 
+class EntityRenameForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for renaming an existing entity."""
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if self._meta.model.objects.filter(author=self.user, name=name).exists():
+            raise ValidationError(
+                'You already have a %s named "%s"' % (self._meta.model.display_type, name))
+
+        return name
+
+
+class ModelEntityRenameForm(EntityRenameForm):
+    class Meta:
+        model = ModelEntity
+        fields = ['name']
+
+
+class ProtocolEntityRenameForm(EntityRenameForm):
+    class Meta:
+        model = ProtocolEntity
+        fields = ['name']
+
+
 class ModelEntityForm(EntityForm):
     class Meta:
         model = ModelEntity
@@ -57,7 +82,9 @@ class EntityVersionForm(forms.Form):
     )
     tag = forms.CharField(
         help_text='Optional short label for this version',
-        required=False)
+        required=False,
+        validators=[RegexValidator(r'[-_A-Za-z0-9]', 'Please enter a valid tag name. '
+                                                     'Only letters, numbers, dashes or underscores are allowed.')])
     commit_message = forms.CharField(
         label='Description of this version',
         widget=forms.Textarea)
@@ -94,7 +121,9 @@ class EntityTagVersionForm(forms.Form):
     tag = forms.CharField(
         label='New tag',
         help_text='Short label for this version',
-        required=True)
+        required=True,
+        validators=[RegexValidator(r'[-_A-Za-z0-9]', 'Please enter a valid tag name.'
+                                                     ' Only letters, numbers, dashes or underscores are allowed.')])
 
 
 class EntityCollaboratorForm(forms.Form):

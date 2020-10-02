@@ -3,7 +3,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from datasets.models import Dataset
-from entities.forms import EntityForm, EntityVersionForm
+from entities.forms import EntityForm, EntityRenameForm, EntityVersionForm
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion
 
@@ -30,6 +30,13 @@ class FittingSpecVersionForm(EntityVersionForm):
     This works almost the same as other entities, except we can't re-run experiments.
     """
     rerun_expts = None
+
+
+class FittingSpecRenameForm(EntityRenameForm):
+    """Used for renaming an existing entity."""
+    class Meta:
+        model = FittingSpec
+        fields = ['name']
 
 
 class VersionChoiceField(forms.ModelChoiceField):

@@ -63,4 +63,9 @@ urlpatterns = [
         name='delete',
     ),
 
+    url(
+        r'^(?P<pk>\d+)/rename$',
+        views.DatasetRenameView.as_view(),
+        name='rename',
+    ),
 ]

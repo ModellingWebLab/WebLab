@@ -50,3 +50,18 @@ class DatasetFileUploadForm(forms.ModelForm):
     class Meta:
         model = DatasetFile
         fields = ['upload']
+
+
+class DatasetRenameForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for renaming an existing entity."""
+    class Meta:
+        model = Dataset
+        fields = ['name']
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if self._meta.model.objects.filter(author=self.user, name=name).exists():
+            raise ValidationError(
+                'You already have a dataset named "%s"' % name)
+
+        return name

@@ -50,7 +50,9 @@ from .forms import (
     EntityVersionForm,
     FileUploadForm,
     ModelEntityForm,
+    ModelEntityRenameForm,
     ProtocolEntityForm,
+    ProtocolEntityRenameForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
@@ -790,6 +792,48 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
             raise Http404
 
         return response
+
+
+class RenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin, FormMixin, EntityTypeMixin, DetailView):
+    template_name = 'entities/entity_rename_form.html'
+    context_object_name = 'entity'
+
+    @property
+    def form_class(self):
+        if self.model is ModelEntity:
+            return ModelEntityRenameForm
+        elif self.model is ProtocolEntity:
+            return ProtocolEntityRenameForm
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def test_func(self):
+        return self._get_object().is_editable_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """Check the form and possibly rename the entity.
+
+        Called by Django when a form is submitted.
+        """
+        form = self.get_form()
+
+        if form.is_valid():
+            new_name = form.cleaned_data['name']
+            entity = self.get_object()
+            entity.name = new_name
+            entity.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':detail', args=[entity.url_type, entity.id])
 
 
 class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTypeMixin, DetailView):
