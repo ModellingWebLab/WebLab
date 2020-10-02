@@ -6,13 +6,27 @@
 
 {% block content %}
 
+<h1>Fit a model to data</h1>
+
+<p>
+To run a fitting experiment, you need to select not just the model to fit and the data to fit to,
+but also the Web Lab protocol describing how to simulate the data from the model,
+and a &quot;fitting specification&quot; detailing the fitting algorithm to use, its settings,
+which model parameters should be fit, and how to compare the simulation results to data.
+</p>
+
+<p>
+Available options will be filtered according to the interfaces they declare,
+so only &quot;compatible&quot; entities may be used together.
+</p>
+
 <form method="POST" action="">
   {% csrf_token %}
   {{ form.as_p }}
 
-    <p>
-    <button id="submitbutton">Submit</button>
-    </p>
+  <p>
+    <button id="submitbutton">Submit fitting experiment</button>
+  </p>
 </form>
 
 {% endblock content %}

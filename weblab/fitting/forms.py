@@ -41,7 +41,8 @@ class FittingResultCreateForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating and running a new fitting result"""
     model_version = VersionChoiceField(queryset=CachedModelVersion.objects.all())
     protocol_version = VersionChoiceField(queryset=CachedProtocolVersion.objects.all())
-    fittingspec_version = VersionChoiceField(queryset=CachedFittingSpecVersion.objects.all())
+    fittingspec_version = VersionChoiceField(queryset=CachedFittingSpecVersion.objects.all(),
+                                             label='Fitting specification version')
 
     class Meta:
         model = FittingResult
@@ -50,6 +51,7 @@ class FittingResultCreateForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['fittingspec'].label = 'Fitting specification'
 
         # Disable fields with preselected values
         # But only when there is no data bound - otherwise we will lose the
