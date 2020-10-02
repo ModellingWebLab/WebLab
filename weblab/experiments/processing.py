@@ -44,6 +44,62 @@ class ProcessingException(Exception):
     pass
 
 
+def submit_runnable(runnable, body, user):
+    """Submit a Celery task to the Chaste backend
+
+    @param runnable Runnable object to submit
+    @param body dict of extra parameters to post to the request
+    @param user user making the request
+    """
+    run = RunningExperiment.objects.create(runnable=runnable)
+    signature = runnable.signature
+
+    body.update({
+        'signature': runnable.signature,
+        'callBack': urljoin(settings.CALLBACK_BASE_URL, reverse('experiments:callback')),
+        'user': user.full_name,
+        'password': settings.CHASTE_PASSWORD,
+        'isAdmin': user.is_staff,
+    })
+
+    try:
+        response = requests.post(settings.CHASTE_URL, body)
+    except requests.exceptions.ConnectionError:
+        run.delete()
+        runnable.status = Runnable.STATUS_FAILED
+        runnable.return_text = 'Unable to connect to experiment runner service'
+        runnable.save()
+        logger.exception(runnable.return_text)
+        return runnable, True
+
+    res = response.content.decode().strip()
+    logger.debug('Response from chaste backend: %s' % res)
+
+    if not res.startswith(signature):
+        run.delete()
+        runnable.status = Runnable.STATUS_FAILED
+        runnable.return_text = 'Chaste backend answered with something unexpected: %s' % res
+        runnable.save()
+        logger.error(runnable.return_text)
+        raise ProcessingException(res)
+
+    status = res[len(signature):].strip()
+
+    if status.startswith('succ'):
+        run.task_id = status[4:].strip()
+        run.save()
+    elif status == 'inapplicable':
+        run.delete()
+        runnable.status = Runnable.STATUS_INAPPLICABLE
+    else:
+        run.delete()
+        logger.error('Chaste backend answered with error: %s' % status)
+        runnable.status = Runnable.STATUS_FAILED
+        runnable.return_text = status
+
+    runnable.save()
+
+
 def submit_experiment(model, model_version, protocol, protocol_version, user, rerun_ok):
     """Submit a Celery task to run an experiment.
 
@@ -80,9 +136,6 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
             author=user,
         )
 
-    run = RunningExperiment.objects.create(runnable=version)
-    signature = version.signature
-
     model_url = reverse(
         'entities:entity_archive',
         args=['model', model.pk, model_version]
@@ -94,52 +147,11 @@ def submit_experiment(model, model_version, protocol, protocol_version, user, re
     body = {
         'model': urljoin(settings.CALLBACK_BASE_URL, model_url),
         'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
-        'signature': signature,
-        'callBack': urljoin(settings.CALLBACK_BASE_URL, reverse('experiments:callback')),
-        'user': user.full_name,
-        'password': settings.CHASTE_PASSWORD,
-        'isAdmin': user.is_staff,
     }
     if protocol.is_fitting_spec:
         body['dataset'] = body['fittingSpec'] = body['protocol']
 
-    try:
-        response = requests.post(settings.CHASTE_URL, body)
-    except requests.exceptions.ConnectionError:
-        run.delete()
-        version.status = Runnable.STATUS_FAILED
-        version.return_text = 'Unable to connect to experiment runner service'
-        version.save()
-        logger.exception(version.return_text)
-        return version, True
-
-    res = response.content.decode().strip()
-    logger.debug('Response from chaste backend: %s' % res)
-
-    if not res.startswith(signature):
-        run.delete()
-        version.status = Runnable.STATUS_FAILED
-        version.return_text = 'Chaste backend answered with something unexpected: %s' % res
-        version.save()
-        logger.error(version.return_text)
-        raise ProcessingException(res)
-
-    status = res[len(signature):].strip()
-
-    if status.startswith('succ'):
-        run.task_id = status[4:].strip()
-        run.save()
-    elif status == 'inapplicable':
-        run.delete()
-        version.status = Runnable.STATUS_INAPPLICABLE
-    else:
-        run.delete()
-        logger.error('Chaste backend answered with error: %s' % status)
-        version.status = Runnable.STATUS_FAILED
-        version.return_text = status
-
-    version.save()
-
+    submit_runnable(version, body, user)
     return version, True
 
 

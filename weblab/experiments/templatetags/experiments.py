@@ -8,8 +8,8 @@ from django.utils.safestring import mark_safe
 register = template.Library()
 
 
-@register.filter
-def url_experiment_comparison_json(experiment_versions):
+@register.simple_tag(takes_context=True)
+def url_experiment_comparison_json(context, experiment_versions):
     """
     Build URL for experiment comparison json
     """
@@ -17,7 +17,8 @@ def url_experiment_comparison_json(experiment_versions):
         version_ids = '/' + '/'.join(str(ver.id) for ver in experiment_versions)
     else:
         version_ids = ''
-    return reverse('experiments:compare_json', args=[version_ids])
+    ns = context['current_namespace']
+    return reverse(ns + ':compare_json', args=[version_ids])
 
 
 @register.simple_tag

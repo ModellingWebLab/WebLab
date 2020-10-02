@@ -43,6 +43,13 @@ class Helpers:
         return commit
 
     @staticmethod
+    def cached_version(entity, **kwargs):
+        """Add a single commit/version to an entity and return the relevant repocache entry"""
+        assert kwargs.get('cache', True), "Cache must be true for cached version"
+        version = Helpers.add_version(entity, **kwargs)
+        return entity.repocache.get_version(version.sha)
+
+    @staticmethod
     def add_fake_version(entity, visibility='private', date=None, message='cache-only commit'):
         """Add a new commit/version only in the cache, not in git."""
         version = entity.repocache.CachedVersionClass.objects.create(
@@ -141,6 +148,13 @@ def protocol_with_version():
 
 
 @pytest.fixture
+def fittingspec_with_version():
+    fittingspec = recipes.fittingspec.make()
+    Helpers.add_version(fittingspec, visibility='private')
+    return fittingspec
+
+
+@pytest.fixture
 def public_model(helpers):
     model = recipes.model.make()
     helpers.add_version(model, visibility='public')
@@ -152,6 +166,19 @@ def public_protocol(helpers):
     protocol = recipes.protocol.make()
     helpers.add_version(protocol, visibility='public')
     return protocol
+
+
+@pytest.fixture
+def public_fittingspec(helpers):
+    fittingspec = recipes.fittingspec.make()
+    helpers.add_version(fittingspec, visibility='public')
+    return fittingspec
+
+
+@pytest.fixture
+def public_dataset(helpers):
+    dataset = recipes.dataset.make(visibility='public')
+    return dataset
 
 
 @pytest.fixture
@@ -331,3 +358,32 @@ def my_dataset_with_file(logged_in_user, helpers, public_protocol, client):
     )
     yield dataset
     dataset.delete()
+
+
+@pytest.fixture
+def fittingresult_version(public_model, public_protocol, public_fittingspec, public_dataset):
+    return recipes.fittingresult_version.make(
+        status='SUCCESS',
+        fittingresult__model=public_model,
+        fittingresult__model_version=public_model.repocache.latest_version,
+        fittingresult__protocol=public_protocol,
+        fittingresult__protocol_version=public_protocol.repocache.latest_version,
+        fittingresult__fittingspec=public_fittingspec,
+        fittingresult__fittingspec_version=public_fittingspec.repocache.latest_version,
+        fittingresult__dataset=public_dataset,
+    )
+
+
+@pytest.fixture
+def fittingresult_with_result(model_with_version, protocol_with_version):
+    version = recipes.fittingresult_version.make(
+        status='SUCCESS',
+        fittingresult__model=model_with_version,
+        fittingresult__model_version=model_with_version.repocache.latest_version,
+        fittingresult__protocol=protocol_with_version,
+        fittingresult__protocol_version=protocol_with_version.repocache.latest_version,
+    )
+    version.mkdir()
+    with (version.abs_path / 'result.txt').open('w') as f:
+        f.write('fitting results')
+    return version

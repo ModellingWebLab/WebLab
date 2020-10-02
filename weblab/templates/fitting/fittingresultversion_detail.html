@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load experiments %}
+
+{% block title %}Fitting result details - {% endblock title %}
+
+{% block body_id %}experiment-version{% endblock %}
+
+{% block content %}
+  {% with version.fittingresult as fittingresult %}
+  {% include "./includes/fittingresult_header.html" %}
+
+  <div id="entitydetails"></div>
+
+  <div id="entityversion"
+       data-version-href="{% url 'fitting:result:version' fittingresult.id version.id %}"
+       data-version-json-href="{% url 'fitting:result:version_json' fittingresult.id version.id %}">
+    <div class="closebtn">
+      <small>
+        <a href="{% url 'fitting:result:versions' fittingresult.id %}">list all versions</a>
+      </small>
+    </div>
+    <h2 id="entityversionname">
+      <small>Version:</small> {{ version.name }}
+    </h2>
+    <div class="suppl">
+      <small>
+        Created <time id="entityversiontime">{{ version.created_at }}</time>
+        by <em id="entityversionauthor">{{ version.author.full_name }}</em>.
+        {% if version.finished_at %}Took {{ version.created_at|timesince:version.finished_at }}.{% endif %}
+        Visibility: <span title="This is derived from the corresponding model version and protocol version visibilities">{{ version.visibility }}</span>
+        <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
+        <span id="exptStatus"></span>
+
+        {% if perms.run_fits %}
+          <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        {% endif %}
+
+        {% can_delete_entity version as can_delete %}
+        {% if can_delete %}
+          Delete fitting result version:
+          <a title="delete this version of this fitting result" href="{% url 'fitting:result:delete_version' fittingresult.id version.id %}">
+            <img src="{% static 'img/delete.png' %}" alt="delete this version of this fitting result"
+                title="delete this version of this fitting result"/></a>
+        {% endif %}
+
+        <br/>Corresponding model:
+        <a href="{% url 'entities:version' 'model' fittingresult.model.pk fittingresult.model_version.sha %}">{{ fittingresult.model.name }} @ {{ fittingresult.nice_model_version }}</a>
+          &amp; protocol:
+          <a href="{% url 'entities:version' 'protocol' fittingresult.protocol.pk fittingresult.protocol_version.sha %}">{{ fittingresult.protocol.name }} @ {{ fittingresult.nice_protocol_version }}</a>
+
+      </small>
+    </div>
+
+    {% if not version.is_latest %}
+      <p class="info">
+        Note: there is a <a href="{% url 'fitting:result:version' fittingresult.id fittingresult.latest_version.id %}">newer run of this fitting experiment</a>.
+      </p>
+    {% endif %}
+
+    <p id="return-text" class="experiment-{{ version.status }}" style="display:none;">
+      {{ version.return_text|safe|linebreaksbr }}
+    </p>
+
+    <div id="running-experiment-note" style="display:none;">
+      <p>
+        This fitting experiment has not yet finished running, and so no result files are available.
+        You can refresh the page to see if it has completed.
+      </p>
+    </div>
+
+    {% if fittingresult.protocol.protocol_experimental_datasets.exists %}
+    <div id="dataset-link-div">
+      <span>Overlay a dataset linked to the associated protocol:</span>
+      <select id="dataset-link">
+        <option selected value="">None</option>
+        {% dataset_options fittingresult %}
+      </select>
+    </div>
+    {% endif %}
+
+    <div id="entityversiondetails">
+      <div id="entityversionfiledetails">
+          <div class="closebtn"><small>
+              <a id="exportPlot" style="display: none;">export plot data |</a>
+          <a id="zoomFile">zoom |</a>
+              <a id="entityversionfileclose">&otimes; close</a>
+          </small></div>
+          <h3 id="entityversionfilename"></h3>
+          <div class="suppl"><small>Created <time id="entityversionfiletime"></time> by
+              <em id="entityversionfileauthor"></em>.</small></div>
+          <div id="entityversionfiledisplay"></div>
+      </div>
+
+        <div id="entityversionfiles">
+          <h3>Files attached to this version</h3>
+          <p id="parse_status"></p>
+          <table id="entityversionfilestable">
+          </table>
+          <a id='downloadArchive' title="Download a 'combine' format archive of all the files">
+            <img src="{% static 'img/download.png' %}" alt="Download"
+                title="Download a 'combine' format archive of all the files"/>
+                Download archive of all files
+          </a>
+          <div id="entityversionfilesreadme"></div>
+      </div>
+    </div>
+  </div>
+
+{% endwith %}
+{% endblock %}

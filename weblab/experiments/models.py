@@ -10,7 +10,75 @@ from entities.models import ModelEntity, ProtocolEntity
 from repocache.models import CachedModelVersion, CachedProtocolVersion
 
 
-class Experiment(UserCreatedModelMixin, models.Model):
+class ExperimentMixin(models.Model):
+    """
+    Model mixin for different types of experiment
+
+    Models must have model, model_version, protocol and protocol_version fields
+    and be the parent of a Runnable-derived model.
+    """
+    def __str__(self):
+        return self.name
+
+    @property
+    def latest_version(self):
+        return self.versions.latest('created_at')
+
+    @property
+    def nice_model_version(self):
+        """Use tags to give a nicer representation of the commit id"""
+        return self.model_version.nice_version()
+
+    @property
+    def nice_protocol_version(self):
+        """Use tags to give a nicer representation of the commit id"""
+        return self.protocol_version.nice_version()
+
+    @property
+    def latest_result(self):
+        try:
+            return self.latest_version.status
+        except Runnable.DoesNotExist:
+            return ''
+
+    @property
+    def entities(self):
+        """Entity objects related to this experiment"""
+        return (self.model, self.protocol)
+
+    def is_visible_to_user(self, user):
+        """
+        Can the user view the experiment?
+
+        :param user: user to test against
+
+        :returns: True if the user is allowed to view the experiment, False otherwise
+        """
+        return visibility_check(self.visibility, self.viewers, user)
+
+    @property
+    def viewers(self):
+        """
+        Get users which have special permissions to view this experiment.
+
+        We take the intersection of users with special permissions to view each object
+        (model, fitting spec, etc) involved, if that object is private. If it's public,
+        we can ignore it because everyone can see it.
+
+        :return: `set` of `User` objects
+        """
+        viewers = [
+            obj.viewers
+            for obj in self.entities
+            if obj.visibility == Visibility.PRIVATE
+        ]
+        return set.intersection(*viewers) if viewers else {}
+
+    class Meta:
+        abstract = True
+
+
+class Experiment(ExperimentMixin, UserCreatedModelMixin, models.Model):
     """A specific version of a protocol run on a specific version of a model
 
     This class essentially just stores the model & protocol links. The results are
@@ -34,9 +102,6 @@ class Experiment(UserCreatedModelMixin, models.Model):
             ('create_experiment', 'Can create experiments'),
         )
 
-    def __str__(self):
-        return self.name
-
     @property
     def name(self):
         return self.get_name()
@@ -59,55 +124,6 @@ class Experiment(UserCreatedModelMixin, models.Model):
     @property
     def visibility(self):
         return get_joint_visibility(self.model_version.visibility, self.protocol_version.visibility)
-
-    @property
-    def viewers(self):
-        """
-        Get users which have special permissions to view this experiment
-
-        We do not handle the case where both model and protocol are public,
-        since this would make the experiment also public and therefore
-        visible to every user - so calling this method makes very little sense.
-
-        :return: `set` of `User` objects
-        """
-        if self.protocol.visibility != Visibility.PRIVATE:
-            return self.model.viewers
-        elif self.model.visibility != Visibility.PRIVATE:
-            return self.protocol.viewers
-        else:
-            return self.model.viewers & self.protocol.viewers
-
-    def is_visible_to_user(self, user):
-        """
-        Can the user view the experiment?
-
-        :param user: user to test against
-
-        :returns: True if the user is allowed to view the experiment, False otherwise
-        """
-        return visibility_check(self.visibility, self.viewers, user)
-
-    @property
-    def latest_version(self):
-        return self.versions.latest('created_at')
-
-    @property
-    def nice_model_version(self):
-        """Use tags to give a nicer representation of the commit id"""
-        return self.model_version.nice_version()
-
-    @property
-    def nice_protocol_version(self):
-        """Use tags to give a nicer representation of the commit id"""
-        return self.protocol_version.nice_version()
-
-    @property
-    def latest_result(self):
-        try:
-            return self.latest_version.status
-        except Runnable.DoesNotExist:
-            return ''
 
 
 class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
@@ -140,13 +156,18 @@ class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
     )
     return_text = models.TextField(blank=True)
 
-    def __str__(self):
-        return '%s at %s: (%s)' % (self.experiment, self.created_at, self.status)
-
     class Meta:
         indexes = [
             models.Index(fields=['created_at'])
         ]
+
+    def __str__(self):
+        return '%s at %s: (%s)' % (self.parent, self.created_at, self.status)
+
+    @property
+    def parent(self):
+        """E.g. the Experiment this is a version of. Must be defined by subclasses."""
+        raise NotImplementedError
 
     @property
     def name(self):
@@ -154,19 +175,19 @@ class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
 
     @property
     def run_number(self):
-        return self.experiment.versions.filter(created_at__lte=self.created_at).count()
+        return self.parent.versions.filter(created_at__lte=self.created_at).count()
 
     @property
     def is_latest(self):
-        return not self.experiment.versions.filter(created_at__gt=self.created_at).exists()
+        return not self.parent.versions.filter(created_at__gt=self.created_at).exists()
 
     @property
     def visibility(self):
-        return self.experiment.visibility
+        return self.parent.visibility
 
     @property
     def viewers(self):
-        return self.experiment.viewers
+        return self.parent.viewers
 
     @property
     def abs_path(self):
