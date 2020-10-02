@@ -114,6 +114,60 @@ class TestDatasetCreation:
 
 
 @pytest.mark.django_db
+class TestDatasetRenaming:
+    def test_dataset_renaming_success(self, client, my_dataset_with_file):
+
+        dataset = my_dataset_with_file
+        old_path = dataset.archive_path
+        assert old_path.exists()
+        assert dataset.name == 'mydataset'
+
+        response = client.post(
+            '/datasets/%d/rename' % dataset.pk,
+            data={
+                'name': 'new name'
+            })
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.first()
+        assert not old_path.exists()
+        assert dataset.archive_path.exists()
+        assert dataset.name == 'new name'
+
+    def test_dataset_renaming_different_users_succeeds(self, client, logged_in_user, helpers):
+        dataset = recipes.dataset.make(author=logged_in_user)
+
+        dataset2 = recipes.dataset.make(name='test dataset 2')
+        assert dataset.name == 'my dataset1'
+        assert dataset2.name == 'test dataset 2'
+
+        response = client.post(
+            '/datasets/%d/rename' % dataset.pk,
+            data={
+                'name': 'test dataset 2'
+            })
+        assert response.status_code == 302
+        dataset = Dataset.objects.first()
+        assert dataset.name == 'test dataset 2'
+
+    def test_dataset_renaming_same_users_fails(self, client, logged_in_user, helpers):
+        dataset = recipes.dataset.make(author=logged_in_user)
+
+        dataset2 = recipes.dataset.make(author=logged_in_user, name='test dataset 2')
+        assert dataset.name == 'my dataset1'
+        assert dataset2.name == 'test dataset 2'
+
+        response = client.post(
+            '/datasets/%d/rename' % dataset.pk,
+            data={
+                'name': 'test dataset 2'
+            })
+        assert response.status_code == 200
+        dataset = Dataset.objects.first()
+        assert dataset.name == 'my dataset1'
+
+
+@pytest.mark.django_db
 class TestDatasetDeletion:
 
     def test_owner_can_delete_dataset_with_file(

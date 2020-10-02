@@ -23,9 +23,9 @@ from django.views.generic.edit import CreateView
 
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
-from entities.views import EntityNewVersionView, EntityTypeMixin
+from entities.views import EntityNewVersionView, EntityTypeMixin, RenameView
 
-from .forms import FittingSpecForm, FittingSpecVersionForm
+from .forms import FittingSpecForm, FittingSpecRenameForm, FittingSpecVersionForm
 from .models import FittingResult, FittingResultVersion
 
 
@@ -49,6 +49,11 @@ class FittingSpecNewVersionView(EntityNewVersionView):
     This is almost identical to other entities, except that we can't re-run experiments.
     """
     form_class = FittingSpecVersionForm
+
+
+class FittingSpecRenameView(RenameView):
+    """Rename a fitting specification."""
+    form_class = FittingSpecRenameForm
 
 
 class FittingResultVersionListView(VisibilityMixin, DetailView):

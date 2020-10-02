@@ -148,12 +148,42 @@ metadataEditor.prototype.getContentsCallback = function (succ)
                         drop: function (event, ui) {
                             console.log("Adding annotation " + ui.helper.data('bindings').ann + " on " + v.fullname);
                             self.addAnnotation(v, ui.helper.data('bindings'));
-                        }
+                        },
+                        hoverClass: "ui-droppable-hover"
                     });
             });
         });
         console.log("Found " + utils.keys(this.vars_by_name).length + " variables");
-        this.modelDiv.append("<h4>Model variables</h4>", var_list);
+        this.modelDiv.append(
+            "<h4>Model variables</h4>",
+            "<div class='ui-widget'><label for='editmeta_search_var'>Search: </label><input id='editmeta_search_var'/></div>",
+            var_list);
+
+        // Set up the autocomplete variable search
+        var completion_data = $.map(self.vars_by_name, function(obj, key) {
+            return {label: key, value: key, match: key.replace(/[^a-zA-Z0-9\s]/, " ")};
+        });
+        $('#editmeta_search_var').autocomplete({
+            source: function (request, response) {
+                var term = request.term.replace(/[^a-zA-Z0-9\s]/, " "),
+                    reg = new RegExp($.ui.autocomplete.escapeRegex(term), "i");
+                response($.grep(completion_data, function (option) {
+                    return option.match.match(reg) !== null;
+                }));
+            },
+            select: function (event, ui) {
+                // Show only the selected variable's component
+                var li = self.vars_by_name[ui.item.value].li;
+                $('#editmeta_modelvars_div .editmeta_content_shown').click();
+                li.parent().prev('.editmeta_content_hidden').click();
+                // Blink the variable to highlight it visually
+                li.fadeTo(200, 0.33).fadeTo(800, 1);
+                li.addClass('ui-droppable-hover');
+                window.setTimeout(function() { li.removeClass('ui-droppable-hover'); }, 5000);
+                // Couldn't get scrolling to work
+                // self.modelDiv.animate({scrollTop: self.modelDiv.scrollTop - self.modelDiv.offset().top + li.offset().top - 20});
+            }
+        });
 
         // Find the existing annotations
         var rdf_nodes = this.model.getElementsByTagNameNS("http://www.w3.org/1999/02/22-rdf-syntax-ns#", "RDF"),
@@ -242,7 +272,7 @@ metadataEditor.prototype.addAnnotation = function (v, bindings)
     // Show in the annotations pane that this term has been used
     $('li.editmeta_annotation').each(function() {
         var $this = $(this);
-        if ($this.data('term') == term)
+        if ($this.data('term') == term && !$this.data('multiple-uses-allowed'))
         {
             $this.addClass('editmeta_annotation_used');
             $this.attr('title', 'This term has been used');
@@ -325,9 +355,11 @@ metadataEditor.prototype.fillCategoryList = function (parent, rdf_, acceptableUr
             var li = $('<li></li>').addClass("editmeta_annotation");
             li.text(bindings.label === undefined ? bindings.ann.value.fragment : bindings.label.value);
             li.data('term', bindings.ann.value.toString());
+            li.data('multiple-uses-allowed',
+                    rdf.where(bindings.ann.toString() + ' a oxmeta:MultipleUsesAllowed').length > 0);
             if (bindings.comment !== undefined)
                 li.attr('title', bindings.comment.value);
-            self.terms.push({uri: bindings.ann.value, li: li});
+            self.terms[bindings.ann.value.toString()] = {uri: bindings.ann.value, li: li};
             ul.append(li);
             if ($('#entityversion').data('can-edit'))
                 li.draggable({
@@ -376,9 +408,41 @@ metadataEditor.prototype.ontologyLoaded = function (data, status, jqXHR)
 metadataEditor.prototype.fillMainAnnotationTree = function ()
 {
     this.mainAnnotDiv.empty();
-    this.mainAnnotDiv.append("<h4>Available annotations</h4>");
-    this.terms = [];
+    this.mainAnnotDiv.append(
+        "<h4>Available annotations</h4>",
+        "<div class='ui-widget'><label for='editmeta_search_term'>Search: </label><input id='editmeta_search_term'/></div>",
+        );
+    this.terms = {};
     this.fillCategoryList(this.mainAnnotDiv, this.rdf.where('?ann a oxmeta:Category'));
+
+    // Set up the autocomplete term search
+    var self = this,
+        completion_data = $.map(self.terms, function(obj, key) {
+            var label = obj.li.text();
+            return {label: label, value: key, match: label.replace(/[^a-zA-Z0-9\s]/, " ")};
+        });
+    $('#editmeta_search_term').autocomplete({
+        source: function (request, response) {
+            var term = request.term.replace(/[^a-zA-Z0-9\s]/, " "),
+                reg = new RegExp($.ui.autocomplete.escapeRegex(term), "i");
+            response($.grep(completion_data, function (option) {
+                return option.match.match(reg) !== null;
+            }));
+        },
+        select: function (event, ui) {
+            // Show only the selected term's branch of the tree
+            var li = self.terms[ui.item.value].li;
+            $('#editmeta_ontoterms_div .editmeta_content_shown').click();
+            li.parents().prev('.editmeta_content_hidden').click();
+            // Blink the term to highlight it visually
+            li.fadeTo(200, 0.33).fadeTo(800, 1);
+            li.addClass('ui-droppable-hover');
+            window.setTimeout(function() { li.removeClass('ui-droppable-hover'); }, 5000);
+            // Fill the input with the label, not the full URI
+            $('#editmeta_search_term').val(ui.item.label);
+            return false;
+        }
+    });
 }
 
 /**
@@ -499,10 +563,10 @@ metadataEditor.prototype.filtersLoaded = function (data)
         self.filtAnnotDiv.show();
         // Shade those annotations that are already used
         $('span.editmeta_annotation').each(function() {
-            var $span = $(this);
+            var $span = $(this); // Each annotated variable
             $('li.editmeta_annotation').each(function() {
-                var $li = $(this);
-                if ($span.data('term') == $li.data('term'))
+                var $li = $(this); // Each available annotation
+                if ($span.data('term') == $li.data('term') && !$li.data('multiple-uses-allowed'))
                 {
                     $li.addClass('editmeta_annotation_used');
                     $li.attr('title', 'This term has been used');
