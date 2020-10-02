@@ -802,14 +802,8 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
         form = self.get_form()
 
         if form.is_valid():
-            email = form.cleaned_data['email']
+            user = form.cleaned_data['user']
             entity = self.get_object()
-            user = User.objects.filter(email=email).first()
-
-            if user is None:
-                form.add_error(None, "Unknown user")
-                return self.form_invalid(form)
-
             if self.model.objects.filter(name=entity.name, author=user).exists():
                 form.add_error(None, "User already has a %s called %s" % (self.model.display_type, entity.name))
                 return self.form_invalid(form)
@@ -821,6 +815,8 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
             new_path = entity.repo_abs_path
             shutil.move(str(old_path), str(new_path))
             return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
     def get_success_url(self):
         ns = self.request.resolver_match.namespace

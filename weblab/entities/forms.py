@@ -166,3 +166,18 @@ class EntityTransferForm(UserKwargModelFormMixin, forms.Form):
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
     )
+
+    def _get_user(self, email):
+        try:
+            return User.objects.get(email=email)
+        except User.DoesNotExist:
+            return None
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        user = self._get_user(email)
+        if not user:
+            raise ValidationError('User not found')
+
+        self.cleaned_data['user'] = user
+        return email
