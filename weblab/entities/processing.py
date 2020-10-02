@@ -108,6 +108,7 @@ def process_check_protocol_callback(data):
             return {'error': 'missing terms'}
         cached_version = entity.repocache.get_version(version)
         cached_version.parsed_ok = True
+        cached_version.interface.all().delete()  # Remove results of any previous analysis
         cached_version.save()
         terms = [
             ProtocolInterface(protocol_version=cached_version, term=term, optional=False)

@@ -410,6 +410,7 @@ class ProtocolEntity(Entity):
         :param version: a `CachedEntityVersion` object for the new version
         """
         from .processing import submit_check_protocol_task
+        submit_check_protocol_task(self, version.sha)
         if not version.has_readme:
             main_file_name = version.master_filename
             if main_file_name is None:
@@ -428,7 +429,6 @@ class ProtocolEntity(Entity):
                 commit.add_ephemeral_file(version.README_NAME, doc)
                 version.has_readme = True
                 version.save()
-        submit_check_protocol_task(self, version.sha)
 
 
 class EntityFile(models.Model):
