@@ -845,7 +845,7 @@ class TestEntityList:
 
 @pytest.mark.django_db
 class TestTransfer:
-    def test_transfer(self, client, logged_in_user, other_user, helpers):
+    def test_transfer_success(self, client, logged_in_user, other_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
         model = recipes.model.make(author=logged_in_user)
         commit = helpers.add_version(model, visibility='public')
@@ -860,11 +860,9 @@ class TestTransfer:
         )
         assert response.status_code == 302
         model.refresh_from_db()
-        newpath = model.repo_abs_path
-        assert newpath.exists()
-        assert not oldpath.exists()
-        assert not oldpath == newpath
         assert model.author == other_user
+        assert not oldpath.exists()
+        assert model.repo_abs_path.exists()
         assert model.repocache.latest_version.sha == commit.sha
 
     def test_transfer_invalid_user(self, client, logged_in_user, other_user, helpers):
@@ -878,6 +876,27 @@ class TestTransfer:
             '/entities/models/%d/transfer' % model.pk,
             data={
                 'email': 'invalid@example.com',
+            },
+        )
+        assert response.status_code == 200
+        model.refresh_from_db()
+        assert model.author == logged_in_user
+        assert model.repocache.latest_version.sha == commit.sha
+
+    def test_transfer_other_user_has_same_named_entity(self, client, logged_in_user, other_user, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        commit = helpers.add_version(model, visibility='public')
+
+        other_model = recipes.model.make(author=other_user)
+        other_model.name = model.name
+        other_model.save()
+
+        assert model.author.email == 'test@example.com'
+        response = client.post(
+            '/entities/models/%d/transfer' % model.pk,
+            data={
+                'email': 'other@example.com',
             },
         )
         assert response.status_code == 200
