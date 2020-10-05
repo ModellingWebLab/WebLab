@@ -843,3 +843,106 @@ class TestFittingSpecRenaming:
         assert response.status_code == 200
         fittingspec = FittingSpec.objects.first()
         assert fittingspec.name == 'my spec1'
+
+
+@pytest.mark.django_db
+class TestRerunFittingView:
+    def test_requires_login(self, client):
+        response = client.post('/fitting/results/rerun')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert not data['newExperiment']['response']
+        assert (
+            data['newExperiment']['responseText'] ==
+            'You are not allowed to run fitting experiments'
+        )
+
+    def test_requires_permission(self, client, logged_in_user):
+        response = client.post('/fitting/results/rerun')
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert not data['newExperiment']['response']
+        assert (
+            data['newExperiment']['responseText'] ==
+            'You are not allowed to run fitting experiments'
+        )
+
+    def test_raises_error_if_no_rerun_id(self, client, fits_user):
+        response = client.post('/fitting/results/rerun')
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert not data['newExperiment']['response']
+        assert (
+            data['newExperiment']['responseText'] ==
+            'You must specify a fitting experiment to rerun'
+        )
+
+    @patch('fitting.views.submit_fitting')
+    def test_rerun_experiment(
+        self, mock_submit, client, fits_user, fittingresult_version
+    ):
+
+        fittingresult = fittingresult_version.fittingresult
+        new_runnable = recipes.fittingresult_version.make(fittingresult=fittingresult)
+        mock_submit.return_value = (new_runnable, True)
+
+        response = client.post(
+            '/fitting/results/rerun',
+            {
+                'rerun': fittingresult_version.pk,
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        url = '/fitting/results/%d/versions/%d' % (fittingresult.id, new_runnable.id)
+
+        assert 'newExperiment' in data
+        assert data['newExperiment']['expId'] == fittingresult.id
+        assert data['newExperiment']['versionId'] == new_runnable.id
+        assert data['newExperiment']['url'] == url
+        assert data['newExperiment']['expName'] == fittingresult.name
+        assert data['newExperiment']['status'] == 'QUEUED'
+        assert data['newExperiment']['response'] is True
+        message = data['newExperiment']['responseText']
+        assert url in message
+        assert fittingresult.name in message
+        assert 'submitted to the queue' in message
+        assert 'Experiment' in message
+
+    @patch('fitting.views.submit_fitting')
+    def test_rerun_experiment_with_failure(
+        self, mock_submit, client, fits_user, fittingresult_version
+    ):
+
+        fittingresult = fittingresult_version.fittingresult
+        new_runnable = recipes.fittingresult_version.make(
+            fittingresult=fittingresult, status='FAILED', return_text='something failed'
+        )
+        mock_submit.return_value = (new_runnable, True)
+
+        response = client.post(
+            '/fitting/results/rerun',
+            {
+                'rerun': fittingresult_version.pk,
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        url = '/fitting/results/%d/versions/%d' % (fittingresult.id, new_runnable.id)
+
+        assert 'newExperiment' in data
+        assert data['newExperiment']['expId'] == fittingresult.id
+        assert data['newExperiment']['versionId'] == new_runnable.id
+        assert data['newExperiment']['url'] == url
+        assert data['newExperiment']['expName'] == fittingresult.name
+        assert data['newExperiment']['status'] == 'FAILED'
+        assert data['newExperiment']['response'] is False
+        message = data['newExperiment']['responseText']
+        assert url in message
+        assert fittingresult.name in message
+        assert 'could not be run: something failed' in message
+        assert 'Experiment' in message

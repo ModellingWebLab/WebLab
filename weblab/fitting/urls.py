@@ -79,6 +79,11 @@ result_patterns = [
         name='filter_json',
     ),
 
+    url(
+        r'^rerun$',
+        views.FittingResultRerunView.as_view(),
+        name='rerun'
+    ),
 ]
 
 urlpatterns = [

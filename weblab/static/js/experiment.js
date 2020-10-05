@@ -912,13 +912,14 @@ function init() {
   var resubmitAction = document.getElementById("rerunExperimentAction");
   if (resubmit && resubmitAction)
   {
+    var resubmitHref = $(resubmit).data('href');
     resubmit.addEventListener("click", function (ev) {
       resubmitAction.innerHTML = "<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />";
       var exp_ver = versions[curVersion.id],
           jsonObject = {
             rerun: exp_ver.id,
           };
-      $.post('/experiments/new', jsonObject, function(data) {
+      $.post(resubmitHref, jsonObject, function(data) {
         var msg = data.newExperiment.responseText;
         if (data.newExperiment.response)
         {

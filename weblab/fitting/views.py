@@ -382,3 +382,57 @@ class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, V
         return JsonResponse({
             'fittingResultOptions': options
         })
+
+
+class FittingResultRerunView(PermissionRequiredMixin, View):
+    permission_required = 'fitting.run_fits'
+
+    def handle_no_permission(self):
+        return JsonResponse({
+            'newExperiment': {
+                'response': False,
+                'responseText': 'You are not allowed to run fitting experiments',
+            }
+        })
+
+    def post(self, request, *args, **kwargs):
+        if 'rerun' in request.POST:
+            version = get_object_or_404(FittingResultVersion, pk=request.POST['rerun'])
+
+            version, is_new = submit_fitting(
+                version.fittingresult.model_version,
+                version.fittingresult.protocol_version,
+                version.fittingresult.fittingspec_version,
+                version.fittingresult.dataset,
+                request.user,
+                rerun_ok=True
+            )
+
+            queued = version.status == FittingResultVersion.STATUS_QUEUED
+            version_url = reverse('fitting:result:version',
+                                args=[version.fittingresult.id, version.id])
+            if queued:
+                msg = " submitted to the queue."
+            else:
+                msg = " could not be run: " + version.return_text
+
+            return JsonResponse({
+                'newExperiment': {
+                    'expId': version.fittingresult.id,
+                    'versionId': version.id,
+                    'url': version_url,
+                    'expName': version.fittingresult.name,
+                    'status': version.status,
+                    'response': (not is_new) or queued,
+                    'responseText': "<a href='{}'>Experiment {}</a> {}".format(
+                        version_url, version.fittingresult.name, msg
+                    )
+                }
+            })
+        else:
+            return JsonResponse({
+                'newExperiment': {
+                    'response': False,
+                    'responseText': 'You must specify a fitting experiment to rerun',
+                }
+            })
