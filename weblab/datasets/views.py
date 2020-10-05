@@ -265,7 +265,6 @@ class DatasetTransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTes
             old_path = dataset.archive_path
             dataset.author = user
             dataset.save()
-            user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
             new_path = dataset.archive_path
             if old_path.exists():
                 shutil.move(str(old_path), str(new_path))
