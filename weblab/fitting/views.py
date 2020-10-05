@@ -30,7 +30,12 @@ from entities.models import ModelEntity, ProtocolEntity
 from entities.views import EntityNewVersionView, EntityTypeMixin, RenameView
 from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion
 
-from .forms import FittingResultCreateForm, FittingSpecForm, FittingSpecRenameForm, FittingSpecVersionForm
+from .forms import (
+    FittingResultCreateForm,
+    FittingSpecForm,
+    FittingSpecRenameForm,
+    FittingSpecVersionForm,
+)
 from .models import FittingResult, FittingResultVersion, FittingSpec
 from .processing import submit_fitting
 
@@ -409,8 +414,7 @@ class FittingResultRerunView(PermissionRequiredMixin, View):
             )
 
             queued = version.status == FittingResultVersion.STATUS_QUEUED
-            version_url = reverse('fitting:result:version',
-                                args=[version.fittingresult.id, version.id])
+            version_url = reverse('fitting:result:version', args=[version.fittingresult.id, version.id])
             if queued:
                 msg = " submitted to the queue."
             else:
