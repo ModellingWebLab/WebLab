@@ -340,26 +340,21 @@ class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, V
         if not protocol:
             if fittingspec:
                 protocol = fittingspec.protocol
+                protocols = [protocol]
             elif dataset:
                 protocol = dataset.protocol
+                protocols = [protocol]
 
-        # Restrict to specified model and its versions
+        # Restrict to versions of specified model
         if model:
-            models = [model]
             model_versions = model_versions.filter(entity__entity=model)
 
-        # Restrict to specified fitting spec and its versions
+        # Restrict to versions of specified fitting spec
         if fittingspec:
-            fittingspecs = [fittingspec]
             fittingspec_versions = fittingspec_versions.filter(entity__entity=fittingspec)
 
-        # Restrict to specified dataset
-        if dataset:
-            datasets = [dataset]
-
-        # Restrict to specified protocol and its versions
+        # Restrict to versions of specified protocol
         if protocol:
-            protocols = [protocol]
             protocol_versions = protocol_versions.filter(entity__entity=protocol)
 
             # If no fitting spec was chosen yet, restrict to those linked to this protocol
