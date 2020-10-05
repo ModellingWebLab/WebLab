@@ -49,7 +49,7 @@
           &amp; protocol:
           <a href="{% url 'entities:version' 'protocol' fittingresult.protocol.pk fittingresult.protocol_version.sha %}">{{ fittingresult.protocol.name }} @ {{ fittingresult.nice_protocol_version }}</a>
           &amp; fitting spec:
-          <a href="{% url 'fitting:version' 'spec' fittingresult.fittingspec.pk fittingresult.protocol_version.sha %}">{{ fittingresult.fittingspec.name }} @ {{ fittingresult.nice_fittingspec_version }}</a>
+          <a href="{% url 'fitting:version' 'spec' fittingresult.fittingspec.pk fittingresult.fittingspec_version.sha %}">{{ fittingresult.fittingspec.name }} @ {{ fittingresult.nice_fittingspec_version }}</a>
 
       </small>
     </div>
