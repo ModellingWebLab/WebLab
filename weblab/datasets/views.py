@@ -27,7 +27,6 @@ from core.visibility import VisibilityMixin
 
 from .forms import DatasetAddFilesForm, DatasetFileUploadForm, DatasetForm, DatasetTransferForm
 from .models import Dataset
-from entities.views import EntityTypeMixin
 
 
 class DatasetCreateView(
@@ -235,7 +234,7 @@ class DatasetDeleteView(UserPassesTestMixin, DeleteView):
 
 
 class DatasetTransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
-                   FormMixin, DetailView):
+                          FormMixin, DetailView):
     template_name = 'datasets/dataset_transfer_ownership.html'
     context_object_name = 'dataset'
     form_class = DatasetTransferForm
@@ -250,7 +249,7 @@ class DatasetTransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTes
         return self._get_object().is_managed_by(self.request.user)
 
     def post(self, request, *args, **kwargs):
-        """Check the form and possibly rename the entity.
+        """Check the form and transfer ownership of the entity.
 
         Called by Django when a form is submitted.
         """

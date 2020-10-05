@@ -193,10 +193,11 @@ class TestDatasetDeletion:
         assert not Dataset.objects.filter(pk=dataset.pk).exists()
         assert not dataset.archive_path.exists()
 
+
 @pytest.mark.django_db
 class TestTransferDatasetView:
 
-    def test_datasets_transfer_success(self, client, logged_in_user, other_user,  my_dataset_with_file, helpers):
+    def test_datasets_transfer_success(self, client, logged_in_user, other_user, my_dataset_with_file, helpers):
         dataset = my_dataset_with_file
         oldpath = dataset.archive_path
         assert oldpath.exists()

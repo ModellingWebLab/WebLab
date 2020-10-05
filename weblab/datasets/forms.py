@@ -52,6 +52,7 @@ class DatasetFileUploadForm(forms.ModelForm):
         model = DatasetFile
         fields = ['upload']
 
+
 class DatasetTransferForm(UserKwargModelFormMixin, forms.Form):
     """Used for transferring an existing entity."""
 

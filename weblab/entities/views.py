@@ -794,7 +794,7 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
         return self._get_object().is_managed_by(self.request.user)
 
     def post(self, request, *args, **kwargs):
-        """Check the form and possibly rename the entity.
+        """Check the form and transfer ownership of the entity.
 
         Called by Django when a form is submitted.
         """

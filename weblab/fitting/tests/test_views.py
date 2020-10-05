@@ -1,6 +1,6 @@
 import pytest
 
-from weblab.core import recipes
+from core import recipes
 
 
 @pytest.mark.django_db
