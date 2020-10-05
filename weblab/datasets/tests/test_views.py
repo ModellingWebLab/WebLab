@@ -193,6 +193,26 @@ class TestDatasetDeletion:
         assert not Dataset.objects.filter(pk=dataset.pk).exists()
         assert not dataset.archive_path.exists()
 
+@pytest.mark.django_db
+class TestTransferDatasetView:
+
+    def test_transfer_ownership(
+            self, logged_in_user, other_user, client, my_dataset_with_file
+    ):
+        dataset = my_dataset_with_file
+        assert Dataset.objects.filter(pk=dataset.pk).exists()
+        assert dataset.archive_path.exists()
+        assert dataset.author == logged_in_user
+        response = client.post(
+            '/datasets/%d/transfer' % dataset.pk,
+            data={
+                'email': other_user.email,
+            },
+        )
+        assert response.status_code == 200
+
+        assert not Dataset.objects.filter(pk=dataset.pk).exists()
+        assert not dataset.archive_path.exists()
 
 @pytest.mark.django_db
 class TestDatasetView:

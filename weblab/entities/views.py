@@ -817,10 +817,9 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
         else:
             return self.form_invalid(form)
 
-    def get_success_url(self):
+    def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
-        entity = self.object
-        return reverse(ns + ':list', args=[entity.entity_type])
+        return reverse(ns + ':list', args=[self.kwargs['entity_type']])
 
 
 class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTypeMixin, DetailView):

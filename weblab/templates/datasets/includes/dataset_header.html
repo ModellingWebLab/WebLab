@@ -14,6 +14,9 @@
         <img src="{% static 'img/delete.png' %}" alt="delete dataset"
              title="delete dataset"/></a>
     {% endif %}
+    <a title="Transfer ownership of dataset" href="{% url 'datasets:transfer' dataset.id %}">
+        Transfer ownership
+      </a>
     <br>
 
   </small>

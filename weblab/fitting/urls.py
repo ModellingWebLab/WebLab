@@ -132,4 +132,10 @@ urlpatterns = [
         entity_views.EntityDiffView.as_view(),
         name='diff',
     ),
+
+    url(
+        r'^%s/(?P<pk>\d+)/transfer$' % _ENTITY_TYPE,
+        entity_views.TransferView.as_view(),
+        name='transfer',
+    ),
 ]
