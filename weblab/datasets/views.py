@@ -269,7 +269,7 @@ class DatasetTransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTes
             user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
             new_path = dataset.archive_path
             if old_path.exists():
-                """hutil.move(str(old_path), str(new_path))"""
+                shutil.move(str(old_path), str(new_path))
             return self.form_valid(form)
         else:
             return self.form_invalid(form)

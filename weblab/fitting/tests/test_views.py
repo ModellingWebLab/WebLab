@@ -5,7 +5,7 @@ from weblab.core import recipes
 
 @pytest.mark.django_db
 class TestTransferOwner:
-    def test_fittingspec_renaming_success(self, client, logged_in_user, other_user, helpers):
+    def test_fittingspec_transfer_success(self, client, logged_in_user, other_user, helpers):
         helpers.add_permission(logged_in_user, 'create_fittingspec')
         fittingspec = recipes.fittingspec.make(author=logged_in_user)
         oldpath = fittingspec.repo_abs_path

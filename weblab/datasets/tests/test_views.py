@@ -196,23 +196,23 @@ class TestDatasetDeletion:
 @pytest.mark.django_db
 class TestTransferDatasetView:
 
-    def test_transfer_ownership(
-            self, logged_in_user, other_user, client, my_dataset_with_file
-    ):
+    def test_datasets_transfer_success(self, client, logged_in_user, other_user,  my_dataset_with_file, helpers):
         dataset = my_dataset_with_file
-        assert Dataset.objects.filter(pk=dataset.pk).exists()
-        assert dataset.archive_path.exists()
-        assert dataset.author == logged_in_user
+        oldpath = dataset.archive_path
+        assert oldpath.exists()
+        assert dataset.author.email == 'test@example.com'
         response = client.post(
             '/datasets/%d/transfer' % dataset.pk,
             data={
                 'email': other_user.email,
             },
         )
-        assert response.status_code == 200
+        assert response.status_code == 302
+        dataset.refresh_from_db()
+        assert dataset.author == other_user
+        assert not oldpath.exists()
+        assert dataset.archive_path.exists()
 
-        assert not Dataset.objects.filter(pk=dataset.pk).exists()
-        assert not dataset.archive_path.exists()
 
 @pytest.mark.django_db
 class TestDatasetView:
