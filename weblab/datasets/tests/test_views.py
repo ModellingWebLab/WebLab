@@ -34,6 +34,21 @@ class TestDatasetCreation:
         assert dataset.name == 'mydataset'
         assert dataset.author == logged_in_user
 
+    def test_create_dataset_with_same_name(self, logged_in_user, other_user, client, helpers, public_protocol):
+        helpers.add_permission(other_user, 'create_dataset', Dataset)
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+        recipes.dataset.make(author=other_user, name='mydataset', protocol=public_protocol)
+
+        response = client.post('/datasets/new', data={
+            'name': 'mydataset',
+            'visibility': 'public',
+            'protocol': public_protocol.pk,
+            'description': 'description'
+        })
+
+        assert response.status_code == 302
+        assert Dataset.objects.count() == 2
+
     def test_create_dataset_requires_permissions(self, logged_in_user, client):
         response = client.post(
             '/datasets/new',
