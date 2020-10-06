@@ -653,6 +653,198 @@ class TestProtocolEntityCompareExperimentsView:
 
 
 @pytest.mark.django_db
+class TestModelEntityCompareFittingResultsView:
+    def test_shows_related_fittings(self, client, logged_in_user, fittingresult_version):
+        fit = fittingresult_version.fittingresult
+        fit.model.set_version_visibility('latest', 'public')
+        fit.author = logged_in_user
+        fit.save()
+
+        sha = fit.model.repo.latest_commit.sha
+        recipes.fittingresult_version.make(
+            fittingresult__author=logged_in_user
+        ).fittingresult  # should not be included, as it uses a different model
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/fittings' % (fit.model.pk, sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(fit.dataset, [fit])]
+
+
+@pytest.mark.django_db
+class TestEntityCompareFittingResultsView:
+    def test_shows_fittings_related_to_model_version(self, client, fittingresult_version):
+        fit = fittingresult_version.fittingresult
+
+        # should not be included, as it uses a different model and version
+        recipes.fittingresult_version.make()
+
+        # should not be included, as it uses a different version of this model
+        recipes.fittingresult_version.make(fittingresult__model=fit.model)
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/fittings' % (fit.model.pk, fit.model_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(fit.dataset, [fit])]
+
+    def test_groups_by_dataset_for_model(self, client, public_model):
+        model_version = public_model.repocache.latest_version
+        dataset1 = recipes.dataset.make(visibility='public')
+        dataset2 = recipes.dataset.make(visibility='public')
+
+        # Create publicly visible fitting result versions
+        ds1fit1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=dataset1,
+            fittingresult__model=public_model,
+            fittingresult__model_version=model_version,
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+        )
+
+        ds1fit2 = recipes.fittingresult_version.make(
+            fittingresult__dataset=dataset1,
+            fittingresult__model=public_model,
+            fittingresult__model_version=model_version,
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+        )
+
+        ds2fit1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=dataset2,
+            fittingresult__model=public_model,
+            fittingresult__model_version=model_version,
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+        )
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/fittings' % (public_model.id, model_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (dataset1, [ds1fit1.fittingresult, ds1fit2.fittingresult]),
+            (dataset2, [ds2fit1.fittingresult]),
+        ]
+
+    def test_shows_fittings_related_to_protocol_version(self, client, fittingresult_version):
+        fit = fittingresult_version.fittingresult
+
+        # should not be included, as it uses a different protocol
+        recipes.fittingresult_version.make()
+
+        # should not be included, as it uses a different version of this protocol
+        recipes.fittingresult_version.make(fittingresult__protocol=fit.protocol)
+
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/fittings' % (fit.protocol.pk, fit.protocol_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(fit.dataset, [fit])]
+
+    def test_groups_by_dataset_for_protocol(self, client, public_protocol):
+        protocol_version = public_protocol.repocache.latest_version
+        dataset1 = recipes.dataset.make(visibility='public')
+        dataset2 = recipes.dataset.make(visibility='public')
+
+        # Create publicly visible fitting result versions
+        ds1fit1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=dataset1,
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+        )
+
+        ds1fit2 = recipes.fittingresult_version.make(
+            fittingresult__dataset=dataset1,
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+        )
+
+        ds2fit1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=dataset2,
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+        )
+
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/fittings' % (public_protocol.id, protocol_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (dataset1, [ds1fit1.fittingresult, ds1fit2.fittingresult]),
+            (dataset2, [ds2fit1.fittingresult]),
+        ]
+
+    def test_shows_fittings_related_to_fittingspec_version(self, client, fittingresult_version):
+        fit = fittingresult_version.fittingresult
+
+        # should not be included, as it uses a different fittingspec
+        recipes.fittingresult_version.make()
+
+        # should not be included, as it uses a different version of this fittingspec
+        recipes.fittingresult_version.make(fittingresult__fittingspec=fit.fittingspec)
+
+        response = client.get(
+            '/fitting/specs/%d/versions/%s/fittings' % (fit.fittingspec.pk, fit.fittingspec_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(fit.dataset, [fit])]
+
+    def test_groups_by_dataset_for_fittingspec(self, client, public_fittingspec):
+        fittingspec_version = public_fittingspec.repocache.latest_version
+        dataset1 = recipes.dataset.make(visibility='public')
+        dataset2 = recipes.dataset.make(visibility='public')
+
+        # Create publicly visible fitting result versions
+        ds1fit1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=dataset1,
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+        )
+
+        ds1fit2 = recipes.fittingresult_version.make(
+            fittingresult__dataset=dataset1,
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+        )
+
+        ds2fit1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=dataset2,
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+        )
+
+        response = client.get(
+            '/fitting/specs/%d/versions/%s/fittings' % (public_fittingspec.id, fittingspec_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (dataset1, [ds1fit1.fittingresult, ds1fit2.fittingresult]),
+            (dataset2, [ds2fit1.fittingresult]),
+        ]
+
+
+@pytest.mark.django_db
 class TestEntityComparisonView:
     def test_loads_entity_versions(self, client, helpers, logged_in_user):
         model = recipes.model.make()

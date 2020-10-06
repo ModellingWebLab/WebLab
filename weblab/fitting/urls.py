@@ -154,6 +154,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/(?P<pk>\d+)/versions/%s/fittings$' % (_ENTITY_TYPE, _COMMIT),
+        entity_views.EntityCompareFittingResultsView.as_view(),
+        name='compare_fittings',
+    ),
+
+    url(
         r'^%s/compare(?P<versions>(/\d+:%s){1,})(?:/show/%s)?$' % (_ENTITY_TYPE, _COMMIT, _FILEVIEW),
         entity_views.EntityComparisonView.as_view(),
         name='compare',
@@ -164,7 +170,6 @@ urlpatterns = [
         entity_views.EntityComparisonJsonView.as_view(),
         name='compare_json',
     ),
-
 
     url(
         r'^%s/(?P<pk>\d+)/versions/%s/download/%s$' % (_ENTITY_TYPE, _COMMIT, _FILENAME),

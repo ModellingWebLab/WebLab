@@ -40,7 +40,7 @@ from guardian.shortcuts import get_objects_for_user
 from accounts.forms import OwnershipTransferForm
 from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
-from fitting.models import FittingSpec
+from fitting.models import FittingResult, FittingSpec
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedProtocolVersion
 
@@ -286,6 +286,48 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
         kwargs['comparisons'] = [
             (obj, list(exp))
             for (obj, exp) in groupby(experiments, lambda exp: getattr(exp, other_type))
+        ]
+
+        return super().get_context_data(**kwargs)
+
+
+class EntityCompareFittingResultsView(EntityTypeMixin, EntityVersionMixin, DetailView):
+    context_object_name = 'entity'
+    template_name = 'entities/compare_fittings.html'
+
+    def get_context_data(self, **kwargs):
+        entity = self._get_object()
+        version = self.get_version()
+
+        entity_type = entity.entity_type
+        other_type = 'dataset'
+
+        fittings = FittingResult.objects.filter(**{
+            entity_type: entity.pk,
+            entity_type + '_version': version.pk,
+        }).annotate(
+            version_count=Count('versions'),
+        )
+
+        if other_type != 'dataset':
+            fittings = fittings.annotate(
+                other_version_timestamp=F(other_type + '_version__timestamp'),
+            ).filter(
+                version_count__gt=0,
+            ).select_related(other_type).order_by(other_type, '-other_version_timestamp')
+        else:
+            fittings = fittings.filter(
+                version_count__gt=0,
+            ).select_related(other_type).order_by(other_type)
+
+        fittings = [
+            fit for fit in fittings
+            if fit.is_visible_to_user(self.request.user)
+        ]
+
+        kwargs['comparisons'] = [
+            (obj, sorted(list(fit), key=lambda x: x.id))
+            for (obj, fit) in groupby(fittings, lambda fit: getattr(fit, other_type))
         ]
 
         return super().get_context_data(**kwargs)
