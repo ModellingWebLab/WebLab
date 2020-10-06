@@ -20,7 +20,7 @@ class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def clean_name(self):
         name = self.cleaned_data['name']
-        if self._meta.model.objects.filter(name=name).exists():
+        if self._meta.model.objects.filter(name=name, author=self.user).exists():
             raise ValidationError(
                 'You already have a dataset named "%s"' % (name))
         return name
