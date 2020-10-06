@@ -200,6 +200,17 @@ class DatasetArchiveView(VisibilityMixin, SingleObjectMixin, View):
     """
     model = Dataset
 
+    def check_access_token(self, token):
+        """
+        Override to allow token based access to dataset archive downloads -
+        must match a (fitting) `RunningExperiment` set up against the dataset.
+        """
+        from experiments.models import RunningExperiment
+        return RunningExperiment.objects.filter(
+            id=token,
+            runnable__fittingresultversion__fittingresult__dataset=self.get_object().id,
+        ).exists()
+
     def get_archive_name(self, dataset):
         return dataset.archive_name
 

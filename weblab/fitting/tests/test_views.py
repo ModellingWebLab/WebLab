@@ -3,6 +3,7 @@ import shutil
 import zipfile
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from django.core.urlresolvers import reverse
@@ -427,6 +428,349 @@ class TestFittingResultComparisonJsonView:
 
 
 @pytest.mark.django_db
+class TestCreateFittingResultView:
+    def test_requires_login(self, client):
+        response = client.get('/fitting/results/new')
+        assert response.status_code == 302
+
+    def test_requires_permission(self, client, logged_in_user):
+        response = client.get('/fitting/results/new')
+        assert response.status_code == 302
+
+    def test_basic_page(self, client, fits_user):
+        response = client.get('/fitting/results/new')
+        assert response.status_code == 200
+        assert 'form' in response.context
+
+    def test_with_preselected_model(self, client, fits_user, public_model):
+        response = client.get('/fitting/results/new', {'model': public_model.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['model'] == public_model
+
+    def test_with_preselected_protocol(self, client, fits_user, public_protocol):
+        response = client.get('/fitting/results/new', {'protocol': public_protocol.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['protocol'] == public_protocol
+
+    def test_with_preselected_fittingspec(self, client, fits_user, public_fittingspec):
+        response = client.get('/fitting/results/new', {'fittingspec': public_fittingspec.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['fittingspec'] == public_fittingspec
+
+    def test_with_preselected_dataset(self, client, fits_user, public_dataset):
+        response = client.get('/fitting/results/new', {'dataset': public_dataset.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['dataset'] == public_dataset
+
+    def test_with_preselected_model_version(self, client, fits_user, public_model):
+        version = public_model.repocache.latest_version
+        response = client.get('/fitting/results/new', {'model_version': version.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['model'] == public_model
+        assert response.context['form'].initial['model_version'] == version
+
+    def test_with_preselected_protocol_version(self, client, fits_user, public_protocol):
+        version = public_protocol.repocache.latest_version
+        response = client.get('/fitting/results/new', {'protocol_version': version.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['protocol'] == public_protocol
+        assert response.context['form'].initial['protocol_version'] == version
+
+    def test_with_preselected_fittingspec_version(self, client, fits_user, public_fittingspec):
+        version = public_fittingspec.repocache.latest_version
+        response = client.get('/fitting/results/new', {'fittingspec_version': version.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['fittingspec'] == public_fittingspec
+        assert response.context['form'].initial['fittingspec_version'] == version
+
+    def test_with_non_visible_model(self, client, fits_user, private_model):
+        response = client.get('/fitting/results/new', {'model': private_model.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_model_version(self, client, fits_user, private_model):
+        version = private_model.repocache.latest_version
+        response = client.get('/fitting/results/new', {'model_version': version.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_protocol(self, client, fits_user, private_protocol):
+        response = client.get('/fitting/results/new', {'protocol': private_protocol.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_protocol_version(self, client, fits_user, private_protocol):
+        version = private_protocol.repocache.latest_version
+        response = client.get('/fitting/results/new', {'protocol_version': version.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_fittingspec(self, client, fits_user, private_fittingspec):
+        response = client.get('/fitting/results/new', {'fittingspec': private_fittingspec.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_fittingspec_version(self, client, fits_user, private_fittingspec):
+        version = private_fittingspec.repocache.latest_version
+        response = client.get('/fitting/results/new', {'fittingspec_version': version.pk})
+        assert response.status_code == 404
+
+    def test_with_non_visible_dataset(self, client, fits_user, private_dataset):
+        response = client.get('/fitting/results/new', {'dataset': private_dataset.pk})
+        assert response.status_code == 404
+
+    @patch('fitting.views.submit_fitting')
+    def test_submits_to_backend(self, mock_submit, client, fits_user, public_model, public_protocol,
+                                public_fittingspec, public_dataset, helpers):
+        model_version = public_model.repocache.latest_version
+        protocol_version = public_protocol.repocache.latest_version
+        fittingspec_version = public_fittingspec.repocache.latest_version
+        helpers.link_to_protocol(public_protocol, public_fittingspec, public_dataset)
+
+        runnable = recipes.fittingresult_version.make()
+        mock_submit.return_value = (runnable, False)
+
+        response = client.post('/fitting/results/new', {
+            'model': public_model.pk,
+            'model_version': model_version.pk,
+            'protocol': public_protocol.pk,
+            'protocol_version': protocol_version.pk,
+            'fittingspec': public_fittingspec.pk,
+            'fittingspec_version': fittingspec_version.pk,
+            'dataset': public_dataset.pk,
+        })
+
+        assert response.status_code == 302
+        mock_submit.assert_called_with(
+            model_version,
+            protocol_version,
+            fittingspec_version,
+            public_dataset, fits_user, True
+        )
+
+        assert response.url == '/fitting/results/%d/versions/%d' % (runnable.fittingresult.pk, runnable.pk)
+
+
+@pytest.mark.django_db
+class TestFittingResultFilterJsonView:
+    def test_requires_login(self, client):
+        response = client.get('/fitting/results/new/filter')
+        assert response.status_code == 302
+
+    def test_requires_permission(self, client, logged_in_user):
+        response = client.get('/fitting/results/new/filter')
+        assert response.status_code == 302
+
+    def test_all_models_and_versions(self, client, fits_user, helpers):
+        model1 = recipes.model.make()
+        model2 = recipes.model.make()
+        m1v1 = helpers.add_cached_version(model1, visibility='public')
+        m2v1 = helpers.add_cached_version(model2, visibility='public')
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert 'fittingResultOptions' in data
+        options = data['fittingResultOptions']
+        assert set(options['models']) == {model1.id, model2.id}
+        assert set(options['model_versions']) == {m1v1.id, m2v1.id}
+
+    def test_model_and_version_must_be_visible_to_user(self, client, fits_user, helpers):
+        model1 = recipes.model.make()
+        model2 = recipes.model.make()
+        m1v1 = helpers.add_cached_version(model1, visibility='public')
+        m2v1 = helpers.add_cached_version(model2, visibility='private')  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert 'fittingResultOptions' in data
+        options = data['fittingResultOptions']
+        assert set(options['models']) == {model1.id}
+        assert set(options['model_versions']) == {m1v1.id}
+
+    def test_all_protocols_and_versions(self, client, fits_user, helpers):
+        protocol1 = recipes.protocol.make()
+        protocol2 = recipes.protocol.make()
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='public')
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert set(options['protocols']) == {protocol1.id, protocol2.id}
+        assert set(options['protocol_versions']) == {p1v1.id, p2v1.id}
+
+    def test_protocol_and_version_must_be_visible_to_user(self, client, fits_user, helpers):
+        protocol1 = recipes.protocol.make()
+        protocol2 = recipes.protocol.make()
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='private')  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert 'fittingResultOptions' in data
+        options = data['fittingResultOptions']
+        assert set(options['protocols']) == {protocol1.id}
+        assert set(options['protocol_versions']) == {p1v1.id}
+
+    def test_all_fittingspecs_and_versions(self, client, fits_user, helpers):
+        fittingspec1 = recipes.fittingspec.make()
+        fittingspec2 = recipes.fittingspec.make()
+        f1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        f2v1 = helpers.add_cached_version(fittingspec2, visibility='public')
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert set(options['fittingspecs']) == {fittingspec1.id, fittingspec2.id}
+        assert set(options['fittingspec_versions']) == {f1v1.id, f2v1.id}
+
+    def test_fittingspec_and_version_must_be_visible_to_user(self, client, fits_user, helpers):
+        fittingspec1 = recipes.fittingspec.make()
+        fittingspec2 = recipes.fittingspec.make()
+        p1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        p2v1 = helpers.add_cached_version(fittingspec2, visibility='private')  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert 'fittingResultOptions' in data
+        options = data['fittingResultOptions']
+        assert set(options['fittingspecs']) == {fittingspec1.id}
+        assert set(options['fittingspec_versions']) == {p1v1.id}
+
+    def test_all_datasets(self, client, fits_user):
+        dataset1 = recipes.dataset.make(visibility='public')
+        dataset2 = recipes.dataset.make(visibility='public')
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert set(options['datasets']) == {dataset1.id, dataset2.id}
+
+    def test_dataset_must_be_visible_to_user(self, client, fits_user, helpers):
+        dataset1 = recipes.dataset.make(visibility='public')
+        dataset2 = recipes.dataset.make(visibility='private')  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert 'fittingResultOptions' in data
+        options = data['fittingResultOptions']
+        assert set(options['datasets']) == {dataset1.id}
+
+    def test_versions_restricted_when_model_selected(self, client, fits_user, helpers):
+        model1 = recipes.model.make()
+        model2 = recipes.model.make()
+        m1v1 = helpers.add_cached_version(model1, visibility='public')
+        m2v1 = helpers.add_cached_version(model2, visibility='public')  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {'model': model1.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['models'] == [model1.id, model2.id]
+        assert options['model_versions'] == [m1v1.id]
+
+    def test_versions_restricted_when_protocol_selected(self, client, fits_user, helpers):
+        protocol1 = recipes.protocol.make()
+        protocol2 = recipes.protocol.make()
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='public')  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {'protocol': protocol1.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['protocols'] == [protocol1.id, protocol2.id]
+        assert options['protocol_versions'] == [p1v1.id]
+
+    def test_versions_restricted_when_fittingspec_selected(self, client, fits_user, helpers):
+        fittingspec1 = recipes.fittingspec.make()
+        fittingspec2 = recipes.fittingspec.make()
+        f1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        f2v1 = helpers.add_cached_version(fittingspec2, visibility='public')  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {'fittingspec': fittingspec1.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['fittingspecs'] == [fittingspec1.id, fittingspec2.id]
+        assert options['fittingspec_versions'] == [f1v1.id]
+
+    def test_dataset_and_fittingspec_restricted_when_protocol_selected(self, client, fits_user, helpers):
+        protocol = recipes.protocol.make()
+        helpers.add_cached_version(protocol, visibility='public')
+        fittingspec1 = recipes.fittingspec.make(protocol=protocol)
+        fittingspec2 = recipes.fittingspec.make()
+        f1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        f2v1 = helpers.add_cached_version(fittingspec2, visibility='public')  # noqa: F841
+        dataset1 = recipes.dataset.make(protocol=protocol, visibility='public')
+        dataset2 = recipes.dataset.make(visibility='public')  # noqa: F841
+
+        response = client.get('/fitting/results/new/filter', {'protocol': protocol.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['datasets'] == [dataset1.id]
+        assert options['fittingspecs'] == [fittingspec1.id]
+        assert options['fittingspec_versions'] == [f1v1.id]
+
+    def test_protocol_and_fittingspec_restricted_when_dataset_selected(self, client, fits_user, helpers):
+        protocol1 = recipes.protocol.make()
+        protocol2 = recipes.protocol.make()
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='public')  # noqa: F841
+        fittingspec1 = recipes.fittingspec.make(protocol=protocol1)
+        fittingspec2 = recipes.fittingspec.make()
+        f1v1 = helpers.add_cached_version(fittingspec1, visibility='public')
+        f2v1 = helpers.add_cached_version(fittingspec2, visibility='public')  # noqa: F841
+
+        dataset = recipes.dataset.make(protocol=protocol1, visibility='public')
+
+        response = client.get('/fitting/results/new/filter', {'dataset': dataset.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['protocols'] == [protocol1.id]
+        assert options['protocol_versions'] == [p1v1.id]
+        assert options['fittingspecs'] == [fittingspec1.id]
+        assert options['fittingspec_versions'] == [f1v1.id]
+
+    def test_protocol_and_dataset_restricted_when_fittingspec_selected(self, client, fits_user, helpers):
+        protocol1 = recipes.protocol.make()
+        protocol2 = recipes.protocol.make()
+        p1v1 = helpers.add_cached_version(protocol1, visibility='public')
+        p2v1 = helpers.add_cached_version(protocol2, visibility='public')  # noqa: F841
+        dataset1 = recipes.dataset.make(protocol=protocol1, visibility='public')
+        dataset2 = recipes.dataset.make(visibility='public')  # noqa: F841
+
+        fittingspec = recipes.fittingspec.make(protocol=protocol1)
+
+        response = client.get('/fitting/results/new/filter', {'fittingspec': fittingspec.id})
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        options = data['fittingResultOptions']
+        assert options['protocols'] == [protocol1.id]
+        assert options['protocol_versions'] == [p1v1.id]
+        assert options['datasets'] == [dataset1.id]
+
+
+@pytest.mark.django_db
 class TestFittingSpecRenaming:
     def test_fittingspec_renaming_success(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_fittingspec')
@@ -474,3 +818,106 @@ class TestFittingSpecRenaming:
         assert response.status_code == 200
         fittingspec = FittingSpec.objects.first()
         assert fittingspec.name == 'my spec1'
+
+
+@pytest.mark.django_db
+class TestRerunFittingView:
+    def test_requires_login(self, client):
+        response = client.post('/fitting/results/rerun')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert not data['newExperiment']['response']
+        assert (
+            data['newExperiment']['responseText'] ==
+            'You are not allowed to run fitting experiments'
+        )
+
+    def test_requires_permission(self, client, logged_in_user):
+        response = client.post('/fitting/results/rerun')
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert not data['newExperiment']['response']
+        assert (
+            data['newExperiment']['responseText'] ==
+            'You are not allowed to run fitting experiments'
+        )
+
+    def test_raises_error_if_no_rerun_id(self, client, fits_user):
+        response = client.post('/fitting/results/rerun')
+        assert response.status_code == 200
+
+        data = json.loads(response.content.decode())
+        assert not data['newExperiment']['response']
+        assert (
+            data['newExperiment']['responseText'] ==
+            'You must specify a fitting experiment to rerun'
+        )
+
+    @patch('fitting.views.submit_fitting')
+    def test_rerun_experiment(
+        self, mock_submit, client, fits_user, fittingresult_version
+    ):
+
+        fittingresult = fittingresult_version.fittingresult
+        new_runnable = recipes.fittingresult_version.make(fittingresult=fittingresult)
+        mock_submit.return_value = (new_runnable, True)
+
+        response = client.post(
+            '/fitting/results/rerun',
+            {
+                'rerun': fittingresult_version.pk,
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        url = '/fitting/results/%d/versions/%d' % (fittingresult.id, new_runnable.id)
+
+        assert 'newExperiment' in data
+        assert data['newExperiment']['expId'] == fittingresult.id
+        assert data['newExperiment']['versionId'] == new_runnable.id
+        assert data['newExperiment']['url'] == url
+        assert data['newExperiment']['expName'] == fittingresult.name
+        assert data['newExperiment']['status'] == 'QUEUED'
+        assert data['newExperiment']['response'] is True
+        message = data['newExperiment']['responseText']
+        assert url in message
+        assert fittingresult.name in message
+        assert 'submitted to the queue' in message
+        assert 'Experiment' in message
+
+    @patch('fitting.views.submit_fitting')
+    def test_rerun_experiment_with_failure(
+        self, mock_submit, client, fits_user, fittingresult_version
+    ):
+
+        fittingresult = fittingresult_version.fittingresult
+        new_runnable = recipes.fittingresult_version.make(
+            fittingresult=fittingresult, status='FAILED', return_text='something failed'
+        )
+        mock_submit.return_value = (new_runnable, True)
+
+        response = client.post(
+            '/fitting/results/rerun',
+            {
+                'rerun': fittingresult_version.pk,
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        url = '/fitting/results/%d/versions/%d' % (fittingresult.id, new_runnable.id)
+
+        assert 'newExperiment' in data
+        assert data['newExperiment']['expId'] == fittingresult.id
+        assert data['newExperiment']['versionId'] == new_runnable.id
+        assert data['newExperiment']['url'] == url
+        assert data['newExperiment']['expName'] == fittingresult.name
+        assert data['newExperiment']['status'] == 'FAILED'
+        assert data['newExperiment']['response'] is False
+        message = data['newExperiment']['responseText']
+        assert url in message
+        assert fittingresult.name in message
+        assert 'could not be run: something failed' in message
+        assert 'Experiment' in message

@@ -415,6 +415,21 @@ class TestDatasetFileDownloadView:
 
 @pytest.mark.django_db
 class TestDatasetArchiveView:
+    def test_anonymous_dataset_download_for_running_fittingresult(
+        self, client, queued_fittingresult, my_dataset_with_file,
+    ):
+        queued_fittingresult.fittingresult.dataset = my_dataset_with_file
+        queued_fittingresult.fittingresult.save()
+
+        response = client.get(
+            '/datasets/%d/archive' % my_dataset_with_file.pk,
+            HTTP_AUTHORIZATION='Token {}'.format(queued_fittingresult.signature)
+        )
+
+        assert response.status_code == 200
+        archive = zipfile.ZipFile(BytesIO(response.content))
+        assert archive.filelist[0].filename == 'mydataset.csv'
+
     def test_download_archive(self, my_dataset_with_file, client):
         response = client.get('/datasets/%d/archive' % my_dataset_with_file.pk)
         assert response.status_code == 200

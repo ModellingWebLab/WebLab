@@ -1,5 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from guardian.shortcuts import get_objects_for_user
 
 from core.models import VisibilityModelMixin
 from core.visibility import Visibility
@@ -202,6 +203,30 @@ def _set_class_links(entity_cache_type, version_cache_type, tag_cache_type):
     tag_cache_type.CachedVersionClass = version_cache_type
 
 
+class CachedEntityVersionManager(models.Manager):
+    def visible_to_user(self, user):
+        """Query over all cached entity versions that the given user can view.
+
+        This includes those versions of entities of the relevant type for which either:
+        - the user is the author of the related entity
+        - the entity version is non-private
+        - or the entity is explicitly shared with the user
+        """
+        non_private = self.filter(visibility__in=['public', 'moderated'])
+
+        if user.is_authenticated:
+            shared_pks = get_objects_for_user(
+                user, 'entities.edit_entity', with_superuser=False
+            ).values_list('pk', flat=True)
+            shared = self.filter(entity__entity__pk__in=shared_pks)
+            owned = self.filter(entity__entity__author=user)
+        else:
+            shared = self.none()
+            owned = self.none()
+
+        return non_private | owned | shared
+
+
 ####################################################################################################
 #
 # Concrete cache classes go here
@@ -215,6 +240,12 @@ class CachedModel(CachedEntity):
 class CachedModelVersion(CachedEntityVersion):
     """Cache for a single version / commit in a CellML model's repository."""
     entity = models.ForeignKey(CachedModel, on_delete=models.CASCADE, related_name='versions')
+
+    objects = CachedEntityVersionManager()
+
+    @property
+    def model(self):
+        return self.entity.entity
 
 
 class CachedModelTag(CachedEntityTag):
@@ -235,6 +266,12 @@ class CachedProtocolVersion(CachedEntityVersion):
     """Cache for a single version / commit in a protocol's repository."""
     entity = models.ForeignKey(CachedProtocol, on_delete=models.CASCADE, related_name='versions')
 
+    objects = CachedEntityVersionManager()
+
+    @property
+    def protocol(self):
+        return self.entity.entity
+
 
 class CachedProtocolTag(CachedEntityTag):
     """Cache for a tag in a protocol's repository."""
@@ -253,6 +290,12 @@ class CachedFittingSpec(CachedEntity):
 class CachedFittingSpecVersion(CachedEntityVersion):
     """Cache for a single version / commit in a fitting specifications's repository."""
     entity = models.ForeignKey(CachedFittingSpec, on_delete=models.CASCADE, related_name='versions')
+
+    objects = CachedEntityVersionManager()
+
+    @property
+    def fittingspec(self):
+        return self.entity.entity
 
 
 class CachedFittingSpecTag(CachedEntityTag):

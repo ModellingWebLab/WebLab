@@ -66,6 +66,24 @@ result_patterns = [
         views.FittingResultComparisonJsonView.as_view(),
         name='compare_json',
     ),
+
+    url(
+        r'^new$',
+        views.FittingResultCreateView.as_view(),
+        name='new'
+    ),
+
+    url(
+        r'^new/filter$',
+        views.FittingResultFilterJsonView.as_view(),
+        name='filter_json',
+    ),
+
+    url(
+        r'^rerun$',
+        views.FittingResultRerunView.as_view(),
+        name='rerun'
+    ),
 ]
 
 urlpatterns = [

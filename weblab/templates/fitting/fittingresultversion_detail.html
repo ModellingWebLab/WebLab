@@ -33,7 +33,7 @@
         <span id="exptStatus"></span>
 
         {% if perms.run_fits %}
-          <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        <a id="rerunExperiment" data-href="{% url "fitting:result:rerun" %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
         {% can_delete_entity version as can_delete %}
@@ -48,6 +48,8 @@
         <a href="{% url 'entities:version' 'model' fittingresult.model.pk fittingresult.model_version.sha %}">{{ fittingresult.model.name }} @ {{ fittingresult.nice_model_version }}</a>
           &amp; protocol:
           <a href="{% url 'entities:version' 'protocol' fittingresult.protocol.pk fittingresult.protocol_version.sha %}">{{ fittingresult.protocol.name }} @ {{ fittingresult.nice_protocol_version }}</a>
+          &amp; fitting spec:
+          <a href="{% url 'fitting:version' 'spec' fittingresult.fittingspec.pk fittingresult.fittingspec_version.sha %}">{{ fittingresult.fittingspec.name }} @ {{ fittingresult.nice_fittingspec_version }}</a>
 
       </small>
     </div>

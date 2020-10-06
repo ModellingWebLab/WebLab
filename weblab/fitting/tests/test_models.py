@@ -139,6 +139,7 @@ class TestFittingResult:
 
         assert fitres.nice_model_version == fitres.model.repocache.latest_version.sha[:8] + '...'
         assert fitres.nice_protocol_version == fitres.protocol.repocache.latest_version.sha[:8] + '...'
+        assert fitres.nice_fittingspec_version == fitres.fittingspec.repocache.latest_version.sha[:8] + '...'
 
         fitres.model.repo.tag('v1')
         populate_entity_cache(fitres.model)
@@ -146,8 +147,11 @@ class TestFittingResult:
 
         fitres.protocol.repo.tag('v2')
         populate_entity_cache(fitres.protocol)
-
         assert fitres.nice_protocol_version == 'v2'
+
+        fitres.fittingspec.repo.tag('v3')
+        populate_entity_cache(fitres.fittingspec)
+        assert fitres.nice_fittingspec_version == 'v3'
 
     def test_visibility(self, helpers):
         model = recipes.model.make()
@@ -156,12 +160,12 @@ class TestFittingResult:
         ds2 = recipes.dataset.make(visibility='public')
         fittingspec = recipes.fittingspec.make()
 
-        mv1 = helpers.cached_version(model, visibility='private')
-        mv2 = helpers.cached_version(model, visibility='public')
-        pv1 = helpers.cached_version(protocol, visibility='private')
-        pv2 = helpers.cached_version(protocol, visibility='public')
-        fv1 = helpers.cached_version(fittingspec, visibility='private')
-        fv2 = helpers.cached_version(fittingspec, visibility='public')
+        mv1 = helpers.add_cached_version(model, visibility='private')
+        mv2 = helpers.add_cached_version(model, visibility='public')
+        pv1 = helpers.add_cached_version(protocol, visibility='private')
+        pv2 = helpers.add_cached_version(protocol, visibility='public')
+        fv1 = helpers.add_cached_version(fittingspec, visibility='private')
+        fv2 = helpers.add_cached_version(fittingspec, visibility='public')
 
         # all public
         assert recipes.fittingresult.make(
@@ -224,9 +228,9 @@ class TestFittingResult:
         # (https://github.com/ModellingWebLab/WebLab/issues/247)
         # so test with a public dataset for now
         dataset = recipes.dataset.make(visibility='public')
-        mv = helpers.cached_version(model, visibility='private')
-        pv = helpers.cached_version(protocol, visibility='private')
-        fv = helpers.cached_version(fittingspec, visibility='private')
+        mv = helpers.add_cached_version(model, visibility='private')
+        pv = helpers.add_cached_version(protocol, visibility='private')
+        fv = helpers.add_cached_version(fittingspec, visibility='private')
 
         fr = recipes.fittingresult.make(
             model=model, model_version=mv,
@@ -254,9 +258,9 @@ class TestFittingResult:
         protocol = recipes.protocol.make()
         fittingspec = recipes.fittingspec.make()
         dataset = recipes.dataset.make(visibility='public')
-        mv = helpers.cached_version(model, visibility='public')
-        pv = helpers.cached_version(protocol, visibility='public')
-        fv = helpers.cached_version(fittingspec, visibility='public')
+        mv = helpers.add_cached_version(model, visibility='public')
+        pv = helpers.add_cached_version(protocol, visibility='public')
+        fv = helpers.add_cached_version(fittingspec, visibility='public')
 
         fr = recipes.fittingresult.make(
             model=model, model_version=mv,

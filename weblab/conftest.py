@@ -13,6 +13,7 @@ from accounts.models import User
 from core import recipes
 from datasets.models import Dataset
 from entities.models import Entity
+from fitting.models import FittingResult
 from repocache.populate import populate_entity_cache
 
 
@@ -43,8 +44,11 @@ class Helpers:
         return commit
 
     @staticmethod
-    def cached_version(entity, **kwargs):
-        """Add a single commit/version to an entity and return the relevant repocache entry"""
+    def add_cached_version(entity, **kwargs):
+        """
+        Add a single commit/version to an entity along with a repocache entry.
+        @return the relevant repocache entry
+        """
         assert kwargs.get('cache', True), "Cache must be true for cached version"
         version = Helpers.add_version(entity, **kwargs)
         return entity.repocache.get_version(version.sha)
@@ -98,6 +102,17 @@ class Helpers:
     @staticmethod
     def login(client, user):
         client.login(username=user.email, password='password')
+
+    @staticmethod
+    def link_to_protocol(protocol, *objects):
+        """
+        Link given objects to protocol (fitting specs or datasets)
+        @param protocol - protocol to link to
+        @param objects - list of objects to link to the protocol
+        """
+        for obj in objects:
+            obj.protocol = protocol
+            obj.save()
 
 
 @pytest.fixture
@@ -156,28 +171,28 @@ def fittingspec_with_version():
 
 @pytest.fixture
 def public_model(helpers):
-    model = recipes.model.make()
+    model = recipes.model.make(name='public model')
     helpers.add_version(model, visibility='public')
     return model
 
 
 @pytest.fixture
 def public_protocol(helpers):
-    protocol = recipes.protocol.make()
+    protocol = recipes.protocol.make(name='public protocol')
     helpers.add_version(protocol, visibility='public')
     return protocol
 
 
 @pytest.fixture
 def public_fittingspec(helpers):
-    fittingspec = recipes.fittingspec.make()
+    fittingspec = recipes.fittingspec.make(name='public fitting spec')
     helpers.add_version(fittingspec, visibility='public')
     return fittingspec
 
 
 @pytest.fixture
-def public_dataset(helpers):
-    dataset = recipes.dataset.make(visibility='public')
+def public_dataset():
+    dataset = recipes.dataset.make(visibility='public', name='public dataset')
     return dataset
 
 
@@ -196,6 +211,32 @@ def moderated_protocol(helpers):
 
 
 @pytest.fixture
+def private_model(helpers):
+    model = recipes.model.make(name='private model')
+    helpers.add_version(model, visibility='private')
+    return model
+
+
+@pytest.fixture
+def private_protocol(helpers):
+    protocol = recipes.protocol.make(name='private protocol')
+    helpers.add_version(protocol, visibility='private')
+    return protocol
+
+
+@pytest.fixture
+def private_fittingspec(helpers):
+    fittingspec = recipes.fittingspec.make(name='private fittingspec')
+    helpers.add_version(fittingspec, visibility='private')
+    return fittingspec
+
+
+@pytest.fixture
+def private_dataset():
+    return recipes.dataset.make(name='private dataset', visibility='private')
+
+
+@pytest.fixture
 def queued_experiment(model_with_version, protocol_with_version):
     version = recipes.experiment_version.make(
         status='QUEUED',
@@ -203,6 +244,22 @@ def queued_experiment(model_with_version, protocol_with_version):
         experiment__model_version=model_with_version.repocache.latest_version,
         experiment__protocol=protocol_with_version,
         experiment__protocol_version=protocol_with_version.repocache.latest_version,
+    )
+    recipes.running_experiment.make(runnable=version)
+    return version
+
+
+@pytest.fixture
+def queued_fittingresult(public_model, public_protocol, public_fittingspec, public_dataset):
+    version = recipes.fittingresult_version.make(
+        status='QUEUED',
+        fittingresult__model=public_model,
+        fittingresult__model_version=public_model.repocache.latest_version,
+        fittingresult__protocol=public_protocol,
+        fittingresult__protocol_version=public_protocol.repocache.latest_version,
+        fittingresult__fittingspec=public_fittingspec,
+        fittingresult__fittingspec_version=public_fittingspec.repocache.latest_version,
+        fittingresult__dataset=public_dataset,
     )
     recipes.running_experiment.make(runnable=version)
     return version
@@ -321,6 +378,18 @@ def model_creator(user, helpers):
 def moderator(user, helpers):
     helpers.add_permission(user, 'moderator')
     return user
+
+
+@pytest.fixture
+def fits_user(logged_in_user):
+    """User with permission to run fittings"""
+    content_type = ContentType.objects.get_for_model(FittingResult)
+    permission = Permission.objects.get(
+        codename='run_fits',
+        content_type=content_type,
+    )
+    logged_in_user.user_permissions.add(permission)
+    return logged_in_user
 
 
 @pytest.fixture

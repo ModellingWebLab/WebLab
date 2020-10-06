@@ -33,7 +33,7 @@
         <span id="exptStatus"></span>
 
         {% if perms.create_experiment %}
-          <a id="rerunExperiment"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        <a id="rerunExperiment" data-href="{% url "experiment:new" %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
         {% can_delete_entity version as can_delete %}

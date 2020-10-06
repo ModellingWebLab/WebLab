@@ -8,6 +8,7 @@ require('./db.js');
 var entity = require('./entity.js');
 var experiment = require('./experiment.js');
 var notifications = require('./lib/notifications.js');
+var fitting = require('./fitting.js');
 require('./compare.js');
 require('./entity_version_list.js');
 require('./experiment_tasks.js');
@@ -168,6 +169,10 @@ function initPage ()
     addText: 'add another',
     deleteText: 'remove',
   });
+
+  if ($('#fitting-result-submit').length > 0) {
+    fitting.init();
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initPage, false);

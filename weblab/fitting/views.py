@@ -13,20 +13,31 @@ by removing the hardcoded 'entities:' namespace from reverse() calls.
 from braces.views import UserFormKwargsMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.text import get_valid_filename
 from django.views import View
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import CreateView
+from django.views.generic.edit import CreateView, FormView
 
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
+from datasets.models import Dataset
+from entities.models import ModelEntity, ProtocolEntity
 from entities.views import EntityNewVersionView, EntityTypeMixin, RenameView
+from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion
 
-from .forms import FittingSpecForm, FittingSpecRenameForm, FittingSpecVersionForm
-from .models import FittingResult, FittingResultVersion
+from .forms import (
+    FittingResultCreateForm,
+    FittingSpecForm,
+    FittingSpecRenameForm,
+    FittingSpecVersionForm,
+)
+from .models import FittingResult, FittingResultVersion, FittingSpec
+from .processing import submit_fitting
 
 
 class FittingSpecCreateView(
@@ -64,6 +75,7 @@ class FittingResultVersionListView(VisibilityMixin, DetailView):
 
 
 class FittingResultVersionView(VisibilityMixin, DetailView):
+    """Show a version of a fitting result"""
     model = FittingResultVersion
     context_object_name = 'version'
 
@@ -202,3 +214,224 @@ class FittingResultComparisonJsonView(View):
         }
 
         return JsonResponse(response)
+
+
+class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, FormView):
+    """
+    Create and submit a fitting result from models, protocols, fitting specs and datasets
+    and (where relevant) their versions.
+    """
+    permission_required = 'fitting.run_fits'
+    form_class = FittingResultCreateForm
+
+    template_name = 'fitting/fittingresult_create_form.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        model_id = self.request.GET.get('model')
+        model_version_id = self.request.GET.get('model_version')
+        protocol_id = self.request.GET.get('protocol')
+        protocol_version_id = self.request.GET.get('protocol_version')
+        fittingspec_id = self.request.GET.get('fittingspec')
+        fittingspec_version_id = self.request.GET.get('fittingspec_version')
+        dataset_id = self.request.GET.get('dataset')
+
+        if model_version_id:
+            initial['model_version'] = get_object_or_404(
+                CachedModelVersion.objects.visible_to_user(self.request.user),
+                pk=model_version_id)
+            initial['model'] = initial['model_version'].model
+        elif model_id:
+            initial['model'] = get_object_or_404(
+                ModelEntity.objects.visible_to_user(self.request.user),
+                pk=model_id)
+
+        if protocol_version_id:
+            initial['protocol_version'] = get_object_or_404(
+                CachedProtocolVersion.objects.visible_to_user(self.request.user),
+                pk=protocol_version_id)
+            initial['protocol'] = initial['protocol_version'].protocol
+        elif protocol_id:
+            initial['protocol'] = get_object_or_404(
+                ProtocolEntity.objects.visible_to_user(self.request.user),
+                pk=protocol_id)
+
+        if fittingspec_version_id:
+            initial['fittingspec_version'] = get_object_or_404(
+                CachedFittingSpecVersion.objects.visible_to_user(self.request.user),
+                pk=fittingspec_version_id)
+            initial['fittingspec'] = initial['fittingspec_version'].fittingspec
+        elif fittingspec_id:
+            initial['fittingspec'] = get_object_or_404(
+                FittingSpec.objects.visible_to_user(self.request.user),
+                pk=fittingspec_id)
+
+        if dataset_id:
+            initial['dataset'] = get_object_or_404(
+                Dataset.objects.visible_to_user(self.request.user),
+                pk=dataset_id)
+
+        return initial
+
+    def form_valid(self, form):
+        self.runnable, is_new = submit_fitting(
+            form.cleaned_data['model_version'],
+            form.cleaned_data['protocol_version'],
+            form.cleaned_data['fittingspec_version'],
+            form.cleaned_data['dataset'],
+            self.request.user,
+            True,
+        )
+
+        queued = self.runnable.status == FittingResultVersion.STATUS_QUEUED
+
+        if is_new:
+            if queued:
+                messages.info(self.request, "Fitting experiment submitted to the queue.")
+            else:
+                messages.error(self.request, "Fitting experiment could not be run: " + self.runnable.return_text)
+        else:
+            messages.info(self.request, "Fitting experiment was already run.")
+
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('fitting:result:version', args=[self.runnable.fittingresult.pk, self.runnable.pk])
+
+
+class FittingResultFilterJsonView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    """
+    JSON view of valid fitting result input values based on those already selected
+
+    For example, if a model id is specified (as a GET param), only versions of that model
+    (which are visible to the user) will be included in the results. Otherwise all visible
+    models and versions will be in the results (which are simply a list of database
+    IDs of the relevant objects)
+
+    Connections between protocols, fitting specs and datasets are also enforced.
+    """
+    permission_required = 'fitting.run_fits'
+
+    def get(self, request, *args, **kwargs):
+        options = {}
+
+        model_versions = CachedModelVersion.objects.visible_to_user(request.user)
+        models = ModelEntity.objects.filter(cachedmodel__versions__in=model_versions)
+        protocol_versions = CachedProtocolVersion.objects.visible_to_user(request.user)
+        protocols = ProtocolEntity.objects.filter(cachedprotocol__versions__in=protocol_versions)
+        fittingspec_versions = CachedFittingSpecVersion.objects.visible_to_user(request.user)
+        fittingspecs = FittingSpec.objects.filter(cachedfittingspec__versions__in=fittingspec_versions)
+        datasets = Dataset.objects.visible_to_user(request.user)
+
+        def _get_int_param(fieldname, _model):
+            try:
+                pk = int(request.GET.get(fieldname, ''))
+                return _model.objects.get(pk=pk)
+            except ValueError:
+                pass
+            except ObjectDoesNotExist:
+                pass
+
+        model = _get_int_param('model', ModelEntity)
+        protocol = _get_int_param('protocol', ProtocolEntity)
+        fittingspec = _get_int_param('fittingspec', FittingSpec)
+        dataset = _get_int_param('dataset', Dataset)
+
+        if not protocol:
+            if fittingspec:
+                protocol = fittingspec.protocol
+                protocols = [protocol]
+            elif dataset:
+                protocol = dataset.protocol
+                protocols = [protocol]
+
+        # Restrict to versions of specified model
+        if model:
+            model_versions = model_versions.filter(entity__entity=model)
+
+        # Restrict to versions of specified fitting spec
+        if fittingspec:
+            fittingspec_versions = fittingspec_versions.filter(entity__entity=fittingspec)
+
+        # Restrict to versions of specified protocol
+        if protocol:
+            protocol_versions = protocol_versions.filter(entity__entity=protocol)
+
+            # If no fitting spec was chosen yet, restrict to those linked to this protocol
+            if not fittingspec:
+                fittingspecs = fittingspecs.filter(protocol=protocol.id)
+                fsids = [fs.pk for fs in fittingspecs.filter(protocol=protocol.id)]
+                fittingspec_versions = fittingspec_versions.filter(entity__entity__in=fsids)
+
+            # If no dataset was chosen yet, restrict to those linked to this protocol
+            if not dataset:
+                datasets = datasets.filter(protocol=protocol.id)
+
+        # These might be either querysets or ID lists
+        def _get_ids(qs):
+            return [item.id for item in qs]
+
+        options['models'] = _get_ids(models)
+        options['model_versions'] = _get_ids(model_versions)
+        options['protocols'] = _get_ids(protocols)
+        options['protocol_versions'] = _get_ids(protocol_versions)
+        options['fittingspecs'] = _get_ids(fittingspecs)
+        options['fittingspec_versions'] = _get_ids(fittingspec_versions)
+        options['datasets'] = _get_ids(datasets)
+
+        return JsonResponse({
+            'fittingResultOptions': options
+        })
+
+
+class FittingResultRerunView(PermissionRequiredMixin, View):
+    permission_required = 'fitting.run_fits'
+
+    def handle_no_permission(self):
+        return JsonResponse({
+            'newExperiment': {
+                'response': False,
+                'responseText': 'You are not allowed to run fitting experiments',
+            }
+        })
+
+    def post(self, request, *args, **kwargs):
+        if 'rerun' in request.POST:
+            version = get_object_or_404(FittingResultVersion, pk=request.POST['rerun'])
+
+            version, is_new = submit_fitting(
+                version.fittingresult.model_version,
+                version.fittingresult.protocol_version,
+                version.fittingresult.fittingspec_version,
+                version.fittingresult.dataset,
+                request.user,
+                rerun_ok=True
+            )
+
+            queued = version.status == FittingResultVersion.STATUS_QUEUED
+            version_url = reverse('fitting:result:version', args=[version.fittingresult.id, version.id])
+            if queued:
+                msg = " submitted to the queue."
+            else:
+                msg = " could not be run: " + version.return_text
+
+            return JsonResponse({
+                'newExperiment': {
+                    'expId': version.fittingresult.id,
+                    'versionId': version.id,
+                    'url': version_url,
+                    'expName': version.fittingresult.name,
+                    'status': version.status,
+                    'response': (not is_new) or queued,
+                    'responseText': "<a href='{}'>Experiment {}</a> {}".format(
+                        version_url, version.fittingresult.name, msg
+                    )
+                }
+            })
+        else:
+            return JsonResponse({
+                'newExperiment': {
+                    'response': False,
+                    'responseText': 'You must specify a fitting experiment to rerun',
+                }
+            })
