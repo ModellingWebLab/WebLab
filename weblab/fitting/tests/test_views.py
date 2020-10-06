@@ -17,16 +17,6 @@ from fitting.models import FittingResult, FittingResultVersion, FittingSpec
 from repocache.populate import populate_entity_cache
 
 
-@pytest.fixture
-def fits_user(logged_in_user):
-    content_type = ContentType.objects.get_for_model(FittingResult)
-    permission = Permission.objects.get(
-        codename='run_fits',
-        content_type=content_type,
-    )
-    logged_in_user.user_permissions.add(permission)
-    return logged_in_user
-
 
 @pytest.fixture
 def archive_file_path():
