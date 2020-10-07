@@ -42,12 +42,12 @@ from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingSpec
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedProtocolVersion
+from accounts.forms import OwnershipTransferForm
 
 from .forms import (
     EntityChangeVisibilityForm,
     EntityCollaboratorFormSet,
     EntityTagVersionForm,
-    EntityTransferForm,
     EntityVersionForm,
     FileUploadForm,
     ModelEntityForm,
