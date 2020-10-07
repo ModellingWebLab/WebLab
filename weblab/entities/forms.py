@@ -14,7 +14,7 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating an entirely new entity."""
     def clean_name(self):
         name = self.cleaned_data['name']
-        if self._meta.model.objects.filter(name=name).exists():
+        if self._meta.model.objects.filter(name=name, author=self.user).exists():
             raise ValidationError(
                 'You already have a %s named "%s"' % (self._meta.model.display_type, name))
 
@@ -31,6 +31,30 @@ class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
     @property
     def entity_type(self):
         return self._meta.model.entity_type
+
+
+class EntityRenameForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for renaming an existing entity."""
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if self._meta.model.objects.filter(author=self.user, name=name).exists():
+            raise ValidationError(
+                'You already have a %s named "%s"' % (self._meta.model.display_type, name))
+
+        return name
+
+
+class ModelEntityRenameForm(EntityRenameForm):
+    class Meta:
+        model = ModelEntity
+        fields = ['name']
+
+
+class ProtocolEntityRenameForm(EntityRenameForm):
+    class Meta:
+        model = ProtocolEntity
+        fields = ['name']
 
 
 class ModelEntityForm(EntityForm):

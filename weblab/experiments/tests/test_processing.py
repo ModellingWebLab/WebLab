@@ -39,13 +39,13 @@ class TestSubmitExperiment:
             user, model_with_version, protocol_with_version):
         model = model_with_version
         protocol = protocol_with_version
-        model_version = model.repo.latest_commit.sha
-        protocol_version = protocol.repo.latest_commit.sha
+        model_version = model.repocache.latest_version
+        protocol_version = protocol.repocache.latest_version
 
         assert Experiment.objects.count() == 0
         assert RunningExperiment.objects.count() == 0
 
-        version, is_new = submit_experiment(model, model_version, protocol, protocol_version, user, False)
+        version, is_new = submit_experiment(model_version, protocol_version, user, False)
         assert is_new
 
         # Check properties of the new experiment & version
@@ -53,16 +53,16 @@ class TestSubmitExperiment:
         assert version.experiment.model == model
         assert version.experiment.protocol == protocol
         assert version.author == user
-        assert version.experiment.model_version.sha == model_version
-        assert version.experiment.protocol_version.sha == protocol_version
+        assert version.experiment.model_version == model_version
+        assert version.experiment.protocol_version == protocol_version
         assert version.experiment.author == user
         assert version.status == ExperimentVersion.STATUS_QUEUED
 
         # Check it did submit to the webservice
-        model_url = '/entities/models/%d/versions/%s/archive' % (model.pk, model_version)
+        model_url = '/entities/models/%d/versions/%s/archive' % (model.pk, model_version.sha)
         protocol_url = (
             '/entities/protocols/%d/versions/%s/archive' %
-            (protocol.pk, protocol_version))
+            (protocol.pk, protocol_version.sha))
 
         assert mock_post.call_count == 1
         assert mock_post.call_args[0][0] == settings.CHASTE_URL
@@ -106,8 +106,7 @@ class TestSubmitExperiment:
                                              protocol=protocol,
                                              protocol_version=protocol_version)
 
-        version, is_new = submit_experiment(model, model_version.sha,
-                                            protocol, protocol_version.sha, user, False)
+        version, is_new = submit_experiment(model_version, protocol_version, user, False)
 
         assert is_new
         assert version.experiment == experiment
@@ -121,7 +120,7 @@ class TestSubmitExperiment:
 
         mock_post.side_effect = generate_response('something %s')
         with pytest.raises(ProcessingException):
-            submit_experiment(model, model_version.sha, protocol, protocol_version.sha, user, False)
+            submit_experiment(model_version, protocol_version, user, False)
 
         # There should be no running experiment
         assert RunningExperiment.objects.count() == 0
@@ -144,7 +143,7 @@ class TestSubmitExperiment:
 
         mock_post.side_effect = generate_response('%s an error occurred')
 
-        version, is_new = submit_experiment(model, model_version.sha, protocol, protocol_version.sha, user, False)
+        version, is_new = submit_experiment(model_version, protocol_version, user, False)
 
         assert is_new
         assert version.status == ExperimentVersion.STATUS_FAILED
@@ -160,7 +159,7 @@ class TestSubmitExperiment:
 
         mock_post.side_effect = generate_response('%s inapplicable')
 
-        version, is_new = submit_experiment(model, model_version.sha, protocol, protocol_version.sha, user, False)
+        version, is_new = submit_experiment(model_version, protocol_version, user, False)
 
         assert is_new
         assert version.status == ExperimentVersion.STATUS_INAPPLICABLE

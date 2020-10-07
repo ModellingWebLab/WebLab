@@ -21,7 +21,7 @@ class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def clean_name(self):
         name = self.cleaned_data['name']
-        if self._meta.model.objects.filter(name=name).exists():
+        if self._meta.model.objects.filter(name=name, author=self.user).exists():
             raise ValidationError(
                 'You already have a dataset named "%s"' % (name))
         return name
@@ -74,3 +74,19 @@ class DatasetTransferForm(UserKwargModelFormMixin, forms.Form):
 
         self.cleaned_data['user'] = user
         return email
+
+
+class DatasetRenameForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for renaming an existing entity."""
+    class Meta:
+        model = Dataset
+        fields = ['name']
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if self._meta.model.objects.filter(author=self.user, name=name).exists():
+            raise ValidationError(
+                'You already have a dataset named "%s"' % name)
+
+        return name
+

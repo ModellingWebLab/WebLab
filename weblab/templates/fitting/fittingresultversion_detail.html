@@ -2,22 +2,22 @@
 {% load staticfiles %}
 {% load experiments %}
 
-{% block title %}Experiment details - {% endblock title %}
+{% block title %}Fitting result details - {% endblock title %}
 
 {% block body_id %}experiment-version{% endblock %}
 
 {% block content %}
-  {% with version.experiment as experiment %}
-  {% include "./includes/experiment_header.html" %}
+  {% with version.fittingresult as fittingresult %}
+  {% include "./includes/fittingresult_header.html" %}
 
   <div id="entitydetails"></div>
 
   <div id="entityversion"
-       data-version-href="{% url 'experiments:version' experiment.id version.id %}"
-       data-version-json-href="{% url 'experiments:version_json' experiment.id version.id %}">
+       data-version-href="{% url 'fitting:result:version' fittingresult.id version.id %}"
+       data-version-json-href="{% url 'fitting:result:version_json' fittingresult.id version.id %}">
     <div class="closebtn">
       <small>
-        <a href="{% url 'experiments:versions' experiment.id %}">list all versions</a>
+        <a href="{% url 'fitting:result:versions' fittingresult.id %}">list all versions</a>
       </small>
     </div>
     <h2 id="entityversionname">
@@ -32,29 +32,31 @@
         <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
         <span id="exptStatus"></span>
 
-        {% if perms.create_experiment %}
-        <a id="rerunExperiment" data-href="{% url "experiment:new" %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        {% if perms.run_fits %}
+        <a id="rerunExperiment" data-href="{% url "fitting:result:rerun" %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
         {% can_delete_entity version as can_delete %}
         {% if can_delete %}
-          Delete experiment version:
-          <a title="delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
-            <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
-                title="delete this version of this experiment"/></a>
+          Delete fitting result version:
+          <a title="delete this version of this fitting result" href="{% url 'fitting:result:delete_version' fittingresult.id version.id %}">
+            <img src="{% static 'img/delete.png' %}" alt="delete this version of this fitting result"
+                title="delete this version of this fitting result"/></a>
         {% endif %}
 
         <br/>Corresponding model:
-        <a href="{% url 'entities:version' 'model' experiment.model.pk experiment.model_version.sha %}">{{ experiment.model.name }} @ {{ experiment.nice_model_version }}</a>
+        <a href="{% url 'entities:version' 'model' fittingresult.model.pk fittingresult.model_version.sha %}">{{ fittingresult.model.name }} @ {{ fittingresult.nice_model_version }}</a>
           &amp; protocol:
-          <a href="{% url 'entities:version' 'protocol' experiment.protocol.pk experiment.protocol_version.sha %}">{{ experiment.protocol.name }} @ {{ experiment.nice_protocol_version }}</a>
+          <a href="{% url 'entities:version' 'protocol' fittingresult.protocol.pk fittingresult.protocol_version.sha %}">{{ fittingresult.protocol.name }} @ {{ fittingresult.nice_protocol_version }}</a>
+          &amp; fitting spec:
+          <a href="{% url 'fitting:version' 'spec' fittingresult.fittingspec.pk fittingresult.fittingspec_version.sha %}">{{ fittingresult.fittingspec.name }} @ {{ fittingresult.nice_fittingspec_version }}</a>
 
       </small>
     </div>
 
     {% if not version.is_latest %}
       <p class="info">
-        Note: there is a <a href="{% url 'experiments:version' experiment.id experiment.latest_version.id %}">later version of this experiment</a>.
+        Note: there is a <a href="{% url 'fitting:result:version' fittingresult.id fittingresult.latest_version.id %}">newer run of this fitting experiment</a>.
       </p>
     {% endif %}
 
@@ -64,17 +66,17 @@
 
     <div id="running-experiment-note" style="display:none;">
       <p>
-        This experiment has not yet finished running, and so no result files are available.
+        This fitting experiment has not yet finished running, and so no result files are available.
         You can refresh the page to see if it has completed.
       </p>
     </div>
 
-    {% if experiment.protocol.protocol_experimental_datasets.exists %}
+    {% if fittingresult.protocol.protocol_experimental_datasets.exists %}
     <div id="dataset-link-div">
-      <span>Overlay a dataset linked to this protocol:</span>
+      <span>Overlay a dataset linked to the associated protocol:</span>
       <select id="dataset-link">
         <option selected value="">None</option>
-        {% dataset_options experiment %}
+        {% dataset_options fittingresult %}
       </select>
     </div>
     {% endif %}

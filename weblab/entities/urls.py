@@ -141,6 +141,12 @@ urlpatterns = [
         views.TransferView.as_view(),
         name='transfer',
     ),
+    
+    url(
+        r'^%s/(?P<pk>\d+)/rename$' % _ENTITY_TYPE,
+        views.RenameView.as_view(),
+        name='rename',
+    ),
 
     url(
         r'^%s/diff(?P<versions>(/\d+:%s){2})/%s$' % (_ENTITY_TYPE, _COMMIT, _FILENAME),

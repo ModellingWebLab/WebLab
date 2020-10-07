@@ -5,6 +5,7 @@ from . import views
 
 _FILENAME = r'(?P<filename>[\w\-. \%:]+)'
 _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
+
 urlpatterns = [
     url(
         '^'
@@ -66,5 +67,11 @@ urlpatterns = [
         r'^(?P<pk>\d+)/transfer$',
         views.DatasetTransferView.as_view(),
         name='transfer',
+    ),
+    
+    url(
+        r'^(?P<pk>\d+)/rename$',
+        views.DatasetRenameView.as_view(),
+        name='rename',
     ),
 ]

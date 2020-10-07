@@ -27,10 +27,20 @@ var entities = {}, // Contains information about each experiment being compared
 	metadataToParse = 0, metadataParsed = 0, defaultViz = null, defaultVizCount = 0,
 	// State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol
 	firstModelName = "", firstModelVersion = "", firstProtoName = "", firstProtoVersion = "",
-	singleModel = true, singleProto = true,
-  modelsWithMultipleVersions = [], protocolsWithMultipleVersions = [];
-  compareModelVersions = false, compareProtocolVersions = false;
-
+  firstFittingSpecName = "", firstFittingSpecVersion = "", firstDatasetName = "",
+  modelsWithMultipleVersions = [], protocolsWithMultipleVersions = [], fittingSpecsWithMultipleVersions = [],
+  singleEntities = {
+    model: true,
+    protocol: true,
+    fittingspec: true,
+    dataset: true,
+  },
+  versionComparisons = {
+    model: false,
+    protocol: false,
+    fittingspec: false,
+    dataset: false,
+  };
 
 
 function nextPage (url, replace)
@@ -111,8 +121,8 @@ function highlightPlots (entity, showDefault)
 					var viz = document.getElementById("filerow-" + data_file_code + "-viz-displayPlotFlot");
 					if (viz)
 					{
-						var thisCount = singleProto ? plotDescription.length : f.entities.length;
-						if ((!singleProto || i == 1) && thisCount > defaultVizCount)
+						var thisCount = singleEntities.protocol ? plotDescription.length : f.entities.length;
+						if ((!singleEntities.protocol || i == 1) && thisCount > defaultVizCount)
 						{
 //    				        console.log("Set default viz to " + plotDescription[i][0]);
 							defaultViz = viz;
@@ -239,10 +249,15 @@ function parseEntities (entityObj)
 	firstModelVersion = entityObj[0].modelVersion;
 	firstProtoName = entityObj[0].protoName;
 	firstProtoVersion = entityObj[0].protoVersion;
+	firstFittingSpecName = entityObj[0].fittingSpecName;
+	firstFittingSpecVersion = entityObj[0].fittingSpecVersion;
+  firstDatasetName = entityObj[0].datasetName;
   var versionsOfModels = {};
   var versionsOfProtocols = {};
+  var versionsOfFittingSpecs ={};
   modelsWithMultipleVersions = [];
   protocolsWithMultipleVersions = [];
+  fittingSpecsWithMultipleVersions = [];
 
     // Sort entityObj list by .name
     entityObj.sort(function(a,b) {return (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) ? 1 : ((b.name.toLocaleLowerCase() > a.name.toLocaleLowerCase()) ? -1 : 0);});
@@ -251,26 +266,41 @@ function parseEntities (entityObj)
 	{
 		var entity = entityObj[i];
 
-    if (singleModel && (entity.modelName != firstModelName)) {
-      singleModel = false;
+    if (singleEntities.model && (entity.modelName != firstModelName)) {
+      singleEntities.model = false;
     }
 
     if (versionsOfModels[entity.modelName] === undefined) {
       versionsOfModels[entity.modelName] = entity.modelVersion;
     } else if (versionsOfModels[entity.modelName] != entity.modelVersion) {
       modelsWithMultipleVersions.push(entity.modelName);
-      compareModelVersions = true;
+      versionComparisons.model = true;
     }
 
-    if (singleProto && (entity.protoName != firstProtoName)) {
-      singleProto = false;
+    if (singleEntities.protocol && (entity.protoName != firstProtoName)) {
+      singleEntities.protocol = false;
     }
 
     if (versionsOfProtocols[entity.protoName] === undefined) {
       versionsOfProtocols[entity.protoName] = entity.protoVersion;
     } else if (versionsOfProtocols[entity.protoName] != entity.protoVersion) {
       protocolsWithMultipleVersions.push(entity.protoName);
-      compareProtocolVersions = true;
+      versionComparisons.protocol = true;
+    }
+
+    if (singleEntities.fittingspec && (entity.fittingSpecName != firstFittingSpecName)) {
+      singleEntities.fittingspec = false;
+    }
+
+    if (versionsOfFittingSpecs[entity.fittingSpecName] === undefined) {
+      versionsOfFittingSpecs[entity.fittingSpecName] = entity.fittingSpecVersion;
+    } else if (versionsOfFittingSpecs[entity.fittingSpecName] != entity.fittingSpecVersion) {
+      fittingSpecsWithMultipleVersions.push(entity.fittingSpecName);
+      versionComparisons.fittingspec = true;
+    }
+
+    if (singleEntities.dataset && (entity.datasetName != firstDatasetName)) {
+      singleEntities.dataset = false;
     }
 
 		// Fill in the entities and files entries for this entity
@@ -303,105 +333,149 @@ function parseEntities (entityObj)
 			}
 	}
 
-  console.log(singleModel ? 'single model' : 'multiple models',
-              compareModelVersions ? ('- compare versions of ' + modelsWithMultipleVersions.join(',')) : '');
-  console.log(singleProto ? 'single protocol' : 'multiple protocols',
-              compareProtocolVersions ? ('- compare versions of ' + protocolsWithMultipleVersions.join(',')) : '');
+  console.log(singleEntities.model ? 'single model' : 'multiple models',
+              versionComparisons.model ? ('- compare versions of ' + modelsWithMultipleVersions.join(',')) : '');
+  console.log(singleEntities.protocol ? 'single protocol' : 'multiple protocols',
+              versionComparisons.protocol ? ('- compare versions of ' + protocolsWithMultipleVersions.join(',')) : '');
+  console.log(singleEntities.fittingspec ? 'single fitting spec' : 'multiple fitting specs',
+              versionComparisons.fittingspec ? ('- compare versions of ' + fittingSpecsWithMultipleVersions.join(',')) : '');
+  console.log(singleEntities.dataset ? 'single dataset' : 'multiple datasets')
 
+  /*
+  // TESTING / DEBUG of different combinations
+  singleEntities = {
+    model: false,
+    protocol: false,
+    fittingspec: false,
+    dataset: false,
+  };
+  versionComparisons = {
+    model: false,
+    protocol: true,
+    fittingspec: false,
+    dataset: false
+  };
+  // END TESTING / DEBUG
+  */
+
+  var entityTypes = ['model', 'protocol'];
+  if (entityType == 'result') entityTypes.push('fittingspec', 'dataset');
+
+  var entityTypeDisplayStrings = {
+    model: 'model',
+    protocol: 'protocol',
+    fittingspec: 'fitting spec',
+    dataset: 'dataset',
+  };
+
+  // List of entity types which have multiple objects
+  var entityTypesToCompare = entityTypes.filter(entitytype => !singleEntities[entitytype]);
+
+  // List of entity types which have multiple versions but not multiple objects
+  var entityVersionsToCompare = entityTypes.filter(entitytype => versionComparisons[entitytype] && singleEntities[entitytype]);
 	
   // Add version info to plot labels where needed
   for (var i = 0; i < entityObj.length; i++)
   {
     var entity = entityObj[i];
+
     var modelDescription = entity.modelName + (modelsWithMultipleVersions.includes(entity.modelName) ? ('@' + entity.modelVersion) : '');
     var protoDescription = entity.protoName + (protocolsWithMultipleVersions.includes(entity.protoName) ? ('@' + entity.protoVersion) : '');
-    if (singleModel && singleProto) {
-      if (compareModelVersions && compareProtocolVersions) {
-        // 5. Single model with multiple versions, single protocol with multiple versions
-        entity.plotName = '@' + entity.modelVersion + ' & @' + entity.protoVersion;
-      } else if (compareProtocolVersions) {
-        // 2. Single model version, single protocol with multiple versions
-        entity.plotName = '@' + entity.protoVersion;
-      } else if (compareModelVersions) {
-        // 4. Single model with multiple versions, single protocol version
-        entity.plotName = '@' + entity.modelVersion;
-      } else {
-        // 1. Single model version, single protocol version
+    var fitspecDescription = entity.fittingSpecName + (fittingSpecsWithMultipleVersions.includes(entity.fittingSpecName) ? ('@' + entity.fittingSpecVersion) : '');
+    var datasetDescription = entity.datasetName;
+
+    // Descriptions of things that have entity comparisons
+    var descriptions = [];
+    if (entityTypesToCompare.includes('model')) descriptions.push(modelDescription);
+    if (entityTypesToCompare.includes('protocol')) descriptions.push(protoDescription);
+    if (entityTypesToCompare.includes('fittingspec')) descriptions.push(fitspecDescription);
+    if (entityTypesToCompare.includes('dataset')) descriptions.push(datasetDescription);
+    var entityDescription = descriptions.join(' & ');
+
+    // Version labels of things that have version comparisons
+    var versionLabels = [];
+    if (entityVersionsToCompare.includes('model')) versionLabels.push('@' + entity.modelVersion);
+    if (entityVersionsToCompare.includes('protocol')) versionLabels.push('@' + entity.protoVersion);
+    if (entityVersionsToCompare.includes('fittingspec')) versionLabels.push('@' + entity.fittingSpecVersion);
+    var versionString = versionLabels.join(' & ');
+
+    if (entityTypesToCompare.length == 0) {
+      // All same entities, possibly different versions of them
+      if (entityVersionsToCompare.length== 0) {
+        // Single versions of everything - show the run number
         entity.plotName = 'Run ' + entity.runNumber;
-      }
-    } else if (singleModel) {
-      if (compareModelVersions) {
-        // 6. Single model with multiple versions, multiple protocols (maybe multiple versions of individual protocols)
-        entity.plotName = '@' + entity.modelVersion + ' & ' + protoDescription;
       } else {
-        // 3. Single model version, multiple protocols (maybe multiple versions of individual protocols)
-        entity.plotName = protoDescription;
-      }
-    } else if (singleProto) {
-      if (compareProtocolVersions) {
-        // 8. Single protocol with multiple versions, multiple models (maybe multiple versions of individual models)
-        entity.plotName = modelDescription + ' & @' + entity.protoVersion;
-      } else {
-        // 7. Single protocol version, multiple models (maybe multiple versions of individual models)
-        entity.plotName = modelDescription;
+        // Just version comparisons
+        entity.plotName = versionString;
       }
     } else {
-      // 9. Multiple models / protocols (maybe multiple versions of each)
-      entity.plotName = modelDescription + ' & ' + protoDescription;
+      // List versions and entities that vary between experiments
+      if (versionString.length > 0) {
+        entity.plotName = versionString + ' & ' + entityDescription;
+      } else {
+        entity.plotName = entityDescription;
+      }
     }
   }
-	
-	
-	// Alter heading to reflect type of comparison
-  var pageTitle = "Comparison of " + entityType.charAt(0).toUpperCase() + entityType.slice(1) + "s";
-	
-	if (entityType == "experiment")
-  {
 
-    if (singleModel && singleProto) {
+  // Alter heading to reflect type of comparison
+  var pageTitle = "Comparison of " + entityType.charAt(0).toUpperCase() + entityType.slice(1) + "s";
+
+  if (entityType == "experiment" || entityType == "result")
+  {
+    if (entityTypesToCompare.length == 0) {
+      // All same entities, just possibly different versions of them
       pageTitle = firstModelName + " & " + firstProtoName;
-      if (compareModelVersions && compareProtocolVersions) {
-        // 5. Single model with multiple versions, single protocol with multiple versions
+
+      if (entityVersionsToCompare.length == 1) {
+        // Just one type of version comparison
+        pageTitle += " experiments: comparison of " + entityTypeDisplayStrings[entityVersionsToCompare[0]] + " versions";
+        // label: '@<version>'
+      } else if (entityVersionsToCompare.length > 1) {
+        // Multiple types of version comparison
         pageTitle += " experiments: comparison of versions";
-        // label = '@<model version> & @<protocol version>'
-      } else if (compareProtocolVersions) {
-        // 2. Single model version, single protocol with multiple versions
-        pageTitle += " experiments: comparison of protocol versions";
-        // label = '@<protocol version>'
-      } else if (compareModelVersions) {
-        // 4. Single model with multiple versions, single protocol version
-        pageTitle += " experiments: comparison of model versions";
-        // label = '@<model version>'
+        // label: '@<model version> & @<protocol version>' etc.
       } else {
-        // 1. Single model version, single protocol version
+        // Single versions of everything
         pageTitle += ": comparison of repeat experiments";
-        // label = Run <n>
+        // label: 'Run <n>'
       }
-    } else if (singleModel) {
-      pageTitle = firstModelName + " experiments : ";
-      if (compareModelVersions) {
-        // 6. Single model with multiple versions, multiple protocols (maybe multiple versions of individual protocols)
-        pageTitle += "comparison of model versions and protocols";
-        // label = '@<model version> & <protocol name>@<protocol version>' (protocol version omitted if not needed)
-      } else {
-        // 3. Single model version, multiple protocols (maybe multiple versions of individual protocols)
-        pageTitle += "comparison of protocols";
-        // label = '<protocol name>@<protocol version>' (protocol version omitted if not needed)
+    } else if (entityTypesToCompare.length == 1) {
+      // Just one type of entity comparison, possibly also with version comparisons
+      pageTitle = singleEntities.model ? firstModelName : firstProtoName;
+      pageTitle += " experiments : comparison of " + entityTypeDisplayStrings[entityTypesToCompare[0]] + "s";
+      // If just one type of version comparison, be specific.
+      // Otherwise, just say "versions"
+      if (entityVersionsToCompare.length == 1) {
+        pageTitle += " and " + entityTypeDisplayStrings[entityVersionsToCompare[0]] + " versions";
+        // label: '<model name>@<model version>'
+        // label: '<model name> & @<protocol version>'
+      } else if (entityVersionsToCompare.length > 1){
+        pageTitle += " and versions";
+        // label: '<model name>@<model version> & @<protocol version>'
       }
-    } else if (singleProto) {
-      pageTitle = firstProtoName + " experiments : ";
-      if (compareProtocolVersions) {
-        // 8. Single protocol with multiple versions, multiple models (maybe multiple versions of individual models)
-        pageTitle += "comparison of models and protocol versions";
-        // label = '@<protocol version> & <model name>@<model version>' (model version omitted if not needed)
-      } else {
-        // 7. Single protocol version, multiple models (maybe multiple versions of individual models)
-        pageTitle += "comparison of models";
-        // label = '<model name>@<model version>' (model version omitted if not needed)
+      // } else { label: '<model name>' }
+
+    } else if (entityTypesToCompare.length == 2){
+      // Two types of entity comparisons
+      // just list those and take the title from one of the other entity types
+      var entityName;
+      if (singleEntities.model) {
+        entityName = firstModelName;
+      } else if (singleEntities.protocol) {
+        entityName = firstProtoName;
+      } else if (firstFittingSpecName && singleEntities.fittingspec) {
+        entityName = firstFittingSpecName;
       }
+      if (entityName !== undefined) {
+        pageTitle = entityName + " experiments: comparison of " + entityTypeDisplayStrings[entityTypesToCompare[0]] + "s and " + entityTypeDisplayStrings[entityTypesToCompare[1]] + "s";
+      }
+      // label: "<model name> & <protocol name>"
+
     // } else {
-      // 9. Multiple models / protocols (maybe multiple versions of each) - page title is default
+    // More than two entity comparisons (possibly multiple versions of each) - page title is default
     }
+
 
     doc.heading.innerHTML = pageTitle;
 
@@ -429,7 +503,7 @@ function parseEntities (entityObj)
 	{
 		var option = document.createElement("option");
     option.value = entities[entity].url;
-		option.innerHTML = entities[entity].name + (entityType == "experiment" ? "" : " &mdash; " + entities[entity].version);
+		option.innerHTML = entities[entity].name + ((entityType == "experiment" || entityType == "result") ? "" : " &mdash; " + entities[entity].version);
 		select_box.appendChild(option);
 	}
 	form.innerHTML = entityType.charAt(0).toUpperCase() + entityType.slice(1) + "s selected for comparison: ";
@@ -603,7 +677,12 @@ function parseUrl (event)
       entityType = 'experiment';
       entityIds = parts.slice(i+2);
       break;
-    } else if (parts[i+1] == 'compare') {
+    } else if (parts[i] == 'results') {
+      basicurl = parts.slice(0, i+2).join('/') + '/';
+      entityType = 'result';
+      entityIds = parts.slice(i+2);
+    }
+    else if (parts[i+1] == 'compare') {
       basicurl = parts.slice(0, i+2).join('/') + '/';
       entityType = parts[i].slice(0, parts[i].length-1);
       entityIds = parts.slice(i+2);

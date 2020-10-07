@@ -34,6 +34,21 @@ class TestDatasetCreation:
         assert dataset.name == 'mydataset'
         assert dataset.author == logged_in_user
 
+    def test_create_dataset_with_same_name(self, logged_in_user, other_user, client, helpers, public_protocol):
+        helpers.add_permission(other_user, 'create_dataset', Dataset)
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+        recipes.dataset.make(author=other_user, name='mydataset', protocol=public_protocol)
+
+        response = client.post('/datasets/new', data={
+            'name': 'mydataset',
+            'visibility': 'public',
+            'protocol': public_protocol.pk,
+            'description': 'description'
+        })
+
+        assert response.status_code == 302
+        assert Dataset.objects.count() == 2
+
     def test_create_dataset_requires_permissions(self, logged_in_user, client):
         response = client.post(
             '/datasets/new',
@@ -111,6 +126,60 @@ class TestDatasetCreation:
             assert f.name in file_map
             with dataset.open_file(f.name) as fp:
                 assert fp.read() == file_map[f.name]
+
+
+@pytest.mark.django_db
+class TestDatasetRenaming:
+    def test_dataset_renaming_success(self, client, my_dataset_with_file):
+
+        dataset = my_dataset_with_file
+        old_path = dataset.archive_path
+        assert old_path.exists()
+        assert dataset.name == 'mydataset'
+
+        response = client.post(
+            '/datasets/%d/rename' % dataset.pk,
+            data={
+                'name': 'new name'
+            })
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.first()
+        assert not old_path.exists()
+        assert dataset.archive_path.exists()
+        assert dataset.name == 'new name'
+
+    def test_dataset_renaming_different_users_succeeds(self, client, logged_in_user, helpers):
+        dataset = recipes.dataset.make(author=logged_in_user)
+
+        dataset2 = recipes.dataset.make(name='test dataset 2')
+        assert dataset.name == 'my dataset1'
+        assert dataset2.name == 'test dataset 2'
+
+        response = client.post(
+            '/datasets/%d/rename' % dataset.pk,
+            data={
+                'name': 'test dataset 2'
+            })
+        assert response.status_code == 302
+        dataset = Dataset.objects.first()
+        assert dataset.name == 'test dataset 2'
+
+    def test_dataset_renaming_same_users_fails(self, client, logged_in_user, helpers):
+        dataset = recipes.dataset.make(author=logged_in_user)
+
+        dataset2 = recipes.dataset.make(author=logged_in_user, name='test dataset 2')
+        assert dataset.name == 'my dataset1'
+        assert dataset2.name == 'test dataset 2'
+
+        response = client.post(
+            '/datasets/%d/rename' % dataset.pk,
+            data={
+                'name': 'test dataset 2'
+            })
+        assert response.status_code == 200
+        dataset = Dataset.objects.first()
+        assert dataset.name == 'my dataset1'
 
 
 @pytest.mark.django_db
@@ -367,6 +436,21 @@ class TestDatasetFileDownloadView:
 
 @pytest.mark.django_db
 class TestDatasetArchiveView:
+    def test_anonymous_dataset_download_for_running_fittingresult(
+        self, client, queued_fittingresult, my_dataset_with_file,
+    ):
+        queued_fittingresult.fittingresult.dataset = my_dataset_with_file
+        queued_fittingresult.fittingresult.save()
+
+        response = client.get(
+            '/datasets/%d/archive' % my_dataset_with_file.pk,
+            HTTP_AUTHORIZATION='Token {}'.format(queued_fittingresult.signature)
+        )
+
+        assert response.status_code == 200
+        archive = zipfile.ZipFile(BytesIO(response.content))
+        assert archive.filelist[0].filename == 'mydataset.csv'
+
     def test_download_archive(self, my_dataset_with_file, client):
         response = client.get('/datasets/%d/archive' % my_dataset_with_file.pk)
         assert response.status_code == 200

@@ -25,7 +25,10 @@
       </a>
 
     {% endif %}
-    <br>
+    <a title="Rename {{ type }}" href="{% entity_url 'rename' entity %}">
+        Rename {{ type }}
+      </a>
+      <br>
     {% if entity.protocol %}
       Linked protocol:
       <a href="{% url 'entities:detail' 'protocol' entity.protocol.pk %}">{{ entity.protocol.name }}</a>

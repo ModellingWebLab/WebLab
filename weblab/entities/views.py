@@ -51,7 +51,9 @@ from .forms import (
     EntityVersionForm,
     FileUploadForm,
     ModelEntityForm,
+    ModelEntityRenameForm,
     ProtocolEntityForm,
+    ProtocolEntityRenameForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity
 from .processing import process_check_protocol_callback, record_experiments_to_run
@@ -660,16 +662,30 @@ class EntityArchiveView(SingleObjectMixin, EntityVersionMixin, View):
     def check_access_token(self, token):
         """
         Override to allow token based access to entity archive downloads -
-        must match a `RunningExperiment` or `AnalysisTask` object set up against the entity
+        must match a `RunningExperiment` or `AnalysisTask` object set up against the entity.
+
+        We support both simulation and fitting experiments.
         """
         from entities.models import AnalysisTask
         from experiments.models import RunningExperiment
-        entity_field = 'runnable__experimentversion__experiment__%s' % self.kwargs['entity_type']
         self_id = self._get_object().id
-        return (RunningExperiment.objects.filter(
-            id=token,
-            **{entity_field: self_id}
-        ).exists() or AnalysisTask.objects.filter(id=token, entity=self_id).exists())
+        if AnalysisTask.objects.filter(id=token, entity=self_id).exists():
+            return True
+
+        query_tpl = 'runnable__{subclass}version__{subclass}__{entity_type}'
+        entity_type = self.kwargs['entity_type']
+
+        # Look for all experiments linked to the given entity
+        # Fitting specs are not valid for simulation experiments, and go by
+        # a different field name for fitting experiments.
+        q_expt = RunningExperiment.objects.none()
+        if entity_type == 'spec':
+            entity_type = 'fittingspec'
+        else:
+            q_expt |= Q(**{query_tpl.format(subclass='experiment', entity_type=entity_type): self_id})
+
+        q_expt |= Q(**{query_tpl.format(subclass='fittingresult', entity_type=entity_type): self_id})
+        return RunningExperiment.objects.filter(Q(id=token) & q_expt).exists()
 
     def get(self, request, *args, **kwargs):
         entity = self._get_object()
@@ -779,11 +795,11 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
         return response
 
 
-class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
+class TransferView(LoginRequiredMixin, UserPassesTestMixin,
                    FormMixin, EntityTypeMixin, DetailView):
     template_name = 'entities/entity_transfer_ownership.html'
     context_object_name = 'entity'
-    form_class = EntityTransferForm
+    form_class = OwnershipTransferForm
 
     def _get_object(self):
         if not hasattr(self, 'object'):
@@ -812,7 +828,7 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
             entity.save()
             user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
             new_path = entity.repo_abs_path
-            shutil.move(str(old_path), str(new_path))
+            os.rename(str(old_path), str(new_path))
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -820,6 +836,48 @@ class TransferView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin,
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':list', args=[self.kwargs['entity_type']])
+
+
+class RenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin, FormMixin, EntityTypeMixin, DetailView):
+    template_name = 'entities/entity_rename_form.html'
+    context_object_name = 'entity'
+
+    @property
+    def form_class(self):
+        if self.model is ModelEntity:
+            return ModelEntityRenameForm
+        elif self.model is ProtocolEntity:
+            return ProtocolEntityRenameForm
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def test_func(self):
+        return self._get_object().is_editable_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """Check the form and possibly rename the entity.
+
+        Called by Django when a form is submitted.
+        """
+        form = self.get_form()
+
+        if form.is_valid():
+            new_name = form.cleaned_data['name']
+            entity = self.get_object()
+            entity.name = new_name
+            entity.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':detail', args=[entity.url_type, entity.id])
 
 
 class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTypeMixin, DetailView):
