@@ -22,19 +22,16 @@ from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 
+from accounts.forms import OwnershipTransferForm
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
 
-
-from .forms import DatasetAddFilesForm, DatasetFileUploadForm, DatasetForm, 
 from .forms import (
     DatasetAddFilesForm,
     DatasetFileUploadForm,
     DatasetForm,
-    DatasetTransferForm,
     DatasetRenameForm,
 )
-
 from .models import Dataset
 
 

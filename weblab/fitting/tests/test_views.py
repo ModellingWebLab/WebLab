@@ -1,7 +1,3 @@
-import pytest
-
-from core import recipes
-
 import json
 import shutil
 import zipfile
