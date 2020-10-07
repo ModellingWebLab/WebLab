@@ -296,6 +296,7 @@ class DatasetTransferView(LoginRequiredMixin, UserPassesTestMixin,
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':list')
 
+
 class DatasetRenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin, FormMixin, DetailView):
     template_name = 'datasets/dataset_rename_form.html'
     context_object_name = 'dataset'

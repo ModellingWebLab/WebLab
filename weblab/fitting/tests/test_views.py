@@ -941,4 +941,4 @@ class TestTransferOwner:
         fittingspec.refresh_from_db()
         assert fittingspec.author == other_user
         assert not oldpath.exists()
-        assert fittingspec.repo_abs_path.exists()     
+        assert fittingspec.repo_abs_path.exists()

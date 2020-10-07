@@ -211,9 +211,9 @@ urlpatterns = [
     url(
         r'^%s/(?P<pk>\d+)/transfer$' % _ENTITY_TYPE,
         entity_views.TransferView.as_view(),
-        name='transfer',   
+        name='transfer',
     ),
-  
+
     url(
         r'^%s/(?P<pk>\d+)/rename$' % _ENTITY_TYPE,
         views.FittingSpecRenameView.as_view(),

@@ -326,8 +326,6 @@ class TestTransferDatasetView:
         assert dataset.author == logged_in_user
 
 
-
-
 @pytest.mark.django_db
 class TestDatasetView:
     def test_view_dataset(self, client, logged_in_user, helpers):

@@ -36,13 +36,13 @@ from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
-
 from accounts.forms import OwnershipTransferForm
 from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingSpec
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedProtocolVersion
+
 
 from .forms import (
     EntityChangeVisibilityForm,
@@ -826,8 +826,9 @@ class TransferView(LoginRequiredMixin, UserPassesTestMixin,
             old_path = entity.repo_abs_path
             entity.author = user
             entity.save()
-            user.get_storage_dir('repo').mkdir(exist_ok=True, parents=True)
             new_path = entity.repo_abs_path
+            new_path.parent.mkdir(exist_ok=True, parents=True)
+
             os.rename(str(old_path), str(new_path))
             return self.form_valid(form)
         else:
