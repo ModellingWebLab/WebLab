@@ -1,49 +1,45 @@
 {% extends "entities/entity_version.html" %}
 {% load entities %}
-{% load experiments %}
+{% load fittings %}
 {% load staticfiles %}
 
-{% block title %}{{ type|capfirst }}: compare {{ other_type }}s - {% endblock title %}
+{% block title %}{{ type|capfirst }}: compare fitting experiments - {% endblock title %}
 
 {% block content_detail %}
     <div id="entityexperimentlist">
       <h3>Fitting Experiments using this {{type}}</h3>
       <p>
-      This {{type}} has been run with the following {{other_type}}s.
+      This {{type}} has been run with the following datasets.
       Click to view the latest results of each single fitting experiment, or select multiple fitting experiments to compare them.
       </p>
 
       <div id="entityexperimentlistpartners">
         <ul>
           {% for entity, fittings in comparisons %}
+          {% comment %}
             {% with fittings.0 as fitting %}
             <li>
               <input name='experimentVersionIds', value="{{ fitting.latest_version.id }}" type="checkbox">
               <a href="{% url 'fitting:result:version' fitting.id fitting.latest_version.id %}">
                 {% if type == 'model' %}
-                  {{ fitting|name_of_protocol }}
-                {% else %}
-                  {{ fitting|name_of_model }}
+                {{ fitting|name_of_dataset }}
                 {% endif %}
               </a>
-              {% if fitting|length > 1 %}
               <ul style="display:none">
-                {% for fit in fittings|slice:"1:" %}
+                {% for fit in fittings %}
                 <li>
                   <input name='experimentVersionIds', value="{{ fit.latest_version.id }}" type="checkbox">
                   <a href="{% url 'fitting:result:version' fit.id fit.latest_version.id %}">
                     {% if type == 'model' %}
-                      {{ fit|name_of_protocol }}
-                    {% else %}
-                      {{ fit|name_of_model }}
+                    {{ fit|name_of_protocol }} / {{ fit|name_of_fittingspec }}
                     {% endif %}
                   </a>
                 </li>
                 {% endfor %}
               </ul>
-              {% endif %}
             </li>
             {% endwith %}
+            {% endcomment %}
           {% endfor %}
         </ul>
       </div>
@@ -54,7 +50,7 @@
         [<a id="entityexperimentlistpartnersactnone">select none</a>]
         <br/>
         <button id="entityexperimentlist_showallversions">show all versions</button>
-        <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_experiment_comparison_base %}">compare selected fittings</button>
+        <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_fitting_comparison_base %}">compare selected fittings</button>
       </div>
     </div>
 {% endblock content_detail %}

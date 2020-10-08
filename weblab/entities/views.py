@@ -300,35 +300,36 @@ class EntityCompareFittingResultsView(EntityTypeMixin, EntityVersionMixin, Detai
         version = self.get_version()
 
         entity_type = entity.entity_type
-        other_type = 'dataset'
 
         fittings = FittingResult.objects.filter(**{
             entity_type: entity.pk,
             entity_type + '_version': version.pk,
         }).annotate(
             version_count=Count('versions'),
-        )
+        ).filter(
+            version_count__gt=0,
+        ).select_related('dataset', 'model').order_by('dataset', 'model')
 
-        if other_type != 'dataset':
-            fittings = fittings.annotate(
-                other_version_timestamp=F(other_type + '_version__timestamp'),
-            ).filter(
-                version_count__gt=0,
-            ).select_related(other_type).order_by(other_type, '-other_version_timestamp')
-        else:
-            fittings = fittings.filter(
-                version_count__gt=0,
-            ).select_related(other_type).order_by(other_type)
-
+        # Ensure all are visible to user
         fittings = [
             fit for fit in fittings
             if fit.is_visible_to_user(self.request.user)
         ]
 
+        def by_subgroup(fits):
+            if entity_type == 'model':
+                return sorted(list(fits), key=lambda x: x.id)
+            else:
+                return [
+                    (obj, sorted(list(subfits), key=lambda x: x.id))
+                    for (obj, subfits) in groupby(fits, lambda fit: fit.model)
+                ]
+
         kwargs['comparisons'] = [
-            (obj, sorted(list(fit), key=lambda x: x.id))
-            for (obj, fit) in groupby(fittings, lambda fit: getattr(fit, other_type))
+            (obj, by_subgroup(fits))
+            for (obj, fits) in groupby(fittings, lambda fit: fit.dataset)
         ]
+
 
         return super().get_context_data(**kwargs)
 
