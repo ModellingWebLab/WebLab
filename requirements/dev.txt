@@ -8,10 +8,12 @@ atomicwrites==1.4.0       # via pytest
 attrs==20.2.0             # via pytest
 backcall==0.1.0           # via ipython
 certifi==2019.3.9         # via requests
+cffi==1.14.3              # via cryptography
 chardet==3.0.4            # via requests
 click==7.0                # via pip-tools
 codecov==2.0.15           # via -r test.in
 coverage==4.5.3           # via codecov, pytest-cov
+cryptography==3.1.1       # via social-auth-core
 decorator==4.4.0          # via ipython, traitlets
 defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2    # via -r base.in
@@ -41,6 +43,7 @@ psycopg2==2.7.3           # via -r base.in
 ptyprocess==0.6.0         # via pexpect
 py==1.8.0                 # via pytest
 pycodestyle==2.3.1        # via flake8
+pycparser==2.20           # via cffi
 pyflakes==1.5.0           # via flake8
 pygments==2.3.1           # via ipython
 pyjwt==1.7.1              # via social-auth-core
@@ -52,10 +55,10 @@ pytz==2018.9              # via django
 requests-oauthlib==1.2.0  # via social-auth-core
 requests==2.21.0          # via codecov, requests-oauthlib, rollbar, social-auth-core
 rollbar==0.14.2           # via -r base.in
-six==1.12.0               # via django-guardian, model-mommy, pip-tools, prompt-toolkit, pytest, rollbar, social-auth-app-django, social-auth-core, traitlets
+six==1.12.0               # via cryptography, django-guardian, model-mommy, pip-tools, prompt-toolkit, pytest, rollbar, social-auth-app-django, social-auth-core, traitlets
 smmap2==2.0.5             # via gitdb2
-social-auth-app-django==1.2.0  # via -r base.in
-social-auth-core==3.1.0   # via social-auth-app-django
+social-auth-app-django==4.0.0  # via -r base.in
+social-auth-core==3.3.3   # via social-auth-app-django
 traitlets==4.3.2          # via ipython
 urllib3==1.24.2           # via requests
 wcwidth==0.1.7            # via prompt-toolkit
