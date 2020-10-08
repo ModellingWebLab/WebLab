@@ -64,6 +64,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^(?P<pk>\d+)/transfer$',
+        views.DatasetTransferView.as_view(),
+        name='transfer',
+    ),
+
+    url(
         r'^(?P<pk>\d+)/rename$',
         views.DatasetRenameView.as_view(),
         name='rename',

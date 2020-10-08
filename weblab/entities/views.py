@@ -37,6 +37,7 @@ from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
 
+from accounts.forms import OwnershipTransferForm
 from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingSpec
@@ -792,6 +793,50 @@ class EntityFileDownloadView(EntityTypeMixin, EntityVersionMixin, SingleObjectMi
             raise Http404
 
         return response
+
+
+class TransferView(LoginRequiredMixin, UserPassesTestMixin,
+                   FormMixin, EntityTypeMixin, DetailView):
+    template_name = 'entities/entity_transfer_ownership.html'
+    context_object_name = 'entity'
+    form_class = OwnershipTransferForm
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def test_func(self):
+        return self._get_object().is_managed_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """Check the form and transfer ownership of the entity.
+
+        Called by Django when a form is submitted.
+        """
+        form = self.get_form()
+
+        if form.is_valid():
+            user = form.cleaned_data['user']
+            entity = self.get_object()
+            if self.model.objects.filter(name=entity.name, author=user).exists():
+                form.add_error(None, "User already has a %s called %s" % (self.model.display_type, entity.name))
+                return self.form_invalid(form)
+
+            old_path = entity.repo_abs_path
+            entity.author = user
+            entity.save()
+            new_path = entity.repo_abs_path
+            new_path.parent.mkdir(exist_ok=True, parents=True)
+
+            os.rename(str(old_path), str(new_path))
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':list', args=[self.kwargs['entity_type']])
 
 
 class RenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin, FormMixin, EntityTypeMixin, DetailView):

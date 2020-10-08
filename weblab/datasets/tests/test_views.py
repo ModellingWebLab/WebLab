@@ -264,6 +264,69 @@ class TestDatasetDeletion:
 
 
 @pytest.mark.django_db
+class TestTransferDatasetView:
+
+    def test_datasets_transfer_success(self, client, logged_in_user, other_user, my_dataset_with_file, helpers):
+        dataset = my_dataset_with_file
+        oldpath = dataset.archive_path
+        assert oldpath.exists()
+        assert dataset.author.email == 'test@example.com'
+        response = client.post(
+            '/datasets/%d/transfer' % dataset.pk,
+            data={
+                'email': other_user.email,
+            },
+        )
+        assert response.status_code == 302
+        dataset.refresh_from_db()
+        assert dataset.author == other_user
+        assert not oldpath.exists()
+        assert not oldpath.parent.exists()
+        assert dataset.archive_path.exists()
+
+    def test_datasets_transfer_success_no_file(self, client, logged_in_user, other_user, my_dataset, helpers):
+        dataset = my_dataset
+        assert dataset.author.email == 'test@example.com'
+        response = client.post(
+            '/datasets/%d/transfer' % dataset.pk,
+            data={
+                'email': other_user.email,
+            },
+        )
+        assert response.status_code == 302
+        dataset.refresh_from_db()
+        assert dataset.author == other_user
+
+    def test_datasets_transfer_fail_invalid_user(self, client, logged_in_user, other_user, my_dataset, helpers):
+        dataset = my_dataset
+        assert dataset.author.email == 'test@example.com'
+        response = client.post(
+            '/datasets/%d/transfer' % dataset.pk,
+            data={
+                'email': 'invalid@example.com',
+            },
+        )
+        assert response.status_code == 200
+        dataset.refresh_from_db()
+        assert dataset.author == logged_in_user
+
+    def test_datasets_transfer_fail_same_name(self, client, logged_in_user, other_user, my_dataset, helpers):
+        protocol = recipes.protocol.make()
+        recipes.dataset.make(author=other_user, name='mydataset', visibility='public', protocol=protocol)
+        dataset = my_dataset
+        assert dataset.author.email == 'test@example.com'
+        response = client.post(
+            '/datasets/%d/transfer' % dataset.pk,
+            data={
+                'email': other_user.email,
+            },
+        )
+        assert response.status_code == 200
+        dataset.refresh_from_db()
+        assert dataset.author == logged_in_user
+
+
+@pytest.mark.django_db
 class TestDatasetView:
     def test_view_dataset(self, client, logged_in_user, helpers):
         protocol = recipes.protocol.make()

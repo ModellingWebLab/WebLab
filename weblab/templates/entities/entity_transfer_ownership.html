@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load entities %}
+
+{% block title %}Change owner for {{ entity.display_type }}{% endblock title %}
+
+{% block content %}
+  {% include "./includes/entity_header.html" %}
+
+  <h2><small>Transfer ownership of  {{ entity.display_type }}</small></h2>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button>Transfer</button>
+  </form>
+
+{% endblock content %}

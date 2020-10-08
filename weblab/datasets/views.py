@@ -1,5 +1,6 @@
 import mimetypes
 import os.path
+import shutil
 from zipfile import ZipFile
 
 from braces.views import UserFormKwargsMixin
@@ -21,6 +22,7 @@ from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
 
+from accounts.forms import OwnershipTransferForm
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
 
@@ -242,6 +244,53 @@ class DatasetDeleteView(UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':list')
+
+
+class DatasetTransferView(LoginRequiredMixin, UserPassesTestMixin,
+                          FormMixin, DetailView):
+    template_name = 'datasets/dataset_transfer_ownership.html'
+    context_object_name = 'dataset'
+    form_class = OwnershipTransferForm
+    model = Dataset
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def test_func(self):
+        return self._get_object().is_managed_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """Check the form and transfer ownership of the entity.
+
+        Called by Django when a form is submitted.
+        """
+        form = self.get_form()
+
+        if form.is_valid():
+            user = form.cleaned_data['user']
+            dataset = self.get_object()
+            if self.model.objects.filter(name=dataset.name, author=user).exists():
+                form.add_error(None, "User already has a dataset called %s" % dataset.name)
+                return self.form_invalid(form)
+
+            old_path = dataset.archive_path
+            dataset.author = user
+            dataset.save()
+            new_path = dataset.archive_path
+            dataset.abs_path.mkdir(exist_ok=False, parents=True)
+            if old_path.exists():
+                shutil.move(str(old_path), str(new_path))
+            if old_path.parent.is_dir():
+                shutil.rmtree(str(old_path.parent))
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
