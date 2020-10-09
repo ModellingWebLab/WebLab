@@ -308,7 +308,10 @@ class EntityCompareFittingResultsView(EntityTypeMixin, EntityVersionMixin, Detai
             version_count=Count('versions'),
         ).filter(
             version_count__gt=0,
-        ).select_related('dataset', 'model').order_by('dataset', 'model')
+        ).select_related(
+            'dataset',
+            'model',
+        ).order_by('dataset', 'model', '-model_version__timestamp')
 
         # Ensure all are visible to user
         fittings = [
@@ -316,12 +319,15 @@ class EntityCompareFittingResultsView(EntityTypeMixin, EntityVersionMixin, Detai
             if fit.is_visible_to_user(self.request.user)
         ]
 
+        def _sorted_fittings(fits):
+            return sorted(list(fits), key=lambda x: x.id)
+
         def by_subgroup(fits):
             if entity_type == 'model':
-                return sorted(list(fits), key=lambda x: x.id)
+                return _sorted_fittings(fits)
             else:
                 return [
-                    (obj, sorted(list(subfits), key=lambda x: x.id))
+                    (obj, _sorted_fittings(subfits))
                     for (obj, subfits) in groupby(fits, lambda fit: fit.model)
                 ]
 
@@ -329,7 +335,6 @@ class EntityCompareFittingResultsView(EntityTypeMixin, EntityVersionMixin, Detai
             (obj, by_subgroup(fits))
             for (obj, fits) in groupby(fittings, lambda fit: fit.dataset)
         ]
-
 
         return super().get_context_data(**kwargs)
 

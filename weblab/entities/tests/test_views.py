@@ -775,6 +775,53 @@ class TestEntityCompareFittingResultsView:
             ]),
         ]
 
+    def test_multiple_model_versions_for_protocol_version(self, client, helpers, public_protocol, public_dataset):
+        protocol_version = public_protocol.repocache.latest_version
+        m1, m2 = recipes.model.make(_quantity=2)
+        m1v1 = helpers.add_cached_version(m1, visibility='public')
+        m1v2 = helpers.add_cached_version(m1, visibility='public')
+        m2v = helpers.add_cached_version(m2, visibility='public')
+
+        # Create publicly visible fitting result versions
+        fit1_m1v1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model=m1,
+            fittingresult__model_version=m1v1,
+            fittingresult__fittingspec_version__visibility='public',
+        ).fittingresult
+
+        fit2_m1v2 = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model=m1,
+            fittingresult__model_version=m1v2,
+            fittingresult__fittingspec_version__visibility='public',
+        ).fittingresult
+
+        fit3_m2v = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model=m2,
+            fittingresult__model_version=m2v,
+            fittingresult__fittingspec_version__visibility='public',
+        ).fittingresult
+
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/fittings' % (public_protocol.id, protocol_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (public_dataset, [
+                (m1, [fit1_m1v1, fit2_m1v2]),
+                (m2, [fit3_m2v]),
+            ]),
+        ]
+
     def test_shows_fittings_related_to_fittingspec_version(self, client, fittingresult_version):
         fit = fittingresult_version.fittingresult
 
@@ -838,6 +885,53 @@ class TestEntityCompareFittingResultsView:
             ]),
             (ds2, [
                 (m1, [fit3_ds2_m1]),
+            ]),
+        ]
+
+    def test_multiple_model_versions_for_fittingspec_version(self, client, helpers, public_fittingspec, public_dataset):
+        fittingspec_version = public_fittingspec.repocache.latest_version
+        m1, m2 = recipes.model.make(_quantity=2)
+        m1v1 = helpers.add_cached_version(m1, visibility='public')
+        m1v2 = helpers.add_cached_version(m1, visibility='public')
+        m2v = helpers.add_cached_version(m2, visibility='public')
+
+        # Create publicly visible fitting result versions
+        fit1_m1v1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model=m1,
+            fittingresult__model_version=m1v1,
+            fittingresult__protocol_version__visibility='public',
+        ).fittingresult
+
+        fit2_m1v2 = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model=m1,
+            fittingresult__model_version=m1v2,
+            fittingresult__protocol_version__visibility='public',
+        ).fittingresult
+
+        fit3_m2v = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model=m2,
+            fittingresult__model_version=m2v,
+            fittingresult__protocol_version__visibility='public',
+        ).fittingresult
+
+        response = client.get(
+            '/fitting/specs/%d/versions/%s/fittings' % (public_fittingspec.id, fittingspec_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (public_dataset, [
+                (m1, [fit1_m1v1, fit2_m1v2]),
+                (m2, [fit3_m2v]),
             ]),
         ]
 

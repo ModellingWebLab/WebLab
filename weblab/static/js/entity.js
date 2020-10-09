@@ -878,7 +878,7 @@ function init() {
   });
 	$("#entityexperimentlist_showallversions").click(function () {
 		$(this).toggleClass("selected");
-		$exp_list.find("ul").toggle();
+		$exp_list.find("ul.all-versions").toggle();
 		$("#entityexperimentlist_span_latest").toggle();
     return false;
 	});
