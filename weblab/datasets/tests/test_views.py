@@ -637,3 +637,96 @@ class TestDatasetVisibility:
     def test_nonexistent_dataset_generates_404_for_user(self, client, logged_in_user, helpers, recipe, url):
         response = client.get(url % 10000)
         assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestDatasetCompareFittingResultsView:
+    def test_shows_fittings_related_to_dataset(self, client, fittingresult_version):
+        fit = fittingresult_version.fittingresult
+
+        # should not be included, as it uses a different dataset
+        recipes.fittingresult_version.make()
+
+        response = client.get('/datasets/%d/fittings' % fit.dataset.pk)
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [(fit.model, [fit])]
+
+    def test_groups_by_model(self, client, helpers, public_dataset):
+        m1, m2 = recipes.model.make(_quantity=2)
+        m1v = helpers.add_cached_version(m1, visibility='public')
+        m2v = helpers.add_cached_version(m2, visibility='public')
+
+        # Create publicly visible fitting result versions
+        fit1_m1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model=m1,
+            fittingresult__model_version=m1v,
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+        ).fittingresult
+
+        fit2_m1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model=m1,
+            fittingresult__model_version=m1v,
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+        ).fittingresult
+
+        fit3_m2 = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model=m2,
+            fittingresult__model_version=m2v,
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+        ).fittingresult
+
+        response = client.get('/datasets/%d/fittings' % public_dataset.id)
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (m1, [fit1_m1, fit2_m1]),
+            (m2, [fit3_m2]),
+        ]
+
+    def test_multiple_model_versions_for_dataset(self, client, helpers, public_dataset):
+        m1, m2 = recipes.model.make(_quantity=2)
+        m1v1 = helpers.add_cached_version(m1, visibility='public')
+        m1v2 = helpers.add_cached_version(m1, visibility='public')
+        m2v = helpers.add_cached_version(m2, visibility='public')
+
+        # Create publicly visible fitting result versions
+        fit1_m1v1 = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model=m1,
+            fittingresult__model_version=m1v1,
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+        ).fittingresult
+
+        fit2_m1v2 = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model=m1,
+            fittingresult__model_version=m1v2,
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+        ).fittingresult
+
+        fit3_m2v = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model=m2,
+            fittingresult__model_version=m2v,
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+        ).fittingresult
+
+        response = client.get(
+            '/datasets/%d/fittings' % public_dataset.id
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (m1, [fit1_m1v1, fit2_m1v2]),
+            (m2, [fit3_m2v]),
+        ]

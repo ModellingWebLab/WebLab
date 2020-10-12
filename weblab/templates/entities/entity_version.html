@@ -25,7 +25,7 @@
     </h2>
 
     <div class="suppl">
-      <small>
+      <small'>
         Created <time id="entityversiontime">{{ version.timestamp }}</time>
         by <em id="entityversionauthor">{{ version.author }}</em>.
         <div id="versionVisibility" data-change-href="{% entity_version_url 'change_visibility' entity version %}">
@@ -70,9 +70,7 @@
       {% elif entity.entity_type == 'fittingspec' %}
         <a class="button" href="{% url "fitting:result:new" %}?fittingspec_version={{version.pk}}" title="Run fitting experiment using this specification">Fit</a>
       {% endif %}
-      <!--
-      <a class="button" href="" title="Show results of parameter fitting experiments run {% if type == 'model' %}on this model{% else %}using this protocol{% endif %}">Fittings</a>
-      -->
+      <a class="button" href="{% entity_version_url 'compare_fittings' entity version %}" title="Show results of parameter fitting experiments run {% if type == 'model' %}on this model{% else %}using this protocol{% endif %}">Fittings</a>
     </div>
 
     {% block content_detail %}

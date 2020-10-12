@@ -74,4 +74,10 @@ urlpatterns = [
         views.DatasetRenameView.as_view(),
         name='rename',
     ),
+
+    url(
+        r'^(?P<pk>\d+)/fittings$',
+        views.DatasetCompareFittingResultsView.as_view(),
+        name='compare_fittings',
+    ),
 ]

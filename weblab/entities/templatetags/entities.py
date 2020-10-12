@@ -164,6 +164,17 @@ def url_compare_experiments(entity, commit):
 
 
 @register.filter
+def url_compare_fittings(entity, commit):
+    """Generate the view URL for comparing fitting experiments using
+    a specific version of this entity
+    """
+    url_name = 'entities:compare_fittings'
+    last_tag = _url_friendly_label(entity, commit)
+    args = [entity.url_type, entity.id, last_tag]
+    return reverse(url_name, args=args)
+
+
+@register.filter
 def url_run_experiments(entity, commit):
     last_tag = _url_friendly_label(entity, commit)
     args = [entity.url_type, entity.id, last_tag]
