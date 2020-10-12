@@ -56,12 +56,12 @@
         <div id="entityexperimentlistpartners">
           <ul>
             {% for model, fittings in comparisons %}
-
               <li>
-                {{ model }}
+              {% with fittings.0.model_version as latest_model_version %}
+              {{ model }}
                 <ul>
                   {% for fitting in fittings %}
-                    <li>
+                    <li class="{% if fitting.model_version != latest_model_version %}latest-model-version{% else %}older-model-version{% endif %}">
                       <input name='experimentVersionIds', value="{{ fitting.latest_version.id }}" type="checkbox">
                       <a href="{% url 'fitting:result:version' fitting.id fitting.latest_version.id %}">
                         {{ fitting|name_of_fittingspec }}
@@ -69,6 +69,7 @@
                     </li>
                   {% endfor %}
                 </ul>
+                {% endwith %}
               </li>
             {% endfor %}
           </ul>

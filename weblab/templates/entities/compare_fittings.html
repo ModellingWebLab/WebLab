@@ -37,39 +37,29 @@
               {% else %}
                 <ul>
                   {% for model, subgroup in fittings %}
-                    {% with subgroup.0 as first_fitting %}
-                    <li>
-                      <!-- Show first item -->
-                      <input name="experimentVersionIds", value="{{ first_fitting.latest_version.id }}" type="checkbox">
-                      <a href="{% url "experiments:version" first_fitting.id first_fitting.latest_version.id %}">
-                        {{ first_fitting|name_of_model }}
-                      </a>
-
-                      {% if subgroup|length > 1 %}
-                        <ul style="display:none" class="all-versions">
-                          <!-- Rest of items -->
-                          {% for fitting in subgroup|slice:"1:" %}
-                            <li>
-                              <input name='experimentVersionIds', value="{{ fitting.latest_version.id }}" type="checkbox">
-                              <a href="{% url 'fitting:result:version' fitting.id fitting.latest_version.id %}">
-                                @{{ fitting.model_version.get_name }}
-                                using
-                                {% if entity.entity_type == 'protocol' %}
-                                  {{ fitting|name_of_fittingspec }}
-                                {% else %}
-                                  {{ fitting|name_of_protocol }}
-                                {% endif %}
-                              </a>
-                            </li>
-                          {% endfor %}
-                        </ul>
-                      {% endif %}
-
-                    </li>
+                  <li>
+                    {% with subgroup.0.model_version as latest_model_version %}
+                    {{ model }}
+                    <ul>
+                      {% for fitting in subgroup %}
+                      <li class="{% if fitting.model_version == latest_model_version %}latest-model-version{% else %}older-model-version{% endif %}">
+                        <input name="experimentVersionIds", value="{{ fitting.latest_version.id }}" type="checkbox">
+                        <a href="{% url "experiments:version" fitting.id fitting.latest_version.id %}">
+                          @{{ fitting.model_version.get_name }}
+                          using
+                          {% if entity.entity_type == 'protocol' %}
+                            {{ fitting|name_of_fittingspec }}
+                          {% else %}
+                            {{ fitting|name_of_protocol }}
+                          {% endif %}
+                        </a>
+                      </li>
+                      {% endfor %}
+                    </ul>
                     {% endwith %}
+                  </li>
                   {% endfor %}
                 </ul>
-
               {% endif %}
             </li>
           {% endfor %}

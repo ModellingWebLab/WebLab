@@ -878,6 +878,7 @@ function init() {
   });
 	$("#entityexperimentlist_showallversions").click(function () {
 		$(this).toggleClass("selected");
+    $exp_list.find(".older-model-version").toggle();
 		$exp_list.find("ul.all-versions").toggle();
 		$("#entityexperimentlist_span_latest").toggle();
     return false;
@@ -894,6 +895,7 @@ function init() {
   });
 	
   $("#entityexperimentlist_span_latest").hide();
+  $("#entityexperimentlistpartners .older-model-version").hide();
 
   $(plugins).each(function(i, plugin) {
     visualizers[plugin.name] = plugin.get_visualizer()
