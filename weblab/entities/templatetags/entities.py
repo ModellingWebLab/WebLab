@@ -124,11 +124,6 @@ def name_of_protocol(experiment):
 
 
 @register.filter
-def name_of_dataset(experiment):
-    return '%s' % (experiment.dataset.name)
-
-
-@register.filter
 def name_of_fittingspec(experiment):
     return '%s @ %s' % (experiment.fittingspec.name, experiment.fittingspec_version.get_name())
 
@@ -158,17 +153,6 @@ def url_compare_experiments(entity, commit):
     e.g. comparing experiments using version of a model across all available protocols
     """
     url_name = 'entities:compare_experiments'
-    last_tag = _url_friendly_label(entity, commit)
-    args = [entity.url_type, entity.id, last_tag]
-    return reverse(url_name, args=args)
-
-
-@register.filter
-def url_compare_fittings(entity, commit):
-    """Generate the view URL for comparing fitting experiments using
-    a specific version of this entity
-    """
-    url_name = 'entities:compare_fittings'
     last_tag = _url_friendly_label(entity, commit)
     args = [entity.url_type, entity.id, last_tag]
     return reverse(url_name, args=args)

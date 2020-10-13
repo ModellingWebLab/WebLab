@@ -21,16 +21,6 @@
           Visibility: <span>{{ dataset.visibility }}</span>
           <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
 
-  {% comment %}
-          {% can_delete_entity version as can_delete %}
-          {% if can_delete %}
-            Delete experiment version:
-            <a title="delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
-              <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
-                  title="delete this version of this experiment"/></a>
-          {% endif %}
-  {% endcomment %}
-
           <br/>Corresponding protocol:
             <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
 

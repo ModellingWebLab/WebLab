@@ -363,6 +363,7 @@ class DatasetCompareFittingResultsView(DetailView):
             if fit.is_visible_to_user(self.request.user)
         ]
 
+        # Group fittings by model
         kwargs['comparisons'] = [
             (obj, list(fits))
             for (obj, fits) in groupby(fittings, lambda fit: fit.model)
