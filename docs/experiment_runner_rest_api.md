@@ -28,7 +28,7 @@ Fields:
 * `signature`: opaque string that the Django site can use to verify that the response is expected and which protocol it is for
 
 Response: empty `text/plain` document unless one of the above fields is missing, in which case an error message as above.
-The current front-end ignores this response entirely...
+The front-end ignores this response entirely.
 
 This will schedule a Celery task to parse the protocol and extract its interface.
 When the task completes it will send a response to the `callBack` URL, including the `signature`.
@@ -39,6 +39,30 @@ The callback will POST JSON data consisting of a single object with fields:
 * `returnmsg`: if failed, an error string formatted with simple HTML (`br` tags only I think)
 * `required`: if success, a list of strings (the required ontology terms in the protocol's interface)
 * `optional`: if success, a list of strings (the optional ontology terms in the protocol's interface)
+* `ioputs`: if success, a list of {'name', 'units', 'kind'} objects detailing the inputs & outputs to the protocol
+
+This callback will be retried up to a configurable number of times if there is no response.
+After that, a new Celery task will be scheduled to send a brief error message (to the same callback URL) reporting that it gave up trying.
+This error payload will similarly be a JSON object with `returntype` and `returnmsg` fields.
+
+## Get model interface (and check syntax)
+
+Fields:
+* `getModelInterface`: URL from which the model COMBINE archive can be downloaded with GET
+* `callBack`: URL to send results to when ready
+* `signature`: opaque string that the Django site can use to verify that the response is expected and which protocol it is for
+
+Response: empty `text/plain` document unless one of the above fields is missing, in which case an error message as above.
+The front-end ignores this response entirely.
+
+This will schedule a Celery task to parse the model and extract its ontology interface.
+When the task completes it will send a response to the `callBack` URL, including the `signature`.
+
+The callback will POST JSON data consisting of a single object with fields:
+* `signature`: as supplied above
+* `returntype`: 'success' or 'failed'
+* `returnmsg`: if failed, an error string formatted with simple HTML (`br` tags only I think)
+* `model_terms`: if success, a list of strings (the ontology terms used to annotate model variables)
 
 This callback will be retried up to a configurable number of times if there is no response.
 After that, a new Celery task will be scheduled to send a brief error message (to the same callback URL) reporting that it gave up trying.

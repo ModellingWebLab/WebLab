@@ -12,11 +12,11 @@ from entities.management.commands.analyse_entity_versions import Command as Anal
 def test_analyse_all_entities(mock_base_analyse, mock_proto_analyse, helpers):
     m1, m2 = recipes.model.make(_quantity=2)
     p1, p2 = recipes.protocol.make(_quantity=2)
-    c1 = helpers.add_version(m1, filename='c1.txt')
-    c2 = helpers.add_version(m2, filename='c2.txt')
-    c3 = helpers.add_version(p1, filename='c3.txt')
-    c4 = helpers.add_version(p1, filename='c4.txt')
-    c5 = helpers.add_version(p2, filename='c5.txt')
+    c1 = m1.repocache.get_version(helpers.add_version(m1, filename='c1.txt').sha)
+    c2 = m2.repocache.get_version(helpers.add_version(m2, filename='c2.txt').sha)
+    c3 = p1.repocache.get_version(helpers.add_version(p1, filename='c3.txt').sha)
+    c4 = p1.repocache.get_version(helpers.add_version(p1, filename='c4.txt').sha)
+    c5 = p2.repocache.get_version(helpers.add_version(p2, filename='c5.txt').sha)
 
     AnalyseCommand().handle()
 

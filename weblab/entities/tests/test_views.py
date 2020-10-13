@@ -19,7 +19,7 @@ from guardian.shortcuts import assign_perm
 from core import recipes
 from entities.models import AnalysisTask, ModelEntity, ProtocolEntity
 from experiments.models import Experiment, PlannedExperiment
-from repocache.models import ProtocolInterface
+from repocache.models import CachedProtocolVersion, ProtocolInterface, ProtocolIoputs
 from repocache.populate import populate_entity_cache
 
 
@@ -1241,8 +1241,8 @@ class TestVersionCreation:
         commit = protocol.repo.latest_commit
         assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.sha)
         # Check documentation parsing
-        assert ProtocolEntity.README_NAME in commit.filenames
-        readme = commit.get_blob(ProtocolEntity.README_NAME)
+        assert CachedProtocolVersion.README_NAME in commit.filenames
+        readme = commit.get_blob(CachedProtocolVersion.README_NAME)
         assert readme.data_stream.read() == doc
         # Check new version analysis "happened"
         assert mock_check.called
@@ -1250,6 +1250,27 @@ class TestVersionCreation:
 
         assert 0 == PlannedExperiment.objects.count()
         assert 0 == protocol.files.count()
+
+    @patch('requests.post')
+    def test_re_analyses_for_new_interface_info(self, mock_post, protocol_with_version, helpers):
+        version = protocol_with_version.repocache.latest_version
+        # Pretend the version was analysed with the old code (just checking model interface)
+        terms = [
+            ProtocolInterface(protocol_version=version, term='optional', optional=True),
+            ProtocolInterface(protocol_version=version, term='required', optional=False),
+        ]
+        ProtocolInterface.objects.bulk_create(terms)
+        assert not version.ioputs.exists()
+        assert not version.has_readme
+        assert not AnalysisTask.objects.exists()
+        # Run the analysis
+        mock_post.return_value.content = b''
+        protocol_with_version.analyse_new_version(version)
+        # Check an analysis would run
+        assert mock_post.called
+        assert AnalysisTask.objects.exists()
+        assert not version.ioputs.exists()  # We didn't actually submit an analysis task
+        assert not version.has_readme  # There isn't one in the fixture
 
     @patch('requests.post', side_effect=requests.exceptions.ConnectionError)
     def test_protocol_analysis_errors(self, mock_post, client, logged_in_user, helpers):
@@ -1275,8 +1296,8 @@ class TestVersionCreation:
         commit = protocol.repo.latest_commit
         assert response.url == '/entities/protocols/%d/versions/%s' % (protocol.id, commit.sha)
         # Check documentation parsing
-        assert ProtocolEntity.README_NAME in commit.filenames
-        readme = commit.get_blob(ProtocolEntity.README_NAME)
+        assert CachedProtocolVersion.README_NAME in commit.filenames
+        readme = commit.get_blob(CachedProtocolVersion.README_NAME)
         assert readme.data_stream.read() == doc
         # Check new version analysis "happened" but failed cleanly
         assert mock_post.called
@@ -1582,6 +1603,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface initially
         assert not version.interface.exists()
+        assert not version.ioputs.exists()
         assert not protocol.is_parsed_ok(version)
 
         # Submit the fake task response
@@ -1590,16 +1612,18 @@ class TestCheckProtocolCallbackView:
             'returntype': 'success',
             'required': [],
             'optional': [],
+            'ioputs': [],
         }), content_type='application/json')
         assert response.status_code == 200
 
         # Check the analysis task has been deleted
         assert not AnalysisTask.objects.filter(id=task_id).exists()
 
-        # Check there is a blank interface term
-        assert version.interface.count() == 1
-        assert version.interface.get().term == ''
-        assert version.interface.get().optional
+        # Check there is an analysed flag, and nothing else
+        assert version.interface.count() == 0
+        assert version.ioputs.count() == 1
+        flag = version.ioputs.get()
+        assert flag.kind == ProtocolIoputs.FLAG
 
         # Check parsing is treated as having happened OK
         version.refresh_from_db()
@@ -1620,16 +1644,22 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface initially
         assert not version.interface.exists()
+        assert not version.ioputs.exists()
         assert not protocol.is_parsed_ok(version)
 
         # Submit the fake task response
         req = ['r1', 'r2']
         opt = ['o1']
+        io = [  # You can have an input & output with the same name
+            {'name': 'n', 'units': 'u', 'kind': 'output'},
+            {'name': 'n', 'units': 'u', 'kind': 'input'},
+        ]
         response = client.post('/entities/callback/check-proto', json.dumps({
             'signature': task_id,
             'returntype': 'success',
             'required': req,
             'optional': opt,
+            'ioputs': io,
         }), content_type='application/json')
         assert response.status_code == 200
 
@@ -1649,6 +1679,67 @@ class TestCheckProtocolCallbackView:
             else:
                 assert term.term in req
                 assert not term.optional
+        assert version.ioputs.count() == len(io) + 1
+        for item in io:
+            kind = ProtocolIoputs.INPUT if item['kind'] == 'input' else ProtocolIoputs.OUTPUT
+            db_item = version.ioputs.get(name=item['name'], kind=kind)
+            assert db_item.units == item['units']
+        assert version.ioputs.filter(kind=ProtocolIoputs.FLAG).count() == 1
+
+    def test_re_analysis_with_protocol_outputs(self, client, analysis_task):
+        task_id = str(analysis_task.id)
+        protocol = analysis_task.entity
+        hexsha = analysis_task.version
+        version = protocol.repocache.get_version(hexsha)
+
+        # Set up interface as stored by original analysis
+        ProtocolInterface(protocol_version=version, term='old_req', optional=False).save()
+        ProtocolInterface(protocol_version=version, term='old_opt', optional=True).save()
+        version.parsed_ok = True
+        version.save()
+        assert version.interface.exists()
+        assert not version.ioputs.exists()
+        assert protocol.is_parsed_ok(version)
+
+        # Submit the fake task response
+        req = ['r1', 'r2']
+        opt = ['o1']
+        io = [  # You can have an input & output with the same name
+            {'name': 'n', 'units': 'u', 'kind': 'output'},
+            {'name': 'n', 'units': 'u', 'kind': 'input'},
+        ]
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': task_id,
+            'returntype': 'success',
+            'required': req,
+            'optional': opt,
+            'ioputs': io,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        assert response.json() == {}
+
+        # Check the analysis task has been deleted
+        assert not AnalysisTask.objects.filter(id=task_id).exists()
+
+        # Check parsing is treated as having happened OK
+        version.refresh_from_db()
+        assert protocol.is_parsed_ok(version)
+
+        # Check the terms are as expected
+        assert version.interface.count() == len(req) + len(opt)
+        assert set(version.interface.values_list('term', flat=True)) == set(req) | set(opt)
+        for term in version.interface.all():
+            if term.term in opt:
+                assert term.optional
+            else:
+                assert term.term in req
+                assert not term.optional
+        assert version.ioputs.count() == len(io) + 1
+        for item in io:
+            kind = ProtocolIoputs.INPUT if item['kind'] == 'input' else ProtocolIoputs.OUTPUT
+            db_item = version.ioputs.get(name=item['name'], kind=kind)
+            assert db_item.units == item['units']
+        assert version.ioputs.filter(kind=ProtocolIoputs.FLAG).count() == 1
 
     @patch('requests.post')
     def test_stores_error_response(self, mock_post, client, analysis_task):
@@ -1659,6 +1750,7 @@ class TestCheckProtocolCallbackView:
 
         # Check there is no interface or error file initially
         assert not version.interface.exists()
+        assert not version.ioputs.exists()
         assert not protocol.is_parsed_ok(version)
         commit = protocol.repo.get_commit(hexsha)
         assert 'errors.txt' not in commit.filenames
@@ -1700,10 +1792,45 @@ class TestCheckProtocolCallbackView:
             'returntype': 'success',
             'required': req,
             'optional': opt,
+            'ioputs': [],
         }), content_type='application/json')
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert data['error'].startswith('duplicate term provided: ')
+
+    def test_errors_on_duplicate_outputs(self, client, analysis_task):
+        # Submit the fake task response
+        io = [
+            {'name': 'o', 'units': 'u', 'kind': 'output'},
+            {'name': 'o', 'units': 'u', 'kind': 'output'},
+        ]
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': str(analysis_task.id),
+            'returntype': 'success',
+            'required': [],
+            'optional': [],
+            'ioputs': io,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error'].startswith('duplicate input or output provided: ')
+
+    def test_errors_on_duplicate_inputs(self, client, analysis_task):
+        # Submit the fake task response
+        io = [
+            {'name': 'o', 'units': 'u', 'kind': 'input'},
+            {'name': 'o', 'units': 'u', 'kind': 'input'},
+        ]
+        response = client.post('/entities/callback/check-proto', json.dumps({
+            'signature': str(analysis_task.id),
+            'returntype': 'success',
+            'required': [],
+            'optional': [],
+            'ioputs': io,
+        }), content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert data['error'].startswith('duplicate input or output provided: ')
 
     def test_errors_on_no_signature(self, client):
         response = client.post('/entities/callback/check-proto', json.dumps({

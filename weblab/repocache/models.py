@@ -98,6 +98,7 @@ class CachedEntity(models.Model):
             numfiles=len(commit.filenames),
             timestamp=commit.timestamp,
             visibility=visibility,
+            has_readme=self.CachedVersionClass.README_NAME in commit.filenames,
         )
 
 
@@ -122,6 +123,13 @@ class CachedEntityVersion(VisibilityModelMixin):
         default=False,
         help_text='Whether this entity version has been verified as syntactically correct'
     )
+    has_readme = models.BooleanField(
+        default=False,
+        help_text='Whether this entity version has a README file'
+    )
+
+    # The name of a (possibly ephemeral) file containing documentation for the entity version
+    README_NAME = 'readme.md'
 
     class Meta:
         abstract = True
@@ -348,3 +356,38 @@ class ProtocolInterface(models.Model):
 
     class Meta:
         unique_together = ['protocol_version', 'term']
+
+
+class ProtocolIoputs(models.Model):
+    """
+    A record of a protocol's inputs and outputs, with their units.
+
+    Units are given as https://pint.readthedocs.io/ definition strings, e.g. 'metre' or 'millivolt / millisecond'.
+
+    A row with kind Kinds.FLAG is added to indicate that the protocol has been analysed, to prevent repeated calls to
+    the backend in the case of a protocol with no inputs or outputs.
+    """
+    INPUT = 1
+    OUTPUT = 2
+    FLAG = 3
+    KIND_CHOICES = (
+        (INPUT, 'input'),
+        (OUTPUT, 'output'),
+        (FLAG, 'flag'),
+    )
+
+    protocol_version = models.ForeignKey(CachedProtocolVersion, on_delete=models.CASCADE, related_name='ioputs')
+    name = models.CharField(
+        blank=False,
+        max_length=200,
+        help_text='name of the input or output')
+    units = models.CharField(
+        blank=True,
+        max_length=200,
+        help_text='units of the input or output, as a pint definition string')
+    kind = models.IntegerField(
+        choices=KIND_CHOICES,
+        help_text='indicates whether this is an input or output variable')
+
+    class Meta:
+        unique_together = ['protocol_version', 'name', 'kind']

@@ -24,6 +24,8 @@ class TestPopulate:
         assert version1.author != model_with_version.author.full_name
         assert version1.author == latest.author.name
         assert version1.numfiles == len(latest.filenames) == 1
+        assert not version1.parsed_ok
+        assert not version1.has_readme
 
         assert cached.tags.get().tag == 'v1'
 

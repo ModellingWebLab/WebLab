@@ -591,7 +591,7 @@ class EntityNewVersionView(
 
             visibility = request.POST['visibility']
             entity.set_visibility_in_repo(commit, visibility)
-            entity.repocache.add_version(commit.sha)
+            version = entity.repocache.add_version(commit.sha)
 
             tag = request.POST['tag']
             if tag:
@@ -608,7 +608,7 @@ class EntityNewVersionView(
             entity.files.all().delete()
 
             # Trigger entity analysis & experiment runs, if required
-            entity.analyse_new_version(commit)
+            entity.analyse_new_version(version)
             if request.POST.get('rerun_expts'):
                 record_experiments_to_run(request.user, entity, commit)
 
