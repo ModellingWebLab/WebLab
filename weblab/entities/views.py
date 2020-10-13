@@ -292,6 +292,9 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
 
 
 class EntityCompareFittingResultsView(EntityTypeMixin, EntityVersionMixin, DetailView):
+    """
+    List fitting results for this entity, with selection boxes for comparison
+    """
     context_object_name = 'entity'
     template_name = 'entities/compare_fittings.html'
 
@@ -319,15 +322,14 @@ class EntityCompareFittingResultsView(EntityTypeMixin, EntityVersionMixin, Detai
             if fit.is_visible_to_user(self.request.user)
         ]
 
-        def _sorted_fittings(fits):
-            return sorted(list(fits), key=lambda x: x.id)
-
+        # Group fittings by dataset and then model
+        # If the entity itself is a model, just group by dataset
         def by_subgroup(fits):
             if entity_type == 'model':
-                return _sorted_fittings(fits)
+                return list(fits)
             else:
                 return [
-                    (obj, _sorted_fittings(subfits))
+                    (obj, list(subfits))
                     for (obj, subfits) in groupby(fits, lambda fit: fit.model)
                 ]
 

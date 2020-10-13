@@ -727,6 +727,6 @@ class TestDatasetCompareFittingResultsView:
 
         assert response.status_code == 200
         assert response.context['comparisons'] == [
-            (m1, [fit1_m1v1, fit2_m1v2]),
+            (m1, [fit2_m1v2, fit1_m1v1]),
             (m2, [fit3_m2v]),
         ]

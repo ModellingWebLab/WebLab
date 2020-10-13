@@ -337,6 +337,9 @@ class DatasetRenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestM
 
 
 class DatasetCompareFittingResultsView(DetailView):
+    """
+    List fitting results for this dataset, with selection boxes for comparison
+    """
     model = Dataset
     template_name = 'datasets/compare_fittings.html'
 
@@ -360,11 +363,8 @@ class DatasetCompareFittingResultsView(DetailView):
             if fit.is_visible_to_user(self.request.user)
         ]
 
-        def _sorted_fittings(fits):
-            return sorted(list(fits), key=lambda x: x.id)
-
         kwargs['comparisons'] = [
-            (obj, _sorted_fittings(fits))
+            (obj, list(fits))
             for (obj, fits) in groupby(fittings, lambda fit: fit.model)
         ]
 
