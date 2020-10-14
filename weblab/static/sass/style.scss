@@ -135,7 +135,7 @@ button,
 }
 
 
-#usernavbar {
+.navbar-submenu {
   min-width: 100px;
 
   ul {
@@ -146,9 +146,10 @@ button,
     padding: 0; /* Aligns drop-down box underneath the menu item */
     background-color: #ffffff;
 
-    li, li a {
+    li, & a, & a:hover, & a:active {
       text-align: left;
       padding: 0;
+      white-space: nowrap;
     }
   }
 
