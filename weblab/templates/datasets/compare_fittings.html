@@ -1,78 +1,47 @@
-{% extends "base.html" %}
+{% extends "datasets/base.html" %}
 {% load entities %}
 {% load fittings %}
 {% load staticfiles %}
 
 {% block title %}Dataset : compare fitting experiments - {% endblock title %}
 
-{% block content %}
-  {% include "./includes/dataset_header.html" %}
-    <div id="entitydetails"></div>
+{% block content_detail %}
+<div id="entityexperimentlist">
+  <h3>Fitting Experiments run with this dataset</h3>
+  <p>
+  This dataset has been run with the following models.
+  Click to view the latest results of each single fitting experiment, or select multiple fitting experiments to compare them.
+  </p>
 
-    <div id="entityversion"
-        data-version-href="{% url 'datasets:detail' dataset.id %}"
-        data-version-json-href="{% url 'datasets:version_json' dataset.id %}">
-      <div class="closebtn">
-      </div>
-      <div class="suppl">
-        <small>
-          Created <time id="entityversiontime">{{ dataset.created_at }}</time>
-          by <em id="entityversionauthor">{{ dataset.author.full_name }}</em>.
-          Visibility: <span>{{ dataset.visibility }}</span>
-          <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
-
-          <br/>Corresponding protocol:
-            <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
-
-        </small>
-      </div>
-      <div id="entity-view-buttons" class="link-list">
-        <a class="button" href="{% url "fitting:result:new" %}?dataset={{dataset.pk}}" title="Run fitting experiment using this dataset">Fit</a>
-      </div>
-
-      <p id="description">
-        {{ dataset.description }}
-      </p>
-
-      <div id="experiment-files-switcher">
-      </div>
-      <div id="entityexperimentlist">
-        <h3>Fitting Experiments run with this dataset</h3>
-        <p>
-        This dataset has been run with the following models.
-        Click to view the latest results of each single fitting experiment, or select multiple fitting experiments to compare them.
-        </p>
-
-        <div id="entityexperimentlistpartners">
+  <div id="entityexperimentlistpartners">
+    <ul>
+      {% for model, fittings in comparisons %}
+        <li>
+        {% with fittings.0.model_version as latest_model_version %}
+        {{ model }}
           <ul>
-            {% for model, fittings in comparisons %}
-              <li>
-              {% with fittings.0.model_version as latest_model_version %}
-              {{ model }}
-                <ul>
-                  {% for fitting in fittings %}
-                    <li class="{% if fitting.model_version != latest_model_version %}latest-model-version{% else %}older-model-version{% endif %}">
-                      <input name='experimentVersionIds', value="{{ fitting.latest_version.id }}" type="checkbox">
-                      <a href="{% url 'fitting:result:version' fitting.id fitting.latest_version.id %}">
-                        {{ fitting|name_of_fittingspec }}
-                      </a>
-                    </li>
-                  {% endfor %}
-                </ul>
-                {% endwith %}
+            {% for fitting in fittings %}
+              <li class="{% if fitting.model_version != latest_model_version %}latest-model-version{% else %}older-model-version{% endif %}">
+                <input name='experimentVersionIds', value="{{ fitting.latest_version.id }}" type="checkbox">
+                <a href="{% url 'fitting:result:version' fitting.id fitting.latest_version.id %}">
+                  {{ fitting|name_of_fittingspec }}
+                </a>
               </li>
             {% endfor %}
           </ul>
-        </div>
+          {% endwith %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
 
-        <div id="entityexperimentlistpartnersact">
-          [<a id="entityexperimentlistpartnersactall">select all</a>]
-          <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest</a>]</span>
-          [<a id="entityexperimentlistpartnersactnone">select none</a>]
-          <br/>
-          <button id="entityexperimentlist_showallversions">show all versions</button>
-          <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_fitting_comparison_base %}">compare selected fittings</button>
-        </div>
-      </div>
-    </div>
-{% endblock content %}
+  <div id="entityexperimentlistpartnersact">
+    [<a id="entityexperimentlistpartnersactall">select all</a>]
+    <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest</a>]</span>
+    [<a id="entityexperimentlistpartnersactnone">select none</a>]
+    <br/>
+    <button id="entityexperimentlist_showallversions">show all versions</button>
+    <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_fitting_comparison_base %}">compare selected fittings</button>
+  </div>
+</div>
+{% endblock content_detail %}
