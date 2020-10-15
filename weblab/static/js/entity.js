@@ -875,6 +875,7 @@ function init() {
   });
   $("#entityexperimentlistpartnersactlatest").click(function () {
     $exp_list.children("li").children("input").prop('checked', true);
+    $exp_list.find(".latest-model-version").children("input").prop('checked', true);
   });
 	$("#entityexperimentlist_showallversions").click(function () {
 		$(this).toggleClass("selected");
