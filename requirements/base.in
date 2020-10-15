@@ -4,7 +4,7 @@ Django==1.11.29
 psycopg2==2.7.3
 
 # Social authentication
-social-auth-app-django==1.2.0
+social-auth-app-django==4.0.0
 
 # Parse database URLs from environment
 dj-database-url==0.4.2

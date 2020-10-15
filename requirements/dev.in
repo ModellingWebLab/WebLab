@@ -3,6 +3,6 @@
 
 appnope; sys_platform=='darwin'
 ipdb
-pip-tools
+pip-tools>=5.2.1
 flake8
 isort
