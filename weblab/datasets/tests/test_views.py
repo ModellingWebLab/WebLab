@@ -730,3 +730,41 @@ class TestDatasetCompareFittingResultsView:
             (m1, [fit2_m1v2, fit1_m1v1]),
             (m2, [fit3_m2v]),
         ]
+
+    def test_ensure_private_results_are_not_shown(self, client, public_dataset):
+        recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model_version__visibility='private',
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+        ).fittingresult
+
+        recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model_version__visibility='public',
+            fittingresult__protocol_version__visibility='private',
+            fittingresult__fittingspec_version__visibility='public',
+        ).fittingresult
+
+        recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='private',
+        ).fittingresult
+
+        fit = recipes.fittingresult_version.make(
+            fittingresult__dataset=public_dataset,
+            fittingresult__model_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+        ).fittingresult
+
+        response = client.get(
+            '/datasets/%d/fittings' % public_dataset.id
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (fit.model, [fit]),
+        ]

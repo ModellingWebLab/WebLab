@@ -719,6 +719,49 @@ class TestEntityCompareFittingResultsView:
             (dataset2, [ds2fit1]),
         ]
 
+    def test_ensure_private_results_are_not_shown_for_model_version(self, client, public_model):
+        model_version = public_model.repocache.latest_version
+        recipes.fittingresult_version.make(
+            fittingresult__model=public_model,
+            fittingresult__model_version=model_version,
+            fittingresult__protocol_version__visibility='private',
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__dataset__visibility='public'
+        ).fittingresult
+
+        recipes.fittingresult_version.make(
+            fittingresult__model=public_model,
+            fittingresult__model_version=model_version,
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='private',
+            fittingresult__dataset__visibility='public'
+        ).fittingresult
+
+        recipes.fittingresult_version.make(
+            fittingresult__model=public_model,
+            fittingresult__model_version=model_version,
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__dataset__visibility='private'
+        ).fittingresult
+
+        fit = recipes.fittingresult_version.make(
+            fittingresult__model=public_model,
+            fittingresult__model_version=model_version,
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__dataset__visibility='public'
+        ).fittingresult
+
+        response = client.get(
+            '/entities/models/%d/versions/%s/fittings' % (public_model.id, model_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (fit.dataset, [fit]),
+        ]
+
     def test_shows_fittings_related_to_protocol_version(self, client, fittingresult_version):
         fit = fittingresult_version.fittingresult
 
@@ -832,6 +875,50 @@ class TestEntityCompareFittingResultsView:
             ]),
         ]
 
+    def test_ensure_private_results_are_not_shown_for_protocol_version(self, client, public_protocol):
+        protocol_version = public_protocol.repocache.latest_version
+
+        recipes.fittingresult_version.make(
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model_version__visibility='private',
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__dataset__visibility='public'
+        ).fittingresult
+
+        recipes.fittingresult_version.make(
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='private',
+            fittingresult__dataset__visibility='public'
+        ).fittingresult
+
+        recipes.fittingresult_version.make(
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__dataset__visibility='private'
+        ).fittingresult
+
+        fit = recipes.fittingresult_version.make(
+            fittingresult__protocol=public_protocol,
+            fittingresult__protocol_version=protocol_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__fittingspec_version__visibility='public',
+            fittingresult__dataset__visibility='public'
+        ).fittingresult
+
+        response = client.get(
+            '/entities/protocols/%d/versions/%s/fittings' % (public_protocol.id, protocol_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (fit.dataset, [(fit.model, [fit])]),
+        ]
+
     def test_shows_fittings_related_to_fittingspec_version(self, client, fittingresult_version):
         fit = fittingresult_version.fittingresult
 
@@ -943,6 +1030,50 @@ class TestEntityCompareFittingResultsView:
                 (m1, [fit2_m1v2, fit1_m1v1]),
                 (m2, [fit3_m2v]),
             ]),
+        ]
+
+    def test_ensure_private_results_are_not_shown_for_fittingspec_version(self, client, public_fittingspec):
+        fittingspec_version = public_fittingspec.repocache.latest_version
+
+        recipes.fittingresult_version.make(
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model_version__visibility='private',
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__dataset__visibility='public'
+        ).fittingresult
+
+        recipes.fittingresult_version.make(
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__protocol_version__visibility='private',
+            fittingresult__dataset__visibility='public'
+        ).fittingresult
+
+        recipes.fittingresult_version.make(
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__dataset__visibility='private'
+        ).fittingresult
+
+        fit = recipes.fittingresult_version.make(
+            fittingresult__fittingspec=public_fittingspec,
+            fittingresult__fittingspec_version=fittingspec_version,
+            fittingresult__model_version__visibility='public',
+            fittingresult__protocol_version__visibility='public',
+            fittingresult__dataset__visibility='public'
+        ).fittingresult
+
+        response = client.get(
+            '/fitting/specs/%d/versions/%s/fittings' % (public_fittingspec.id, fittingspec_version.sha)
+        )
+
+        assert response.status_code == 200
+        assert response.context['comparisons'] == [
+            (fit.dataset, [(fit.model, [fit])]),
         ]
 
 
