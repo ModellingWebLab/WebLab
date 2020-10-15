@@ -89,6 +89,18 @@ class EntityTypeMixin:
         return super().get_context_data(**kwargs)
 
 
+class EntityVisibilityFormMixin:
+    def get_context_data(self, **kwargs):
+        entity = self._get_object()
+        visibility = entity.get_version_visibility(self.get_version().sha)
+        kwargs['form'] = EntityChangeVisibilityForm(
+            user=self.request.user,
+            initial={
+                'visibility': visibility,
+            })
+        return super().get_context_data(**kwargs)
+
+
 class EntityVersionMixin(VisibilityMixin):
     """
     Mixin for views describing a specific version of an `Entity` object
@@ -201,22 +213,12 @@ class EntityListView(LoginRequiredMixin, EntityTypeMixin, ListView):
         return self.model.objects.filter(author=self.request.user)
 
 
-class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
+class EntityVersionView(EntityTypeMixin, EntityVisibilityFormMixin, EntityVersionMixin, DetailView):
     """
     View a version of an entity
     """
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
-
-    def get_context_data(self, **kwargs):
-        entity = self._get_object()
-        visibility = entity.get_version_visibility(self.get_version().sha)
-        kwargs['form'] = EntityChangeVisibilityForm(
-            user=self.request.user,
-            initial={
-                'visibility': visibility,
-            })
-        return super().get_context_data(**kwargs)
 
 
 class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
@@ -257,7 +259,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
         })
 
 
-class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailView):
+class EntityCompareExperimentsView(EntityTypeMixin, EntityVisibilityFormMixin, EntityVersionMixin, DetailView):
     context_object_name = 'entity'
     template_name = 'entities/compare_experiments.html'
 
@@ -291,7 +293,7 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
         return super().get_context_data(**kwargs)
 
 
-class EntityCompareFittingResultsView(EntityTypeMixin, EntityVersionMixin, DetailView):
+class EntityCompareFittingResultsView(EntityTypeMixin, EntityVisibilityFormMixin, EntityVersionMixin, DetailView):
     """
     List fitting results for this entity, with selection boxes for comparison
     """

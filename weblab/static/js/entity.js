@@ -683,6 +683,21 @@ function init() {
       render ();
   }
 
+  function renderExperimentList()
+  {
+    if (!curVersion) {
+      var jsonUrl = $('#entityversion').data('version-json-href');
+      $.getJSON(jsonUrl, function(data) {
+        notifications.display(data);
+        if (data.version) {
+          curVersion = data.version;
+          $('#entityversion').data('version-json', curVersion);
+          updateVersion(curVersion);
+        }
+      });
+    }
+  }
+
 
   function render ()
   {
@@ -804,6 +819,11 @@ function init() {
   if (doc.version.details) {
     window.onpopstate = render;
     render ();
+  }
+
+  if (doc.version.experimentlist) {
+    window.onpopstate = renderExperimentList;
+    renderExperimentList();
   }
 
   var $visibility = $(doc.version.visibility);

@@ -540,6 +540,11 @@ class TestGetProtocolInterfacesJsonView:
 
 @pytest.mark.django_db
 class TestModelEntityCompareExperimentsView:
+    def test_has_visibility_form(self, client, helpers, public_model):
+        response = client.get('/entities/models/%d/versions/%s/compare' %
+                              (public_model.pk, public_model.repocache.latest_version.sha))
+        assert 'form' in response.context
+
     def test_shows_related_experiments(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
         model_version = exp.model.repocache.latest_version
@@ -654,6 +659,11 @@ class TestProtocolEntityCompareExperimentsView:
 
 @pytest.mark.django_db
 class TestEntityCompareFittingResultsView:
+    def test_has_visibility_form(self, client, helpers, public_model):
+        response = client.get('/entities/models/%d/versions/%s/fittings' %
+                              (public_model.pk, public_model.repocache.latest_version.sha))
+        assert 'form' in response.context
+
     def test_shows_fittings_related_to_model_version(self, client, fittingresult_version):
         fit = fittingresult_version.fittingresult
 
