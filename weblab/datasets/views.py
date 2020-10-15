@@ -355,7 +355,7 @@ class DatasetCompareFittingResultsView(DetailView):
             dataset=dataset.pk,
         ).select_related(
             'model',
-        ).order_by('model', '-model_version__timestamp')
+        ).order_by('model', '-model_version__timestamp', '-protocol_version__timestamp')
 
         # Ensure all are visible to user
         fittings = [

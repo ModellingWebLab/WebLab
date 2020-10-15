@@ -314,7 +314,7 @@ class EntityCompareFittingResultsView(EntityTypeMixin, EntityVersionMixin, Detai
         ).select_related(
             'dataset',
             'model',
-        ).order_by('dataset', 'model', '-model_version__timestamp')
+        ).order_by('dataset', 'model', '-model_version__timestamp', '-protocol_version__timestamp')
 
         # Ensure all are visible to user
         fittings = [

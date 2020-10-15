@@ -705,7 +705,7 @@ class TestEntityCompareFittingResultsView:
 
         assert response.status_code == 200
         assert response.context['comparisons'] == [
-            (dataset1, [ds1fit1, ds1fit2]),
+            (dataset1, [ds1fit2, ds1fit1]),
             (dataset2, [ds2fit1]),
         ]
 
