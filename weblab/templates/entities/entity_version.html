@@ -56,6 +56,12 @@
       {% if permission %}
         <a class="button" href="{% entity_url 'newversion' entity %}" title="Add new version of this {{ type }}">Add version</a>
       {% endif %}
+      {% if entity.entity_type == 'model' %}
+        <a class="button" href="{% url 'fitting:result:new' %}?model_version={{version.pk}}" title="Fit the parameters of this model to data">Fit</a>
+      {% else %}
+        <a class="button" href="{% url 'fitting:result:new' %}?{{entity.entity_type}}_version={{version.pk}}" title="Run fitting experiment using this {{ entity.display_type }}">Fit</a>
+      {% endif %}
+      <a class="button" href="{% entity_version_url 'compare_fittings' entity version %}" title="Show results of parameter fitting experiments run {% if type == 'model' %}on this model{% else %}using this {{ entity.display_type }}{% endif %}">Fittings</a>
       <div class="button hover-menu" title="Compare... (hover to see options)">Compare&hellip;<ul>
         {% if type == 'model' or type == 'protocol' %}
         <li><a href="{{ entity|url_compare_experiments:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
@@ -63,14 +69,6 @@
         {% endif %}
         <li><a href="{% entity_url 'version_list' entity %}" title="Show differences between versions of this {{ type }}">Other versions</a></li>
       </ul></div>
-      {% if entity.entity_type == 'model' %}
-        <a class="button" href="{% url "fitting:result:new" %}?model_version={{version.pk}}" title="Fit the parameters of this model to data">Fit</a>
-      {% elif entity.entity_type == 'protocol' %}
-        <a class="button" href="{% url "fitting:result:new" %}?protocol_version={{version.pk}}" title="Run fitting experiment using this protocol">Fit</a>
-      {% elif entity.entity_type == 'fittingspec' %}
-        <a class="button" href="{% url "fitting:result:new" %}?fittingspec_version={{version.pk}}" title="Run fitting experiment using this specification">Fit</a>
-      {% endif %}
-      <a class="button" href="{% entity_version_url 'compare_fittings' entity version %}" title="Show results of parameter fitting experiments run {% if type == 'model' %}on this model{% else %}using this protocol{% endif %}">Fittings</a>
     </div>
 
     {% block content_detail %}
