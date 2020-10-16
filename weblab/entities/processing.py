@@ -6,10 +6,11 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db import IntegrityError
 
-from experiments.models import Experiment, PlannedExperiment
+from experiments.models import PlannedExperiment
 from repocache.models import ProtocolInterface, ProtocolIoputs
 
 from .models import AnalysisTask, ModelEntity, ProtocolEntity
+
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ def process_check_protocol_callback(data):
 def record_experiments_to_run(user, entity, commit):
     """Record what experiments to run automatically on a new entity version.
 
-    Any experiments that were run with the parent version(s) (that are visible to the user)
+    The latest experiments that were run with the parent version(s) (that are visible to the user)
     should be repeated with the new version.
 
     :param user: the user that created the new version
@@ -180,13 +181,13 @@ def record_experiments_to_run(user, entity, commit):
     other_entities = other_model.objects.visible_to_user(user).filter(**search_args)
     for other_entity in other_entities:
         # Look for latest visible version
-        for other_version in other_entity.cachedentity.versions.reverse():
+        for other_version in other_entity.cachedentity.versions.all():
             if other_entity.is_version_visible_to_user(other_version.sha, user):
                 # Record the new experiment to run
                 kwargs = {
                     'submitter': user,
                     entity.other_type: other_entity,
-                    other_entity + '_version': other_version.sha,
+                    entity.other_type + '_version': other_version.sha,
                 }
                 kwargs.update(new_version_kwargs)
                 PlannedExperiment.objects.get_or_create(**kwargs)
