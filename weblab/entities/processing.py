@@ -160,8 +160,10 @@ def process_check_protocol_callback(data):
 def record_experiments_to_run(user, entity, commit):
     """Record what experiments to run automatically on a new entity version.
 
-    The latest experiments that were run with the parent version(s) (that are visible to the user)
-    should be repeated with the new version.
+    Find all experiments run with the entity for which we're adding a new version (consider case of a model)
+    Get the list of corresponding protocol IDs. We now know both our model ID, and all protocols that have
+    previously had any version run on any version of this model.
+    Run our new model version under the latest (visible) version of all those protocols.
 
     :param user: the user that created the new version
     :param entity: the entity that has had a new version created
