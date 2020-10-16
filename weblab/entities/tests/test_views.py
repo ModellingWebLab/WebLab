@@ -1419,9 +1419,7 @@ class TestVersionCreation:
             }), content_type='application/json')
             assert response.status_code == 200
             detail = json.loads(response.content.decode())
-            print(detail)
             assert 'updateEntityFile' in detail
-
             assert detail['updateEntityFile']['response']
             new_commit = m1.repo.latest_commit
             assert detail['updateEntityFile']['url'] == '/entities/models/%d/versions/%s' % (
