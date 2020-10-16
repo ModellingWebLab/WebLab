@@ -1263,14 +1263,19 @@ class TestVersionCreation:
         assert not version.ioputs.exists()
         assert not version.has_readme
         assert not AnalysisTask.objects.exists()
+        # Pretend we added a readme before (and have a main file to parse)
+        protocol_with_version.repo.latest_commit.add_ephemeral_file(version.README_NAME, b'fake readme')
+        version.master_filename = version.README_NAME
+        version.save()
         # Run the analysis
         mock_post.return_value.content = b''
         protocol_with_version.analyse_new_version(version)
         # Check an analysis would run
+        version.refresh_from_db()
         assert mock_post.called
         assert AnalysisTask.objects.exists()
         assert not version.ioputs.exists()  # We didn't actually submit an analysis task
-        assert not version.has_readme  # There isn't one in the fixture
+        assert version.has_readme  # Because we added a readme before
 
     @patch('requests.post', side_effect=requests.exceptions.ConnectionError)
     def test_protocol_analysis_errors(self, mock_post, client, logged_in_user, helpers):
