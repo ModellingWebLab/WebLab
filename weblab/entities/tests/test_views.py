@@ -544,6 +544,7 @@ class TestModelEntityCompareExperimentsView:
         response = client.get('/entities/models/%d/versions/%s/compare' %
                               (public_model.pk, public_model.repocache.latest_version.sha))
         assert 'form' in response.context
+        assert response.context['form'].initial.get('visibility') == 'public'
 
     def test_shows_related_experiments(self, client, helpers, experiment_version):
         exp = experiment_version.experiment
@@ -663,6 +664,7 @@ class TestEntityCompareFittingResultsView:
         response = client.get('/entities/models/%d/versions/%s/fittings' %
                               (public_model.pk, public_model.repocache.latest_version.sha))
         assert 'form' in response.context
+        assert response.context['form'].initial.get('visibility') == 'public'
 
     def test_shows_fittings_related_to_model_version(self, client, fittingresult_version):
         fit = fittingresult_version.fittingresult
