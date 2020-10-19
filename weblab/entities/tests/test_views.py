@@ -96,6 +96,26 @@ class TestEntityCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
+    def test_error_if_later_version(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        helpers.add_version(model, tag_name='v1')
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'parent_hexsha': '',
+                'filename[]': ['file1.txt'],
+                'delete_filename[]': [],
+                'mainEntry': ['file1.txt'],
+                'commit_message': 'files',
+                'tag': 'v1',
+                'visibility': 'public',
+            },
+        )
+
+        assert response.status_code == 200
+
 
 @pytest.mark.django_db
 class TestEntityRenaming:
