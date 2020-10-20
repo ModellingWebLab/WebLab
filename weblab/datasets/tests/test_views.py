@@ -737,21 +737,21 @@ class TestDatasetCompareFittingResultsView:
             fittingresult__model_version__visibility='private',
             fittingresult__protocol_version__visibility='public',
             fittingresult__fittingspec_version__visibility='public',
-        ).fittingresult
+        )
 
         recipes.fittingresult_version.make(
             fittingresult__dataset=public_dataset,
             fittingresult__model_version__visibility='public',
             fittingresult__protocol_version__visibility='private',
             fittingresult__fittingspec_version__visibility='public',
-        ).fittingresult
+        )
 
         recipes.fittingresult_version.make(
             fittingresult__dataset=public_dataset,
             fittingresult__model_version__visibility='public',
             fittingresult__protocol_version__visibility='public',
             fittingresult__fittingspec_version__visibility='private',
-        ).fittingresult
+        )
 
         fit = recipes.fittingresult_version.make(
             fittingresult__dataset=public_dataset,
