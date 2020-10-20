@@ -1851,7 +1851,7 @@ class TestVersionCreation:
             response = client.post(
                 '/entities/models/%d/versions/new' % m1.pk,
                 data={
-                    'parent_hexsha': model.repo.latest_commit.sha,
+                    'parent_hexsha': m1.repo.latest_commit.sha,
                     'filename[]': ['uploads/file2.txt'],
                     'mainEntry': ['file2.txt'],
                     'commit_message': 'new',
