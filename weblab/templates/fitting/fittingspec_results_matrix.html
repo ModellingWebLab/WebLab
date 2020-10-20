@@ -43,9 +43,7 @@
         <button id="comparisonMatrix" title="Show matrix featuring only selected models and/or datasets">Show sub-matrix</button>
     </span>
     </p>
-    {% comment %}
-    <div id="matrixdiv" data-base-json-href="{% url 'experiments:matrix' %}" data-base-href="{% url 'experiments:list' %}"></div>
-    {% endcomment %}
+    <div id="matrixdiv" data-base-json-href="{% url 'fitting:matrix_json' 'spec' fittingspec.id %}" data-base-href="{% url 'experiments:list' %}"></div>
     <br/>
     Key:
     <table class="matrixTable small">

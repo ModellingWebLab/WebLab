@@ -74,6 +74,17 @@ class FittingSpecResultsMatrixView(EntityTypeMixin, DetailView):
         return FittingSpec.objects.visible_to_user(self.request.user)
 
 
+class FittingSpecResultsMatrixJsonView(SingleObjectMixin, View):
+    def get_queryset(self):
+        return FittingSpec.objects.visible_to_user(self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        spec = self.get_object()
+        return JsonResponse({
+            'getMatrix': {}
+        })
+
+
 class FittingResultVersionListView(VisibilityMixin, DetailView):
     """Show all versions of a fitting result"""
     model = FittingResult

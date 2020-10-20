@@ -954,3 +954,15 @@ class TestFittingSpecResultsMatrixView:
     def test_raises_404_for_non_visible_spec(self, client, private_fittingspec):
         response = client.get('/fitting/specs/%d/results' % private_fittingspec.pk)
         assert response.status_code == 404
+
+@pytest.mark.django_db
+class TestFittingSpecResultsMatrixJsonView:
+    def test_matrix_json_for_fitting_spec(self, client, public_fittingspec):
+        response = client.get('/fitting/specs/%d/results/matrix' % public_fittingspec.pk)
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+    def test_raises_404_for_non_visible_spec(self, client, private_fittingspec):
+        response = client.get('/fitting/specs/%d/results/matrix' % private_fittingspec.pk)
+        assert response.status_code == 404

@@ -232,6 +232,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/(?P<pk>\d+)/results/matrix$' % _ENTITY_TYPE,
+        views.FittingSpecResultsMatrixJsonView.as_view(),
+        name='matrix_json',
+    ),
+
+    url(
         r'^results/', include(result_patterns, namespace='result')
     ),
 ]
