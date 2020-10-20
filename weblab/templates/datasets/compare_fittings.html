@@ -1,0 +1,43 @@
+{% extends "datasets/base.html" %}
+{% load entities %}
+{% load fittings %}
+{% load staticfiles %}
+
+{% block title %}Dataset : compare fitting experiments - {% endblock title %}
+
+{% block content_detail %}
+<div id="entityexperimentlist">
+  <h3>Fitting Experiments run with this dataset</h3>
+  <p>
+  The following models have been fit to this dataset.
+  Click to view the latest results of each single fitting experiment, or select multiple fitting experiments to compare them.
+  </p>
+
+  <div id="entityexperimentlistpartners">
+    {% for model, fittings in comparisons %}
+      {% with fittings.0.model_version as latest_model_version %}
+        <h4>{{ model }}</h4>
+        <ul>
+          {% for fitting in fittings %}
+            <li class="{% if fitting.model_version == latest_model_version %}latest-model-version{% else %}older-model-version{% endif %}">
+              <input name='experimentVersionIds', value="{{ fitting.latest_version.id }}" type="checkbox">
+              <a href="{% url 'fitting:result:version' fitting.id fitting.latest_version.id %}">
+                @{{ fitting.model_version.get_name }} using {{ fitting|name_of_fittingspec }} and {{ fitting|name_of_protocol }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endwith %}
+    {% endfor %}
+  </div>
+
+  <div id="entityexperimentlistpartnersact">
+    [<a id="entityexperimentlistpartnersactall">select all</a>]
+    <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest model versions</a>]</span>
+    [<a id="entityexperimentlistpartnersactnone">select none</a>]
+    <br/>
+    <button id="entityexperimentlist_showallversions">show all model versions</button>
+    <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_fitting_comparison_base %}">compare selected fittings</button>
+  </div>
+</div>
+{% endblock content_detail %}

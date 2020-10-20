@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load entities %}
+{% load fittings %}
+{% load staticfiles %}
+
+{% block content %}
+  {% include "./includes/dataset_header.html" %}
+    <div id="entitydetails"></div>
+
+    <div id="entityversion"
+        data-version-href="{% url 'datasets:detail' dataset.id %}"
+        data-version-json-href="{% url 'datasets:version_json' dataset.id %}">
+      <div class="closebtn">
+      </div>
+      <div class="suppl">
+        <small>
+          Created <time id="entityversiontime">{{ dataset.created_at }}</time>
+          by <em id="entityversionauthor">{{ dataset.author.full_name }}</em>.
+          Visibility: <span>{{ dataset.visibility }}</span>
+          <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
+
+{% comment %}
+        {% can_delete_entity version as can_delete %}
+        {% if can_delete %}
+          Delete experiment version:
+          <a title="delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
+            <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
+                title="delete this version of this experiment"/></a>
+        {% endif %}
+{% endcomment %}
+
+          <br/>Corresponding protocol:
+            <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
+
+        </small>
+      </div>
+      <div id="entity-view-buttons" class="link-list">
+        <a class="button" href="{% url "fitting:result:new" %}?dataset={{dataset.pk}}" title="Run fitting experiment using this dataset">Fit</a>
+        <a class="button" href="{% url "datasets:compare_fittings" dataset.pk %}" title="Show results of parameter fitting experiments run using this dataset">Fittings</a>
+      </div>
+
+      <p id="description">
+        {{ dataset.description }}
+      </p>
+
+      <div id="experiment-files-switcher">
+      </div>
+
+      {% block content_detail %}
+      {% endblock content_detail %}
+    </div>
+{% endblock content %}

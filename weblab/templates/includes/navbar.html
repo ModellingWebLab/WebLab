@@ -4,18 +4,23 @@
     <li><a href="{% url 'home' %}">Home</a></li>
     {% if user.is_authenticated %}
       <li><a href="{% url 'experiments:list' 'mine' %}">Experiments</a></li>
-      <li><a href="{% url 'entities:list' 'model' %}">My models</a></li>
-      <li><a href="{% url 'entities:list' 'protocol' %}">My protocols</a></li>
-      <li><a href="{% url 'datasets:list' 'mine' %}">My datasets</a></li>
+      <li class="navbar-submenu">
+        <a href="{% url 'entities:list' 'model' %}">My Files</a>
+        <ul>
+          <li><a href="{% url 'entities:list' 'model' %}">Models</a></li>
+          <li><a href="{% url 'datasets:list' %}">Datasets</a></li>
+          <li><a href="{% url 'entities:list' 'protocol' %}">Protocols</a></li>
+          <li><a href="{% url 'fitting:list' 'spec' %}">Fitting specifications</a></li>
+        </ul>
+      </li>
     {% else %}
       <li><a href="{% url 'experiments:list' %}">Experiments</a></li>
       <li><a href="{% url 'about' %}">About</a></li>
     {% endif %}
     {% if user.is_authenticated %}
-        <li id="usernavbar">
+        <li class="navbar-submenu">
           <a>{{ user.full_name }}</a>
           <ul>
-            <li><a href="{% url 'entities:list' 'model' %}">My Files</a></li>
             <li><a href="{% url 'experiments:tasks' %}">Tasks</a></li>
             <li><a href="{% url 'accounts:myaccount' %}">Account</a></li>
 

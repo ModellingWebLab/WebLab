@@ -27,7 +27,7 @@
                 {% endif %}
               </a>
               {% if experiments|length > 1 %}
-              <ul style="display:none">
+              <ul style="display:none" class="all-versions">
                 {% for exp in experiments|slice:"1:" %}
                 <li>
                   <input name='experimentVersionIds', value="{{ exp.latest_version.id }}" type="checkbox">

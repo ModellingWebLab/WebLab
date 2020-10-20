@@ -40,7 +40,7 @@ from guardian.shortcuts import get_objects_for_user
 from accounts.forms import OwnershipTransferForm
 from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
-from fitting.models import FittingSpec
+from fitting.models import FittingResult, FittingSpec
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedProtocolVersion
 
@@ -86,6 +86,18 @@ class EntityTypeMixin:
             'type': self.model.display_type,
             'url_type': self.model.url_type,
         })
+        return super().get_context_data(**kwargs)
+
+
+class EntityVisibilityFormMixin:
+    def get_context_data(self, **kwargs):
+        entity = self._get_object()
+        visibility = entity.get_version_visibility(self.get_version().sha)
+        kwargs['form'] = EntityChangeVisibilityForm(
+            user=self.request.user,
+            initial={
+                'visibility': visibility,
+            })
         return super().get_context_data(**kwargs)
 
 
@@ -201,22 +213,12 @@ class EntityListView(LoginRequiredMixin, EntityTypeMixin, ListView):
         return self.model.objects.filter(author=self.request.user)
 
 
-class EntityVersionView(EntityTypeMixin, EntityVersionMixin, DetailView):
+class EntityVersionView(EntityTypeMixin, EntityVisibilityFormMixin, EntityVersionMixin, DetailView):
     """
     View a version of an entity
     """
     context_object_name = 'entity'
     template_name = 'entities/entity_version.html'
-
-    def get_context_data(self, **kwargs):
-        entity = self._get_object()
-        visibility = entity.get_version_visibility(self.get_version().sha)
-        kwargs['form'] = EntityChangeVisibilityForm(
-            user=self.request.user,
-            initial={
-                'visibility': visibility,
-            })
-        return super().get_context_data(**kwargs)
 
 
 class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMixin, View):
@@ -257,7 +259,7 @@ class EntityVersionJsonView(EntityTypeMixin, EntityVersionMixin, SingleObjectMix
         })
 
 
-class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailView):
+class EntityCompareExperimentsView(EntityTypeMixin, EntityVisibilityFormMixin, EntityVersionMixin, DetailView):
     context_object_name = 'entity'
     template_name = 'entities/compare_experiments.html'
 
@@ -286,6 +288,56 @@ class EntityCompareExperimentsView(EntityTypeMixin, EntityVersionMixin, DetailVi
         kwargs['comparisons'] = [
             (obj, list(exp))
             for (obj, exp) in groupby(experiments, lambda exp: getattr(exp, other_type))
+        ]
+
+        return super().get_context_data(**kwargs)
+
+
+class EntityCompareFittingResultsView(EntityTypeMixin, EntityVisibilityFormMixin, EntityVersionMixin, DetailView):
+    """
+    List fitting results for this entity, with selection boxes for comparison
+    """
+    context_object_name = 'entity'
+    template_name = 'entities/compare_fittings.html'
+
+    def get_context_data(self, **kwargs):
+        entity = self._get_object()
+        version = self.get_version()
+
+        entity_type = entity.entity_type
+
+        fittings = FittingResult.objects.filter(**{
+            entity_type: entity.pk,
+            entity_type + '_version': version.pk,
+        }).annotate(
+            version_count=Count('versions'),
+        ).filter(
+            version_count__gt=0,
+        ).select_related(
+            'dataset',
+            'model',
+        ).order_by('dataset', 'model', '-model_version__timestamp', '-protocol_version__timestamp')
+
+        # Ensure all are visible to user
+        fittings = [
+            fit for fit in fittings
+            if fit.is_visible_to_user(self.request.user)
+        ]
+
+        # Group fittings by dataset and then model
+        # If the entity itself is a model, just group by dataset
+        def by_subgroup(fits):
+            if entity_type == 'model':
+                return list(fits)
+            else:
+                return [
+                    (obj, list(subfits))
+                    for (obj, subfits) in groupby(fits, lambda fit: fit.model)
+                ]
+
+        kwargs['comparisons'] = [
+            (obj, by_subgroup(fits))
+            for (obj, fits) in groupby(fittings, lambda fit: fit.dataset)
         ]
 
         return super().get_context_data(**kwargs)

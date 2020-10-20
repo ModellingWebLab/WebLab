@@ -1,6 +1,7 @@
 import mimetypes
 import os.path
 import shutil
+from itertools import groupby
 from zipfile import ZipFile
 
 from braces.views import UserFormKwargsMixin
@@ -25,6 +26,7 @@ from django.views.generic.list import ListView
 from accounts.forms import OwnershipTransferForm
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
+from fitting.models import FittingResult
 
 from .forms import (
     DatasetAddFilesForm,
@@ -332,3 +334,39 @@ class DatasetRenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestM
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':detail', args=[self._get_object().id])
+
+
+class DatasetCompareFittingResultsView(DetailView):
+    """
+    List fitting results for this dataset, with selection boxes for comparison
+    """
+    model = Dataset
+    template_name = 'datasets/compare_fittings.html'
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def get_context_data(self, **kwargs):
+        dataset = self._get_object()
+
+        fittings = FittingResult.objects.filter(
+            dataset=dataset.pk,
+        ).select_related(
+            'model',
+        ).order_by('model', '-model_version__timestamp', '-protocol_version__timestamp')
+
+        # Ensure all are visible to user
+        fittings = [
+            fit for fit in fittings
+            if fit.is_visible_to_user(self.request.user)
+        ]
+
+        # Group fittings by model
+        kwargs['comparisons'] = [
+            (obj, list(fits))
+            for (obj, fits) in groupby(fittings, lambda fit: fit.model)
+        ]
+
+        return super().get_context_data(**kwargs)

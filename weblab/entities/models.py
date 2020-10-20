@@ -416,6 +416,11 @@ class ProtocolEntity(Entity):
             if main_file_name is None:
                 return  # TODO: Add error to errors.txt instead!
             commit = self.repo.get_commit(version.sha)
+            if version.README_NAME in commit.filenames:
+                # README already exists, so just set the flag
+                version.has_readme = True
+                version.save()
+                return
             main_file = commit.get_blob(main_file_name)
             if main_file is None:
                 return  # TODO: Add error to errors.txt instead!

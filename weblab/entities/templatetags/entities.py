@@ -123,6 +123,11 @@ def name_of_protocol(experiment):
     return '%s @ %s' % (experiment.protocol.name, experiment.protocol_version.get_name())
 
 
+@register.filter
+def name_of_fittingspec(experiment):
+    return '%s @ %s' % (experiment.fittingspec.name, experiment.fittingspec_version.get_name())
+
+
 def _url_friendly_label(entity, version):
     """
     Get URL-friendly version label for a commit

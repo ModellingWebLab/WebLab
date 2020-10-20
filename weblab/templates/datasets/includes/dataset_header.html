@@ -2,7 +2,9 @@
 {% load datasets %}
 
 <h1 id="entityname">
+  <a href="{% url 'datasets:detail' dataset.id %}">
   <small>Dataset: </small><span>{{ dataset.name }}</span>
+  </a>
 </h1>
 
 <div class="suppl">
