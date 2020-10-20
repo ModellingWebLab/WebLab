@@ -6,10 +6,10 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db import IntegrityError
 
-from experiments.models import Experiment, PlannedExperiment
+from experiments.models import PlannedExperiment
 from repocache.models import ProtocolInterface, ProtocolIoputs
 
-from .models import AnalysisTask
+from .models import AnalysisTask, ModelEntity, ProtocolEntity
 
 
 logger = logging.getLogger(__name__)
@@ -160,8 +160,10 @@ def process_check_protocol_callback(data):
 def record_experiments_to_run(user, entity, commit):
     """Record what experiments to run automatically on a new entity version.
 
-    Any experiments that were run with the parent version(s) (that are visible to the user)
-    should be repeated with the new version.
+    Find all experiments run with the entity for which we're adding a new version (consider case of a model)
+    Get the list of corresponding protocol IDs. We now know both our model ID, and all protocols that have
+    previously had any version run on any version of this model.
+    Run our new model version under the latest (visible) version of all those protocols.
 
     :param user: the user that created the new version
     :param entity: the entity that has had a new version created
@@ -171,21 +173,24 @@ def record_experiments_to_run(user, entity, commit):
         entity.entity_type: entity,
         entity.entity_type + '_version': commit.sha,
     }
-    for parent in commit.parents:
-        # Find visible experiments involving this parent
-        parent_kwargs = {
-            entity.entity_type: entity,
-            entity.entity_type + '_version': entity.repocache.get_version(parent.sha),
-        }
-        for expt in Experiment.objects.filter(**parent_kwargs):
-            if expt.is_visible_to_user(user):
+    if entity.other_type == entity.ENTITY_TYPE_MODEL:
+        other_model = ModelEntity
+    else:
+        other_model = ProtocolEntity
+    search_args = {
+        entity.other_type + '_experiments__' + entity.entity_type: entity,
+    }
+    other_entities = other_model.objects.visible_to_user(user).filter(**search_args)
+    for other_entity in other_entities:
+        # Look for latest visible version
+        for other_version in other_entity.cachedentity.versions.all():
+            if other_entity.is_version_visible_to_user(other_version.sha, user):
                 # Record the new experiment to run
                 kwargs = {
                     'submitter': user,
-                    'model_id': expt.model_id,
-                    'model_version': expt.model_version.sha,
-                    'protocol_id': expt.protocol_id,
-                    'protocol_version': expt.protocol_version.sha,
+                    entity.other_type: other_entity,
+                    entity.other_type + '_version': other_version.sha,
                 }
                 kwargs.update(new_version_kwargs)
                 PlannedExperiment.objects.get_or_create(**kwargs)
+                break

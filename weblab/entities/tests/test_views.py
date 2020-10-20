@@ -1352,15 +1352,16 @@ class TestVersionCreation:
     @pytest.mark.parametrize("route", ['main_form', 'edit_file'])
     def test_rerun_experiments(self, logged_in_user, other_user, client, helpers, route):
         # Set up previous experiments
-        model = recipes.model.make(author=logged_in_user)
-        model_first_commit = helpers.add_version(model, visibility='private')
-        model_commit = helpers.add_version(model, visibility='private')
-        other_model = recipes.model.make(author=other_user)
-        other_model_commit = helpers.add_version(other_model, visibility='public')
+        m1 = recipes.model.make(author=logged_in_user)
+        m1v1 = helpers.add_version(m1, visibility='private')
+        m1v2 = helpers.add_version(m1, visibility='private')
+
+        m2 = recipes.model.make(author=other_user)
+        m2v1 = helpers.add_version(m2, visibility='public')
 
         def _add_experiment(proto_author, proto_vis, shared=False,
                             proto=None, proto_commit=None,
-                            model=model, model_commit=model_commit):
+                            model=m1, model_commit=m1v1):
             if proto is None:
                 proto = recipes.protocol.make(author=proto_author)
                 proto_commit = helpers.add_version(proto, visibility=proto_vis)
@@ -1375,29 +1376,29 @@ class TestVersionCreation:
                 assign_perm('edit_entity', logged_in_user, proto)
             return proto
 
-        my_private_protocol = _add_experiment(logged_in_user, 'private')  # Re-run case 1
-        _add_experiment(logged_in_user, 'private',  # Shouldn't be re-run
-                        model=model, model_commit=model_first_commit)
-        _add_experiment(logged_in_user, 'private',  # Does get re-run because same proto version as case 1
-                        proto=my_private_protocol, proto_commit=my_private_protocol.repo.latest_commit,
-                        model=model, model_commit=model_first_commit)
-        public_protocol = _add_experiment(other_user, 'public')  # Re-run case 2
-        _add_experiment(other_user, 'public',  # Not re-run as other model
-                        proto=public_protocol, proto_commit=public_protocol.repo.latest_commit,
-                        model=other_model, model_commit=other_model_commit)
-        _add_experiment(other_user, 'private')  # Not re-run as can't see protocol
-        visible_protocol = _add_experiment(other_user, 'private', shared=True)  # Re-run case 3
+        p1 = _add_experiment(logged_in_user, 'private', model=m1, model_commit=m1v2)
+        p1v2 = helpers.add_version(p1, visibility='private')
+        _add_experiment(logged_in_user, 'private', model=m1, model_commit=m1v1, proto=p1, proto_commit=p1v2)
+        _add_experiment(logged_in_user, 'private', model=m2, model_commit=m2v1, proto=p1, proto_commit=p1v2)
+        _add_experiment(logged_in_user, 'public', model=m2, model_commit=m2v1)
+        p3 = _add_experiment(other_user, 'public', model=m1, model_commit=m1v2)
+        p3v1 = p3.repocache.latest_version
+        p3v2 = helpers.add_version(p3, visibility='private')
+        _add_experiment(logged_in_user, 'private', model=m1, model_commit=m1v2, proto=p3, proto_commit=p3v2)
+        p4 = _add_experiment(other_user, 'public', model=m1, model_commit=m1v2, shared=True)
+        p4v2 = helpers.add_version(p4, visibility='private')
+        _add_experiment(other_user, 'private', model=m1, model_commit=m1v2)
 
         # Create a new version of our model, re-running experiments
         helpers.add_permission(logged_in_user, 'create_model')
         if route == 'main_form':
             recipes.model_file.make(
-                entity=model,
+                entity=m1,
                 upload=SimpleUploadedFile('file2.txt', b'file 2'),
                 original_name='file2.txt',
             )
             response = client.post(
-                '/entities/models/%d/versions/new' % model.pk,
+                '/entities/models/%d/versions/new' % m1.pk,
                 data={
                     'filename[]': ['uploads/file2.txt'],
                     'mainEntry': ['file2.txt'],
@@ -1408,12 +1409,12 @@ class TestVersionCreation:
                 },
             )
             assert response.status_code == 302
-            new_commit = model.repo.latest_commit
-            assert response.url == '/entities/models/%d/versions/%s' % (model.id, new_commit.sha)
+            new_commit = m1.repo.latest_commit
+            assert response.url == '/entities/models/%d/versions/%s' % (m1.id, new_commit.sha)
         else:
             assert route == 'edit_file'
-            response = client.post('/entities/models/%d/versions/edit' % model.id, json.dumps({
-                'parent_hexsha': model_commit.sha,
+            response = client.post('/entities/models/%d/versions/edit' % m1.id, json.dumps({
+                'parent_hexsha': m1v2.sha,
                 'file_name': 'file1.txt',
                 'file_contents': 'new file 1',
                 'visibility': 'private',
@@ -1425,20 +1426,20 @@ class TestVersionCreation:
             detail = json.loads(response.content.decode())
             assert 'updateEntityFile' in detail
             assert detail['updateEntityFile']['response']
-            new_commit = model.repo.latest_commit
+            new_commit = m1.repo.latest_commit
             assert detail['updateEntityFile']['url'] == '/entities/models/%d/versions/%s' % (
-                model.id, new_commit.sha)
+                m1.id, new_commit.sha)
 
         # Test that planned experiments have been added correctly
         expected_proto_versions = set([
-            (my_private_protocol, my_private_protocol.repo.latest_commit.sha),
-            (public_protocol, public_protocol.repo.latest_commit.sha),
-            (visible_protocol, visible_protocol.repo.latest_commit.sha),
+            (p1, p1v2.sha),
+            (p3, p3v1.sha),
+            (p4, p4v2.sha),
         ])
         assert len(expected_proto_versions) == PlannedExperiment.objects.count()
         for planned_experiment in PlannedExperiment.objects.all():
             assert planned_experiment.submitter == logged_in_user
-            assert planned_experiment.model == model
+            assert planned_experiment.model == m1
             assert planned_experiment.model_version == new_commit.sha
             assert (planned_experiment.protocol, planned_experiment.protocol_version) in expected_proto_versions
 
