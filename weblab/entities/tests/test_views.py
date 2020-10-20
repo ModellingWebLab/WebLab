@@ -1093,6 +1093,7 @@ class TestVersionCreation:
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
+                'parent_hexsha': model.repo.latest_commit.sha,
                 'delete_filename[]': ['file1.txt'],
                 'commit_message': 'delete file1',
                 'tag': 'delete-file',
@@ -1123,6 +1124,7 @@ class TestVersionCreation:
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
+                'parent_hexsha': model.repo.latest_commit.sha,
                 'delete_filename[]': ['file1.txt', 'file2.txt'],
                 'commit_message': 'delete files',
                 'tag': 'delete-files',
@@ -1165,6 +1167,7 @@ class TestVersionCreation:
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
+                'parent_hexsha': model.repo.latest_commit.sha,
                 'filename[]': ['uploads/file1_v2.txt', 'uploads/file1_v3.txt'],
                 'delete_filename[]': ['file1.txt', 'file1.txt'],
                 'commit_message': 'replace file1',
@@ -1414,6 +1417,7 @@ class TestVersionCreation:
             response = client.post(
                 '/entities/models/%d/versions/new' % model.pk,
                 data={
+                    'parent_hexsha': model.repo.latest_commit.sha,
                     'filename[]': ['uploads/file2.txt'],
                     'mainEntry': ['file2.txt'],
                     'commit_message': 'new',
