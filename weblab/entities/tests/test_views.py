@@ -115,7 +115,7 @@ class TestEntityCreation:
         )
 
         assert response.status_code == 200
-
+        assert "Someone has saved a newer version since you started " in response.rendered_content
 
 @pytest.mark.django_db
 class TestEntityRenaming:
