@@ -226,6 +226,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/(?P<pk>\d+)/results$' % _ENTITY_TYPE,
+        views.FittingSpecResultsMatrixView.as_view(),
+        name='matrix',
+    ),
+
+    url(
         r'^results/', include(result_patterns, namespace='result')
     ),
 ]

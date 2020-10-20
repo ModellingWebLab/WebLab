@@ -67,6 +67,13 @@ class FittingSpecRenameView(RenameView):
     form_class = FittingSpecRenameForm
 
 
+class FittingSpecResultsMatrixView(EntityTypeMixin, DetailView):
+    template_name = 'fitting/fittingspec_results_matrix.html'
+
+    def get_queryset(self):
+        return FittingSpec.objects.visible_to_user(self.request.user)
+
+
 class FittingResultVersionListView(VisibilityMixin, DetailView):
     """Show all versions of a fitting result"""
     model = FittingResult

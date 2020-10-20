@@ -942,3 +942,15 @@ class TestTransferOwner:
         assert fittingspec.author == other_user
         assert not oldpath.exists()
         assert fittingspec.repo_abs_path.exists()
+
+
+@pytest.mark.django_db
+class TestFittingSpecResultsMatrixView:
+    def test_matrix_page_for_fitting_spec(self, client, public_fittingspec):
+        response = client.get('/fitting/specs/%d/results' % public_fittingspec.pk)
+        assert response.status_code == 200
+        assert response.context['fittingspec'] == public_fittingspec
+
+    def test_raises_404_for_non_visible_spec(self, client, private_fittingspec):
+        response = client.get('/fitting/specs/%d/results' % private_fittingspec.pk)
+        assert response.status_code == 404
