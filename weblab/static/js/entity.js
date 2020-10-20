@@ -683,6 +683,21 @@ function init() {
       render ();
   }
 
+  function renderExperimentList()
+  {
+    if (!curVersion) {
+      var jsonUrl = $('#entityversion').data('version-json-href');
+      $.getJSON(jsonUrl, function(data) {
+        notifications.display(data);
+        if (data.version) {
+          curVersion = data.version;
+          $('#entityversion').data('version-json', curVersion);
+          updateVersion(curVersion);
+        }
+      });
+    }
+  }
+
 
   function render ()
   {
@@ -806,6 +821,11 @@ function init() {
     render ();
   }
 
+  if (doc.version.experimentlist) {
+    window.onpopstate = renderExperimentList;
+    renderExperimentList();
+  }
+
   var $visibility = $(doc.version.visibility);
   $visibility.on(
       'change',
@@ -875,10 +895,12 @@ function init() {
   });
   $("#entityexperimentlistpartnersactlatest").click(function () {
     $exp_list.children("li").children("input").prop('checked', true);
+    $exp_list.find(".latest-model-version").children("input").prop('checked', true);
   });
 	$("#entityexperimentlist_showallversions").click(function () {
 		$(this).toggleClass("selected");
-		$exp_list.find("ul").toggle();
+    $exp_list.find(".older-model-version").toggle();
+		$exp_list.find("ul.all-versions").toggle();
 		$("#entityexperimentlist_span_latest").toggle();
     return false;
 	});
@@ -894,6 +916,7 @@ function init() {
   });
 	
   $("#entityexperimentlist_span_latest").hide();
+  $("#entityexperimentlistpartners .older-model-version").hide();
 
   $(plugins).each(function(i, plugin) {
     visualizers[plugin.name] = plugin.get_visualizer()

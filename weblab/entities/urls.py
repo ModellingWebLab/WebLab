@@ -76,6 +76,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/(?P<pk>\d+)/versions/%s/fittings$' % (_ENTITY_TYPE, _COMMIT),
+        views.EntityCompareFittingResultsView.as_view(),
+        name='compare_fittings',
+    ),
+
+    url(
         r'^%s/(?P<pk>\d+)/versions/%s/compare$' % (_ENTITY_TYPE, _COMMIT),
         views.EntityCompareExperimentsView.as_view(),
         name='compare_experiments',
