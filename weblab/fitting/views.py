@@ -14,6 +14,8 @@ from braces.views import UserFormKwargsMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F, Q
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -28,6 +30,7 @@ from datasets import views as dataset_views
 from datasets.models import Dataset
 from entities.models import ModelEntity, ProtocolEntity
 from entities.views import EntityNewVersionView, EntityTypeMixin, RenameView
+from experiments.views import ExperimentMatrixJsonView
 from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion
 
 from .forms import (
@@ -74,14 +77,100 @@ class FittingSpecResultsMatrixView(EntityTypeMixin, DetailView):
         return FittingSpec.objects.visible_to_user(self.request.user)
 
 
-class FittingSpecResultsMatrixJsonView(SingleObjectMixin, View):
+class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonView):
     def get_queryset(self):
         return FittingSpec.objects.visible_to_user(self.request.user)
 
+    @classmethod
+    def dataset_json(cls, dataset):
+        _json = {
+            'id': dataset.id,
+            'entityId': dataset.id,
+            'author': dataset.author.get_full_name(),
+            'visibility': dataset.visibility,
+            'created': dataset.created_at,
+            'name': dataset.name,
+            'url': reverse('datasets:detail', args=[dataset.id]),
+        }
+
+        return _json
+
+    @classmethod
+    def fittingresult_version_json(cls, version):
+        return {
+            'id': version.id,
+            'entity_id': version.fittingresult.id,
+            'latestResult': version.status,
+            'dataset': cls.dataset_json(version.fittingresult.dataset),
+            'model': cls.entity_json(
+                version.fittingresult.model, version.fittingresult.model_version.sha,
+                extend_name=True, visibility=version.model_visibility, author=version.model_author,
+            ),
+            'url': reverse(
+                'fitting:result:version',
+                args=[version.fittingresult.id, version.id]
+            ),
+        }
+
     def get(self, request, *args, **kwargs):
         spec = self.get_object()
+
+        model_versions = None
+
+        # Base models/protocols to show
+        q_models = ModelEntity.objects.all()
+        q_datasets = Dataset.objects.all()
+
+        visibility_where = ~Q(visibility='private')
+
+        # If specific versions have been requested, show at most those
+        q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
+
+        # Get the JSON data needed to display the matrix axes
+        model_versions = [self.entity_json(version.entity.entity, version.sha,
+                                           extend_name=bool(model_versions),
+                                           visibility=version.visibility,
+                                           author=version.author_name,
+                                           friendly_version=version.friendly_name)
+                          for version in q_model_versions]
+        model_versions = {ver['id']: ver for ver in model_versions}
+
+        datasets = {ds.id: self.dataset_json(ds) for ds in q_datasets}
+
+        # Only give info on fittingresults involving the correct entity versions
+        fittingresults = {}
+        q_fittings = FittingResult.objects.filter(
+            model__in=q_models,
+            model_version__in=q_model_versions,
+            dataset__in=q_datasets,
+        )
+        q_fittingresult_versions = FittingResultVersion.objects.filter(
+            fittingresult__in=q_fittings,
+        ).order_by(
+            'fittingresult__id',
+            '-created_at',
+        ).distinct(
+            'fittingresult__id'
+        ).select_related(
+            'fittingresult',
+            'fittingresult__dataset', 'fittingresult__model',
+            'fittingresult__model__cachedmodel',
+        ).annotate(
+            dataset_visibility=F('fittingresult__dataset__visibility'),
+            model_visibility=F('fittingresult__model_version__visibility'),
+            dataset_author=F('fittingresult__dataset__author__full_name'),
+            model_author=F('fittingresult__model__author__full_name'),
+        )
+
+        for fit_ver in q_fittingresult_versions:
+            fittingresults[fit_ver.fittingresult.pk] = self.fittingresult_version_json(fit_ver)
+
         return JsonResponse({
-            'getMatrix': {}
+            'getMatrix': {
+                'models': model_versions,
+                'datasets': datasets,
+                'experiments':  fittingresults
+            }
         })
 
 

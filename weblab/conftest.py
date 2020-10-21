@@ -264,6 +264,26 @@ def queued_fittingresult(public_model, public_protocol, public_fittingspec, publ
     recipes.running_experiment.make(runnable=version)
     return version
 
+@pytest.fixture
+def quick_fittingresult_version(helpers):
+    """A fitting result version that exists only in the DB - no repos, no results."""
+    model = recipes.model.make()
+    model_version = helpers.add_fake_version(model, 'public')
+    protocol = recipes.protocol.make()
+    protocol_version = helpers.add_fake_version(protocol, 'public')
+    fittingspec = recipes.fittingspec.make()
+    fittingspec_version = helpers.add_fake_version(fittingspec, 'public')
+    dataset = recipes.dataset.make(visibility='public')
+    return recipes.fittingresult_version.make(
+        status='SUCCESS',
+        fittingresult__model=model,
+        fittingresult__model_version=model_version,
+        fittingresult__protocol=protocol,
+        fittingresult__protocol_version=protocol_version,
+        fittingresult__fittingspec=fittingspec,
+        fittingresult__fittingspec_version=fittingspec_version,
+        fittingresult__dataset=dataset,
+    )
 
 @pytest.fixture
 def experiment_with_result(model_with_version, protocol_with_version):

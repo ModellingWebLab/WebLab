@@ -966,3 +966,23 @@ class TestFittingSpecResultsMatrixJsonView:
     def test_raises_404_for_non_visible_spec(self, client, private_fittingspec):
         response = client.get('/fitting/specs/%d/results/matrix' % private_fittingspec.pk)
         assert response.status_code == 404
+
+    def test_matrix_json(self, client, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fit.fittingspec.pk)
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        assert len(data['getMatrix']['models']) == 1
+        assert str(fit.model_version.sha) in data['getMatrix']['models']
+        assert len(data['getMatrix']['datasets']) == 1
+        assert str(fit.dataset.id) in data['getMatrix']['datasets']
+        assert len(data['getMatrix']['experiments']) == 1
+        assert str(fit.pk) in data['getMatrix']['experiments']
+
+        fit_data = data['getMatrix']['experiments'][str(fit.pk)]
+        assert fit_data['id'] == quick_fittingresult_version.id
+        assert fit_data['entity_id'] == fit.id
+        assert fit_data['latestResult'] == quick_fittingresult_version.status
+        assert '/fitting/results/%d/versions/%d' % (fit.id, quick_fittingresult_version.id) in fit_data['url']
