@@ -90,6 +90,8 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
             'visibility': dataset.visibility,
             'created': dataset.created_at,
             'name': dataset.name,
+            'protocolId': dataset.protocol.id,
+            'protocolLatestVersion': dataset.protocol.repocache.latest_version.sha,
             'url': reverse('datasets:detail', args=[dataset.id]),
         }
 
@@ -153,8 +155,10 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
             'fittingresult__id'
         ).select_related(
             'fittingresult',
-            'fittingresult__dataset', 'fittingresult__model',
+            'fittingresult__model',
             'fittingresult__model__cachedmodel',
+            'fittingresult__protocol',
+            'fittingresult__dataset',
         ).annotate(
             dataset_visibility=F('fittingresult__dataset__visibility'),
             model_visibility=F('fittingresult__model_version__visibility'),
@@ -168,7 +172,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
         return JsonResponse({
             'getMatrix': {
                 'models': model_versions,
-                'datasets': datasets,
+                'columns': datasets,
                 'experiments':  fittingresults
             }
         })
@@ -336,37 +340,43 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
     def get_initial(self):
         initial = super().get_initial()
         model_id = self.request.GET.get('model')
-        model_version_id = self.request.GET.get('model_version')
+        model_version = self.request.GET.get('model_version')
         protocol_id = self.request.GET.get('protocol')
-        protocol_version_id = self.request.GET.get('protocol_version')
+        protocol_version = self.request.GET.get('protocol_version')
         fittingspec_id = self.request.GET.get('fittingspec')
-        fittingspec_version_id = self.request.GET.get('fittingspec_version')
+        fittingspec_version = self.request.GET.get('fittingspec_version')
         dataset_id = self.request.GET.get('dataset')
 
-        if model_version_id:
+        def get_version_query(version):
+            if len(version) == 40:
+                return {'sha': version}
+            else:
+                return {'id': version}
+
+        if model_version:
             initial['model_version'] = get_object_or_404(
                 CachedModelVersion.objects.visible_to_user(self.request.user),
-                pk=model_version_id)
+                **get_version_query(model_version))
             initial['model'] = initial['model_version'].model
         elif model_id:
             initial['model'] = get_object_or_404(
                 ModelEntity.objects.visible_to_user(self.request.user),
                 pk=model_id)
 
-        if protocol_version_id:
+        if protocol_version:
             initial['protocol_version'] = get_object_or_404(
                 CachedProtocolVersion.objects.visible_to_user(self.request.user),
-                pk=protocol_version_id)
+                **get_version_query(protocol_version))
             initial['protocol'] = initial['protocol_version'].protocol
         elif protocol_id:
             initial['protocol'] = get_object_or_404(
                 ProtocolEntity.objects.visible_to_user(self.request.user),
                 pk=protocol_id)
 
-        if fittingspec_version_id:
+        if fittingspec_version:
             initial['fittingspec_version'] = get_object_or_404(
                 CachedFittingSpecVersion.objects.visible_to_user(self.request.user),
-                pk=fittingspec_version_id)
+                **get_version_query(fittingspec_version))
             initial['fittingspec'] = initial['fittingspec_version'].fittingspec
         elif fittingspec_id:
             initial['fittingspec'] = get_object_or_404(

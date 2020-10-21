@@ -51,13 +51,58 @@ function submitNewExperiment(jsonObject, $td, entry)
 }
 
 
+
+/**
+ * Submit a request to create a fitting experiment.
+ * @param jsonObject  the data to send;
+ *    an object with fields { task: "newExperiment", model, model_version, protocol, protocol_version }
+ * @param $td  the table cell to contain this experiment
+ * @param entry  the entry for this experiment in the data matrix
+ */
+function submitNewFittingExperiment(jsonObject, $td, entry)
+{
+
+  $td.append("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
+
+  $.post('/fitting/results/new', jsonObject, function(data) {
+      var msg = data.newExperiment.responseText;
+      $td.removeClass("experiment-QUEUED experiment-RUNNING experiment-INAPPLICABLE experiment-FAILED experiment-PARTIAL experiment-SUCCESS");
+      $td.unbind("click");
+
+      if (data.newExperiment.response)
+      {
+        notifications.add(msg, "info");
+      }
+      else
+      {
+        notifications.add(msg, "error");
+      }
+      entry.experiment = {
+        name: data.newExperiment.expName,
+        id: data.newExperiment.expId,
+        latestResult: data.newExperiment.status,
+        url: data.newExperiment.url,
+      };
+      $td.addClass("experiment-" + data.newExperiment.status);
+      setExpListeners($td, entry);
+  }).fail(function() {
+      notifications.add("Server-side error occurred submitting experiment.", "error");
+      $td.addClass("experiment-FAILED");
+  }).always(function(data) {
+    notifications.display(data);
+    $td.contents().remove();
+  });
+}
+
+
+
 function drawMatrix (matrix)
 {
 	//console.log (matrix);
 	var models = [],
-		protocols = [],
+		columns = [],
 		modelMapper = {},
-		protocolMapper = {},
+		columnMapper = {},
 		mat = [];
 	
 	for (var key in matrix.models)
@@ -69,40 +114,37 @@ function drawMatrix (matrix)
 			models.push(version);
 		}
 
-	for (var key in matrix.protocols)
-		if (matrix.protocols.hasOwnProperty (key))
+	for (var key in matrix.columns)
+		if (matrix.columns.hasOwnProperty (key))
 		{
-			var version = matrix.protocols[key].id;
-			protocolMapper[version] = matrix.protocols[key];
+			var columnId = matrix.columns[key].id;
+			columnMapper[columnId] = matrix.columns[key];
 //			protocolMapper[version].name = matrix.protocols[key].name;
-			protocols.push(version);
+			columns.push(columnId);
 		}
 
     // Sort rows & columns alphabetically (case insensitive)
     models.sort(function(a,b) {return (modelMapper[a].name.toLocaleLowerCase() > modelMapper[b].name.toLocaleLowerCase()) ? 1 : ((modelMapper[b].name.toLocaleLowerCase() > modelMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
-    protocols.sort(function(a,b) {return (protocolMapper[a].name.toLocaleLowerCase() > protocolMapper[b].name.toLocaleLowerCase()) ? 1 : ((protocolMapper[b].name.toLocaleLowerCase() > protocolMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
+    columns.sort(function(a,b) {return (columnMapper[a].name.toLocaleLowerCase() > columnMapper[b].name.toLocaleLowerCase()) ? 1 : ((columnMapper[b].name.toLocaleLowerCase() > columnMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
 	
 	/*console.log ("models");
 	console.log (modelMapper);
-	console.log ("protocols");
-	console.log (protocolMapper);*/
+	console.log ("columns");
+	console.log (columnMapper);*/
 	
 	for (var i = 0; i < models.length; i++)
 	{
 		mat[i] = [];
-		for (var j = 0; j < protocols.length; j++)
+		for (var j = 0; j < columns.length; j++)
 		{
 			mat[i][j] = {
 					model: modelMapper[models[i]],
-					protocol: protocolMapper[protocols[j]]
+					column: columnMapper[columns[j]]
 			};
 			modelMapper[models[i]].row = i;
-			protocolMapper[protocols[j]].col = j;
-			//console.log (mat[i][j]);
+			columnMapper[columns[j]].col = j;
 		}
 	}
-	//console.log ("matrix");
-	//console.log (mat);
 	
 	for (var key in matrix.experiments)
 	{
@@ -110,8 +152,9 @@ function drawMatrix (matrix)
 		{
 			var exp = matrix.experiments[key],
 				row = modelMapper[exp.model.id].row,
-				col = protocolMapper[exp.protocol.id].col;
-			exp.name = exp.model.name + " @ " + exp.model.version + " & " + exp.protocol.name + " @ " + exp.protocol.version;
+        colEntity = exp.dataset || exp.protocol,
+				col = columnMapper[colEntity.id].col;
+			exp.name = exp.model.name + " @ " + exp.model.version + " & " + colEntity.name + " @ " + colEntity.version;
 			mat[row][col].experiment = exp;
 		}
 	}
@@ -144,13 +187,13 @@ function drawMatrix (matrix)
 			if (row == -1 && col == -1)
 				continue;
 			
-			// Top row: protocol names
+			// Top row: column names
 			if (row == -1)
 			{
 				var d1 = document.createElement("div"),
 					d2 = document.createElement("div"),
 					a = document.createElement("a"),
-					proto = mat[0][col].protocol;
+					proto = mat[0][col].column;
         a.href = proto.url;
 				d2.setAttribute("class", "vertical-text");
 				d1.setAttribute("class", "vertical-text__inner");
@@ -221,6 +264,16 @@ function drawMatrix (matrix)
 }
 
 
+function encodeQueryData(data) {
+  const ret = [];
+  for (var d in data) {
+    if (data.hasOwnProperty(d)) {
+      ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]));
+    }
+  }
+  return ret.join('&');
+}
+
 /**
  * Set up the click/hover listeners for the given matrix entry
  * @param $td  the table cell
@@ -235,15 +288,34 @@ function setExpListeners($td, entry)
 	}
 	else
 	{
-		$td.click(function () {
-			submitNewExperiment ({
-				task: "newExperiment",
-				model: entry.model.entityId,
-        model_version: entry.model.id,
-				protocol: entry.protocol.entityId,
-        protocol_version: entry.protocol.id,
-			}, $td, entry);
-		});
+    if (entry.protocol) {
+      $td.click(function () {
+        submitNewExperiment ({
+          task: "newExperiment",
+          model: entry.model.entityId,
+          model_version: entry.model.id,
+          protocol: entry.protocol.entityId,
+          protocol_version: entry.protocol.id,
+        }, $td, entry);
+      });
+    } else {
+	    var $div = $("#matrixdiv");
+
+      $td.click(function() {
+        var link = '/fitting/results/new?';
+        var params = {
+          'model': entry.model.entityId,
+          'model_version': entry.model.id,
+          'dataset': entry.column.id,
+          'protocol': entry.column.protocolId,
+          'protocol_version': entry.column.protocolLatestVersion,
+          'fittingspec': $div.data('fittingspec-id'),
+          'fittingspec_version': $div.data('fittingspec-version'),
+        }
+        location.href = link + encodeQueryData(params);
+
+      });
+    }
 	}
 
 	// Highlight the relevant row & column labels when the mouse is over this cell

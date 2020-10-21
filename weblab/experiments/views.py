@@ -72,7 +72,7 @@ class ExperimentMatrixJsonView(View):
     Serve up JSON for experiment matrix
     """
     @classmethod
-    def entity_json(cls, entity, version, *, extend_name, visibility, author, friendly_version=''):
+    def entity_json(cls, entity, version, *, extend_name, visibility, author, friendly_version='', ns='entities'):
         if extend_name:
             name = '%s @ %s' % (entity.name, friendly_version or version)
         else:
@@ -86,8 +86,8 @@ class ExperimentMatrixJsonView(View):
             'created': entity.created_at,
             'name': name,
             'url': reverse(
-                'entities:version',
-                args=[entity.entity_type, entity.id, version]
+                '%s:version' % ns,
+                args=[entity.url_type, entity.id, version]
             ),
         }
 

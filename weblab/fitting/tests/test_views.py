@@ -469,6 +469,13 @@ class TestCreateFittingResultView:
         assert response.context['form'].initial['model'] == public_model
         assert response.context['form'].initial['model_version'] == version
 
+    def test_with_preselected_model_version_by_sha(self, client, fits_user, public_model):
+        version = public_model.repocache.latest_version
+        response = client.get('/fitting/results/new', {'model_version': version.sha})
+        assert response.status_code == 200
+        assert response.context['form'].initial['model'] == public_model
+        assert response.context['form'].initial['model_version'] == version
+
     def test_with_preselected_protocol_version(self, client, fits_user, public_protocol):
         version = public_protocol.repocache.latest_version
         response = client.get('/fitting/results/new', {'protocol_version': version.pk})
@@ -476,9 +483,23 @@ class TestCreateFittingResultView:
         assert response.context['form'].initial['protocol'] == public_protocol
         assert response.context['form'].initial['protocol_version'] == version
 
+    def test_with_preselected_protocol_version_by_sha(self, client, fits_user, public_protocol):
+        version = public_protocol.repocache.latest_version
+        response = client.get('/fitting/results/new', {'protocol_version': version.sha})
+        assert response.status_code == 200
+        assert response.context['form'].initial['protocol'] == public_protocol
+        assert response.context['form'].initial['protocol_version'] == version
+
     def test_with_preselected_fittingspec_version(self, client, fits_user, public_fittingspec):
         version = public_fittingspec.repocache.latest_version
         response = client.get('/fitting/results/new', {'fittingspec_version': version.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['fittingspec'] == public_fittingspec
+        assert response.context['form'].initial['fittingspec_version'] == version
+
+    def test_with_preselected_fittingspec_version_by_sha(self, client, fits_user, public_fittingspec):
+        version = public_fittingspec.repocache.latest_version
+        response = client.get('/fitting/results/new', {'fittingspec_version': version.sha})
         assert response.status_code == 200
         assert response.context['form'].initial['fittingspec'] == public_fittingspec
         assert response.context['form'].initial['fittingspec_version'] == version
@@ -976,8 +997,8 @@ class TestFittingSpecResultsMatrixJsonView:
 
         assert len(data['getMatrix']['models']) == 1
         assert str(fit.model_version.sha) in data['getMatrix']['models']
-        assert len(data['getMatrix']['datasets']) == 1
-        assert str(fit.dataset.id) in data['getMatrix']['datasets']
+        assert len(data['getMatrix']['columns']) == 1
+        assert str(fit.dataset.id) in data['getMatrix']['columns']
         assert len(data['getMatrix']['experiments']) == 1
         assert str(fit.pk) in data['getMatrix']['experiments']
 
@@ -985,4 +1006,5 @@ class TestFittingSpecResultsMatrixJsonView:
         assert fit_data['id'] == quick_fittingresult_version.id
         assert fit_data['entity_id'] == fit.id
         assert fit_data['latestResult'] == quick_fittingresult_version.status
+        assert fit_data['dataset']['id'] == fit.dataset.id
         assert '/fitting/results/%d/versions/%d' % (fit.id, quick_fittingresult_version.id) in fit_data['url']

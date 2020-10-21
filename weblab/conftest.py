@@ -271,9 +271,9 @@ def quick_fittingresult_version(helpers):
     model_version = helpers.add_fake_version(model, 'public')
     protocol = recipes.protocol.make()
     protocol_version = helpers.add_fake_version(protocol, 'public')
-    fittingspec = recipes.fittingspec.make()
+    fittingspec = recipes.fittingspec.make(protocol=protocol)
     fittingspec_version = helpers.add_fake_version(fittingspec, 'public')
-    dataset = recipes.dataset.make(visibility='public')
+    dataset = recipes.dataset.make(visibility='public', protocol=protocol)
     return recipes.fittingresult_version.make(
         status='SUCCESS',
         fittingresult__model=model,

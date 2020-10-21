@@ -43,7 +43,13 @@
         <button id="comparisonMatrix" title="Show matrix featuring only selected models and/or datasets">Show sub-matrix</button>
     </span>
     </p>
-    <div id="matrixdiv" data-base-json-href="{% url 'fitting:matrix_json' 'spec' fittingspec.id %}" data-base-href="{% url 'experiments:list' %}"></div>
+    <div id="matrixdiv"
+      data-base-json-href="{% url 'fitting:matrix_json' 'spec' fittingspec.id %}"
+      data-base-href="{% url 'experiments:list' %}"
+      data-fittingspec-id="{{ fittingspec.id }}"
+      data-fittingspec-version="{{ fittingspec.repocache.latest_version.sha }}"
+      >
+    </div>
     <br/>
     Key:
     <table class="matrixTable small">
