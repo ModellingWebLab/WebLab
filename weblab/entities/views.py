@@ -570,6 +570,9 @@ class EntityNewVersionView(
         if delete_file:
             initial['commit_message'] = 'Delete %s' % delete_file
         initial['visibility'] = self.get_object().visibility
+        entity = self.object
+        if entity.repo.latest_commit is not None:
+            initial['parent_hexsha'] = entity.repo.latest_commit.sha
         return initial
 
     def get_form_kwargs(self):
@@ -600,6 +603,14 @@ class EntityNewVersionView(
 
         deletions = set(request.POST.getlist('delete_filename[]'))
         additions = request.POST.getlist('filename[]')
+        parent_hexsha = request.POST.get('parent_hexsha')
+
+        # check if sha is still that of the latest version
+        if entity.repo.latest_commit is not None:
+            if entity.repo.latest_commit.sha != parent_hexsha:
+                form = self.get_form()
+                form.add_error(None, 'Someone has saved a newer version since you started editing')
+                return self.form_invalid(form)
 
         # Copy files into the index
         for upload in entity.files.filter(upload__in=additions).order_by('pk'):

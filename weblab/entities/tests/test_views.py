@@ -96,6 +96,27 @@ class TestEntityCreation:
         assert response.status_code == 302
         assert '/login/' in response.url
 
+    def test_error_if_later_version(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+        helpers.add_version(model, tag_name='v1')
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'parent_hexsha': '',
+                'filename[]': ['file1.txt'],
+                'delete_filename[]': [],
+                'mainEntry': ['file1.txt'],
+                'commit_message': 'files',
+                'tag': 'v1',
+                'visibility': 'public',
+            },
+        )
+
+        assert response.status_code == 200
+        assert "Someone has saved a newer version since you started " in response.rendered_content
+
 
 @pytest.mark.django_db
 class TestEntityRenaming:
@@ -1500,6 +1521,7 @@ class TestVersionCreation:
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
+                'parent_hexsha': model.repo.latest_commit.sha,
                 'delete_filename[]': ['file1.txt'],
                 'commit_message': 'delete file1',
                 'tag': 'delete-file',
@@ -1530,6 +1552,7 @@ class TestVersionCreation:
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
+                'parent_hexsha': model.repo.latest_commit.sha,
                 'delete_filename[]': ['file1.txt', 'file2.txt'],
                 'commit_message': 'delete files',
                 'tag': 'delete-files',
@@ -1572,6 +1595,7 @@ class TestVersionCreation:
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
+                'parent_hexsha': model.repo.latest_commit.sha,
                 'filename[]': ['uploads/file1_v2.txt', 'uploads/file1_v3.txt'],
                 'delete_filename[]': ['file1.txt', 'file1.txt'],
                 'commit_message': 'replace file1',
@@ -1827,6 +1851,7 @@ class TestVersionCreation:
             response = client.post(
                 '/entities/models/%d/versions/new' % m1.pk,
                 data={
+                    'parent_hexsha': m1.repo.latest_commit.sha,
                     'filename[]': ['uploads/file2.txt'],
                     'mainEntry': ['file2.txt'],
                     'commit_message': 'new',
