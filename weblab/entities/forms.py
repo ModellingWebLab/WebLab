@@ -151,8 +151,6 @@ class EntityCollaboratorForm(forms.Form):
         user = self._get_user(email)
         if not user:
             raise ValidationError('User not found')
-        if user == self.entity.author:
-            raise ValidationError("Cannot add because user is the author")
         self.cleaned_data['user'] = user
         return email
 
