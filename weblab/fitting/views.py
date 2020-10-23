@@ -15,7 +15,6 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F, Q
-from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -24,6 +23,7 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, FormView
+from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
@@ -115,7 +115,9 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
         }
 
     def get(self, request, *args, **kwargs):
+        user = request.user
         spec = self.get_object()
+        subset = request.GET.get('subset', 'moderated')
 
         model_versions = None
 
@@ -123,7 +125,58 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
         q_models = ModelEntity.objects.all()
         q_datasets = Dataset.objects.all()
 
-        visibility_where = ~Q(visibility='private')
+        if subset == 'moderated':
+            visibility_where = Q(visibility='moderated')
+        else:
+            visibility_where = ~Q(visibility='private')
+
+        if user.is_authenticated:
+            q_mine = Q(author=user)
+            # Can also include versions the user has explicit permission to see
+            visible_entities = user.entity_set.union(
+                get_objects_for_user(user, 'entities.edit_entity', with_superuser=False)
+            ).values_list(
+                'id', flat=True
+            )
+        else:
+            q_mine = Q()
+            visible_entities = set()
+
+        # Figure out which entity versions will be listed on the axes
+        # We look at which subset has been requested: moderated, mine, all (visible), public
+        q_moderated_models = Q(cachedmodel__versions__visibility='moderated')
+        q_moderated_datasets = Q(visibility='moderated')
+        q_public_models = Q(cachedmodel__versions__visibility__in=['public', 'moderated'])
+        q_public_datasets = Q(visibility__in=['public', 'moderated'])
+        if subset == 'moderated':
+            q_models = q_models.filter(q_moderated_models)
+            q_datasets = q_datasets.filter(q_moderated_datasets)
+
+        elif subset == 'mine' and user.is_authenticated:
+            if request.GET.get('moderated-models', 'true') == 'true':
+                q_models = q_models.filter(q_mine | q_moderated_models)
+            else:
+                q_models = q_models.filter(q_mine).filter(
+                    cachedmodel__versions__visibility__in=['public', 'private'])
+            if request.GET.get('moderated-datasets', 'true') == 'true':
+                q_datasets = q_datasets.filter(q_mine | q_moderated_datasets)
+            else:
+                q_datasets = q_datasets.filter(q_mine).filter(
+                    visibility__in=['public', 'private'])
+        elif subset == 'public':
+            q_models = q_models.filter(q_public_models)
+            q_datasets = q_datasets.filter(q_public_datasets)
+        elif subset == 'all':
+            shared_models = ModelEntity.objects.shared_with_user(user)
+            q_models = q_models.filter(q_public_models | q_mine).union(shared_models)
+            shared_datasets = Dataset.objects.shared_with_user(user)
+            q_datasets = q_datasets.filter(q_public_datasets | q_mine).union(shared_datasets)
+        else:
+            q_models = ModelEntity.objects.none()
+            q_datasets = Dataset.objects.none()
+
+        if subset not in ['moderated', 'public']:
+            visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
 
         # If specific versions have been requested, show at most those
         q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
@@ -142,6 +195,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
         # Only give info on fittingresults involving the correct entity versions
         fittingresults = {}
         q_fittings = FittingResult.objects.filter(
+            fittingspec=spec,
             model__in=q_models,
             model_version__in=q_model_versions,
             dataset__in=q_datasets,
@@ -173,7 +227,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
             'getMatrix': {
                 'models': model_versions,
                 'columns': datasets,
-                'experiments':  fittingresults
+                'experiments': fittingresults
             }
         })
 

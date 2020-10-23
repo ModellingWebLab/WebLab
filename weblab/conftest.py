@@ -211,6 +211,18 @@ def moderated_protocol(helpers):
 
 
 @pytest.fixture
+def moderated_fittingspec(helpers):
+    fittingspec = recipes.fittingspec.make()
+    helpers.add_version(fittingspec, visibility='moderated')
+    return fittingspec
+
+
+@pytest.fixture
+def moderated_dataset(helpers):
+    return recipes.dataset.make(visibility='moderated')
+
+
+@pytest.fixture
 def private_model(helpers):
     model = recipes.model.make(name='private model')
     helpers.add_version(model, visibility='private')
@@ -284,6 +296,22 @@ def quick_fittingresult_version(helpers):
         fittingresult__fittingspec_version=fittingspec_version,
         fittingresult__dataset=dataset,
     )
+
+
+@pytest.fixture
+def moderated_fittingresult_version(moderated_model, moderated_protocol,
+                                    moderated_fittingspec, moderated_dataset):
+    return recipes.fittingresult_version.make(
+        status='SUCCESS',
+        fittingresult__model=moderated_model,
+        fittingresult__model_version=moderated_model.repocache.latest_version,
+        fittingresult__protocol=moderated_protocol,
+        fittingresult__protocol_version=moderated_protocol.repocache.latest_version,
+        fittingresult__fittingspec=moderated_fittingspec,
+        fittingresult__fittingspec_version=moderated_fittingspec.repocache.latest_version,
+        fittingresult__dataset=moderated_dataset,
+    )
+
 
 @pytest.fixture
 def experiment_with_result(model_with_version, protocol_with_version):
