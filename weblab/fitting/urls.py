@@ -11,9 +11,9 @@ _FILENAME = r'(?P<filename>[\w\-. \%:]+)'
 _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 _ENTITY_TYPE = '(?P<entity_type>%s)s' % FittingSpec.url_type
 
-
-result_patterns = [
-    url(
+app_name = 'fitting'
+result_patterns = ([
+   url(
         r'^(?P<pk>\d+)/versions/$',
         views.FittingResultVersionListView.as_view(),
         name='versions',
@@ -56,7 +56,7 @@ result_patterns = [
     ),
 
     url(
-        r'^compare(?P<version_pks>(/\d+){1,})(?:/show/%s)?$' % _FILEVIEW,
+       r'^compare(?P<version_pks>(/\d+){1,})(?:/show/%s)?$' % _FILEVIEW,
         views.FittingResultComparisonView.as_view(),
         name='compare',
     ),
@@ -84,10 +84,10 @@ result_patterns = [
         views.FittingResultRerunView.as_view(),
         name='rerun'
     ),
-]
+], app_name)
 
 urlpatterns = [
-    url(
+   url(
         r'^%s/$' % _ENTITY_TYPE,
         entity_views.EntityListView.as_view(),
         name='list',
@@ -131,7 +131,7 @@ urlpatterns = [
 
     url(
         r'^%s/(?P<pk>\d+)/versions/%s(?:/%s)?$' % (_ENTITY_TYPE, _COMMIT, _FILEVIEW),
-        entity_views.EntityVersionView.as_view(),
+       entity_views.EntityVersionView.as_view(),
         name='version',
     ),
 
@@ -161,7 +161,7 @@ urlpatterns = [
 
     url(
         r'^%s/compare(?P<versions>(/\d+:%s){1,})(?:/show/%s)?$' % (_ENTITY_TYPE, _COMMIT, _FILEVIEW),
-        entity_views.EntityComparisonView.as_view(),
+       entity_views.EntityComparisonView.as_view(),
         name='compare',
     ),
 
@@ -179,7 +179,7 @@ urlpatterns = [
 
     url(
         r'^tag/(?P<pk>\d+)/%s$' % _COMMIT,
-        entity_views.EntityTagVersionView.as_view(),
+       entity_views.EntityTagVersionView.as_view(),
         name='tag_version',
     ),
 
@@ -227,5 +227,5 @@ urlpatterns = [
 
     url(
         r'^results/', include(result_patterns, namespace='result')
-    ),
+   ),
 ]

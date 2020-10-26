@@ -1,7 +1,7 @@
 import urllib.parse
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
@@ -28,7 +28,7 @@ class UserCreatedModelMixin(models.Model):
     Model mixin for user-created objects
     """
     created_at = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
 
     def is_deletable_by(self, user):
         """

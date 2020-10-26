@@ -3,6 +3,7 @@ from django.conf.urls import url
 from . import views
 
 
+
 _FILENAME = r'(?P<filename>[\w\-. \%:]+)'
 _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 
@@ -81,3 +82,4 @@ urlpatterns = [
         name='compare_fittings',
     ),
 ]
+app_name = 'datasets'

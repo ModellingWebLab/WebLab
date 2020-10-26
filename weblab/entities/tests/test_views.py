@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from git import GitCommandError
 from guardian.shortcuts import assign_perm

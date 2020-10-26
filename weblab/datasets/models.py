@@ -33,7 +33,7 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
 
     description = models.TextField(validators=[MinLengthValidator(2)])
 
-    protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experimental_datasets')
+    protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experimental_datasets',on_delete=models.CASCADE)
 
     objects = DatasetQuerySet.as_manager()
 
@@ -59,7 +59,7 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
 
 
 class DatasetFile(models.Model):
-    dataset = models.ForeignKey(Dataset, related_name='file_uploads')
+    dataset = models.ForeignKey(Dataset, related_name='file_uploads',on_delete=models.CASCADE)
     upload = models.FileField(upload_to='uploads')
     original_name = models.CharField(max_length=255)
 

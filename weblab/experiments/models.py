@@ -88,11 +88,13 @@ class Experiment(ExperimentMixin, UserCreatedModelMixin, models.Model):
     There will only ever be one Experiment for a given combination of model version
     and protocol version.
     """
-    model = models.ForeignKey(ModelEntity, related_name='model_experiments')
-    protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments')
+    model = models.ForeignKey(ModelEntity, related_name='model_experiments', on_delete=models.CASCADE)
+    protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_experiments', on_delete=models.CASCADE)
 
-    model_version = models.ForeignKey(CachedModelVersion, default=None, null=False, related_name='model_ver_exps')
-    protocol_version = models.ForeignKey(CachedProtocolVersion, default=None, null=False, related_name='pro_ver_exps')
+    model_version = models.ForeignKey(CachedModelVersion, default=None, null=False,
+                                      related_name='model_ver_exps', on_delete=models.CASCADE)
+    protocol_version = models.ForeignKey(CachedProtocolVersion,
+                                        default=None, null=False, related_name='pro_ver_exps', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('model', 'protocol', 'model_version', 'protocol_version')
@@ -228,7 +230,7 @@ class ExperimentVersion(Runnable):
     The same model/protocol combination may be run more than once,
     resulting in an Experiment having multiple versions.
     """
-    experiment = models.ForeignKey(Experiment, related_name='versions')
+    experiment = models.ForeignKey(Experiment, related_name='versions', on_delete=models.CASCADE)
 
     @property
     def parent(self):
@@ -244,7 +246,7 @@ class RunningExperiment(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    runnable = models.ForeignKey(Runnable, related_name='running')
+    runnable = models.ForeignKey(Runnable, related_name='running', on_delete=models.CASCADE)
 
     task_id = models.CharField(max_length=50)
 
@@ -260,10 +262,11 @@ class PlannedExperiment(models.Model):
                                   help_text='the user that requested this experiment',
                                   null=True,  # To support migrating; new instances should provide this!
                                   default=None,
+                                  on_delete=models.CASCADE,
                                   )
 
-    model = models.ForeignKey(ModelEntity, related_name='planned_model_experiments')
-    protocol = models.ForeignKey(ProtocolEntity, related_name='planned_protocol_experiments')
+    model = models.ForeignKey(ModelEntity, related_name='planned_model_experiments', on_delete=models.CASCADE)
+    protocol = models.ForeignKey(ProtocolEntity, related_name='planned_protocol_experiments', on_delete=models.CASCADE)
 
     model_version = models.CharField(max_length=50)
     protocol_version = models.CharField(max_length=50)

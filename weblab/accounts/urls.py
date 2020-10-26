@@ -23,3 +23,4 @@ urlpatterns = [
         name='myaccount',
     ),
 ]
+app_name = 'accounts'
