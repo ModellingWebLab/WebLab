@@ -45,7 +45,7 @@
     </p>
     <div id="matrixdiv"
       data-base-json-href="{% url 'fitting:matrix_json' 'spec' fittingspec.id %}"
-      data-base-href="{% url 'experiments:list' %}"
+      data-base-href="{% url 'fitting:matrix' 'spec' fittingspec.id %}"
       data-fittingspec-id="{{ fittingspec.id }}"
       data-fittingspec-version="{{ fittingspec.repocache.latest_version.sha }}"
       >

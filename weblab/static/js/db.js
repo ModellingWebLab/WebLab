@@ -528,7 +528,7 @@ function parseLocation ()
   }
   if (rest.length > 0)
   {
-    var items = rest.split("/"),
+    var items = rest.replace(/^\//, "").split("/"),
     modelIndex = items.indexOf("models"),
     protoIndex = items.indexOf("protocols");
     if (protoIndex != -1)

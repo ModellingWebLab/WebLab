@@ -981,6 +981,33 @@ class TestTransferOwner:
 
 @pytest.mark.django_db
 class TestFittingSpecResultsMatrixView:
+
+
+    @pytest.mark.parametrize("url", [
+        '/fitting/specs/%d/results/',
+        '/fitting/specs/%d/results/mine',
+        '/fitting/specs/%d/results/public',
+        '/fitting/specs/%d/results/all',
+    #    '/experiments/public/models/1/2',
+    #    '/experiments/all/protocols/1/2',
+    #    '/experiments/models/1/2',
+    #    '/experiments/models/1/2/protocols/3/4',
+    #    '/experiments/protocols/1/2',
+    #    '/experiments/models/1/versions/abc/def',
+    #    '/experiments/models/1/versions/*',
+    #    '/experiments/models/1/versions/abc/def/protocols/3/4',
+    #    '/experiments/protocols/3/versions/abc/def',
+    #    '/experiments/protocols/3/versions/*',
+    #    '/experiments/models/1/2/protocols/3/versions/abc/def',
+    ])
+    def test_urls(self, client, url, public_fittingspec):
+        """
+        This is a dumb page that doesn't actually load any data, so we just
+        check that the URLs are working.
+        """
+        response = client.get(url % public_fittingspec.id)
+        assert response.status_code == 200
+
     def test_matrix_page_for_fitting_spec(self, client, public_fittingspec):
         response = client.get('/fitting/specs/%d/results' % public_fittingspec.pk)
         assert response.status_code == 200

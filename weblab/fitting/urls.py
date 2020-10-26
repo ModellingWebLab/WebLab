@@ -226,7 +226,10 @@ urlpatterns = [
     ),
 
     url(
-        r'^%s/(?P<pk>\d+)/results$' % _ENTITY_TYPE,
+        r'^%s/(?P<pk>\d+)/results'
+        '/?'
+        r'(?P<subset>mine|public|all)?'
+        r'$' % _ENTITY_TYPE,
         views.FittingSpecResultsMatrixView.as_view(),
         name='matrix',
     ),
