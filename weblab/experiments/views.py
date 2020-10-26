@@ -291,7 +291,7 @@ class ExperimentMatrixJsonView(View):
         return JsonResponse({
             'getMatrix': {
                 'models': model_versions,
-                'protocols': protocol_versions,
+                'columns': protocol_versions,
                 'experiments': experiments,
             }
         })

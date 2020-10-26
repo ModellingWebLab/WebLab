@@ -139,8 +139,8 @@ class TestExperimentMatrix:
 
         assert len(data['getMatrix']['models']) == 1
         assert str(exp.model_version.sha) in data['getMatrix']['models']
-        assert len(data['getMatrix']['protocols']) == 1
-        assert str(exp.protocol_version.sha) in data['getMatrix']['protocols']
+        assert len(data['getMatrix']['columns']) == 1
+        assert str(exp.protocol_version.sha) in data['getMatrix']['columns']
         assert len(data['getMatrix']['experiments']) == 1
         assert str(exp.pk) in data['getMatrix']['experiments']
 
@@ -166,7 +166,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert len(data['getMatrix']['models']) == 0
-        assert len(data['getMatrix']['protocols']) == 1
+        assert len(data['getMatrix']['columns']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
     def test_view_my_experiments_with_moderated_flags(
@@ -434,7 +434,7 @@ class TestExperimentMatrix:
         assert models[str(exp.model_version.sha)]['id'] == str(exp.model_version.sha)
         assert models[str(exp.model_version.sha)]['entityId'] == exp.model.pk
 
-        protocols = data['getMatrix']['protocols']
+        protocols = data['getMatrix']['columns']
         assert len(protocols) == 1
         assert str(exp.protocol_version.sha) in protocols
         assert protocols[str(exp.protocol_version.sha)]['id'] == str(exp.protocol_version.sha)
@@ -549,7 +549,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['protocols'].keys()) == {str(v1.sha), str(v2.sha)}
+        assert set(data['getMatrix']['columns'].keys()) == {str(v1.sha), str(v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_submatrix_with_all_protocol_versions(self, client, helpers, quick_experiment_version):
@@ -582,7 +582,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['protocols'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
+        assert set(data['getMatrix']['columns'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_submatrix_with_too_many_protocol_ids(self, client, helpers, quick_experiment_version):
@@ -632,7 +632,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert set(data['getMatrix']['models'].keys()) == {str(m1v1.sha), str(m1v2.sha)}
-        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1.sha), str(p1v2.sha)}
+        assert set(data['getMatrix']['columns'].keys()) == {str(p1v1.sha), str(p1v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk), str(exp2.pk)}
 
         # Now select only some versions
@@ -651,7 +651,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert set(data['getMatrix']['models'].keys()) == {str(m1v1.sha)}
-        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1.sha)}
+        assert set(data['getMatrix']['columns'].keys()) == {str(p1v1.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk)}
 
     def test_experiment_without_version_is_ignored(
@@ -667,7 +667,7 @@ class TestExperimentMatrix:
         response = client.get('/experiments/matrix?subset=all')
         assert response.status_code == 200
         data = json.loads(response.content.decode())
-        assert len(data['getMatrix']['protocols']) == 1
+        assert len(data['getMatrix']['columns']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
     def test_old_version_is_hidden(self, client, public_model, experiment_version, helpers):
@@ -679,7 +679,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
         assert str(new_version.sha) in data['getMatrix']['models']
-        assert str(experiment_version.experiment.protocol_version.sha) in data['getMatrix']['protocols']
+        assert str(experiment_version.experiment.protocol_version.sha) in data['getMatrix']['columns']
         assert len(data['getMatrix']['experiments']) == 0
 
 
