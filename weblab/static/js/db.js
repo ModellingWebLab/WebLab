@@ -161,7 +161,7 @@ function drawMatrix (matrix)
 	
 	var div = document.getElementById("matrixdiv"),
 		table = document.createElement("table");
-	$(div).empty();
+	$(div).data('column-type', matrix.columnType).empty();
 	table.setAttribute("class", "matrixTable");
 	div.appendChild(table);
 
@@ -193,16 +193,16 @@ function drawMatrix (matrix)
 				var d1 = document.createElement("div"),
 					d2 = document.createElement("div"),
 					a = document.createElement("a"),
-					proto = mat[0][col].column;
-        a.href = proto.url;
+					column = mat[0][col].column;
+        a.href = column.url;
 				d2.setAttribute("class", "vertical-text");
 				d1.setAttribute("class", "vertical-text__inner");
 				d2.appendChild(d1);
-				a.appendChild(document.createTextNode(proto.name));
+				a.appendChild(document.createTextNode(column.name));
 				d1.appendChild(a);
 				td.appendChild(d2);
 				$td.addClass("matrixTableCol")
-					.data({col: col, protoId: proto.entityId, protoVersion: proto.id})
+					.data({col: col, columnId: column.entityId, columnVersion: column.id})
 					.click(function (ev) {
 						if (comparisonMode) {
 							ev.preventDefault();
@@ -681,13 +681,20 @@ function prepareMatrix ()
 
     if (linesToCompare.col.length > 0)
     {
+      var colType = $(div).data('column-type');
       var cols = linesToCompare.col.map(i => $("#matrix-entry--1-" + i));
-      var protoIds = cols.map($col => $col.data('protoId'));
-      var protoVersions = cols.map($col => $col.data('protoVersion'));
-      if (components.protoVersions) {
-        url += '/protocols/' + protoIds[0] + '/versions/' + protoVersions.join('/');
-      } else {
-        url += '/protocols/' + protoIds.join('/');
+
+      if (colType == 'dataset') {
+        var datasetIds = cols.map($col => $col.data('columnId'));
+        url += '/datasets/' + datasetIds.join('/');
+      } else if (colType == 'protocol') {
+        var protoIds = cols.map($col => $col.data('columnId'));
+        var protoVersions = cols.map($col => $col.data('columnVersion'));
+        if (components.protoVersions) {
+          url += '/protocols/' + protoIds[0] + '/versions/' + protoVersions.join('/');
+        } else {
+          url += '/protocols/' + protoIds.join('/');
+        }
       }
     }
     else

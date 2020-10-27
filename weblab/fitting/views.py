@@ -117,13 +117,25 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
     def get(self, request, *args, **kwargs):
         user = request.user
         spec = self.get_object()
+        model_pks = list(map(int, request.GET.getlist('modelIds[]')))
+        dataset_pks = list(map(int, request.GET.getlist('datasetIds[]')))
+        model_versions = request.GET.getlist('modelVersions[]')
         subset = request.GET.get('subset', 'moderated')
 
-        model_versions = None
+        if model_versions and len(model_pks) > 1:
+            return JsonResponse({
+                'notifications': {
+                    'errors': ['Only one model ID can be used when versions are specified'],
+                }
+            })
 
-        # Base models/protocols to show
+        # Base models/datasets to show
         q_models = ModelEntity.objects.all()
+        if model_pks:
+            q_models = q_models.filter(id__in=set(model_pks))
         q_datasets = Dataset.objects.all()
+        if dataset_pks:
+            q_datasets = q_datasets.filter(id__in=set(dataset_pks))
 
         if subset == 'moderated':
             visibility_where = Q(visibility='moderated')
@@ -168,8 +180,12 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
             q_datasets = q_datasets.filter(q_public_datasets)
         elif subset == 'all':
             shared_models = ModelEntity.objects.shared_with_user(user)
+            if model_pks:
+                shared_models = shared_models.filter(id__in=set(model_pks))
             q_models = q_models.filter(q_public_models | q_mine).union(shared_models)
             shared_datasets = Dataset.objects.shared_with_user(user)
+            if dataset_pks:
+                shared_datasets = shared_datasets.filter(id__in=set(dataset_pks))
             q_datasets = q_datasets.filter(q_public_datasets | q_mine).union(shared_datasets)
         else:
             q_models = ModelEntity.objects.none()
@@ -225,6 +241,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
 
         return JsonResponse({
             'getMatrix': {
+                'columnType': 'dataset',
                 'models': model_versions,
                 'columns': datasets,
                 'experiments': fittingresults

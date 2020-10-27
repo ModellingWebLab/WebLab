@@ -21,7 +21,6 @@
       {% endif %}
     </p>
     {% comment %}
-      <p>
       This matrix shows the latest versions (visible to you) of the models and dataset in our database, with the corresponding experiments.
       {% if perms.create_experiment %}
         If you can't see experiments you expect to be there, this is probably because they are associated with an older version of a listed model or protocol.
@@ -35,8 +34,10 @@
       <p>
       Alternatively, enable 'comparison mode' to allow selecting arbitrary experiments from this matrix view to compare.
       Click on a column or row heading to select the entire column or row.<br/>
+   {% endcomment %}
+    <p>
       Comparison mode: <button id="comparisonModeButton"></button>
-    {% endcomment %}
+    </p>
 
     <span id="comparisonModeActions">
         <button id="comparisonLink" data-comparison-href="{% url_fitting_comparison_base %}">Compare selected fitting results</button>

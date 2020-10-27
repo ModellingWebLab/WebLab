@@ -290,6 +290,7 @@ class ExperimentMatrixJsonView(View):
 
         return JsonResponse({
             'getMatrix': {
+                'columnType': ProtocolEntity.entity_type,
                 'models': model_versions,
                 'columns': protocol_versions,
                 'experiments': experiments,

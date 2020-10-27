@@ -982,23 +982,19 @@ class TestTransferOwner:
 @pytest.mark.django_db
 class TestFittingSpecResultsMatrixView:
 
-
     @pytest.mark.parametrize("url", [
         '/fitting/specs/%d/results/',
         '/fitting/specs/%d/results/mine',
         '/fitting/specs/%d/results/public',
         '/fitting/specs/%d/results/all',
-    #    '/experiments/public/models/1/2',
-    #    '/experiments/all/protocols/1/2',
-    #    '/experiments/models/1/2',
-    #    '/experiments/models/1/2/protocols/3/4',
-    #    '/experiments/protocols/1/2',
-    #    '/experiments/models/1/versions/abc/def',
-    #    '/experiments/models/1/versions/*',
-    #    '/experiments/models/1/versions/abc/def/protocols/3/4',
-    #    '/experiments/protocols/3/versions/abc/def',
-    #    '/experiments/protocols/3/versions/*',
-    #    '/experiments/models/1/2/protocols/3/versions/abc/def',
+        '/fitting/specs/%d/results/public/models/1/2',
+        '/fitting/specs/%d/results/all/datasets/1/2',
+        '/fitting/specs/%d/results/models/1/2',
+        '/fitting/specs/%d/results/models/1/2/datasets/3/4',
+        '/fitting/specs/%d/results/datasets/1/2',
+        '/fitting/specs/%d/results/models/1/versions/abc/def',
+        '/fitting/specs/%d/results/models/1/versions/*',
+        '/fitting/specs/%d/results/models/1/versions/abc/def/datasets/3/4',
     ])
     def test_urls(self, client, url, public_fittingspec):
         """
@@ -1324,3 +1320,156 @@ class TestFittingSpecResultsMatrixJsonView:
             str(exp2.pk),
             str(exp4_public.pk),
         }
+
+    def test_submatrix(self, client, helpers, public_protocol, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+        spec = fit.fittingspec
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_fake_version(other_model, visibility='public')
+        other_dataset = recipes.dataset.make(protocol=public_protocol, visibility='public')
+
+        make_fittingresult(other_model, other_model_version, spec, other_dataset)
+
+        # Throw in a non-existent dataset so we can make sure it gets ignored
+        non_existent_pk = 0
+        response = client.get(
+            '/fitting/specs/%d/results/matrix' % spec.pk,
+            {
+                'subset': 'all',
+                'modelIds[]': [fit.model.pk, non_existent_pk],
+                'datasetIds[]': [fit.dataset.pk, non_existent_pk],
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        models = data['getMatrix']['models']
+        assert len(models) == 1
+        assert str(fit.model_version.sha) in models
+        assert models[str(fit.model_version.sha)]['id'] == str(fit.model_version.sha)
+        assert models[str(fit.model_version.sha)]['entityId'] == fit.model.pk
+
+        columns = data['getMatrix']['columns']
+        assert len(columns) == 1
+        assert str(fit.dataset.pk) in columns
+        assert columns[str(fit.dataset.pk)]['id'] == fit.dataset.pk
+        assert columns[str(fit.dataset.pk)]['entityId'] == fit.dataset.pk
+
+        experiments = data['getMatrix']['experiments']
+        assert len(experiments) == 1
+        assert str(fit.pk) in experiments
+
+    def test_submatrix_with_model_versions(self, client, helpers, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+        spec = fit.fittingspec
+        v1 = fit.model_version
+        v2 = helpers.add_fake_version(fit.model, visibility='public')
+        helpers.add_fake_version(fit.model, visibility='public')  # v3, not used
+
+        # Add an fittingresult with a different model, which shouldn't appear
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_fake_version(other_model, 'public')
+        make_fittingresult(other_model, other_model_version, spec, fit.dataset)
+
+        response = client.get(
+            '/fitting/specs/%d/results/matrix' % spec.pk,
+            {
+                'subset': 'all',
+                'modelIds[]': [fit.model.pk],
+                'modelVersions[]': [str(v1.sha), str(v2.sha)],
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha)}
+        assert set(data['getMatrix']['experiments'].keys()) == {str(fit.pk)}
+
+    def test_submatrix_with_all_model_versions(self, client, helpers, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+        spec = fit.fittingspec
+        v1 = fit.model_version
+        v2 = helpers.add_fake_version(fit.model)
+        v3 = helpers.add_fake_version(fit.model)
+
+        fit2 = make_fittingresult(
+            fit.model, v2, spec, fit.dataset,
+        )
+
+        # Add an experiment with a different model, which shouldn't appear
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_fake_version(other_model, 'public')
+        make_fittingresult(other_model, other_model_version, spec, fit.dataset)
+
+        response = client.get(
+            '/fitting/specs/%d/results/matrix' % spec.pk,
+            {
+                'subset': 'all',
+                'modelIds[]': [fit.model.pk],
+                'modelVersions[]': '*',
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
+        assert set(data['getMatrix']['experiments'].keys()) == {str(fit.pk), str(fit2.pk)}
+
+    def test_submatrix_with_too_many_model_ids(self, client, helpers, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+        spec = fit.fittingspec
+        model = recipes.model.make()
+
+        response = client.get(
+            '/fitting/specs/%d/results/matrix' % spec.pk,
+            {
+                'subset': 'all',
+                'modelIds[]': [quick_fittingresult_version.fittingresult.model.pk, model.pk],
+                'modelVersions[]': '*',
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert len(data['notifications']['errors']) == 1
+
+    def test_experiment_without_version_is_ignored(
+        self, client, public_model, public_protocol, public_fittingspec,
+    ):
+
+        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+        exp = recipes.fittingresult.make(
+            model=public_model,
+            model_version=public_model.repocache.latest_version,
+            protocol=public_protocol,
+            protocol_version=public_protocol.repocache.latest_version,
+            fittingspec=public_fittingspec,
+            fittingspec_version=public_fittingspec.repocache.latest_version,
+            dataset=dataset,
+        )
+
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % public_fittingspec.pk)
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert len(data['getMatrix']['columns']) == 1
+        assert len(data['getMatrix']['experiments']) == 0
+
+    def test_old_version_is_hidden(self, client, public_model, fittingresult_version, helpers):
+        fit = fittingresult_version.fittingresult
+
+        # Add a new model version without corresponding experiment
+        new_version = helpers.add_version(public_model, filename='file2.txt')
+
+        # We should now see this version in the matrix, but no experiments
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fit.fittingspec.pk)
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert str(new_version.sha) in data['getMatrix']['models']
+        assert str(fit.dataset.pk) in data['getMatrix']['columns']
+        assert len(data['getMatrix']['experiments']) == 0

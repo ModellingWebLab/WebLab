@@ -229,7 +229,12 @@ urlpatterns = [
         r'^%s/(?P<pk>\d+)/results'
         '/?'
         r'(?P<subset>mine|public|all)?'
-        r'$' % _ENTITY_TYPE,
+        '/?'
+        r'(?:models(?P<model_pks>(/\d+)+)'
+        '(?:/versions(?P<model_versions>(/%s)+))?)?'
+        '/?'
+        r'(?:datasets(?P<dataset_pks>(/\d+)+))?'
+        r'$' % (_ENTITY_TYPE, _COMMIT),
         views.FittingSpecResultsMatrixView.as_view(),
         name='matrix',
     ),

@@ -479,6 +479,8 @@ def my_dataset_with_file(logged_in_user, helpers, public_protocol, client):
 
 @pytest.fixture
 def fittingresult_version(public_model, public_protocol, public_fittingspec, public_dataset):
+    public_dataset.protocol = public_protocol
+    public_dataset.save()
     return recipes.fittingresult_version.make(
         status='SUCCESS',
         fittingresult__model=public_model,
