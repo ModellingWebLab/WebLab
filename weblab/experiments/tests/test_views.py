@@ -420,7 +420,7 @@ class TestExperimentMatrix:
             {
                 'subset': 'all',
                 'modelIds[]': [exp.model.pk, non_existent_pk],
-                'protoIds[]': [exp.protocol.pk, non_existent_pk],
+                'columnIds[]': [exp.protocol.pk, non_existent_pk],
             }
         )
 
@@ -540,8 +540,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'protoIds[]': [exp.protocol.pk],
-                'protoVersions[]': [str(v1.sha), str(v2.sha)],
+                'columnIds[]': [exp.protocol.pk],
+                'columnVersions[]': [str(v1.sha), str(v2.sha)],
             }
         )
 
@@ -573,8 +573,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'protoIds[]': [exp.protocol.pk],
-                'protoVersions[]': '*',
+                'columnIds[]': [exp.protocol.pk],
+                'columnVersions[]': '*',
             }
         )
 
@@ -592,8 +592,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'protoIds[]': [quick_experiment_version.experiment.protocol.pk, protocol.pk],
-                'protoVersions[]': '*',
+                'columnIds[]': [quick_experiment_version.experiment.protocol.pk, protocol.pk],
+                'columnVersions[]': '*',
             }
         )
 
@@ -623,8 +623,8 @@ class TestExperimentMatrix:
                 'subset': 'all',
                 'modelIds[]': [m1.pk],
                 'modelVersions[]': '*',
-                'protoIds[]': [p1.pk],
-                'protoVersions[]': '*',
+                'columnIds[]': [p1.pk],
+                'columnVersions[]': '*',
             }
         )
 
@@ -642,8 +642,8 @@ class TestExperimentMatrix:
                 'subset': 'all',
                 'modelIds[]': [m1.pk],
                 'modelVersions[]': [str(m1v1.sha)],
-                'protoIds[]': [p1.pk],
-                'protoVersions[]': [str(p1v1.sha)],
+                'columnIds[]': [p1.pk],
+                'columnVersions[]': [str(p1v1.sha)],
             }
         )
 

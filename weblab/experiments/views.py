@@ -150,9 +150,9 @@ class ExperimentMatrixJsonView(View):
         # Extract and sanity-check call arguments
         user = request.user
         model_pks = list(map(int, request.GET.getlist('modelIds[]')))
-        protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
+        protocol_pks = list(map(int, request.GET.getlist('columnIds[]')))
         model_versions = request.GET.getlist('modelVersions[]')
-        protocol_versions = request.GET.getlist('protoVersions[]')
+        protocol_versions = request.GET.getlist('columnVersions[]')
         subset = request.GET.get('subset', 'all' if model_pks or protocol_pks else 'moderated')
         show_fits = 'show_fits' in request.GET
 

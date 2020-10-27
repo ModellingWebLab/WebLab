@@ -161,7 +161,7 @@ function drawMatrix (matrix)
 	
 	var div = document.getElementById("matrixdiv"),
 		table = document.createElement("table");
-	$(div).data('column-type', matrix.columnType).empty();
+	$(div).empty();
 	table.setAttribute("class", "matrixTable");
 	div.appendChild(table);
 
@@ -506,7 +506,9 @@ function getMatrix(params, div) {
  */
 function parseLocation ()
 {
-  var base = $('#matrixdiv').data('base-href'),
+  var $div = $("#matrixdiv"),
+  base = $div.data('base-href'),
+  columnType = $div.data('column-type'),
   rest = "",
   ret = {},
   queryParams = (new URL(document.location)).searchParams;
@@ -528,29 +530,34 @@ function parseLocation ()
   }
   if (rest.length > 0)
   {
-    var items = rest.replace(/^\//, "").split("/"),
-    modelIndex = items.indexOf("models"),
-    protoIndex = items.indexOf("protocols");
-    if (protoIndex != -1)
+    var columnUrlFragment = columnType + 's',
+      items = rest.replace(/^\//, "").split("/"),
+      modelIndex = items.indexOf("models"),
+      colIndex = items.indexOf(columnUrlFragment);
+    if (colIndex != -1)
     {
       if (modelIndex != -1)
       {
         // /models/1/2/protocols/3/4
-        ret.modelIds = parts = items.slice(modelIndex + 1, protoIndex);
+        // /models/1/2/datasets/3/4
+        ret.modelIds = parts = items.slice(modelIndex + 1, colIndex);
         versionIndex = parts.indexOf('versions')
         if (versionIndex != -1)
         {
+          // /models/1/2/protocols/3/versions/abc/def
           ret.modelIds = parts.slice(0, versionIndex);
           ret.modelVersions = parts.slice(versionIndex + 1);
         }
       }
       // /protocols/3/4
-      parts = ret.protoIds = items.slice(protoIndex + 1);
+      // /datasets/3/4
+      parts = ret.columnIds = items.slice(colIndex + 1);
       versionIndex = parts.indexOf('versions')
       if (versionIndex != -1)
       {
-        ret.protoIds = parts.slice(0, versionIndex);
-        ret.protoVersions = parts.slice(versionIndex + 1);
+        // /protocols/3/versions/abc/def
+        ret.columnIds = parts.slice(0, versionIndex);
+        ret.columnVersions = parts.slice(versionIndex + 1);
       }
     }
     else if (modelIndex != -1)
@@ -560,6 +567,7 @@ function parseLocation ()
       versionIndex = parts.indexOf('versions')
       if (versionIndex != -1)
       {
+        // /models/1/versions/xyz
         ret.modelIds = parts.slice(0, versionIndex);
         ret.modelVersions = parts.slice(versionIndex + 1);
       }
@@ -569,12 +577,12 @@ function parseLocation ()
     {
       baseUrls.row = "/models/" + ret.modelIds.join("/");
     }
-    if (protoIndex != -1)
+    if (colIndex != -1)
     {
-      baseUrls.col = "/protocols/" + ret.protoIds.join("/");
+      baseUrls.col = "/" + columnUrlFragment + "/" + ret.columnIds.join("/");
     }
 
-    if (modelIndex == -1 && protoIndex == -1)
+    if (modelIndex == -1 && colIndex == -1)
     {
       if (items[0] == "public")
       {
@@ -690,7 +698,7 @@ function prepareMatrix ()
       } else if (colType == 'protocol') {
         var protoIds = cols.map($col => $col.data('columnId'));
         var protoVersions = cols.map($col => $col.data('columnVersion'));
-        if (components.protoVersions) {
+        if (components.columnVersions) {
           url += '/protocols/' + protoIds[0] + '/versions/' + protoVersions.join('/');
         } else {
           url += '/protocols/' + protoIds.join('/');
@@ -700,8 +708,8 @@ function prepareMatrix ()
     else
     {
       url += baseUrls.col;
-      if (components.protoVersions) {
-        url += '/versions/' + components.protoVersions.join('/');
+      if (components.columnVersions) {
+        url += '/versions/' + components.columnVersions.join('/');
       }
     }
     document.location.href = url; // TODO: use history API instead?

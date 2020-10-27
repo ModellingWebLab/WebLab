@@ -1337,7 +1337,7 @@ class TestFittingSpecResultsMatrixJsonView:
             {
                 'subset': 'all',
                 'modelIds[]': [fit.model.pk, non_existent_pk],
-                'datasetIds[]': [fit.dataset.pk, non_existent_pk],
+                'columnIds[]': [fit.dataset.pk, non_existent_pk],
             }
         )
 
