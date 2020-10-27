@@ -1033,8 +1033,8 @@ class TestFittingSpecResultsMatrixJsonView:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert len(data['getMatrix']['models']) == 1
-        assert str(fit.model_version.sha) in data['getMatrix']['models']
+        assert len(data['getMatrix']['rows']) == 1
+        assert str(fit.model_version.sha) in data['getMatrix']['rows']
         assert len(data['getMatrix']['columns']) == 1
         assert str(fit.dataset.id) in data['getMatrix']['columns']
         assert len(data['getMatrix']['experiments']) == 1
@@ -1056,7 +1056,7 @@ class TestFittingSpecResultsMatrixJsonView:
         response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fit.fittingspec.pk)
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert len(data['getMatrix']['models']) == 0
+        assert len(data['getMatrix']['rows']) == 0
         assert len(data['getMatrix']['columns']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
@@ -1336,7 +1336,7 @@ class TestFittingSpecResultsMatrixJsonView:
             '/fitting/specs/%d/results/matrix' % spec.pk,
             {
                 'subset': 'all',
-                'modelIds[]': [fit.model.pk, non_existent_pk],
+                'rowIds[]': [fit.model.pk, non_existent_pk],
                 'columnIds[]': [fit.dataset.pk, non_existent_pk],
             }
         )
@@ -1345,7 +1345,7 @@ class TestFittingSpecResultsMatrixJsonView:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        models = data['getMatrix']['models']
+        models = data['getMatrix']['rows']
         assert len(models) == 1
         assert str(fit.model_version.sha) in models
         assert models[str(fit.model_version.sha)]['id'] == str(fit.model_version.sha)
@@ -1377,8 +1377,8 @@ class TestFittingSpecResultsMatrixJsonView:
             '/fitting/specs/%d/results/matrix' % spec.pk,
             {
                 'subset': 'all',
-                'modelIds[]': [fit.model.pk],
-                'modelVersions[]': [str(v1.sha), str(v2.sha)],
+                'rowIds[]': [fit.model.pk],
+                'rowVersions[]': [str(v1.sha), str(v2.sha)],
             }
         )
 
@@ -1386,7 +1386,7 @@ class TestFittingSpecResultsMatrixJsonView:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(v1.sha), str(v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(fit.pk)}
 
     def test_submatrix_with_all_model_versions(self, client, helpers, quick_fittingresult_version):
@@ -1409,8 +1409,8 @@ class TestFittingSpecResultsMatrixJsonView:
             '/fitting/specs/%d/results/matrix' % spec.pk,
             {
                 'subset': 'all',
-                'modelIds[]': [fit.model.pk],
-                'modelVersions[]': '*',
+                'rowIds[]': [fit.model.pk],
+                'rowVersions[]': '*',
             }
         )
 
@@ -1418,7 +1418,7 @@ class TestFittingSpecResultsMatrixJsonView:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(fit.pk), str(fit2.pk)}
 
     def test_submatrix_with_too_many_model_ids(self, client, helpers, quick_fittingresult_version):
@@ -1430,8 +1430,8 @@ class TestFittingSpecResultsMatrixJsonView:
             '/fitting/specs/%d/results/matrix' % spec.pk,
             {
                 'subset': 'all',
-                'modelIds[]': [quick_fittingresult_version.fittingresult.model.pk, model.pk],
-                'modelVersions[]': '*',
+                'rowIds[]': [quick_fittingresult_version.fittingresult.model.pk, model.pk],
+                'rowVersions[]': '*',
             }
         )
 
@@ -1470,6 +1470,6 @@ class TestFittingSpecResultsMatrixJsonView:
         response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fit.fittingspec.pk)
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert str(new_version.sha) in data['getMatrix']['models']
+        assert str(new_version.sha) in data['getMatrix']['rows']
         assert str(fit.dataset.pk) in data['getMatrix']['columns']
         assert len(data['getMatrix']['experiments']) == 0

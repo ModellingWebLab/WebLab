@@ -137,8 +137,8 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert len(data['getMatrix']['models']) == 1
-        assert str(exp.model_version.sha) in data['getMatrix']['models']
+        assert len(data['getMatrix']['rows']) == 1
+        assert str(exp.model_version.sha) in data['getMatrix']['rows']
         assert len(data['getMatrix']['columns']) == 1
         assert str(exp.protocol_version.sha) in data['getMatrix']['columns']
         assert len(data['getMatrix']['experiments']) == 1
@@ -165,7 +165,7 @@ class TestExperimentMatrix:
         response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert len(data['getMatrix']['models']) == 0
+        assert len(data['getMatrix']['rows']) == 0
         assert len(data['getMatrix']['columns']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
@@ -419,7 +419,7 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [exp.model.pk, non_existent_pk],
+                'rowIds[]': [exp.model.pk, non_existent_pk],
                 'columnIds[]': [exp.protocol.pk, non_existent_pk],
             }
         )
@@ -428,7 +428,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        models = data['getMatrix']['models']
+        models = data['getMatrix']['rows']
         assert len(models) == 1
         assert str(exp.model_version.sha) in models
         assert models[str(exp.model_version.sha)]['id'] == str(exp.model_version.sha)
@@ -459,8 +459,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [exp.model.pk],
-                'modelVersions[]': [str(v1.sha), str(v2.sha)],
+                'rowIds[]': [exp.model.pk],
+                'rowVersions[]': [str(v1.sha), str(v2.sha)],
             }
         )
 
@@ -468,7 +468,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(v1.sha), str(v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk)}
 
     def test_submatrix_with_all_model_versions(self, client, helpers, quick_experiment_version):
@@ -491,8 +491,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [exp.model.pk],
-                'modelVersions[]': '*',
+                'rowIds[]': [exp.model.pk],
+                'rowVersions[]': '*',
             }
         )
 
@@ -500,7 +500,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_submatrix_with_too_many_model_ids(self, client, helpers, quick_experiment_version):
@@ -510,8 +510,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [quick_experiment_version.experiment.model.pk, model.pk],
-                'modelVersions[]': '*',
+                'rowIds[]': [quick_experiment_version.experiment.model.pk, model.pk],
+                'rowVersions[]': '*',
             }
         )
 
@@ -621,8 +621,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [m1.pk],
-                'modelVersions[]': '*',
+                'rowIds[]': [m1.pk],
+                'rowVersions[]': '*',
                 'columnIds[]': [p1.pk],
                 'columnVersions[]': '*',
             }
@@ -631,7 +631,7 @@ class TestExperimentMatrix:
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert set(data['getMatrix']['models'].keys()) == {str(m1v1.sha), str(m1v2.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(m1v1.sha), str(m1v2.sha)}
         assert set(data['getMatrix']['columns'].keys()) == {str(p1v1.sha), str(p1v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk), str(exp2.pk)}
 
@@ -640,8 +640,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [m1.pk],
-                'modelVersions[]': [str(m1v1.sha)],
+                'rowIds[]': [m1.pk],
+                'rowVersions[]': [str(m1v1.sha)],
                 'columnIds[]': [p1.pk],
                 'columnVersions[]': [str(p1v1.sha)],
             }
@@ -650,7 +650,7 @@ class TestExperimentMatrix:
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert set(data['getMatrix']['models'].keys()) == {str(m1v1.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(m1v1.sha)}
         assert set(data['getMatrix']['columns'].keys()) == {str(p1v1.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk)}
 
@@ -678,7 +678,7 @@ class TestExperimentMatrix:
         response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert str(new_version.sha) in data['getMatrix']['models']
+        assert str(new_version.sha) in data['getMatrix']['rows']
         assert str(experiment_version.experiment.protocol_version.sha) in data['getMatrix']['columns']
         assert len(data['getMatrix']['experiments']) == 0
 

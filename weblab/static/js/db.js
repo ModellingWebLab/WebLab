@@ -99,19 +99,19 @@ function submitNewFittingExperiment(jsonObject, $td, entry)
 function drawMatrix (matrix)
 {
 	//console.log (matrix);
-	var models = [],
+	var rows = [],
 		columns = [],
-		modelMapper = {},
+		rowMapper = {},
 		columnMapper = {},
 		mat = [];
 	
-	for (var key in matrix.models)
-		if (matrix.models.hasOwnProperty (key))
+	for (var key in matrix.rows)
+		if (matrix.rows.hasOwnProperty (key))
 		{
-			var version = matrix.models[key].id;
-			modelMapper[version] = matrix.models[key];
-//			modelMapper[version].name = matrix.models[key].name;
-			models.push(version);
+			var rowId = matrix.rows[key].id;
+			rowMapper[rowId] = matrix.rows[key];
+//			rowMapper[version].name = matrix.rows[key].name;
+			rows.push(rowId);
 		}
 
 	for (var key in matrix.columns)
@@ -124,24 +124,24 @@ function drawMatrix (matrix)
 		}
 
     // Sort rows & columns alphabetically (case insensitive)
-    models.sort(function(a,b) {return (modelMapper[a].name.toLocaleLowerCase() > modelMapper[b].name.toLocaleLowerCase()) ? 1 : ((modelMapper[b].name.toLocaleLowerCase() > modelMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
+    rows.sort(function(a,b) {return (rowMapper[a].name.toLocaleLowerCase() > rowMapper[b].name.toLocaleLowerCase()) ? 1 : ((rowMapper[b].name.toLocaleLowerCase() > rowMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
     columns.sort(function(a,b) {return (columnMapper[a].name.toLocaleLowerCase() > columnMapper[b].name.toLocaleLowerCase()) ? 1 : ((columnMapper[b].name.toLocaleLowerCase() > columnMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
 	
-	/*console.log ("models");
-	console.log (modelMapper);
+	/*console.log ("rows");
+	console.log (rowMapper);
 	console.log ("columns");
 	console.log (columnMapper);*/
 	
-	for (var i = 0; i < models.length; i++)
+	for (var i = 0; i < rows.length; i++)
 	{
 		mat[i] = [];
 		for (var j = 0; j < columns.length; j++)
 		{
 			mat[i][j] = {
-					model: modelMapper[models[i]],
-					column: columnMapper[columns[j]]
+					rowData: rowMapper[rows[i]],
+					columnData: columnMapper[columns[j]]
 			};
-			modelMapper[models[i]].row = i;
+			rowMapper[rows[i]].row = i;
 			columnMapper[columns[j]].col = j;
 		}
 	}
@@ -151,7 +151,7 @@ function drawMatrix (matrix)
 		if (matrix.experiments.hasOwnProperty (key))
 		{
 			var exp = matrix.experiments[key],
-				row = modelMapper[exp.model.id].row,
+				row = rowMapper[exp.model.id].row,
         colEntity = exp.dataset || exp.protocol,
 				col = columnMapper[colEntity.id].col;
 			exp.name = exp.model.name + " @ " + exp.model.version + " & " + colEntity.name + " @ " + colEntity.version;
@@ -193,7 +193,7 @@ function drawMatrix (matrix)
 				var d1 = document.createElement("div"),
 					d2 = document.createElement("div"),
 					a = document.createElement("a"),
-					column = mat[0][col].column;
+					column = mat[0][col].columnData;
         a.href = column.url;
 				d2.setAttribute("class", "vertical-text");
 				d1.setAttribute("class", "vertical-text__inner");
@@ -216,7 +216,7 @@ function drawMatrix (matrix)
 			if (col == -1)
 			{
 				var a = document.createElement("a"),
-					model = mat[row][0].model;
+					model = mat[row][0].rowData;
         a.href = model.url;
 				a.appendChild(document.createTextNode(model.name));
 				td.appendChild(a);
@@ -292,10 +292,10 @@ function setExpListeners($td, entry)
       $td.click(function () {
         submitNewExperiment ({
           task: "newExperiment",
-          model: entry.model.entityId,
-          model_version: entry.model.id,
-          protocol: entry.protocol.entityId,
-          protocol_version: entry.protocol.id,
+          model: entry.rowData.entityId,
+          model_version: entry.rowData.id,
+          protocol: entry.columnData.entityId,
+          protocol_version: entry.columnData.id,
         }, $td, entry);
       });
     } else {
@@ -304,11 +304,11 @@ function setExpListeners($td, entry)
       $td.click(function() {
         var link = '/fitting/results/new?';
         var params = {
-          'model': entry.model.entityId,
-          'model_version': entry.model.id,
-          'dataset': entry.column.id,
-          'protocol': entry.column.protocolId,
-          'protocol_version': entry.column.protocolLatestVersion,
+          'model': entry.rowData.entityId,
+          'model_version': entry.rowData.id,
+          'dataset': entry.columnData.id,
+          'protocol': entry.columnData.protocolId,
+          'protocol_version': entry.columnData.protocolLatestVersion,
           'fittingspec': $div.data('fittingspec-id'),
           'fittingspec_version': $div.data('fittingspec-version'),
         }
@@ -508,6 +508,7 @@ function parseLocation ()
 {
   var $div = $("#matrixdiv"),
   base = $div.data('base-href'),
+  rowType = $div.data('row-type'),
   columnType = $div.data('column-type'),
   rest = "",
   ret = {},
@@ -530,23 +531,24 @@ function parseLocation ()
   }
   if (rest.length > 0)
   {
-    var columnUrlFragment = columnType + 's',
+    var rowUrlFragment = rowType + 's',
+      columnUrlFragment = columnType + 's',
       items = rest.replace(/^\//, "").split("/"),
-      modelIndex = items.indexOf("models"),
+      rowIndex = items.indexOf(rowUrlFragment);
       colIndex = items.indexOf(columnUrlFragment);
     if (colIndex != -1)
     {
-      if (modelIndex != -1)
+      if (rowIndex != -1)
       {
         // /models/1/2/protocols/3/4
         // /models/1/2/datasets/3/4
-        ret.modelIds = parts = items.slice(modelIndex + 1, colIndex);
+        ret.rowIds = parts = items.slice(rowIndex + 1, colIndex);
         versionIndex = parts.indexOf('versions')
         if (versionIndex != -1)
         {
           // /models/1/2/protocols/3/versions/abc/def
-          ret.modelIds = parts.slice(0, versionIndex);
-          ret.modelVersions = parts.slice(versionIndex + 1);
+          ret.rowIds = parts.slice(0, versionIndex);
+          ret.rowVersions = parts.slice(versionIndex + 1);
         }
       }
       // /protocols/3/4
@@ -560,29 +562,29 @@ function parseLocation ()
         ret.columnVersions = parts.slice(versionIndex + 1);
       }
     }
-    else if (modelIndex != -1)
+    else if (rowIndex != -1)
     {
       // /models/1/2
-      ret.modelIds = parts = items.slice(modelIndex + 1);
+      ret.rowIds = parts = items.slice(rowIndex + 1);
       versionIndex = parts.indexOf('versions')
       if (versionIndex != -1)
       {
         // /models/1/versions/xyz
-        ret.modelIds = parts.slice(0, versionIndex);
-        ret.modelVersions = parts.slice(versionIndex + 1);
+        ret.rowIds = parts.slice(0, versionIndex);
+        ret.rowVersions = parts.slice(versionIndex + 1);
       }
     }
 
-    if (modelIndex != -1)
+    if (rowIndex != -1)
     {
-      baseUrls.row = "/models/" + ret.modelIds.join("/");
+      baseUrls.row = "/models/" + ret.rowIds.join("/");
     }
     if (colIndex != -1)
     {
       baseUrls.col = "/" + columnUrlFragment + "/" + ret.columnIds.join("/");
     }
 
-    if (modelIndex == -1 && colIndex == -1)
+    if (rowIndex == -1 && colIndex == -1)
     {
       if (items[0] == "public")
       {
@@ -671,19 +673,19 @@ function prepareMatrix ()
 
     if (linesToCompare.row.length > 0) {
       var rows = linesToCompare.row.map(i => $("#matrix-entry-" + i + "--1"));
-      var modelIds = rows.map($row => $row.data('modelId'));
-      var modelVersions = rows.map($row => $row.data('modelVersion'));
-      if (components.modelVersions) {
-        url += '/models/' + modelIds[0] + '/versions/' + modelVersions.join('/');
+      var rowIds = rows.map($row => $row.data('modelId'));
+      var rowVersions = rows.map($row => $row.data('modelVersion'));
+      if (components.rowVersions) {
+        url += '/models/' + rowIds[0] + '/versions/' + rowVersions.join('/');
       } else {
-        url += '/models/' + modelIds.join('/');
+        url += '/models/' + rowIds.join('/');
       }
     }
     else
     {
       url += baseUrls.row;
-      if (components.modelVersions) {
-        url += '/versions/' + components.modelVersions.join('/');
+      if (components.rowVersions) {
+        url += '/versions/' + components.rowVersions.join('/');
       }
     }
 

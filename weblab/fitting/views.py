@@ -117,9 +117,9 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
     def get(self, request, *args, **kwargs):
         user = request.user
         spec = self.get_object()
-        model_pks = list(map(int, request.GET.getlist('modelIds[]')))
+        model_pks = list(map(int, request.GET.getlist('rowIds[]')))
         dataset_pks = list(map(int, request.GET.getlist('columnIds[]')))
-        model_versions = request.GET.getlist('modelVersions[]')
+        model_versions = request.GET.getlist('rowVersions[]')
         subset = request.GET.get('subset', 'all' if model_pks or dataset_pks else 'moderated')
 
         if model_versions and len(model_pks) > 1:
@@ -241,8 +241,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
 
         return JsonResponse({
             'getMatrix': {
-                'columnType': 'dataset',
-                'models': model_versions,
+                'rows': model_versions,
                 'columns': datasets,
                 'experiments': fittingresults
             }

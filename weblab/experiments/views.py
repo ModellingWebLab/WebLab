@@ -149,9 +149,9 @@ class ExperimentMatrixJsonView(View):
     def get(self, request, *args, **kwargs):
         # Extract and sanity-check call arguments
         user = request.user
-        model_pks = list(map(int, request.GET.getlist('modelIds[]')))
+        model_pks = list(map(int, request.GET.getlist('rowIds[]')))
         protocol_pks = list(map(int, request.GET.getlist('columnIds[]')))
-        model_versions = request.GET.getlist('modelVersions[]')
+        model_versions = request.GET.getlist('rowVersions[]')
         protocol_versions = request.GET.getlist('columnVersions[]')
         subset = request.GET.get('subset', 'all' if model_pks or protocol_pks else 'moderated')
         show_fits = 'show_fits' in request.GET
@@ -290,8 +290,7 @@ class ExperimentMatrixJsonView(View):
 
         return JsonResponse({
             'getMatrix': {
-                'columnType': ProtocolEntity.entity_type,
-                'models': model_versions,
+                'rows': model_versions,
                 'columns': protocol_versions,
                 'experiments': experiments,
             }
