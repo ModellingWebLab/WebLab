@@ -955,6 +955,18 @@ class TestExperimentVersionView:
         assertTemplateUsed(response, 'experiments/experimentversion_detail.html')
         assertContains(response, 'Download archive of all files')
 
+    def test_view_experiment_version_logged_in(self, client, logged_in_user, experiment_version):
+        add_permission(logged_in_user, 'create_experiment')
+        response = client.get(
+            ('/experiments/%d/versions/%d' % (experiment_version.experiment.pk,
+                                              experiment_version.pk))
+        )
+
+        assert response.context['version'] == experiment_version
+        assertTemplateUsed(response, 'experiments/experimentversion_detail.html')
+        assertContains(response, 'Download archive of all files')
+        assertContains(response, 'a id="rerunExperiment"')
+
 
 @pytest.mark.django_db
 class TestExperimentTasks:
