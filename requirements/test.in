@@ -2,7 +2,7 @@
 
 codecov
 flake8
-isort
+isort<5
 model-mommy==1.5.1
 pytest==3.6.0
 pytest-django==3.8.0

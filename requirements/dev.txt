@@ -27,7 +27,7 @@ idna==2.8                 # via requests
 ipdb==0.12                # via -r dev.in
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.4.0            # via ipdb
-isort==4.2.15             # via -r dev.in, -r test.in
+isort==4.3.21             # via -r dev.in, -r test.in
 jedi==0.13.3              # via ipython
 mccabe==0.6.1             # via flake8
 model-mommy==1.5.1        # via -r test.in
