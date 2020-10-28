@@ -19,7 +19,7 @@ defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2    # via -r base.in
 django-braces==1.11.0     # via -r base.in
 django-guardian==1.4.9    # via -r base.in
-django==1.11.29           # via -r base.in, model-mommy
+django==2.2.16            # via -r base.in, model-mommy
 flake8==3.4.1             # via -r dev.in, -r test.in
 gitdb2==2.0.5             # via gitpython
 gitpython==2.1.7          # via -r base.in
@@ -59,6 +59,7 @@ six==1.12.0               # via cryptography, django-guardian, model-mommy, pip-
 smmap2==2.0.5             # via gitdb2
 social-auth-app-django==4.0.0  # via -r base.in
 social-auth-core==3.3.3   # via social-auth-app-django
+sqlparse==0.4.1           # via django
 traitlets==4.3.2          # via ipython
 urllib3==1.24.2           # via requests
 wcwidth==0.1.7            # via prompt-toolkit
