@@ -54,8 +54,7 @@ class TestDatasetCreation:
             '/datasets/new',
             data={},
         )
-        assert response.status_code == 302
-        assert '/login/' in response.url
+        assert response.status_code == 403
 
     def test_create_dataset_with_file(self, client, my_dataset_with_file):
         # These match what the fixture sets up

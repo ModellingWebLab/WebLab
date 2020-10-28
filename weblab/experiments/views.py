@@ -236,12 +236,12 @@ class ExperimentMatrixJsonView(View):
             visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
 
         # If specific versions have been requested, show at most those
-        q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
+        q_model_versions = self.versions_query('model', model_versions, q_models.values('pk'), visibility_where)
         if show_fits:  # Temporary hack
             protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=True)
         else:
             protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=False)
-        q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols, protocol_visibility_where)
+        q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols.values('pk'), protocol_visibility_where)
 
         # Get the JSON data needed to display the matrix axes
         model_versions = [self.entity_json(version.entity.entity, version.sha,

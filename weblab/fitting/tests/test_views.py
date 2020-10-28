@@ -435,7 +435,7 @@ class TestCreateFittingResultView:
 
     def test_requires_permission(self, client, logged_in_user):
         response = client.get('/fitting/results/new')
-        assert response.status_code == 302
+        assert response.status_code == 403
 
     def test_basic_page(self, client, fits_user):
         response = client.get('/fitting/results/new')
@@ -554,7 +554,7 @@ class TestFittingResultFilterJsonView:
 
     def test_requires_permission(self, client, logged_in_user):
         response = client.get('/fitting/results/new/filter')
-        assert response.status_code == 302
+        assert response.status_code == 403
 
     def test_all_models_and_versions(self, client, fits_user, helpers):
         model1 = recipes.model.make()
