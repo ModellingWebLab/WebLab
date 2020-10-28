@@ -686,7 +686,6 @@ class TestExperimentMatrix:
 @patch('requests.post', side_effect=generate_response())
 @pytest.mark.django_db
 class TestNewExperimentView:
-    @pytest.mark.usefixtures('logged_in_user')
     def test_submits_experiment(
         self, mock_post,
         client, logged_in_user, model_with_version, protocol_with_version, planned_experiments
@@ -772,7 +771,7 @@ class TestNewExperimentView:
         assert data['newExperiment']['expName'] == exp_version2.experiment.name
 
     @pytest.mark.usefixtures('logged_in_user')
-    def test_submit_experiment_requires_permissions(self, mock_post, client, logged_in_user):
+    def test_submit_experiment_requires_permissions(self, mock_post, client):
         response = client.post('/experiments/new', {})
 
         assert response.status_code == 200
@@ -784,7 +783,6 @@ class TestNewExperimentView:
             'You are not allowed to create a new experiment'
         )
 
-    @pytest.mark.usefixtures('logged_in_user')
     def test_failure_keeps_planned_experiment(
         self, mock_post,
         client, logged_in_user, model_with_version, protocol_with_version, planned_experiments
@@ -826,7 +824,6 @@ class TestNewExperimentView:
             protocol=protocol, protocol_version=protocol_version
         ).count() == 1
 
-    @pytest.mark.usefixtures('logged_in_user')
     def test_inapplicable_removes_planned_experiment(
         self, mock_post,
         client, logged_in_user, model_with_version, protocol_with_version, planned_experiments
@@ -867,7 +864,6 @@ class TestNewExperimentView:
             protocol=protocol, protocol_version=protocol_version
         ).count() == 0
 
-    @pytest.mark.usefixtures('logged_in_user')
     def test_rerun_experiment(
         self, mock_post,
         client, logged_in_user, experiment_version
@@ -954,6 +950,18 @@ class TestExperimentVersionView:
         assert response.context['version'] == experiment_version
         assertTemplateUsed(response, 'experiments/experimentversion_detail.html')
         assertContains(response, 'Download archive of all files')
+
+    def test_view_experiment_version_logged_in(self, client, logged_in_user, experiment_version):
+        add_permission(logged_in_user, 'create_experiment')
+        response = client.get(
+            ('/experiments/%d/versions/%d' % (experiment_version.experiment.pk,
+                                              experiment_version.pk))
+        )
+
+        assert response.context['version'] == experiment_version
+        assertTemplateUsed(response, 'experiments/experimentversion_detail.html')
+        assertContains(response, 'Download archive of all files')
+        assertContains(response, 'a id="rerunExperiment"')
 
 
 @pytest.mark.django_db
