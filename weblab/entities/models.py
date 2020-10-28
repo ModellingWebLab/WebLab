@@ -437,7 +437,7 @@ class ProtocolEntity(Entity):
 
 
 class EntityFile(models.Model):
-    entity = models.ForeignKey(Entity, related_name='files',on_delete=models.CASCADE)
+    entity = models.ForeignKey(Entity, related_name='files', on_delete=models.CASCADE)
     upload = models.FileField(upload_to='uploads')
     original_name = models.CharField(max_length=255)
 
@@ -450,7 +450,7 @@ class AnalysisTask(models.Model):
     A celery task analysing an entity version.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    entity = models.ForeignKey(Entity, related_name='analysis_tasks',on_delete=models.CASCADE)
+    entity = models.ForeignKey(Entity, related_name='analysis_tasks', on_delete=models.CASCADE)
     version = models.CharField(max_length=40)
 
     class Meta:

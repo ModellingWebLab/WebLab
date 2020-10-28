@@ -94,7 +94,8 @@ class Experiment(ExperimentMixin, UserCreatedModelMixin, models.Model):
     model_version = models.ForeignKey(CachedModelVersion, default=None, null=False,
                                       related_name='model_ver_exps', on_delete=models.CASCADE)
     protocol_version = models.ForeignKey(CachedProtocolVersion,
-                                        default=None, null=False, related_name='pro_ver_exps', on_delete=models.CASCADE)
+                                         default=None, null=False,
+                                         related_name='pro_ver_exps', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('model', 'protocol', 'model_version', 'protocol_version')

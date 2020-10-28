@@ -605,7 +605,12 @@ class EntityNewVersionView(
         additions = request.POST.getlist('filename[]')
         parent_hexsha = request.POST.get('parent_hexsha')
 
-
+        # check if sha is still that of the latest version
+        if entity.repo.latest_commit is not None:
+            if entity.repo.latest_commit.sha != parent_hexsha:
+                form = self.get_form()
+                form.add_error(None, 'Someone has saved a newer version since you started editing')
+                return self.form_invalid(form)
 
         # Copy files into the index
         for upload in entity.files.filter(upload__in=additions).order_by('pk'):

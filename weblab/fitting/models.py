@@ -31,7 +31,7 @@ class FittingSpec(Entity):
     protocol = models.ForeignKey(
         ProtocolEntity, related_name='fitting_specs',
         help_text='the experimental scenario used to fit models',
-        on_delete = models.CASCADE
+        on_delete=models.CASCADE
     )
 
     objects = EntityManager()
@@ -76,8 +76,10 @@ class FittingResult(ExperimentMixin, UserCreatedModelMixin, models.Model):
     model = models.ForeignKey(ModelEntity, related_name='model_fitting_results', on_delete=models.CASCADE)
     protocol = models.ForeignKey(ProtocolEntity, related_name='protocol_fitting_results', on_delete=models.CASCADE)
 
-    model_version = models.ForeignKey(CachedModelVersion, default=None, null=False, related_name='model_ver_fitres', on_delete=models.CASCADE)
-    protocol_version = models.ForeignKey(CachedProtocolVersion, default=None, null=False, related_name='pro_ver_fitres', on_delete=models.CASCADE)
+    model_version = models.ForeignKey(CachedModelVersion, default=None, null=False, related_name='model_ver_fitres',
+                                      on_delete=models.CASCADE)
+    protocol_version = models.ForeignKey(CachedProtocolVersion, default=None, null=False, related_name='pro_ver_fitres',
+                                         on_delete=models.CASCADE)
     fittingspec_version = models.ForeignKey(
         CachedFittingSpecVersion,
         default=None, null=False, related_name='fit_ver_fitres', on_delete=models.CASCADE

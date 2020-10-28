@@ -1773,7 +1773,6 @@ class TestVersionCreation:
         )
         assert response.status_code == 403
 
-
     def test_rolls_back_if_tag_exists(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
         model = recipes.model.make(author=logged_in_user)

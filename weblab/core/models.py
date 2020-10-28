@@ -28,7 +28,7 @@ class UserCreatedModelMixin(models.Model):
     Model mixin for user-created objects
     """
     created_at = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def is_deletable_by(self, user):
         """
