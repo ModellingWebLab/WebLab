@@ -28,7 +28,7 @@ urlpatterns = [
     url(r'^privacy$', TemplateView.as_view(template_name='privacy.html'), name="privacy"),
     url(r'^accounts/', include('accounts.urls', namespace='accounts')),
     url(r'^accounts/', include('django.contrib.auth.urls')),
-    url(r'^social/', include('social_django.urls')),
+    url(r'^social/', include('social_django.urls', namespace='social')),
     url(r'^entities/', include('entities.urls', namespace='entities')),
     url(r'^datasets/', include('datasets.urls', namespace='datasets')),
     url(r'^experiments/', include('experiments.urls', namespace='experiments')),
