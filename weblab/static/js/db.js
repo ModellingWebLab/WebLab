@@ -288,19 +288,10 @@ function setExpListeners($td, entry)
 	}
 	else
 	{
-    if (entry.protocol) {
-      $td.click(function () {
-        submitNewExperiment ({
-          task: "newExperiment",
-          model: entry.rowData.entityId,
-          model_version: entry.rowData.id,
-          protocol: entry.columnData.entityId,
-          protocol_version: entry.columnData.id,
-        }, $td, entry);
-      });
-    } else {
-	    var $div = $("#matrixdiv");
-
+	  var $div = $("#matrixdiv");
+    var experimentType = $div.data('experiment-type');
+    if (experimentType == 'fitting') {
+      // Link through to fitting submission form
       $td.click(function() {
         var link = '/fitting/results/new?';
         var params = {
@@ -313,7 +304,17 @@ function setExpListeners($td, entry)
           'fittingspec_version': $div.data('fittingspec-version'),
         }
         location.href = link + encodeQueryData(params);
-
+      });
+    } else {
+      // Submit new experiment directly
+      $td.click(function () {
+        submitNewExperiment ({
+          task: "newExperiment",
+          model: entry.rowData.entityId,
+          model_version: entry.rowData.id,
+          protocol: entry.columnData.entityId,
+          protocol_version: entry.columnData.id,
+        }, $td, entry);
       });
     }
 	}
