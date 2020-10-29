@@ -51,51 +51,6 @@ function submitNewExperiment(jsonObject, $td, entry)
 }
 
 
-
-/**
- * Submit a request to create a fitting experiment.
- * @param jsonObject  the data to send;
- *    an object with fields { task: "newExperiment", model, model_version, protocol, protocol_version }
- * @param $td  the table cell to contain this experiment
- * @param entry  the entry for this experiment in the data matrix
- */
-function submitNewFittingExperiment(jsonObject, $td, entry)
-{
-
-  $td.append("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
-
-  $.post('/fitting/results/new', jsonObject, function(data) {
-      var msg = data.newExperiment.responseText;
-      $td.removeClass("experiment-QUEUED experiment-RUNNING experiment-INAPPLICABLE experiment-FAILED experiment-PARTIAL experiment-SUCCESS");
-      $td.unbind("click");
-
-      if (data.newExperiment.response)
-      {
-        notifications.add(msg, "info");
-      }
-      else
-      {
-        notifications.add(msg, "error");
-      }
-      entry.experiment = {
-        name: data.newExperiment.expName,
-        id: data.newExperiment.expId,
-        latestResult: data.newExperiment.status,
-        url: data.newExperiment.url,
-      };
-      $td.addClass("experiment-" + data.newExperiment.status);
-      setExpListeners($td, entry);
-  }).fail(function() {
-      notifications.add("Server-side error occurred submitting experiment.", "error");
-      $td.addClass("experiment-FAILED");
-  }).always(function(data) {
-    notifications.display(data);
-    $td.contents().remove();
-  });
-}
-
-
-
 function drawMatrix (matrix)
 {
 	//console.log (matrix);
@@ -119,7 +74,6 @@ function drawMatrix (matrix)
 		{
 			var columnId = matrix.columns[key].id;
 			columnMapper[columnId] = matrix.columns[key];
-//			protocolMapper[version].name = matrix.protocols[key].name;
 			columns.push(columnId);
 		}
 
@@ -501,7 +455,8 @@ function getMatrix(params, div) {
 /**
  * Parse the current location URL to determine what part of the matrix to show.
  * The URL pathname should look like: {contextPath}/db/models/id1/id2/protocols/id3/id4
- * If no models or protocols are given, we show everything.
+ * or {contextPath}/db/models/id1/id2/datasets/id3/id4
+ * If no models or protocols/datasets are given, we show everything.
  * The URL can also be {contextPath}/db/public to show only what anonymous users can view.
  * Returns a JSON object to be passed to getMatrix();
  */
@@ -700,17 +655,13 @@ function prepareMatrix ()
       var colType = $(div).data('column-type');
       var cols = linesToCompare.col.map(i => $("#matrix-entry--1-" + i));
 
-      if (colType == 'dataset') {
-        var datasetIds = cols.map($col => $col.data('columnId'));
-        url += '/datasets/' + datasetIds.join('/');
-      } else if (colType == 'protocol') {
-        var protoIds = cols.map($col => $col.data('columnId'));
-        var protoVersions = cols.map($col => $col.data('columnVersion'));
-        if (components.columnVersions) {
-          url += '/protocols/' + protoIds[0] + '/versions/' + protoVersions.join('/');
-        } else {
-          url += '/protocols/' + protoIds.join('/');
-        }
+      var colIds = cols.map($col => $col.data('columnId'));
+      var colVersions = cols.map($col => $col.data('columnVersion'));
+      var colUrlPrefix = '/' + colType + 's/';
+      if (components.columnVersions) {
+        url += colUrlPrefix + colIds[0] + '/versions/' + colVersions.join('/');
+      } else {
+        url += colUrlPrefix + colIds.join('/');
       }
     }
     else
