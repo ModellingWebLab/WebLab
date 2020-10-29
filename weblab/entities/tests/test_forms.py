@@ -46,7 +46,7 @@ class TestEntityCollaboratorFormSet:
     def test_cant_add_author_as_collaborator(self, model_creator):
         model = recipes.model.make(author=model_creator)
         form = self._form({'email': model_creator.email, 'DELETE': False}, model)
-        assert form.is_valid()
+        assert not form.is_valid()
 
     def test_remove_collaborator(self, public_model, model_creator):
         assign_perm('edit_entity', model_creator, public_model)
