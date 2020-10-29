@@ -89,7 +89,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
             'author': dataset.author.get_full_name(),
             'visibility': dataset.visibility,
             'created': dataset.created_at,
-            'name': dataset.name,
+            'name': "%s (%s)" % (dataset.name, dataset.protocol.name),
             'protocolId': dataset.protocol.id,
             'protocolLatestVersion': dataset.protocol.repocache.latest_version.sha,
             'url': reverse('datasets:detail', args=[dataset.id]),
