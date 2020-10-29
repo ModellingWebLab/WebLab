@@ -477,14 +477,6 @@ function parseLocation ()
 
   $('.showButton').removeClass("selected");
   $('.showMyButton').hide();
-  if (queryParams.has('show_fits')) {
-    ret.show_fits = true;
-    $('#showFittingExpts').addClass("selected");
-    $('#showPredictionExpts').removeClass("selected");
-  } else {
-    $('#showPredictionExpts').addClass("selected");
-    $('#showFittingExpts').removeClass("selected");
-  }
   if (rest.length > 0)
   {
     var rowUrlFragment = rowType + 's',
@@ -688,14 +680,8 @@ function prepareMatrix ()
     return url + '?';
   }
 
-  function getFittingParams() {
-    params = {};
-    if ($('#showFittingExpts').hasClass("selected")) params['show_fits'] = true;
-    return params;
-  }
-
   function hideModeratedParams(hideModels, hideProtocols, hideDatasets) {
-    var params = getFittingParams();
+    var params = {};
     if (hideModels) params['moderated-models'] = false;
     if (hideProtocols) params['moderated-protocols'] = false;
     if (hideDatasets) params['moderated-datasets'] = false;
@@ -708,7 +694,7 @@ function prepareMatrix ()
         {
             $('.showButton').removeClass("selected");
             $(this).addClass("selected");
-			document.location.href = getBaseUrl() + $.param(getFittingParams());
+			document.location.href = getBaseUrl();
         }
 	});
 	$("#showPublicExpts").click(function () {
@@ -716,7 +702,7 @@ function prepareMatrix ()
         {
             $('.showButton').removeClass("selected");
             $(this).addClass("selected");
-			document.location.href = getBaseUrl() + $.param(getFittingParams());
+			document.location.href = getBaseUrl();
         }
 	});
 	$("#showAllExpts").click(function () {
@@ -724,7 +710,7 @@ function prepareMatrix ()
         {
             $('.showButton').removeClass("selected");
             $(this).addClass("selected");
-			document.location.href = getBaseUrl() + $.param(getFittingParams());
+			document.location.href = getBaseUrl();
         }
 	});
 	$("#showMyExpts").click(function () {
@@ -732,7 +718,7 @@ function prepareMatrix ()
         {
             $('.showButton').removeClass("selected");
             $(this).addClass("selected");
-			document.location.href = getBaseUrl() + $.param(getFittingParams());
+			document.location.href = getBaseUrl();
         }
 	});
 	$("#showMyExptsModels").click(function () {
@@ -753,12 +739,6 @@ function prepareMatrix ()
 			hideProtocols = $("#showMyExptsProtocols").text().substr(0,4) == 'Show';
 			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
 	});
-
-    // Hacky fitting experiment support
-    $('.showFitsButton').click(function() {
-        $('.showFitsButton').toggleClass("selected");
-        document.location.href = getBaseUrl() + $.param(getFittingParams());
-    });
 }
 
 /**

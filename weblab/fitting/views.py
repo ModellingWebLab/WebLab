@@ -306,7 +306,8 @@ class FittingResultDeleteView(dataset_views.DatasetDeleteView):
     model = FittingResult
 
     def get_success_url(self, *args, **kwargs):
-        return reverse('experiments:list') + '?show_fits=true'
+        obj = self.get_object()
+        return reverse('fitting:matrix', args=[FittingSpec.url_type, obj.fittingspec.id])
 
 
 class FittingResultVersionDeleteView(dataset_views.DatasetDeleteView):

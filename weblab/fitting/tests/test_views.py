@@ -201,13 +201,14 @@ class TestFittingResultDeletion:
         fittingresult = fittingresult_with_result.fittingresult
         fittingresult.author = logged_in_user
         fittingresult.save()
+        spec = fittingresult.fittingspec
         exp_ver_path = fittingresult_with_result.abs_path
         assert FittingResult.objects.filter(pk=fittingresult.pk).exists()
 
         response = client.post('/fitting/results/%d/delete' % fittingresult.pk)
 
         assert response.status_code == 302
-        assert response.url == '/experiments/?show_fits=true'
+        assert response.url == '/fitting/specs/%d/results' % spec.pk
 
         assert not FittingResult.objects.filter(pk=fittingresult.pk).exists()
         assert not exp_ver_path.exists()

@@ -154,7 +154,6 @@ class ExperimentMatrixJsonView(View):
         model_versions = request.GET.getlist('rowVersions[]')
         protocol_versions = request.GET.getlist('columnVersions[]')
         subset = request.GET.get('subset', 'all' if model_pks or protocol_pks else 'moderated')
-        show_fits = 'show_fits' in request.GET
 
         if model_versions and len(model_pks) > 1:
             return JsonResponse({
@@ -237,10 +236,7 @@ class ExperimentMatrixJsonView(View):
 
         # If specific versions have been requested, show at most those
         q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
-        if show_fits:  # Temporary hack
-            protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=True)
-        else:
-            protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=False)
+        protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=False)
         q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols, protocol_visibility_where)
 
         # Get the JSON data needed to display the matrix axes
