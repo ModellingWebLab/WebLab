@@ -599,6 +599,7 @@ function parseLocation ()
 
         $('#showMyExptsModels').text("Hide moderated models");
         $('#showMyExptsProtocols').text("Hide moderated protocols");
+        $('#showMyExptsDatasets').text("Hide moderated datasets");
 
         var query = location.search.substr(1);
         var result = {};
@@ -611,6 +612,10 @@ function parseLocation ()
           if (item[0] == 'moderated-protocols' && item[1] == 'false') {
             ret["moderated-protocols"] = "false";
             $('#showMyExptsProtocols').text("Show moderated protocols");
+          }
+          if (item[0] == 'moderated-datasets' && item[1] == 'false') {
+            ret["moderated-datasets"] = "false";
+            $('#showMyExptsDatasets').text("Show moderated datasets");
           }
           result[item[0]] = decodeURIComponent(item[1]);
         });
@@ -737,10 +742,11 @@ function prepareMatrix ()
     return params;
   }
 
-  function hideModeratedParams(hideModels, hideProtocols) {
+  function hideModeratedParams(hideModels, hideProtocols, hideDatasets) {
     var params = getFittingParams();
     if (hideModels) params['moderated-models'] = false;
     if (hideProtocols) params['moderated-protocols'] = false;
+    if (hideDatasets) params['moderated-datasets'] = false;
     return params;
   }
 
@@ -780,12 +786,20 @@ function prepareMatrix ()
 	$("#showMyExptsModels").click(function () {
 		var hideModels = hiddenToggle($(this)),
 			hideProtocols = $("#showMyExptsProtocols").text().substr(0,4) == 'Show';
-			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols));
+			hideDatasets = $("#showMyExptsDatasets").text().substr(0,4) == 'Show';
+			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
 	});
 	$("#showMyExptsProtocols").click(function () {
 		var hideProtocols = hiddenToggle($(this)),
 			hideModels = $("#showMyExptsModels").text().substr(0,4) == 'Show';
-			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols));
+			hideDatasets = $("#showMyExptsDatasets").text().substr(0,4) == 'Show';
+			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
+	});
+	$("#showMyExptsDatasets").click(function () {
+		var hideDatasets = hiddenToggle($(this)),
+			hideModels = $("#showMyExptsModels").text().substr(0,4) == 'Show';
+			hideProtocols = $("#showMyExptsProtocols").text().substr(0,4) == 'Show';
+			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
 	});
 
     // Hacky fitting experiment support

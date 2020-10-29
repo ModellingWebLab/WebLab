@@ -1444,7 +1444,8 @@ class TestFittingSpecResultsMatrixJsonView:
     ):
 
         dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
-        exp = recipes.fittingresult.make(
+        # fitting result with no version
+        recipes.fittingresult.make(
             model=public_model,
             model_version=public_model.repocache.latest_version,
             protocol=public_protocol,

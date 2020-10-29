@@ -276,6 +276,7 @@ def queued_fittingresult(public_model, public_protocol, public_fittingspec, publ
     recipes.running_experiment.make(runnable=version)
     return version
 
+
 @pytest.fixture
 def quick_fittingresult_version(helpers):
     """A fitting result version that exists only in the DB - no repos, no results."""
