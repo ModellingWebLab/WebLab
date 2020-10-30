@@ -5,7 +5,7 @@
 {% block title %}Fitting Experiments - {{ fittingspec.name }}{% endblock title %}
 
 {% block content %}
-<h1>Available fitting experiments for {{ fittingspec.name }}</h1>
+<h1>Available fitting experiments for <a href="{% url "fitting:detail" "spec" fittingspec.id %}">{{ fittingspec.name }}</a></h1>
 
   <section id="matrixTab">
     <p>
