@@ -133,7 +133,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
         q_models = ModelEntity.objects.all()
         if model_pks:
             q_models = q_models.filter(id__in=set(model_pks))
-        q_datasets = Dataset.objects.all()
+        q_datasets = Dataset.objects.filter(protocol=spec.protocol)
         if dataset_pks:
             q_datasets = q_datasets.filter(id__in=set(dataset_pks))
 

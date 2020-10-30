@@ -1061,10 +1061,33 @@ class TestFittingSpecResultsMatrixJsonView:
         assert len(data['getMatrix']['columns']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
+    def test_ignores_unrelated_datasets(self, client, helpers):
+        related_protocol = recipes.protocol.make()
+        helpers.add_version(related_protocol, visibility='public')
+        related_dataset = recipes.dataset.make(protocol=related_protocol)
+
+        unrelated_protocol = recipes.protocol.make()
+        helpers.add_version(unrelated_protocol, visibility='public')
+        unrelated_dataset = recipes.dataset.make(protocol=unrelated_protocol)
+
+        fittingspec = recipes.fittingspec.make(protocol=related_protocol)
+        helpers.add_version(fittingspec, visibility='public')
+
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fittingspec.pk)
+        data = json.loads(response.content.decode())
+
+        columns = data['getMatrix']['columns']
+        assert len(columns) == 1
+        assert str(related_dataset.pk) in columns
+        assert str(unrelated_dataset.pk) not in columns
+
     def test_view_mine_with_moderated_flags(
         self, client, helpers, logged_in_user,
-        moderated_model, public_fittingspec, public_protocol,
+        moderated_model, public_protocol,
     ):
+        fittingspec = recipes.fittingspec.make(protocol=public_protocol)
+        helpers.add_version(fittingspec, visibility='public')
+
         my_model = recipes.model.make(author=logged_in_user)
         my_model_version = helpers.add_fake_version(my_model, visibility='private')
 
@@ -1081,34 +1104,34 @@ class TestFittingSpecResultsMatrixJsonView:
             author=logged_in_user, protocol=public_protocol, visibility='moderated'
         )
 
-        my_version = make_fittingresult(my_model, my_model_version, public_fittingspec, my_dataset)
+        my_version = make_fittingresult(my_model, my_model_version, fittingspec, my_dataset)
 
         with_moderated_model = make_fittingresult(
             moderated_model,
             moderated_model.repocache.latest_version,
-            public_fittingspec,
+            fittingspec,
             my_dataset,
         )
         with_moderated_dataset = make_fittingresult(
             my_model,
             my_model_version,
-            public_fittingspec,
+            fittingspec,
             moderated_dataset,
         )
         with_my_moderated_model = make_fittingresult(
             my_moderated_model,
             my_moderated_model.repocache.latest_version,
-            public_fittingspec,
+            fittingspec,
             my_dataset,
         )
         with_my_moderated_dataset = make_fittingresult(
             my_model,
             my_model_version,
-            public_fittingspec,
+            fittingspec,
             my_moderated_dataset,
         )
 
-        matrix_url = '/fitting/specs/%d/results/matrix' % public_fittingspec.pk
+        matrix_url = '/fitting/specs/%d/results/matrix' % fittingspec.pk
 
         # All my fittingresults plus ones involving moderated entities
         response = client.get(matrix_url + '?subset=mine')
@@ -1157,7 +1180,10 @@ class TestFittingSpecResultsMatrixJsonView:
 
         assert len(data['getMatrix']['experiments']) == 0
 
-    def test_view_public(self, client, logged_in_user, other_user, helpers, public_fittingspec, public_protocol):
+    def test_view_public(self, client, logged_in_user, other_user, helpers, public_protocol):
+        fittingspec = recipes.fittingspec.make(protocol=public_protocol)
+        helpers.add_version(fittingspec, visibility='public')
+
         my_model_moderated = recipes.model.make(author=logged_in_user)
         my_model_moderated_version = helpers.add_fake_version(my_model_moderated, visibility='moderated')
 
@@ -1167,7 +1193,7 @@ class TestFittingSpecResultsMatrixJsonView:
         # My moderated model with my private dataset: should not be visible
         exp1 = make_fittingresult(
             my_model_moderated, my_model_moderated_version,
-            public_fittingspec,
+            fittingspec,
             my_dataset_private,
         )
 
@@ -1179,17 +1205,17 @@ class TestFittingSpecResultsMatrixJsonView:
 
         exp2 = make_fittingresult(
             other_model_public, other_model_public_version,
-            public_fittingspec,
+            fittingspec,
             my_dataset_public,
         )
         exp2_model_private = make_fittingresult(  # noqa: F841
             other_model_public, other_model_second_private_version,
-            public_fittingspec,
+            fittingspec,
             my_dataset_public,
         )
         exp2_dataset_private = make_fittingresult(
             other_model_public, other_model_public_version,
-            public_fittingspec,
+            fittingspec,
             my_dataset_private,
         )
 
@@ -1201,12 +1227,12 @@ class TestFittingSpecResultsMatrixJsonView:
 
         exp3 = make_fittingresult(
             other_model_public, other_model_public_version,
-            public_fittingspec,
+            fittingspec,
             other_dataset_moderated,
         )
         exp3_dataset_private = make_fittingresult(  # noqa: F841
             other_model_public, other_model_second_private_version,
-            public_fittingspec,
+            fittingspec,
             other_dataset_private,
         )
 
@@ -1216,10 +1242,10 @@ class TestFittingSpecResultsMatrixJsonView:
 
         exp4 = make_fittingresult(  # noqa: F841
             other_model_private, other_model_private_version,
-            public_fittingspec,
+            fittingspec,
             my_dataset_public,
         )
-        matrix_url = '/fitting/specs/%d/results/matrix' % public_fittingspec.pk
+        matrix_url = '/fitting/specs/%d/results/matrix' % fittingspec.pk
 
         response = client.get(matrix_url + '?subset=public')
         data = json.loads(response.content.decode())
@@ -1253,7 +1279,10 @@ class TestFittingSpecResultsMatrixJsonView:
             str(exp2_model_private.pk),
         }
 
-    def test_view_moderated(self, client, logged_in_user, other_user, helpers, public_fittingspec, public_protocol):
+    def test_view_moderated(self, client, logged_in_user, other_user, helpers, public_protocol):
+        fittingspec = recipes.fittingspec.make(protocol=public_protocol)
+        helpers.add_version(fittingspec, visibility='public')
+
         # My public model with somebody else's public dataset: should not be visible
         my_model_public = recipes.model.make(author=logged_in_user)
         my_model_public_version = helpers.add_fake_version(my_model_public, visibility='public')
@@ -1262,7 +1291,7 @@ class TestFittingSpecResultsMatrixJsonView:
 
         exp1 = make_fittingresult(
             my_model_public, my_model_public_version,
-            public_fittingspec,
+            fittingspec,
             other_dataset_public,
         )
 
@@ -1272,7 +1301,7 @@ class TestFittingSpecResultsMatrixJsonView:
 
         exp2 = make_fittingresult(
             my_model_public, my_model_public_version,
-            public_fittingspec,
+            fittingspec,
             other_dataset_moderated
         )
 
@@ -1282,14 +1311,14 @@ class TestFittingSpecResultsMatrixJsonView:
 
         exp3 = make_fittingresult(  # noqa: F841
             other_model_moderated, other_model_moderated_version,
-            public_fittingspec,
+            fittingspec,
             other_dataset_public
         )
 
         # Someone else's moderated model and moderated dataset: should be visible
         exp4 = make_fittingresult(
             other_model_moderated, other_model_moderated_version,
-            public_fittingspec,
+            fittingspec,
             other_dataset_moderated,
         )
 
@@ -1297,11 +1326,11 @@ class TestFittingSpecResultsMatrixJsonView:
         other_model_second_public_version = helpers.add_fake_version(other_model_moderated, visibility='public')
         exp4_public = make_fittingresult(
             other_model_moderated, other_model_second_public_version,
-            public_fittingspec,
+            fittingspec,
             other_dataset_moderated,
         )
 
-        matrix_url = '/fitting/specs/%d/results/matrix' % public_fittingspec.pk
+        matrix_url = '/fitting/specs/%d/results/matrix' % fittingspec.pk
 
         response = client.get(matrix_url)
         data = json.loads(response.content.decode())
@@ -1441,9 +1470,10 @@ class TestFittingSpecResultsMatrixJsonView:
         assert len(data['notifications']['errors']) == 1
 
     def test_experiment_without_version_is_ignored(
-        self, client, public_model, public_protocol, public_fittingspec,
+        self, client, helpers, public_model, public_protocol
     ):
-
+        fittingspec = recipes.fittingspec.make(protocol=public_protocol)
+        helpers.add_version(fittingspec, visibility='public')
         dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
         # fitting result with no version
         recipes.fittingresult.make(
@@ -1451,12 +1481,12 @@ class TestFittingSpecResultsMatrixJsonView:
             model_version=public_model.repocache.latest_version,
             protocol=public_protocol,
             protocol_version=public_protocol.repocache.latest_version,
-            fittingspec=public_fittingspec,
-            fittingspec_version=public_fittingspec.repocache.latest_version,
+            fittingspec=fittingspec,
+            fittingspec_version=fittingspec.repocache.latest_version,
             dataset=dataset,
         )
 
-        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % public_fittingspec.pk)
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fittingspec.pk)
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert len(data['getMatrix']['columns']) == 1
