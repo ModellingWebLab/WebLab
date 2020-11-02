@@ -227,8 +227,8 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
             'fittingresult',
             'fittingresult__model',
             'fittingresult__model__cachedmodel',
-            'fittingresult__protocol',
             'fittingresult__dataset',
+            'fittingresult__dataset__protocol',
         ).annotate(
             dataset_visibility=F('fittingresult__dataset__visibility'),
             model_visibility=F('fittingresult__model_version__visibility'),
