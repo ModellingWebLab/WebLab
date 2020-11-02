@@ -218,16 +218,6 @@ function drawMatrix (matrix)
 }
 
 
-function encodeQueryData(data) {
-  const ret = [];
-  for (var d in data) {
-    if (data.hasOwnProperty(d)) {
-      ret.push(encodeURIComponent(d) + '=' + encodeURIComponent(data[d]));
-    }
-  }
-  return ret.join('&');
-}
-
 /**
  * Set up the click/hover listeners for the given matrix entry
  * @param $td  the table cell
@@ -247,7 +237,7 @@ function setExpListeners($td, entry)
     if (experimentType == 'fitting') {
       // Link through to fitting submission form
       $td.click(function() {
-        var link = '/fitting/results/new?';
+        var link = $div.data('new-fitting-href') + '?';
         var params = {
           'model': entry.rowData.entityId,
           'model_version': entry.rowData.id,
@@ -257,7 +247,7 @@ function setExpListeners($td, entry)
           'fittingspec': $div.data('fittingspec-id'),
           'fittingspec_version': $div.data('fittingspec-version'),
         }
-        location.href = link + encodeQueryData(params);
+        location.href = link + $.param(params);
       });
     } else {
       // Submit new experiment directly
@@ -525,7 +515,7 @@ function parseLocation ()
 
     if (rowIndex != -1)
     {
-      baseUrls.row = "/models/" + ret.rowIds.join("/");
+      baseUrls.row = "/" + rowUrlFragment + "/" + ret.rowIds.join("/");
     }
     if (colIndex != -1)
     {
