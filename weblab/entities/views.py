@@ -596,11 +596,11 @@ class EntityNewVersionView(
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
+
+        entity = self.object = self.get_object()
         form = self.get_form()
         if not form.is_valid():
             return self.form_invalid(form)
-
-        entity = self.object = self.get_object()
 
         git_errors = []
         files_to_delete = set()  # Temp files to be removed if successful
