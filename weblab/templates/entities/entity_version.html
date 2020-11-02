@@ -68,7 +68,7 @@
         <li><a href="{{ entity|url_compare_experiments:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
         <li><a href="{{ entity|url_version_comparison_matrix }}" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>
         {% else %}
-        <li><a href="{% url "fitting:matrix" 'spec' entity.id %}" title="Compare fitting results run with this spec">Results for this spec</a></li>
+        <li><a href="{% url "fitting:matrix" 'spec' entity.id %}" title="Compare fitting results run with this spec">Fitting results for this spec</a></li>
         {% endif %}
         <li><a href="{% entity_url 'version_list' entity %}" title="Show differences between versions of this {{ type }}">Other versions</a></li>
       </ul></div>
