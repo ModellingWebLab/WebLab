@@ -1336,7 +1336,6 @@ class TestTagging:
         assert response.status_code == 200
         assert "Please enter a valid tag name" in response.rendered_content
 
-
     def test_cannot_tag_as_non_owner(self, logged_in_user, client, helpers):
         protocol = recipes.protocol.make()
         commit = helpers.add_version(protocol)
