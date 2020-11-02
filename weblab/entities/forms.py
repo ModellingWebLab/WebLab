@@ -124,8 +124,8 @@ class EntityTagVersionForm(forms.Form):
         label='New tag',
         help_text='Short label for this version',
         required=True,
-        validators=[RegexValidator(r'[-_A-Za-z0-9]', 'Please enter a valid tag name.'
-                                                     ' Only letters, numbers, dashes or underscores are allowed.')])
+        validators=[RegexValidator(r'^[-_A-Za-z0-9]$', 'Please enter a valid tag name.'
+                                                       ' Only letters, numbers, dashes or underscores are allowed.')])
 
 
 class EntityCollaboratorForm(forms.Form):

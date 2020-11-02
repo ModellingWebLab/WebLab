@@ -596,6 +596,10 @@ class EntityNewVersionView(
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if not form.is_valid():
+            return self.form_invalid(form)
+
         entity = self.object = self.get_object()
 
         git_errors = []
@@ -608,7 +612,7 @@ class EntityNewVersionView(
         # check if sha is still that of the latest version
         if entity.repo.latest_commit is not None:
             if entity.repo.latest_commit.sha != parent_hexsha:
-                form = self.get_form()
+
                 form.add_error(None, 'Someone has saved a newer version since you started editing')
                 return self.form_invalid(form)
 
@@ -643,7 +647,7 @@ class EntityNewVersionView(
             # inform the user and reset the index / working tree
             # (as resubmission of the form will do it all again).
             entity.repo.hard_reset()
-            return self.fail_with_git_errors(git_errors)
+            return self.fail_with_git_errors(git_errors, form)
 
         main_file = request.POST.get('mainEntry')
         entity.repo.generate_manifest(master_filename=main_file)
@@ -685,8 +689,8 @@ class EntityNewVersionView(
             form.add_error(None, 'No changes were made for this version')
             return self.form_invalid(form)
 
-    def fail_with_git_errors(self, git_errors):
-        form = self.get_form()
+    def fail_with_git_errors(self, git_errors, form):
+
         for error in git_errors:
             form.add_error(None, 'Git command error: %s' % error)
         return self.form_invalid(form)
