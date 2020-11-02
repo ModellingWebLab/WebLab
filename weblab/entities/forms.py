@@ -85,7 +85,7 @@ class EntityVersionForm(forms.Form):
     tag = forms.CharField(
         help_text='Optional short label for this version',
         required=False,
-        validators=[RegexValidator(r'^[-_A-Za-z0-9]$', 'Please enter a valid tag name. '
+        validators=[RegexValidator(r'^[-_A-Za-z0-9]+$', 'Please enter a valid tag name. '
                                                        'Only letters, numbers, dashes or underscores are allowed.')])
     commit_message = forms.CharField(
         label='Description of this version',
@@ -124,7 +124,7 @@ class EntityTagVersionForm(forms.Form):
         label='New tag',
         help_text='Short label for this version',
         required=True,
-        validators=[RegexValidator(r'^[-_A-Za-z0-9]$', 'Please enter a valid tag name.'
+        validators=[RegexValidator(r'^[-_A-Za-z0-9]+$', 'Please enter a valid tag name.'
                                                        ' Only letters, numbers, dashes or underscores are allowed.')])
 
 
