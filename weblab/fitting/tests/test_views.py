@@ -1004,10 +1004,6 @@ class TestFittingSpecResultsMatrixView:
         """
         response = client.get(url % public_fittingspec.id)
         assert response.status_code == 200
-
-    def test_matrix_page_for_fitting_spec(self, client, public_fittingspec):
-        response = client.get('/fitting/specs/%d/results' % public_fittingspec.pk)
-        assert response.status_code == 200
         assert response.context['fittingspec'] == public_fittingspec
 
     def test_raises_404_for_non_visible_spec(self, client, private_fittingspec):
@@ -1017,12 +1013,6 @@ class TestFittingSpecResultsMatrixView:
 
 @pytest.mark.django_db
 class TestFittingSpecResultsMatrixJsonView:
-    def test_matrix_json_for_fitting_spec(self, client, public_fittingspec):
-        response = client.get('/fitting/specs/%d/results/matrix' % public_fittingspec.pk)
-        assert response.status_code == 200
-        data = json.loads(response.content.decode())
-        assert 'getMatrix' in data
-
     def test_raises_404_for_non_visible_spec(self, client, private_fittingspec):
         response = client.get('/fitting/specs/%d/results/matrix' % private_fittingspec.pk)
         assert response.status_code == 404
@@ -1063,30 +1053,30 @@ class TestFittingSpecResultsMatrixJsonView:
 
     def test_ignores_unrelated_datasets(self, client, helpers):
         related_protocol = recipes.protocol.make()
-        helpers.add_version(related_protocol, visibility='public')
+        helpers.add_fake_version(related_protocol, visibility='public')
         related_dataset = recipes.dataset.make(protocol=related_protocol)
 
         unrelated_protocol = recipes.protocol.make()
-        helpers.add_version(unrelated_protocol, visibility='public')
+        helpers.add_fake_version(unrelated_protocol, visibility='public')
         unrelated_dataset = recipes.dataset.make(protocol=unrelated_protocol)
 
         fittingspec = recipes.fittingspec.make(protocol=related_protocol)
-        helpers.add_version(fittingspec, visibility='public')
+        helpers.add_fake_version(fittingspec, visibility='public')
 
         response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fittingspec.pk)
         data = json.loads(response.content.decode())
 
         columns = data['getMatrix']['columns']
-        assert len(columns) == 1
         assert str(related_dataset.pk) in columns
         assert str(unrelated_dataset.pk) not in columns
+        assert len(columns) == 1
 
     def test_view_mine_with_moderated_flags(
         self, client, helpers, logged_in_user,
         moderated_model, public_protocol,
     ):
         fittingspec = recipes.fittingspec.make(protocol=public_protocol)
-        helpers.add_version(fittingspec, visibility='public')
+        helpers.add_fake_version(fittingspec, visibility='public')
 
         my_model = recipes.model.make(author=logged_in_user)
         my_model_version = helpers.add_fake_version(my_model, visibility='private')
@@ -1182,7 +1172,7 @@ class TestFittingSpecResultsMatrixJsonView:
 
     def test_view_public(self, client, logged_in_user, other_user, helpers, public_protocol):
         fittingspec = recipes.fittingspec.make(protocol=public_protocol)
-        helpers.add_version(fittingspec, visibility='public')
+        helpers.add_fake_version(fittingspec, visibility='public')
 
         my_model_moderated = recipes.model.make(author=logged_in_user)
         my_model_moderated_version = helpers.add_fake_version(my_model_moderated, visibility='moderated')
@@ -1281,7 +1271,7 @@ class TestFittingSpecResultsMatrixJsonView:
 
     def test_view_moderated(self, client, logged_in_user, other_user, helpers, public_protocol):
         fittingspec = recipes.fittingspec.make(protocol=public_protocol)
-        helpers.add_version(fittingspec, visibility='public')
+        helpers.add_fake_version(fittingspec, visibility='public')
 
         # My public model with somebody else's public dataset: should not be visible
         my_model_public = recipes.model.make(author=logged_in_user)
@@ -1469,11 +1459,11 @@ class TestFittingSpecResultsMatrixJsonView:
         data = json.loads(response.content.decode())
         assert len(data['notifications']['errors']) == 1
 
-    def test_experiment_without_version_is_ignored(
+    def test_fittingresult_without_version_is_ignored(
         self, client, helpers, public_model, public_protocol
     ):
         fittingspec = recipes.fittingspec.make(protocol=public_protocol)
-        helpers.add_version(fittingspec, visibility='public')
+        helpers.add_fake_version(fittingspec, visibility='public')
         dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
         # fitting result with no version
         recipes.fittingresult.make(
