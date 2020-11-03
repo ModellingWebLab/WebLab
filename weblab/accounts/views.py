@@ -2,9 +2,10 @@ from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
-from django.views.generic.edit import FormView, UpdateView
+from django.views.generic.edit import FormView, UpdateView, DeleteView
 
 from .forms import MyAccountForm, RegistrationForm
+from .models import User
 
 
 class RegistrationView(FormView):
@@ -51,3 +52,15 @@ class MyAccountView(LoginRequiredMixin, UpdateView):
             'user_permissions': user_perms,
         })
         return super().get_context_data(**kwargs)
+
+
+class UserDeleteView(LoginRequiredMixin, DeleteView):
+    """
+    Delete a user
+    """
+    template_name = 'registration/delete_user.html'
+    model = User
+
+    def get_success_url(self, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':login')

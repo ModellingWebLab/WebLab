@@ -22,4 +22,11 @@ urlpatterns = [
         views.MyAccountView.as_view(),
         name='myaccount',
     ),
+
+    url(
+        r'^(?P<pk>\d+)/delete/$',
+        views.UserDeleteView.as_view(),
+        name='delete',
+    ),
+
 ]
