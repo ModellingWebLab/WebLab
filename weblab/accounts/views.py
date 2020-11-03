@@ -64,3 +64,4 @@ class UserDeleteView(LoginRequiredMixin, DeleteView):
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':login')
+
