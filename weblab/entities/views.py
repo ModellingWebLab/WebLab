@@ -666,7 +666,7 @@ class EntityNewVersionView(
                     entity.add_tag(tag, commit.sha)
                 except GitCommandError as e:
                     entity.repo.rollback()
-                    return self.fail_with_git_errors([e.stderr])
+                    return self.fail_with_git_errors([e.stderr], form)
 
             # Temporary upload files have been safely committed, so can be deleted
             for filepath in files_to_delete:
@@ -685,7 +685,7 @@ class EntityNewVersionView(
                 reverse(ns + ':version', args=[entity.url_type, entity.id, commit.sha]))
         else:
             # Nothing changed, so inform the user and do nothing else.
-            form = self.get_form()
+
             form.add_error(None, 'No changes were made for this version')
             return self.form_invalid(form)
 
