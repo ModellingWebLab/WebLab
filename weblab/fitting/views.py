@@ -14,6 +14,7 @@ from braces.views import UserFormKwargsMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -22,12 +23,14 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, FormView
+from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
 from datasets.models import Dataset
 from entities.models import ModelEntity, ProtocolEntity
 from entities.views import EntityNewVersionView, EntityTypeMixin, RenameView
+from experiments.views import ExperimentMatrixJsonView
 from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion
 
 from .forms import (
@@ -65,6 +68,184 @@ class FittingSpecNewVersionView(EntityNewVersionView):
 class FittingSpecRenameView(RenameView):
     """Rename a fitting specification."""
     form_class = FittingSpecRenameForm
+
+
+class FittingSpecResultsMatrixView(EntityTypeMixin, DetailView):
+    template_name = 'fitting/fittingspec_results_matrix.html'
+
+    def get_queryset(self):
+        return FittingSpec.objects.visible_to_user(self.request.user)
+
+
+class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonView):
+    def get_queryset(self):
+        return FittingSpec.objects.visible_to_user(self.request.user)
+
+    @classmethod
+    def dataset_json(cls, dataset):
+        _json = {
+            'id': dataset.id,
+            'entityId': dataset.id,
+            'author': dataset.author.get_full_name(),
+            'visibility': dataset.visibility,
+            'created': dataset.created_at,
+            'name': "%s (%s)" % (dataset.name, dataset.protocol.name),
+            'protocolId': dataset.protocol.id,
+            'protocolLatestVersion': dataset.protocol.repocache.latest_version.sha,
+            'url': reverse('datasets:detail', args=[dataset.id]),
+        }
+
+        return _json
+
+    @classmethod
+    def fittingresult_version_json(cls, version):
+        return {
+            'id': version.id,
+            'entity_id': version.fittingresult.id,
+            'latestResult': version.status,
+            'dataset': cls.dataset_json(version.fittingresult.dataset),
+            'model': cls.entity_json(
+                version.fittingresult.model, version.fittingresult.model_version.sha,
+                extend_name=True, visibility=version.model_visibility, author=version.model_author,
+            ),
+            'url': reverse(
+                'fitting:result:version',
+                args=[version.fittingresult.id, version.id]
+            ),
+        }
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        spec = self.get_object()
+        model_pks = list(map(int, request.GET.getlist('rowIds[]')))
+        dataset_pks = list(map(int, request.GET.getlist('columnIds[]')))
+        model_versions = request.GET.getlist('rowVersions[]')
+        subset = request.GET.get('subset', 'all' if model_pks or dataset_pks else 'moderated')
+
+        if model_versions and len(model_pks) > 1:
+            return JsonResponse({
+                'notifications': {
+                    'errors': ['Only one model ID can be used when versions are specified'],
+                }
+            })
+
+        # Base models/datasets to show
+        q_models = ModelEntity.objects.all()
+        if model_pks:
+            q_models = q_models.filter(id__in=set(model_pks))
+        q_datasets = Dataset.objects.filter(protocol=spec.protocol)
+        if dataset_pks:
+            q_datasets = q_datasets.filter(id__in=set(dataset_pks))
+
+        if subset == 'moderated':
+            visibility_where = Q(visibility='moderated')
+        else:
+            visibility_where = ~Q(visibility='private')
+
+        if user.is_authenticated:
+            q_mine = Q(author=user)
+            # Can also include versions the user has explicit permission to see
+            visible_entities = user.entity_set.union(
+                get_objects_for_user(user, 'entities.edit_entity', with_superuser=False)
+            ).values_list(
+                'id', flat=True
+            )
+        else:
+            q_mine = Q()
+            visible_entities = set()
+
+        # Figure out which entity versions will be listed on the axes
+        # We look at which subset has been requested: moderated, mine, all (visible), public
+        q_moderated_models = Q(cachedmodel__versions__visibility='moderated')
+        q_moderated_datasets = Q(visibility='moderated')
+        q_public_models = Q(cachedmodel__versions__visibility__in=['public', 'moderated'])
+        q_public_datasets = Q(visibility__in=['public', 'moderated'])
+        if subset == 'moderated':
+            q_models = q_models.filter(q_moderated_models)
+            q_datasets = q_datasets.filter(q_moderated_datasets)
+
+        elif subset == 'mine' and user.is_authenticated:
+            if request.GET.get('moderated-models', 'true') == 'true':
+                q_models = q_models.filter(q_mine | q_moderated_models)
+            else:
+                q_models = q_models.filter(q_mine).filter(
+                    cachedmodel__versions__visibility__in=['public', 'private'])
+            if request.GET.get('moderated-datasets', 'true') == 'true':
+                q_datasets = q_datasets.filter(q_mine | q_moderated_datasets)
+            else:
+                q_datasets = q_datasets.filter(q_mine).filter(
+                    visibility__in=['public', 'private'])
+        elif subset == 'public':
+            q_models = q_models.filter(q_public_models)
+            q_datasets = q_datasets.filter(q_public_datasets)
+        elif subset == 'all':
+            shared_models = ModelEntity.objects.shared_with_user(user)
+            if model_pks:
+                shared_models = shared_models.filter(id__in=set(model_pks))
+            q_models = q_models.filter(q_public_models | q_mine).union(shared_models)
+            shared_datasets = Dataset.objects.shared_with_user(user)
+            if dataset_pks:
+                shared_datasets = shared_datasets.filter(id__in=set(dataset_pks))
+            q_datasets = q_datasets.filter(q_public_datasets | q_mine).union(shared_datasets)
+        else:
+            q_models = ModelEntity.objects.none()
+            q_datasets = Dataset.objects.none()
+
+        if subset not in ['moderated', 'public']:
+            visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
+
+        # If specific versions have been requested, show at most those
+        q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
+
+        # Get the JSON data needed to display the matrix axes
+        model_versions = [self.entity_json(version.entity.entity, version.sha,
+                                           extend_name=bool(model_versions),
+                                           visibility=version.visibility,
+                                           author=version.author_name,
+                                           friendly_version=version.friendly_name)
+                          for version in q_model_versions]
+        model_versions = {ver['id']: ver for ver in model_versions}
+
+        datasets = {ds.id: self.dataset_json(ds) for ds in q_datasets}
+
+        # Only give info on fittingresults involving the correct entity versions
+        fittingresults = {}
+        q_fittings = FittingResult.objects.filter(
+            fittingspec=spec,
+            model__in=q_models,
+            model_version__in=q_model_versions,
+            dataset__in=q_datasets,
+        )
+        q_fittingresult_versions = FittingResultVersion.objects.filter(
+            fittingresult__in=q_fittings,
+        ).order_by(
+            'fittingresult__id',
+            '-created_at',
+        ).distinct(
+            'fittingresult__id'
+        ).select_related(
+            'fittingresult',
+            'fittingresult__model',
+            'fittingresult__model__cachedmodel',
+            'fittingresult__dataset',
+            'fittingresult__dataset__protocol',
+        ).annotate(
+            dataset_visibility=F('fittingresult__dataset__visibility'),
+            model_visibility=F('fittingresult__model_version__visibility'),
+            dataset_author=F('fittingresult__dataset__author__full_name'),
+            model_author=F('fittingresult__model__author__full_name'),
+        )
+
+        for fit_ver in q_fittingresult_versions:
+            fittingresults[fit_ver.fittingresult.pk] = self.fittingresult_version_json(fit_ver)
+
+        return JsonResponse({
+            'getMatrix': {
+                'rows': model_versions,
+                'columns': datasets,
+                'experiments': fittingresults
+            }
+        })
 
 
 class FittingResultVersionListView(VisibilityMixin, DetailView):
@@ -125,7 +306,8 @@ class FittingResultDeleteView(dataset_views.DatasetDeleteView):
     model = FittingResult
 
     def get_success_url(self, *args, **kwargs):
-        return reverse('experiments:list') + '?show_fits=true'
+        obj = self.get_object()
+        return reverse('fitting:matrix', args=[FittingSpec.url_type, obj.fittingspec.id])
 
 
 class FittingResultVersionDeleteView(dataset_views.DatasetDeleteView):
@@ -229,37 +411,43 @@ class FittingResultCreateView(LoginRequiredMixin, PermissionRequiredMixin, UserF
     def get_initial(self):
         initial = super().get_initial()
         model_id = self.request.GET.get('model')
-        model_version_id = self.request.GET.get('model_version')
+        model_version = self.request.GET.get('model_version')
         protocol_id = self.request.GET.get('protocol')
-        protocol_version_id = self.request.GET.get('protocol_version')
+        protocol_version = self.request.GET.get('protocol_version')
         fittingspec_id = self.request.GET.get('fittingspec')
-        fittingspec_version_id = self.request.GET.get('fittingspec_version')
+        fittingspec_version = self.request.GET.get('fittingspec_version')
         dataset_id = self.request.GET.get('dataset')
 
-        if model_version_id:
+        def get_version_query(version):
+            if len(version) == 40:
+                return {'sha': version}
+            else:
+                return {'id': version}
+
+        if model_version:
             initial['model_version'] = get_object_or_404(
                 CachedModelVersion.objects.visible_to_user(self.request.user),
-                pk=model_version_id)
+                **get_version_query(model_version))
             initial['model'] = initial['model_version'].model
         elif model_id:
             initial['model'] = get_object_or_404(
                 ModelEntity.objects.visible_to_user(self.request.user),
                 pk=model_id)
 
-        if protocol_version_id:
+        if protocol_version:
             initial['protocol_version'] = get_object_or_404(
                 CachedProtocolVersion.objects.visible_to_user(self.request.user),
-                pk=protocol_version_id)
+                **get_version_query(protocol_version))
             initial['protocol'] = initial['protocol_version'].protocol
         elif protocol_id:
             initial['protocol'] = get_object_or_404(
                 ProtocolEntity.objects.visible_to_user(self.request.user),
                 pk=protocol_id)
 
-        if fittingspec_version_id:
+        if fittingspec_version:
             initial['fittingspec_version'] = get_object_or_404(
                 CachedFittingSpecVersion.objects.visible_to_user(self.request.user),
-                pk=fittingspec_version_id)
+                **get_version_query(fittingspec_version))
             initial['fittingspec'] = initial['fittingspec_version'].fittingspec
         elif fittingspec_id:
             initial['fittingspec'] = get_object_or_404(

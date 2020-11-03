@@ -15,4 +15,3 @@ def url_fitting_comparison_base():
     # between fitting result versions.
     url = reverse('fitting:result:compare', args=['/1/1'])
     return url[:-4]
-

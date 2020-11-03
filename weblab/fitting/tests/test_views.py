@@ -20,6 +20,20 @@ def archive_file_path():
     return str(Path(__file__).absolute().parent.joinpath('./test.omex'))
 
 
+def make_fittingresult(model, model_version, fittingspec, dataset):
+    """Create an experiment in the DB with a single version."""
+    fit = recipes.fittingresult.make(
+        model=model, model_version=model_version,
+        protocol=dataset.protocol,
+        protocol_version=dataset.protocol.repocache.latest_version,
+        fittingspec=fittingspec,
+        fittingspec_version=fittingspec.repocache.latest_version,
+        dataset=dataset,
+    )
+    recipes.fittingresult_version.make(fittingresult=fit)
+    return fit
+
+
 @pytest.mark.django_db
 class TestFittingResultVersionsView:
     def test_view_fittingresult_versions(self, client, fittingresult_version):
@@ -187,13 +201,14 @@ class TestFittingResultDeletion:
         fittingresult = fittingresult_with_result.fittingresult
         fittingresult.author = logged_in_user
         fittingresult.save()
+        spec = fittingresult.fittingspec
         exp_ver_path = fittingresult_with_result.abs_path
         assert FittingResult.objects.filter(pk=fittingresult.pk).exists()
 
         response = client.post('/fitting/results/%d/delete' % fittingresult.pk)
 
         assert response.status_code == 302
-        assert response.url == '/experiments/?show_fits=true'
+        assert response.url == '/fitting/specs/%d/results' % spec.pk
 
         assert not FittingResult.objects.filter(pk=fittingresult.pk).exists()
         assert not exp_ver_path.exists()
@@ -469,6 +484,13 @@ class TestCreateFittingResultView:
         assert response.context['form'].initial['model'] == public_model
         assert response.context['form'].initial['model_version'] == version
 
+    def test_with_preselected_model_version_by_sha(self, client, fits_user, public_model):
+        version = public_model.repocache.latest_version
+        response = client.get('/fitting/results/new', {'model_version': version.sha})
+        assert response.status_code == 200
+        assert response.context['form'].initial['model'] == public_model
+        assert response.context['form'].initial['model_version'] == version
+
     def test_with_preselected_protocol_version(self, client, fits_user, public_protocol):
         version = public_protocol.repocache.latest_version
         response = client.get('/fitting/results/new', {'protocol_version': version.pk})
@@ -476,9 +498,23 @@ class TestCreateFittingResultView:
         assert response.context['form'].initial['protocol'] == public_protocol
         assert response.context['form'].initial['protocol_version'] == version
 
+    def test_with_preselected_protocol_version_by_sha(self, client, fits_user, public_protocol):
+        version = public_protocol.repocache.latest_version
+        response = client.get('/fitting/results/new', {'protocol_version': version.sha})
+        assert response.status_code == 200
+        assert response.context['form'].initial['protocol'] == public_protocol
+        assert response.context['form'].initial['protocol_version'] == version
+
     def test_with_preselected_fittingspec_version(self, client, fits_user, public_fittingspec):
         version = public_fittingspec.repocache.latest_version
         response = client.get('/fitting/results/new', {'fittingspec_version': version.pk})
+        assert response.status_code == 200
+        assert response.context['form'].initial['fittingspec'] == public_fittingspec
+        assert response.context['form'].initial['fittingspec_version'] == version
+
+    def test_with_preselected_fittingspec_version_by_sha(self, client, fits_user, public_fittingspec):
+        version = public_fittingspec.repocache.latest_version
+        response = client.get('/fitting/results/new', {'fittingspec_version': version.sha})
         assert response.status_code == 200
         assert response.context['form'].initial['fittingspec'] == public_fittingspec
         assert response.context['form'].initial['fittingspec_version'] == version
@@ -942,3 +978,520 @@ class TestTransferOwner:
         assert fittingspec.author == other_user
         assert not oldpath.exists()
         assert fittingspec.repo_abs_path.exists()
+
+
+@pytest.mark.django_db
+class TestFittingSpecResultsMatrixView:
+
+    @pytest.mark.parametrize("url", [
+        '/fitting/specs/%d/results/',
+        '/fitting/specs/%d/results/mine',
+        '/fitting/specs/%d/results/public',
+        '/fitting/specs/%d/results/all',
+        '/fitting/specs/%d/results/public/models/1/2',
+        '/fitting/specs/%d/results/all/datasets/1/2',
+        '/fitting/specs/%d/results/models/1/2',
+        '/fitting/specs/%d/results/models/1/2/datasets/3/4',
+        '/fitting/specs/%d/results/datasets/1/2',
+        '/fitting/specs/%d/results/models/1/versions/abc/def',
+        '/fitting/specs/%d/results/models/1/versions/*',
+        '/fitting/specs/%d/results/models/1/versions/abc/def/datasets/3/4',
+    ])
+    def test_urls(self, client, url, public_fittingspec):
+        """
+        This is a dumb page that doesn't actually load any data, so we just
+        check that the URLs are working.
+        """
+        response = client.get(url % public_fittingspec.id)
+        assert response.status_code == 200
+        assert response.context['fittingspec'] == public_fittingspec
+
+    def test_raises_404_for_non_visible_spec(self, client, private_fittingspec):
+        response = client.get('/fitting/specs/%d/results' % private_fittingspec.pk)
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestFittingSpecResultsMatrixJsonView:
+    def test_raises_404_for_non_visible_spec(self, client, private_fittingspec):
+        response = client.get('/fitting/specs/%d/results/matrix' % private_fittingspec.pk)
+        assert response.status_code == 404
+
+    def test_matrix_json(self, client, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fit.fittingspec.pk)
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        assert len(data['getMatrix']['rows']) == 1
+        assert str(fit.model_version.sha) in data['getMatrix']['rows']
+        assert len(data['getMatrix']['columns']) == 1
+        assert str(fit.dataset.id) in data['getMatrix']['columns']
+        assert len(data['getMatrix']['experiments']) == 1
+        assert str(fit.pk) in data['getMatrix']['experiments']
+
+        fit_data = data['getMatrix']['experiments'][str(fit.pk)]
+        assert fit_data['id'] == quick_fittingresult_version.id
+        assert fit_data['entity_id'] == fit.id
+        assert fit_data['latestResult'] == quick_fittingresult_version.status
+        assert fit_data['dataset']['id'] == fit.dataset.id
+        assert '/fitting/results/%d/versions/%d' % (fit.id, quick_fittingresult_version.id) in fit_data['url']
+
+    def test_anonymous_cannot_see_private_data(self, client, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+        model_version = fit.model_version
+        model_version.visibility = 'private'
+        model_version.save()
+
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fit.fittingspec.pk)
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert len(data['getMatrix']['rows']) == 0
+        assert len(data['getMatrix']['columns']) == 1
+        assert len(data['getMatrix']['experiments']) == 0
+
+    def test_ignores_unrelated_datasets(self, client, helpers):
+        related_protocol = recipes.protocol.make()
+        helpers.add_fake_version(related_protocol, visibility='public')
+        related_dataset = recipes.dataset.make(protocol=related_protocol)
+
+        unrelated_protocol = recipes.protocol.make()
+        helpers.add_fake_version(unrelated_protocol, visibility='public')
+        unrelated_dataset = recipes.dataset.make(protocol=unrelated_protocol)
+
+        fittingspec = recipes.fittingspec.make(protocol=related_protocol)
+        helpers.add_fake_version(fittingspec, visibility='public')
+
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fittingspec.pk)
+        data = json.loads(response.content.decode())
+
+        columns = data['getMatrix']['columns']
+        assert str(related_dataset.pk) in columns
+        assert str(unrelated_dataset.pk) not in columns
+        assert len(columns) == 1
+
+    def test_view_mine_with_moderated_flags(
+        self, client, helpers, logged_in_user,
+        moderated_model, public_protocol,
+    ):
+        fittingspec = recipes.fittingspec.make(protocol=public_protocol)
+        helpers.add_fake_version(fittingspec, visibility='public')
+
+        my_model = recipes.model.make(author=logged_in_user)
+        my_model_version = helpers.add_fake_version(my_model, visibility='private')
+
+        my_moderated_model = recipes.model.make(author=logged_in_user)
+        helpers.add_fake_version(my_moderated_model, visibility='moderated')
+
+        my_dataset = recipes.dataset.make(
+            author=logged_in_user, protocol=public_protocol, visibility='private'
+        )
+        moderated_dataset = recipes.dataset.make(
+            protocol=public_protocol, visibility='moderated'
+        )
+        my_moderated_dataset = recipes.dataset.make(
+            author=logged_in_user, protocol=public_protocol, visibility='moderated'
+        )
+
+        my_version = make_fittingresult(my_model, my_model_version, fittingspec, my_dataset)
+
+        with_moderated_model = make_fittingresult(
+            moderated_model,
+            moderated_model.repocache.latest_version,
+            fittingspec,
+            my_dataset,
+        )
+        with_moderated_dataset = make_fittingresult(
+            my_model,
+            my_model_version,
+            fittingspec,
+            moderated_dataset,
+        )
+        with_my_moderated_model = make_fittingresult(
+            my_moderated_model,
+            my_moderated_model.repocache.latest_version,
+            fittingspec,
+            my_dataset,
+        )
+        with_my_moderated_dataset = make_fittingresult(
+            my_model,
+            my_model_version,
+            fittingspec,
+            my_moderated_dataset,
+        )
+
+        matrix_url = '/fitting/specs/%d/results/matrix' % fittingspec.pk
+
+        # All my fittingresults plus ones involving moderated entities
+        response = client.get(matrix_url + '?subset=mine')
+        data = json.loads(response.content.decode())
+        fittingresult_ids = set(data['getMatrix']['experiments'])
+        assert fittingresult_ids == {
+            str(my_version.pk),
+            str(with_moderated_model.pk),
+            str(with_moderated_dataset.pk),
+            str(with_my_moderated_model.pk),
+            str(with_my_moderated_dataset.pk),
+        }
+
+        # Exclude those involving moderated datasets
+        response = client.get(matrix_url + '?subset=mine&moderated-datasets=false')
+        data = json.loads(response.content.decode())
+        fittingresult_ids = set(data['getMatrix']['experiments'])
+        assert fittingresult_ids == {
+            str(my_version.pk),
+            str(with_moderated_model.pk),
+            str(with_my_moderated_model.pk),
+        }
+
+        # Exclude those involving moderated models
+        response = client.get(matrix_url + '?subset=mine&moderated-models=false')
+        data = json.loads(response.content.decode())
+        fittingresult_ids = set(data['getMatrix']['experiments'])
+        assert fittingresult_ids == {
+            str(my_version.pk),
+            str(with_moderated_dataset.pk),
+            str(with_my_moderated_dataset.pk),
+        }
+
+        # Don't show anything moderated
+        response = client.get(matrix_url + '?subset=mine&moderated-models=false&moderated-datasets=false')
+        data = json.loads(response.content.decode())
+        fittingresult_ids = set(data['getMatrix']['experiments'])
+        assert fittingresult_ids == {
+            str(my_version.pk),
+        }
+
+    def test_view_mine_empty_for_anonymous(self, client, helpers, quick_fittingresult_version):
+        spec = quick_fittingresult_version.fittingresult.fittingspec
+        response = client.get('/fitting/specs/%d/results/matrix?subset=mine' % spec.pk)
+        data = json.loads(response.content.decode())
+
+        assert len(data['getMatrix']['experiments']) == 0
+
+    def test_view_public(self, client, logged_in_user, other_user, helpers, public_protocol):
+        fittingspec = recipes.fittingspec.make(protocol=public_protocol)
+        helpers.add_fake_version(fittingspec, visibility='public')
+
+        my_model_moderated = recipes.model.make(author=logged_in_user)
+        my_model_moderated_version = helpers.add_fake_version(my_model_moderated, visibility='moderated')
+
+        my_dataset_private = recipes.dataset.make(author=logged_in_user, visibility='private', protocol=public_protocol)
+        my_dataset_public = recipes.dataset.make(author=logged_in_user, visibility='public', protocol=public_protocol)
+
+        # My moderated model with my private dataset: should not be visible
+        exp1 = make_fittingresult(
+            my_model_moderated, my_model_moderated_version,
+            fittingspec,
+            my_dataset_private,
+        )
+
+        # Someone else's public model with my public dataset: should be visible
+        # But experiments with newer private versions should not be
+        other_model_public = recipes.model.make(author=other_user)
+        other_model_public_version = helpers.add_fake_version(other_model_public, visibility='public')
+        other_model_second_private_version = helpers.add_fake_version(other_model_public, visibility='private')
+
+        exp2 = make_fittingresult(
+            other_model_public, other_model_public_version,
+            fittingspec,
+            my_dataset_public,
+        )
+        exp2_model_private = make_fittingresult(  # noqa: F841
+            other_model_public, other_model_second_private_version,
+            fittingspec,
+            my_dataset_public,
+        )
+        exp2_dataset_private = make_fittingresult(
+            other_model_public, other_model_public_version,
+            fittingspec,
+            my_dataset_private,
+        )
+
+        # Someone else's public model and moderated dataset: should be visible
+        other_dataset_moderated = recipes.dataset.make(
+            author=other_user, visibility='moderated', protocol=public_protocol)
+        other_dataset_private = recipes.dataset.make(
+            author=other_user, visibility='private', protocol=public_protocol)
+
+        exp3 = make_fittingresult(
+            other_model_public, other_model_public_version,
+            fittingspec,
+            other_dataset_moderated,
+        )
+        exp3_dataset_private = make_fittingresult(  # noqa: F841
+            other_model_public, other_model_second_private_version,
+            fittingspec,
+            other_dataset_private,
+        )
+
+        # Other's private model, my public dataset: should not be visible
+        other_model_private = recipes.model.make(author=other_user)
+        other_model_private_version = helpers.add_fake_version(other_model_private, visibility='private')
+
+        exp4 = make_fittingresult(  # noqa: F841
+            other_model_private, other_model_private_version,
+            fittingspec,
+            my_dataset_public,
+        )
+        matrix_url = '/fitting/specs/%d/results/matrix' % fittingspec.pk
+
+        response = client.get(matrix_url + '?subset=public')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp2.pk),
+            str(exp3.pk),
+        }
+
+        # If however I ask for what I can see, I get more returned
+        response = client.get(matrix_url + '?subset=all')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp1.pk),
+            str(exp2.pk),
+            str(exp2_dataset_private.pk),
+            str(exp3.pk),
+        }
+
+        # If the other user shares their model with me, I see their later private versions instead
+        other_model_public.add_collaborator(logged_in_user)
+        response = client.get(matrix_url + '?subset=all')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp1.pk),
+            str(exp2_model_private.pk),
+        }
+
+    def test_view_moderated(self, client, logged_in_user, other_user, helpers, public_protocol):
+        fittingspec = recipes.fittingspec.make(protocol=public_protocol)
+        helpers.add_fake_version(fittingspec, visibility='public')
+
+        # My public model with somebody else's public dataset: should not be visible
+        my_model_public = recipes.model.make(author=logged_in_user)
+        my_model_public_version = helpers.add_fake_version(my_model_public, visibility='public')
+
+        other_dataset_public = recipes.dataset.make(author=other_user, visibility='public', protocol=public_protocol)
+
+        exp1 = make_fittingresult(
+            my_model_public, my_model_public_version,
+            fittingspec,
+            other_dataset_public,
+        )
+
+        # My public model with somebody else's moderated dataset: should not be visible
+        other_dataset_moderated = recipes.dataset.make(
+            author=other_user, visibility='moderated', protocol=public_protocol)
+
+        exp2 = make_fittingresult(
+            my_model_public, my_model_public_version,
+            fittingspec,
+            other_dataset_moderated
+        )
+
+        # Someone else's moderated model and public dataset: should not be visible
+        other_model_moderated = recipes.model.make(author=other_user)
+        other_model_moderated_version = helpers.add_fake_version(other_model_moderated, visibility='moderated')
+
+        exp3 = make_fittingresult(  # noqa: F841
+            other_model_moderated, other_model_moderated_version,
+            fittingspec,
+            other_dataset_public
+        )
+
+        # Someone else's moderated model and moderated dataset: should be visible
+        exp4 = make_fittingresult(
+            other_model_moderated, other_model_moderated_version,
+            fittingspec,
+            other_dataset_moderated,
+        )
+
+        # A later public version shouldn't show up
+        other_model_second_public_version = helpers.add_fake_version(other_model_moderated, visibility='public')
+        exp4_public = make_fittingresult(
+            other_model_moderated, other_model_second_public_version,
+            fittingspec,
+            other_dataset_moderated,
+        )
+
+        matrix_url = '/fitting/specs/%d/results/matrix' % fittingspec.pk
+
+        response = client.get(matrix_url)
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp4.pk),
+        }
+
+        # If however I ask for what I can see, I get experiments with later public versions
+        response = client.get(matrix_url + '?subset=all')
+        data = json.loads(response.content.decode())
+
+        experiment_ids = set(data['getMatrix']['experiments'])
+        assert experiment_ids == {
+            str(exp1.pk),
+            str(exp2.pk),
+            str(exp4_public.pk),
+        }
+
+    def test_submatrix(self, client, helpers, public_protocol, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+        spec = fit.fittingspec
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_fake_version(other_model, visibility='public')
+        other_dataset = recipes.dataset.make(protocol=public_protocol, visibility='public')
+
+        make_fittingresult(other_model, other_model_version, spec, other_dataset)
+
+        # Throw in a non-existent dataset so we can make sure it gets ignored
+        non_existent_pk = 0
+        response = client.get(
+            '/fitting/specs/%d/results/matrix' % spec.pk,
+            {
+                'subset': 'all',
+                'rowIds[]': [fit.model.pk, non_existent_pk],
+                'columnIds[]': [fit.dataset.pk, non_existent_pk],
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        models = data['getMatrix']['rows']
+        assert len(models) == 1
+        assert str(fit.model_version.sha) in models
+        assert models[str(fit.model_version.sha)]['id'] == str(fit.model_version.sha)
+        assert models[str(fit.model_version.sha)]['entityId'] == fit.model.pk
+
+        columns = data['getMatrix']['columns']
+        assert len(columns) == 1
+        assert str(fit.dataset.pk) in columns
+        assert columns[str(fit.dataset.pk)]['id'] == fit.dataset.pk
+        assert columns[str(fit.dataset.pk)]['entityId'] == fit.dataset.pk
+
+        experiments = data['getMatrix']['experiments']
+        assert len(experiments) == 1
+        assert str(fit.pk) in experiments
+
+    def test_submatrix_with_model_versions(self, client, helpers, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+        spec = fit.fittingspec
+        v1 = fit.model_version
+        v2 = helpers.add_fake_version(fit.model, visibility='public')
+        helpers.add_fake_version(fit.model, visibility='public')  # v3, not used
+
+        # Add an fittingresult with a different model, which shouldn't appear
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_fake_version(other_model, 'public')
+        make_fittingresult(other_model, other_model_version, spec, fit.dataset)
+
+        response = client.get(
+            '/fitting/specs/%d/results/matrix' % spec.pk,
+            {
+                'subset': 'all',
+                'rowIds[]': [fit.model.pk],
+                'rowVersions[]': [str(v1.sha), str(v2.sha)],
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        assert set(data['getMatrix']['rows'].keys()) == {str(v1.sha), str(v2.sha)}
+        assert set(data['getMatrix']['experiments'].keys()) == {str(fit.pk)}
+
+    def test_submatrix_with_all_model_versions(self, client, helpers, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+        spec = fit.fittingspec
+        v1 = fit.model_version
+        v2 = helpers.add_fake_version(fit.model)
+        v3 = helpers.add_fake_version(fit.model)
+
+        fit2 = make_fittingresult(
+            fit.model, v2, spec, fit.dataset,
+        )
+
+        # Add an experiment with a different model, which shouldn't appear
+        other_model = recipes.model.make()
+        other_model_version = helpers.add_fake_version(other_model, 'public')
+        make_fittingresult(other_model, other_model_version, spec, fit.dataset)
+
+        response = client.get(
+            '/fitting/specs/%d/results/matrix' % spec.pk,
+            {
+                'subset': 'all',
+                'rowIds[]': [fit.model.pk],
+                'rowVersions[]': '*',
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+
+        assert set(data['getMatrix']['rows'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
+        assert set(data['getMatrix']['experiments'].keys()) == {str(fit.pk), str(fit2.pk)}
+
+    def test_submatrix_with_too_many_model_ids(self, client, helpers, quick_fittingresult_version):
+        fit = quick_fittingresult_version.fittingresult
+        spec = fit.fittingspec
+        model = recipes.model.make()
+
+        response = client.get(
+            '/fitting/specs/%d/results/matrix' % spec.pk,
+            {
+                'subset': 'all',
+                'rowIds[]': [quick_fittingresult_version.fittingresult.model.pk, model.pk],
+                'rowVersions[]': '*',
+            }
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert len(data['notifications']['errors']) == 1
+
+    def test_fittingresult_without_version_is_ignored(
+        self, client, helpers, public_model, public_protocol
+    ):
+        fittingspec = recipes.fittingspec.make(protocol=public_protocol)
+        helpers.add_fake_version(fittingspec, visibility='public')
+        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+        # fitting result with no version
+        recipes.fittingresult.make(
+            model=public_model,
+            model_version=public_model.repocache.latest_version,
+            protocol=public_protocol,
+            protocol_version=public_protocol.repocache.latest_version,
+            fittingspec=fittingspec,
+            fittingspec_version=fittingspec.repocache.latest_version,
+            dataset=dataset,
+        )
+
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fittingspec.pk)
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        assert len(data['getMatrix']['columns']) == 1
+        assert len(data['getMatrix']['experiments']) == 0
+
+    def test_old_version_is_hidden(self, client, public_model, fittingresult_version, helpers):
+        fit = fittingresult_version.fittingresult
+
+        # Add a new model version without corresponding experiment
+        new_version = helpers.add_version(public_model, filename='file2.txt')
+
+        # We should now see this version in the matrix, but no experiments
+        response = client.get('/fitting/specs/%d/results/matrix?subset=all' % fit.fittingspec.pk)
+        data = json.loads(response.content.decode())
+        assert 'getMatrix' in data
+        assert str(new_version.sha) in data['getMatrix']['rows']
+        assert str(fit.dataset.pk) in data['getMatrix']['columns']
+        assert len(data['getMatrix']['experiments']) == 0

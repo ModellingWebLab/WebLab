@@ -226,6 +226,26 @@ urlpatterns = [
     ),
 
     url(
+        r'^%s/(?P<pk>\d+)/results'
+        '/?'
+        r'(?P<subset>mine|public|all)?'
+        '/?'
+        r'(?:models(?P<model_pks>(/\d+)+)'
+        '(?:/versions(?P<model_versions>(/%s)+))?)?'
+        '/?'
+        r'(?:datasets(?P<dataset_pks>(/\d+)+))?'
+        r'$' % (_ENTITY_TYPE, _COMMIT),
+        views.FittingSpecResultsMatrixView.as_view(),
+        name='matrix',
+    ),
+
+    url(
+        r'^%s/(?P<pk>\d+)/results/matrix$' % _ENTITY_TYPE,
+        views.FittingSpecResultsMatrixJsonView.as_view(),
+        name='matrix_json',
+    ),
+
+    url(
         r'^results/', include(result_patterns, namespace='result')
     ),
 ]
