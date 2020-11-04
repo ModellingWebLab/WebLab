@@ -4,7 +4,6 @@ import os
 import uuid
 import zipfile
 from datetime import timedelta
-from http import client
 from io import BytesIO
 from subprocess import SubprocessError
 from unittest.mock import patch
@@ -475,20 +474,6 @@ class TestEntityVersionJsonView:
             assert planned['protocol_version'] == str(planned_expt.protocol_version)
         else:
             assert len(ver['planned_experiments']) == 0
-
-@pytest.mark.django_db
-def test_delete_user_directory(self, client, model_with_version):
-    model = model_with_version
-    user = model.author
-
-    user_directory = user.get_storage_dir('repo')
-    assert user_directory.is_dir()
-
-    response = client.get(
-        '/accounts/%d/delete' % user.pk,
-    )
-    assert not user_directory.exists()
-
 
 
 @pytest.mark.django_db

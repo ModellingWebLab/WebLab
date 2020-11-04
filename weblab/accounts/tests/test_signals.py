@@ -27,6 +27,7 @@ def test_email_sent_on_user_creation(superuser):
     assert 'test@example.com' in body
     assert 'http://127.0.0.1:8000/admin/accounts/user/{}/change/'.format(user.pk) in body
 
+
 @pytest.mark.django_db
 def test_delete_user_directory(self, model_with_version, my_dataset_with_file):
     model = model_with_version
@@ -38,7 +39,7 @@ def test_delete_user_directory(self, model_with_version, my_dataset_with_file):
     assert user_directory_repo.is_dir()
     assert user_directory_dataset.is_dir()
 
-    response = client.post(
+    client.post(
         '/accounts/%d/delete' % user.pk,
     )
     assert not user_directory_repo.exists()
