@@ -1,7 +1,6 @@
 import pytest
-
-from http import client
 from django.core import mail
+
 from accounts.models import User
 
 
@@ -29,7 +28,7 @@ def test_email_sent_on_user_creation(superuser):
 
 
 @pytest.mark.django_db
-def test_delete_user_directory(self, model_with_version):
+def test_delete_user_directory(client, model_with_version):
     model = model_with_version
     user = model.author
 
@@ -37,8 +36,9 @@ def test_delete_user_directory(self, model_with_version):
 
     assert user_directory_repo.is_dir()
 
-    client.post(
-        '/accounts/%d/delete' % user.pk,
+    response = client.post(
+        '/accounts/%d/delete/' % user.pk,
     )
+    assert response.status_code == 302
+    assert not User.objects.filter(pk=user.pk).exists()
     assert not user_directory_repo.exists()
-
