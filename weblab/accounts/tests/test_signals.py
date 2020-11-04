@@ -29,19 +29,16 @@ def test_email_sent_on_user_creation(superuser):
 
 
 @pytest.mark.django_db
-def test_delete_user_directory(self, model_with_version, my_dataset_with_file):
+def test_delete_user_directory(self, model_with_version):
     model = model_with_version
     user = model.author
 
     user_directory_repo = user.get_storage_dir('repo')
-    user_directory_dataset = user.get_storage_dir('dataset')
 
     assert user_directory_repo.is_dir()
-    assert user_directory_dataset.is_dir()
 
     client.post(
         '/accounts/%d/delete' % user.pk,
     )
-    assert not user_directory_repo.exists()
     assert not user_directory_repo.exists()
 
