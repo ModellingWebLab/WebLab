@@ -44,3 +44,4 @@ def test_delete_user_directory(self, model_with_version, my_dataset_with_file):
     )
     assert not user_directory_repo.exists()
     assert not user_directory_repo.exists()
+
