@@ -80,5 +80,11 @@ urlpatterns = [
         views.DatasetCompareFittingResultsView.as_view(),
         name='compare_fittings',
     ),
+
+    url(
+        r'^(?P<pk>\d+)/map$',
+        views.DatasetMapColumnsView.as_view(),
+        name='map_columns',
+    ),
 ]
 app_name = 'datasets'

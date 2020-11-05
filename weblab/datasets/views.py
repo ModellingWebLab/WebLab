@@ -30,6 +30,7 @@ from fitting.models import FittingResult
 
 from .forms import (
     DatasetAddFilesForm,
+    DatasetColumnMappingFormSet,
     DatasetFileUploadForm,
     DatasetForm,
     DatasetRenameForm,
@@ -369,4 +370,33 @@ class DatasetCompareFittingResultsView(DetailView):
             for (obj, fits) in groupby(fittings, lambda fit: fit.model)
         ]
 
+        return super().get_context_data(**kwargs)
+
+
+class DatasetMapColumnsView(DetailView):
+    model = Dataset
+    formset_class = DatasetColumnMappingFormSet
+    template_name = 'datasets/map_columns.html'
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def get_formset(self):
+        dataset = self._get_object()
+        protocol_versions = dataset.protocol.cachedentity.versions.visible_to_user(self.request.user)
+        form_kwargs = {
+            'dataset': dataset,
+            'protocol_versions': protocol_versions,
+        }
+        initial = [
+            {'protocol_version': dataset.protocol.repocache.latest_version},
+            {'protocol_version': dataset.protocol.repocache.latest_version},
+            {'protocol_version': dataset.protocol.repocache.latest_version},
+        ]
+        return self.formset_class(form_kwargs=form_kwargs, initial=initial)
+
+    def get_context_data(self, **kwargs):
+        kwargs['formset'] = self.get_formset()
         return super().get_context_data(**kwargs)

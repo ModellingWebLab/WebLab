@@ -1,0 +1,31 @@
+{% extends "datasets/base.html" %}
+
+{% block content_detail %}
+<form method="POST" action="">
+  {% csrf_token %}
+
+  <table class="formset">
+    <tbody>
+      {% for form in formset %}
+      <tr>
+        <td>
+          {{ form.column_name }}
+        </td>
+        <td>
+          {{ form.column_units }}
+        </td>
+        <td>
+          {{ form.protocol_version }}
+        </td>
+        <td>
+          {{ form.protocol_ioput }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody >
+  </table>
+  <p>
+    <button id="savebutton">Save</button>
+  </p>
+</form>
+{% endblock content_detail %}

@@ -767,3 +767,33 @@ class TestDatasetCompareFittingResultsView:
         assert response.context['comparisons'] == [
             (fit.model, [fit]),
         ]
+
+
+@pytest.mark.django_db
+class TestDatasetMapColumnsView:
+    def test_mapping_form_has_dataset(self, client, logged_in_user, helpers, public_protocol):
+        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+        response = client.get('/datasets/%d/map' % dataset.pk)
+
+        assert response.status_code == 200
+        assert response.context['formset']
+        assert response.context['formset'][0].dataset == dataset
+
+    def test_mapping_form_loads_versions(self, client, logged_in_user, helpers):
+        protocol = recipes.protocol.make()
+        proto_v1 = helpers.add_fake_version(protocol, visibility='public')
+        proto_v2 = helpers.add_fake_version(protocol, visibility='private')
+        proto_v3 = helpers.add_fake_version(protocol, visibility='public')
+
+        dataset = recipes.dataset.make(visibility='public', protocol=protocol)
+
+        response = client.get('/datasets/%d/map' % dataset.pk)
+
+        assert response.status_code == 200
+        assert response.context['formset']
+        form0 = response.context['formset'][0]
+        pv_field = form0.fields['protocol_version']
+        assert pv_field.valid_value(proto_v1.pk)
+        assert not pv_field.valid_value(proto_v2.pk)
+        assert pv_field.valid_value(proto_v3.pk)
+        assert form0.initial['protocol_version'] == proto_v3

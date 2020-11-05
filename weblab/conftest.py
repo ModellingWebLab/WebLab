@@ -58,7 +58,7 @@ class Helpers:
         """Add a new commit/version only in the cache, not in git."""
         version = entity.repocache.CachedVersionClass.objects.create(
             entity=entity.repocache,
-            sha=uuid.uuid4(),
+            sha=str(uuid.uuid4()),
             message=message,
             timestamp=date or Now(),
             visibility=visibility,

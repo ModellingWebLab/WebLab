@@ -1,10 +1,12 @@
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
+from django.forms import inlineformset_factory
 
 from entities.models import ProtocolEntity
+from repocache.models import CachedProtocolVersion
 
-from .models import Dataset, DatasetFile
+from .models import Dataset, DatasetColumnMapping, DatasetFile
 
 
 class DatasetForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -65,3 +67,32 @@ class DatasetRenameForm(UserKwargModelFormMixin, forms.ModelForm):
                 'You already have a dataset named "%s"' % name)
 
         return name
+
+
+class EntityVersionChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.nice_version()
+
+
+class DatasetColumnMappingForm(forms.ModelForm):
+    protocol_version = EntityVersionChoiceField(
+        queryset=CachedProtocolVersion.objects.none())
+
+    def __init__(self, *args, **kwargs):
+        protocol_versions = kwargs.pop('protocol_versions')
+        self.dataset = kwargs.pop('dataset')
+        super().__init__(*args, **kwargs)
+        self.fields['protocol_version'].queryset = protocol_versions
+        self.fields['protocol_version'].empty_label = None
+
+    class Meta:
+        model = DatasetColumnMapping
+        fields = ['column_name', 'column_units', 'protocol_version', 'protocol_ioput']
+        readonly_fields = ['column_name']
+
+
+DatasetColumnMappingFormSet = inlineformset_factory(
+    Dataset,
+    DatasetColumnMapping,
+    form=DatasetColumnMappingForm,
+)
