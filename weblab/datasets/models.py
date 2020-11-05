@@ -5,6 +5,7 @@ from guardian.shortcuts import get_objects_for_user
 
 from core.models import FileCollectionMixin, UserCreatedModelMixin, VisibilityModelMixin
 from entities.models import ProtocolEntity
+from repocache.models import CachedProtocolVersion, ProtocolIoputs
 
 
 class DatasetQuerySet(models.QuerySet):
@@ -66,3 +67,35 @@ class DatasetFile(models.Model):
 
     def __str__(self):
         return self.original_name
+
+
+class DatasetColumnMapping(models.Model):
+    """
+    Maps dataset columns to protocol inputs/outputs
+    """
+    dataset = models.ForeignKey(Dataset, related_name='column_mappings', on_delete=models.CASCADE)
+
+    column_name = models.CharField(
+        max_length=200,
+        help_text='name of the column')
+
+    column_units = models.CharField(
+        blank=True,
+        max_length=200,
+        help_text='units of the column, as a pint definition string')
+
+    protocol_version = models.ForeignKey(
+        CachedProtocolVersion,
+        help_text='Protocol version to link to',
+        on_delete=models.CASCADE,
+    )
+
+    protocol_ioput = models.ForeignKey(
+        ProtocolIoputs,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        help_text='Protocol input or output to link to')
+
+    class Meta:
+        unique_together = ['dataset', 'column_name', 'protocol_version']
