@@ -5,85 +5,86 @@ from entities import views as entity_views
 from . import views
 from .models import FittingSpec
 
+
 _COMMIT = r'(?P<sha>[^^~:/ ]+)'
 _FILENAME = r'(?P<filename>[\w\-. \%:]+)'
 _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 _ENTITY_TYPE = '(?P<entity_type>%s)s' % FittingSpec.url_type
 
 app_name = 'fitting'
-result_patterns = ([
-                       url(
-                           r'^(?P<pk>\d+)/versions/$',
-                           views.FittingResultVersionListView.as_view(),
-                           name='versions',
-                       ),
+result_patterns = [
+    url(
+        r'^(?P<pk>\d+)/versions/$',
+        views.FittingResultVersionListView.as_view(),
+        name='versions',
+    ),
 
-                       url(
-                           r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)(?:/%s)?$' % _FILEVIEW,
-                           views.FittingResultVersionView.as_view(),
-                           name='version',
-                       ),
+    url(
+        r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)(?:/%s)?$' % _FILEVIEW,
+        views.FittingResultVersionView.as_view(),
+        name='version',
+    ),
 
-                       url(
-                           r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/archive$',
-                           views.FittingResultVersionArchiveView.as_view(),
-                           name='archive',
-                       ),
+    url(
+        r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/archive$',
+        views.FittingResultVersionArchiveView.as_view(),
+        name='archive',
+    ),
 
-                       url(
-                           r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/download/%s$' % _FILENAME,
-                           views.FittingResultFileDownloadView.as_view(),
-                           name='file_download',
-                       ),
+    url(
+        r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/download/%s$' % _FILENAME,
+        views.FittingResultFileDownloadView.as_view(),
+        name='file_download',
+    ),
 
-                       url(
-                           r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/files.json$',
-                           views.FittingResultVersionJsonView.as_view(),
-                           name='version_json',
-                       ),
+    url(
+        r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/files.json$',
+        views.FittingResultVersionJsonView.as_view(),
+        name='version_json',
+    ),
 
-                       url(
-                           r'^(?P<pk>\d+)/delete$',
-                           views.FittingResultDeleteView.as_view(),
-                           name='delete',
-                       ),
+    url(
+        r'^(?P<pk>\d+)/delete$',
+        views.FittingResultDeleteView.as_view(),
+        name='delete',
+    ),
 
-                       url(
-                           r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/delete$',
-                           views.FittingResultVersionDeleteView.as_view(),
-                           name='delete_version',
-                       ),
+    url(
+        r'^(?P<fittingresult_pk>\d+)/versions/(?P<pk>\d+)/delete$',
+        views.FittingResultVersionDeleteView.as_view(),
+        name='delete_version',
+    ),
 
-                       url(
-                           r'^compare(?P<version_pks>(/\d+){1,})(?:/show/%s)?$' % _FILEVIEW,
-                           views.FittingResultComparisonView.as_view(),
-                           name='compare',
-                       ),
+    url(
+        r'^compare(?P<version_pks>(/\d+){1,})(?:/show/%s)?$' % _FILEVIEW,
+        views.FittingResultComparisonView.as_view(),
+        name='compare',
+    ),
 
-                       url(
-                           r'^compare(?P<version_pks>(/\d+)*)/info$',
-                           views.FittingResultComparisonJsonView.as_view(),
-                           name='compare_json',
-                       ),
+    url(
+        r'^compare(?P<version_pks>(/\d+)*)/info$',
+        views.FittingResultComparisonJsonView.as_view(),
+        name='compare_json',
+    ),
 
-                       url(
-                           r'^new$',
-                           views.FittingResultCreateView.as_view(),
-                           name='new'
-                       ),
+    url(
+        r'^new$',
+        views.FittingResultCreateView.as_view(),
+        name='new'
+    ),
 
-                       url(
-                           r'^new/filter$',
-                           views.FittingResultFilterJsonView.as_view(),
-                           name='filter_json',
-                       ),
+    url(
+        r'^new/filter$',
+        views.FittingResultFilterJsonView.as_view(),
+        name='filter_json',
+    ),
 
-                       url(
-                           r'^rerun$',
-                           views.FittingResultRerunView.as_view(),
-                           name='rerun'
-                       ),
-                   ], app_name)
+    url(
+        r'^rerun$',
+        views.FittingResultRerunView.as_view(),
+        name='rerun'
+    ),
+]
 
 urlpatterns = [
     url(
@@ -225,6 +226,6 @@ urlpatterns = [
     ),
 
     url(
-        r'^results/', include(result_patterns, namespace='result')
+        r'^results/', include((result_patterns, app_name), namespace='result')
     ),
 ]
