@@ -49,3 +49,19 @@ def test_delete_user_directory(client, logged_in_user, my_dataset):
     assert not user_directory_repo.exists()
     assert not Dataset.objects.filter(pk=dataset.pk).exists()
     assert not user_directory_dataset.exists()
+
+
+@pytest.mark.django_db
+def test_cannot_delete_other_user(client, logged_in_user, other_user):
+    recipes.model.make(author=other_user)
+    user_directory_repo = other_user.get_storage_dir('repo')
+
+    assert user_directory_repo.is_dir()
+
+    response = client.post(
+        '/accounts/%d/delete/' % other_user.pk,
+    )
+
+    assert response.status_code == 302
+    assert User.objects.filter(pk=other_user.pk).exists()
+    assert user_directory_repo.exists()

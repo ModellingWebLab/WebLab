@@ -1,5 +1,5 @@
 from django.contrib.auth import login
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.views.generic.edit import DeleteView, FormView, UpdateView
@@ -54,13 +54,17 @@ class MyAccountView(LoginRequiredMixin, UpdateView):
         return super().get_context_data(**kwargs)
 
 
-class UserDeleteView(LoginRequiredMixin, DeleteView):
-    """
-    Delete a user
-    """
-    template_name = 'registration/delete_user.html'
+class UserDeleteView(UserPassesTestMixin, DeleteView):
+    template_name = 'registration/account_confirm_delete.html'
     model = User
 
+    """
+       Delete a user
+       """
+
+    def test_func(self):
+        """A user can only delete their own account."""
+        return self.get_object() == self.request.user
+
     def get_success_url(self, *args, **kwargs):
-        ns = self.request.resolver_match.namespace
-        return reverse(ns + ':login')
+        return reverse('home')
