@@ -27,6 +27,7 @@ from accounts.forms import OwnershipTransferForm
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
 from fitting.models import FittingResult
+from repocache.models import ProtocolIoputs
 
 from .forms import (
     DatasetAddFilesForm,
@@ -386,9 +387,13 @@ class DatasetMapColumnsView(DetailView):
     def get_formset(self):
         dataset = self._get_object()
         protocol_versions = dataset.protocol.cachedentity.versions.visible_to_user(self.request.user)
+        protocol_ioputs = ProtocolIoputs.objects.filter(
+            protocol_version__in=protocol_versions,
+            kind__in=(ProtocolIoputs.INPUT, ProtocolIoputs.OUTPUT))
         form_kwargs = {
             'dataset': dataset,
             'protocol_versions': protocol_versions,
+            'protocol_ioputs': protocol_ioputs,
         }
         initial = [
             {'protocol_version': dataset.protocol.repocache.latest_version},

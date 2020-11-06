@@ -80,10 +80,12 @@ class DatasetColumnMappingForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         protocol_versions = kwargs.pop('protocol_versions')
+        protocol_ioputs = kwargs.pop('protocol_ioputs')
         self.dataset = kwargs.pop('dataset')
         super().__init__(*args, **kwargs)
         self.fields['protocol_version'].queryset = protocol_versions
         self.fields['protocol_version'].empty_label = None
+        self.fields['protocol_ioput'].queryset = protocol_ioputs
 
     class Meta:
         model = DatasetColumnMapping
