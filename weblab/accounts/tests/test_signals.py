@@ -2,8 +2,6 @@ import pytest
 from django.core import mail
 
 from accounts.models import User
-from core import recipes
-from datasets.models import Dataset
 
 
 @pytest.fixture
