@@ -2,6 +2,8 @@ import pytest
 from django.core import mail
 
 from accounts.models import User
+from datasets.models import Dataset
+from weblab.core import recipes
 
 
 @pytest.fixture
@@ -28,17 +30,22 @@ def test_email_sent_on_user_creation(superuser):
 
 
 @pytest.mark.django_db
-def test_delete_user_directory(client, model_with_version):
-    model = model_with_version
-    user = model.author
-
-    user_directory_repo = user.get_storage_dir('repo')
+def test_delete_user_directory(client, logged_in_user, my_dataset):
+    recipes.model.make(author=logged_in_user)
+    dataset = my_dataset
+    user_directory_repo = logged_in_user.get_storage_dir('repo')
+    user_directory_dataset = logged_in_user.get_storage_dir('dataset')
+    assert Dataset.objects.filter(pk=dataset.pk).exists()
 
     assert user_directory_repo.is_dir()
+    assert user_directory_dataset.is_dir()
 
     response = client.post(
-        '/accounts/%d/delete/' % user.pk,
+        '/accounts/%d/delete/' % logged_in_user.pk,
     )
+
     assert response.status_code == 302
-    assert not User.objects.filter(pk=user.pk).exists()
+    assert not User.objects.filter(pk=logged_in_user.pk).exists()
     assert not user_directory_repo.exists()
+    assert not Dataset.objects.filter(pk=dataset.pk).exists()
+    assert not user_directory_dataset.exists()

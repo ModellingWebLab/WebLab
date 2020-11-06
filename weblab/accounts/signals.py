@@ -8,7 +8,8 @@ def user_created(sender, instance, created, **kwargs):
         send_user_creation_email(instance)
 
 
-def user_deleted(sender, instance,  **kwargs):
-
-    if instance.get_storage_dir('repo').is_dir():
-        rmtree(str(instance.get_storage_dir('repo')))
+def user_deleted(sender, instance, **kwargs):
+    for kind in instance.STORAGE_DIRS:
+        path = instance.get_storage_dir(kind)
+        if path.is_dir():
+            rmtree(str(path))
