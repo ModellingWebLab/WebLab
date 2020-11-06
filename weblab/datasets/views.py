@@ -374,7 +374,7 @@ class DatasetCompareFittingResultsView(DetailView):
         return super().get_context_data(**kwargs)
 
 
-class DatasetMapColumnsView(DetailView):
+class DatasetMapColumnsView(VisibilityMixin, DetailView):
     model = Dataset
     formset_class = DatasetColumnMappingFormSet
     template_name = 'datasets/map_columns.html'

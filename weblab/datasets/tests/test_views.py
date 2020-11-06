@@ -585,6 +585,7 @@ class TestDatasetJsonView:
 @pytest.mark.django_db
 @pytest.mark.parametrize("recipe,url", [
     (recipes.dataset, '/datasets/%d'),
+    (recipes.dataset, '/datasets/%d/map'),
     (recipes.dataset, '/datasets/%d/files.json'),
 ])
 class TestDatasetVisibility:
