@@ -4,6 +4,7 @@
 #
 #    pip-compile --output-file=dev.txt dev.in
 #
+appnope==0.1.0 ; sys_platform == "darwin"  # via -r dev.in, ipython
 atomicwrites==1.4.0       # via pytest
 attrs==20.2.0             # via pytest
 backcall==0.1.0           # via ipython

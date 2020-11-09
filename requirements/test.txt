@@ -4,7 +4,6 @@
 #
 #    pip-compile --output-file=test.txt test.in
 #
-atomicwrites==1.4.0       # via pytest
 attrs==20.2.0             # via pytest
 certifi==2019.3.9         # via requests
 cffi==1.14.3              # via cryptography
@@ -21,20 +20,23 @@ entrypoints==0.3          # via flake8
 flake8==3.7.8             # via -r test.in
 gitdb2==2.0.5             # via gitpython
 gitpython==2.1.7          # via -r base.in
-importlib-metadata==2.0.0  # via flake8
 idna==2.8                 # via requests
+importlib-metadata==2.0.0  # via pluggy, pytest
+iniconfig==1.1.1          # via pytest
 isort==4.3.21             # via -r test.in
 mccabe==0.6.1             # via flake8
 model-mommy==1.5.1        # via -r test.in
-more-itertools==8.5.0     # via pytest
 oauthlib==3.0.1           # via requests-oauthlib, social-auth-core
-pluggy==0.6.0             # via pytest
+packaging==20.4           # via pytest
+pathlib2==2.3.5           # via pytest
+pluggy==0.13.1            # via pytest
 psycopg2==2.7.3           # via -r base.in
-py==1.8.0                 # via pytest
+py==1.9.0                 # via pytest
 pycodestyle==2.5.0        # via flake8
 pycparser==2.20           # via cffi
 pyflakes==2.1.1           # via flake8
 pyjwt==1.7.1              # via social-auth-core
+pyparsing==2.4.7          # via packaging
 pytest-cov==2.5.1         # via -r test.in
 pytest-django==4.1.0      # via -r test.in
 pytest==6.1.2             # via -r test.in, pytest-cov, pytest-django
@@ -43,12 +45,11 @@ pytz==2018.9              # via django
 requests-oauthlib==1.2.0  # via social-auth-core
 requests==2.21.0          # via codecov, requests-oauthlib, rollbar, social-auth-core
 rollbar==0.14.2           # via -r base.in
-six==1.12.0               # via cryptography, django-guardian, model-mommy, pytest, rollbar, social-auth-app-django, social-auth-core
+six==1.12.0               # via cryptography, django-guardian, model-mommy, packaging, pathlib2, rollbar, social-auth-app-django, social-auth-core
 smmap2==2.0.5             # via gitdb2
 social-auth-app-django==4.0.0  # via -r base.in
 social-auth-core==3.3.3   # via social-auth-app-django
 sqlparse==0.4.1           # via django
+toml==0.10.2              # via pytest
 urllib3==1.24.2           # via requests
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
+zipp==1.2.0               # via importlib-metadata
