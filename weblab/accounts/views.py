@@ -55,12 +55,11 @@ class MyAccountView(LoginRequiredMixin, UpdateView):
 
 
 class UserDeleteView(UserPassesTestMixin, DeleteView):
-    template_name = 'registration/account_confirm_delete.html'
-    model = User
-
     """
        Delete a user
        """
+    template_name = 'registration/account_confirm_delete.html'
+    model = User
 
     def test_func(self):
         """A user can only delete their own account."""

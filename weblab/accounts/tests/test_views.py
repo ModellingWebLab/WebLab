@@ -1,4 +1,5 @@
 import pytest
+from django.urls import reverse
 
 from accounts.models import User
 from core import recipes
@@ -31,6 +32,7 @@ def test_user_can_delete_own_account(client, logged_in_user, my_dataset):
     assert not user_directory_repo.exists()
     assert not Dataset.objects.filter(pk=dataset.pk).exists()
     assert not user_directory_dataset.exists()
+    assert response.url == reverse('home')
 
 
 @pytest.mark.django_db
@@ -44,6 +46,7 @@ def test_delete_user_requires_login(client, other_user):
     assert response.status_code == 302
     assert User.objects.filter(pk=other_user.pk).exists()
     assert user_directory_repo.exists()
+    assert '/login' in response.url
 
 
 @pytest.mark.django_db
@@ -60,3 +63,4 @@ def test_cannot_delete_other_account(client, logged_in_user, other_user):
     assert response.status_code == 302
     assert User.objects.filter(pk=other_user.pk).exists()
     assert user_directory_repo.exists()
+    assert '/login' in response.url
