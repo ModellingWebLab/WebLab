@@ -779,52 +779,5 @@ class TestDatasetMapColumnsView:
         assert response.status_code == 200
         assert response.context['formset']
         assert response.context['formset'][0].dataset == dataset
+        assert response.context['formset'][0].initial['protocol_version'] == public_protocol.repocache.latest_version
 
-    def test_mapping_form_loads_versions(self, client, logged_in_user, helpers):
-        protocol = recipes.protocol.make()
-        proto_v1 = helpers.add_fake_version(protocol, visibility='public')
-        proto_v2 = helpers.add_fake_version(protocol, visibility='private')
-        proto_v3 = helpers.add_fake_version(protocol, visibility='public')
-
-        dataset = recipes.dataset.make(visibility='public', protocol=protocol)
-
-        response = client.get('/datasets/%d/map' % dataset.pk)
-
-        assert response.status_code == 200
-        assert response.context['formset']
-        form0 = response.context['formset'][0]
-        pv_field = form0.fields['protocol_version']
-        assert pv_field.valid_value(proto_v1.pk)
-        assert not pv_field.valid_value(proto_v2.pk)
-        assert pv_field.valid_value(proto_v3.pk)
-        assert form0.initial['protocol_version'] == proto_v3
-
-    def test_mapping_form_loads_linked_ioputs(self, client, logged_in_user, helpers):
-        protocol = recipes.protocol.make()
-        proto_v1 = helpers.add_fake_version(protocol, visibility='private')
-        proto_v2 = helpers.add_fake_version(protocol, visibility='public')
-
-        # linked to private version
-        v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
-
-        # linked to a public version
-        v2_in = recipes.protocol_input.make(protocol_version=proto_v2)
-        v2_out = recipes.protocol_output.make(protocol_version=proto_v2)
-        v2_flag = recipes.protocol_ioput_flag.make(protocol_version=proto_v2)
-
-        # another input, linked to a different protocol and version
-        other_in = recipes.protocol_input.make()
-
-        dataset = recipes.dataset.make(visibility='public', protocol=protocol)
-
-        response = client.get('/datasets/%d/map' % dataset.pk)
-
-        assert response.status_code == 200
-        form0 = response.context['formset'][0]
-        pv_field = form0.fields['protocol_ioput']
-
-        assert not pv_field.valid_value(v1_in.pk)
-        assert pv_field.valid_value(v2_in.pk)
-        assert pv_field.valid_value(v2_out.pk)
-        assert not pv_field.valid_value(v2_flag.pk)
-        assert not pv_field.valid_value(other_in.pk)

@@ -2,9 +2,10 @@ from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import inlineformset_factory
+from django.utils.functional import cached_property
 
 from entities.models import ProtocolEntity
-from repocache.models import CachedProtocolVersion
+from repocache.models import CachedProtocolVersion, ProtocolIoputs
 
 from .models import Dataset, DatasetColumnMapping, DatasetFile
 
@@ -74,6 +75,32 @@ class EntityVersionChoiceField(forms.ModelChoiceField):
         return obj.nice_version()
 
 
+class BaseDatasetColumnMappingFormSet(forms.BaseInlineFormSet):
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def proto_versions(self):
+        return self.instance.protocol.cachedentity.versions.visible_to_user(self.user)
+
+    @cached_property
+    def proto_ioputs(self):
+        return ProtocolIoputs.objects.filter(
+            protocol_version__in=self.proto_versions,
+            kind__in=(ProtocolIoputs.INPUT, ProtocolIoputs.OUTPUT)
+        )
+
+    def get_form_kwargs(self, index):
+        kwargs = super().get_form_kwargs(index)
+        kwargs['dataset'] = self.instance
+
+        kwargs['protocol_versions'] = self.proto_versions
+        kwargs['protocol_ioputs'] = self.proto_ioputs
+
+        return kwargs
+
+
 class DatasetColumnMappingForm(forms.ModelForm):
     protocol_version = EntityVersionChoiceField(
         queryset=CachedProtocolVersion.objects.none())
@@ -96,5 +123,6 @@ class DatasetColumnMappingForm(forms.ModelForm):
 DatasetColumnMappingFormSet = inlineformset_factory(
     Dataset,
     DatasetColumnMapping,
+    formset=BaseDatasetColumnMappingFormSet,
     form=DatasetColumnMappingForm,
 )

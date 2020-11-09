@@ -386,21 +386,17 @@ class DatasetMapColumnsView(VisibilityMixin, DetailView):
 
     def get_formset(self):
         dataset = self._get_object()
-        protocol_versions = dataset.protocol.cachedentity.versions.visible_to_user(self.request.user)
-        protocol_ioputs = ProtocolIoputs.objects.filter(
-            protocol_version__in=protocol_versions,
-            kind__in=(ProtocolIoputs.INPUT, ProtocolIoputs.OUTPUT))
-        form_kwargs = {
-            'dataset': dataset,
-            'protocol_versions': protocol_versions,
-            'protocol_ioputs': protocol_ioputs,
-        }
         initial = [
+            # TODO: one per dataset field
             {'protocol_version': dataset.protocol.repocache.latest_version},
             {'protocol_version': dataset.protocol.repocache.latest_version},
             {'protocol_version': dataset.protocol.repocache.latest_version},
         ]
-        return self.formset_class(form_kwargs=form_kwargs, initial=initial)
+        return self.formset_class(
+            instance=dataset,
+            user=self.request.user,
+            initial=initial
+        )
 
     def get_context_data(self, **kwargs):
         kwargs['formset'] = self.get_formset()
