@@ -54,64 +54,61 @@ function submitNewExperiment(jsonObject, $td, entry)
 function drawMatrix (matrix)
 {
 	//console.log (matrix);
-	var models = [],
-		protocols = [],
-		modelMapper = {},
-		protocolMapper = {},
+	var rows = [],
+		columns = [],
+		rowMapper = {},
+		columnMapper = {},
 		mat = [];
 	
-	for (var key in matrix.models)
-		if (matrix.models.hasOwnProperty (key))
+	for (var key in matrix.rows)
+		if (matrix.rows.hasOwnProperty (key))
 		{
-			var version = matrix.models[key].id;
-			modelMapper[version] = matrix.models[key];
-//			modelMapper[version].name = matrix.models[key].name;
-			models.push(version);
+			var rowId = matrix.rows[key].id;
+			rowMapper[rowId] = matrix.rows[key];
+//			rowMapper[version].name = matrix.rows[key].name;
+			rows.push(rowId);
 		}
 
-	for (var key in matrix.protocols)
-		if (matrix.protocols.hasOwnProperty (key))
+	for (var key in matrix.columns)
+		if (matrix.columns.hasOwnProperty (key))
 		{
-			var version = matrix.protocols[key].id;
-			protocolMapper[version] = matrix.protocols[key];
-//			protocolMapper[version].name = matrix.protocols[key].name;
-			protocols.push(version);
+			var columnId = matrix.columns[key].id;
+			columnMapper[columnId] = matrix.columns[key];
+			columns.push(columnId);
 		}
 
     // Sort rows & columns alphabetically (case insensitive)
-    models.sort(function(a,b) {return (modelMapper[a].name.toLocaleLowerCase() > modelMapper[b].name.toLocaleLowerCase()) ? 1 : ((modelMapper[b].name.toLocaleLowerCase() > modelMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
-    protocols.sort(function(a,b) {return (protocolMapper[a].name.toLocaleLowerCase() > protocolMapper[b].name.toLocaleLowerCase()) ? 1 : ((protocolMapper[b].name.toLocaleLowerCase() > protocolMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
+    rows.sort(function(a,b) {return (rowMapper[a].name.toLocaleLowerCase() > rowMapper[b].name.toLocaleLowerCase()) ? 1 : ((rowMapper[b].name.toLocaleLowerCase() > rowMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
+    columns.sort(function(a,b) {return (columnMapper[a].name.toLocaleLowerCase() > columnMapper[b].name.toLocaleLowerCase()) ? 1 : ((columnMapper[b].name.toLocaleLowerCase() > columnMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
 	
-	/*console.log ("models");
-	console.log (modelMapper);
-	console.log ("protocols");
-	console.log (protocolMapper);*/
+	/*console.log ("rows");
+	console.log (rowMapper);
+	console.log ("columns");
+	console.log (columnMapper);*/
 	
-	for (var i = 0; i < models.length; i++)
+	for (var i = 0; i < rows.length; i++)
 	{
 		mat[i] = [];
-		for (var j = 0; j < protocols.length; j++)
+		for (var j = 0; j < columns.length; j++)
 		{
 			mat[i][j] = {
-					model: modelMapper[models[i]],
-					protocol: protocolMapper[protocols[j]]
+					rowData: rowMapper[rows[i]],
+					columnData: columnMapper[columns[j]]
 			};
-			modelMapper[models[i]].row = i;
-			protocolMapper[protocols[j]].col = j;
-			//console.log (mat[i][j]);
+			rowMapper[rows[i]].row = i;
+			columnMapper[columns[j]].col = j;
 		}
 	}
-	//console.log ("matrix");
-	//console.log (mat);
 	
 	for (var key in matrix.experiments)
 	{
 		if (matrix.experiments.hasOwnProperty (key))
 		{
 			var exp = matrix.experiments[key],
-				row = modelMapper[exp.model.id].row,
-				col = protocolMapper[exp.protocol.id].col;
-			exp.name = exp.model.name + " @ " + exp.model.version + " & " + exp.protocol.name + " @ " + exp.protocol.version;
+				row = rowMapper[exp.model.id].row,
+        colEntity = exp.dataset || exp.protocol,
+				col = columnMapper[colEntity.id].col;
+			exp.name = exp.model.name + " @ " + exp.model.version + " & " + colEntity.name + " @ " + colEntity.version;
 			mat[row][col].experiment = exp;
 		}
 	}
@@ -144,22 +141,22 @@ function drawMatrix (matrix)
 			if (row == -1 && col == -1)
 				continue;
 			
-			// Top row: protocol names
+			// Top row: column names
 			if (row == -1)
 			{
 				var d1 = document.createElement("div"),
 					d2 = document.createElement("div"),
 					a = document.createElement("a"),
-					proto = mat[0][col].protocol;
-        a.href = proto.url;
+					column = mat[0][col].columnData;
+        a.href = column.url;
 				d2.setAttribute("class", "vertical-text");
 				d1.setAttribute("class", "vertical-text__inner");
 				d2.appendChild(d1);
-				a.appendChild(document.createTextNode(proto.name));
+				a.appendChild(document.createTextNode(column.name));
 				d1.appendChild(a);
 				td.appendChild(d2);
 				$td.addClass("matrixTableCol")
-					.data({col: col, protoId: proto.entityId, protoVersion: proto.id})
+					.data({col: col, columnId: column.entityId, columnVersion: column.id})
 					.click(function (ev) {
 						if (comparisonMode) {
 							ev.preventDefault();
@@ -173,7 +170,7 @@ function drawMatrix (matrix)
 			if (col == -1)
 			{
 				var a = document.createElement("a"),
-					model = mat[row][0].model;
+					model = mat[row][0].rowData;
         a.href = model.url;
 				a.appendChild(document.createTextNode(model.name));
 				td.appendChild(a);
@@ -235,15 +232,35 @@ function setExpListeners($td, entry)
 	}
 	else
 	{
-		$td.click(function () {
-			submitNewExperiment ({
-				task: "newExperiment",
-				model: entry.model.entityId,
-        model_version: entry.model.id,
-				protocol: entry.protocol.entityId,
-        protocol_version: entry.protocol.id,
-			}, $td, entry);
-		});
+	  var $div = $("#matrixdiv");
+    var experimentType = $div.data('experiment-type');
+    if (experimentType == 'fitting') {
+      // Link through to fitting submission form
+      $td.click(function() {
+        var link = $div.data('new-fitting-href') + '?';
+        var params = {
+          'model': entry.rowData.entityId,
+          'model_version': entry.rowData.id,
+          'dataset': entry.columnData.id,
+          'protocol': entry.columnData.protocolId,
+          'protocol_version': entry.columnData.protocolLatestVersion,
+          'fittingspec': $div.data('fittingspec-id'),
+          'fittingspec_version': $div.data('fittingspec-version'),
+        }
+        location.href = link + $.param(params);
+      });
+    } else {
+      // Submit new experiment directly
+      $td.click(function () {
+        submitNewExperiment ({
+          task: "newExperiment",
+          model: entry.rowData.entityId,
+          model_version: entry.rowData.id,
+          protocol: entry.columnData.entityId,
+          protocol_version: entry.columnData.id,
+        }, $td, entry);
+      });
+    }
 	}
 
 	// Highlight the relevant row & column labels when the mouse is over this cell
@@ -428,13 +445,17 @@ function getMatrix(params, div) {
 /**
  * Parse the current location URL to determine what part of the matrix to show.
  * The URL pathname should look like: {contextPath}/db/models/id1/id2/protocols/id3/id4
- * If no models or protocols are given, we show everything.
+ * or {contextPath}/db/models/id1/id2/datasets/id3/id4
+ * If no models or protocols/datasets are given, we show everything.
  * The URL can also be {contextPath}/db/public to show only what anonymous users can view.
  * Returns a JSON object to be passed to getMatrix();
  */
 function parseLocation ()
 {
-  var base = $('#matrixdiv').data('base-href'),
+  var $div = $("#matrixdiv"),
+  base = $div.data('base-href'),
+  rowType = $div.data('row-type'),
+  columnType = $div.data('column-type'),
   rest = "",
   ret = {},
   queryParams = (new URL(document.location)).searchParams;
@@ -446,63 +467,62 @@ function parseLocation ()
 
   $('.showButton').removeClass("selected");
   $('.showMyButton').hide();
-  if (queryParams.has('show_fits')) {
-    ret.show_fits = true;
-    $('#showFittingExpts').addClass("selected");
-    $('#showPredictionExpts').removeClass("selected");
-  } else {
-    $('#showPredictionExpts').addClass("selected");
-    $('#showFittingExpts').removeClass("selected");
-  }
   if (rest.length > 0)
   {
-    var items = rest.split("/"),
-    modelIndex = items.indexOf("models"),
-    protoIndex = items.indexOf("protocols");
-    if (protoIndex != -1)
+    var rowUrlFragment = rowType + 's',
+      columnUrlFragment = columnType + 's',
+      items = rest.replace(/^\//, "").split("/"),
+      rowIndex = items.indexOf(rowUrlFragment);
+      colIndex = items.indexOf(columnUrlFragment);
+    if (colIndex != -1)
     {
-      if (modelIndex != -1)
+      if (rowIndex != -1)
       {
         // /models/1/2/protocols/3/4
-        ret.modelIds = parts = items.slice(modelIndex + 1, protoIndex);
+        // /models/1/2/datasets/3/4
+        ret.rowIds = parts = items.slice(rowIndex + 1, colIndex);
         versionIndex = parts.indexOf('versions')
         if (versionIndex != -1)
         {
-          ret.modelIds = parts.slice(0, versionIndex);
-          ret.modelVersions = parts.slice(versionIndex + 1);
+          // /models/1/2/protocols/3/versions/abc/def
+          ret.rowIds = parts.slice(0, versionIndex);
+          ret.rowVersions = parts.slice(versionIndex + 1);
         }
       }
       // /protocols/3/4
-      parts = ret.protoIds = items.slice(protoIndex + 1);
+      // /datasets/3/4
+      parts = ret.columnIds = items.slice(colIndex + 1);
       versionIndex = parts.indexOf('versions')
       if (versionIndex != -1)
       {
-        ret.protoIds = parts.slice(0, versionIndex);
-        ret.protoVersions = parts.slice(versionIndex + 1);
+        // /protocols/3/versions/abc/def
+        ret.columnIds = parts.slice(0, versionIndex);
+        ret.columnVersions = parts.slice(versionIndex + 1);
       }
     }
-    else if (modelIndex != -1)
+    else if (rowIndex != -1)
     {
       // /models/1/2
-      ret.modelIds = parts = items.slice(modelIndex + 1);
+      ret.rowIds = parts = items.slice(rowIndex + 1);
       versionIndex = parts.indexOf('versions')
       if (versionIndex != -1)
       {
-        ret.modelIds = parts.slice(0, versionIndex);
-        ret.modelVersions = parts.slice(versionIndex + 1);
+        // /models/1/versions/xyz
+        ret.rowIds = parts.slice(0, versionIndex);
+        ret.rowVersions = parts.slice(versionIndex + 1);
       }
     }
 
-    if (modelIndex != -1)
+    if (rowIndex != -1)
     {
-      baseUrls.row = "/models/" + ret.modelIds.join("/");
+      baseUrls.row = "/" + rowUrlFragment + "/" + ret.rowIds.join("/");
     }
-    if (protoIndex != -1)
+    if (colIndex != -1)
     {
-      baseUrls.col = "/protocols/" + ret.protoIds.join("/");
+      baseUrls.col = "/" + columnUrlFragment + "/" + ret.columnIds.join("/");
     }
 
-    if (modelIndex == -1 && protoIndex == -1)
+    if (rowIndex == -1 && colIndex == -1)
     {
       if (items[0] == "public")
       {
@@ -517,6 +537,7 @@ function parseLocation ()
 
         $('#showMyExptsModels').text("Hide moderated models");
         $('#showMyExptsProtocols').text("Hide moderated protocols");
+        $('#showMyExptsDatasets').text("Hide moderated datasets");
 
         var query = location.search.substr(1);
         var result = {};
@@ -529,6 +550,10 @@ function parseLocation ()
           if (item[0] == 'moderated-protocols' && item[1] == 'false') {
             ret["moderated-protocols"] = "false";
             $('#showMyExptsProtocols').text("Show moderated protocols");
+          }
+          if (item[0] == 'moderated-datasets' && item[1] == 'false') {
+            ret["moderated-datasets"] = "false";
+            $('#showMyExptsDatasets').text("Show moderated datasets");
           }
           result[item[0]] = decodeURIComponent(item[1]);
         });
@@ -591,38 +616,41 @@ function prepareMatrix ()
 
     if (linesToCompare.row.length > 0) {
       var rows = linesToCompare.row.map(i => $("#matrix-entry-" + i + "--1"));
-      var modelIds = rows.map($row => $row.data('modelId'));
-      var modelVersions = rows.map($row => $row.data('modelVersion'));
-      if (components.modelVersions) {
-        url += '/models/' + modelIds[0] + '/versions/' + modelVersions.join('/');
+      var rowIds = rows.map($row => $row.data('modelId'));
+      var rowVersions = rows.map($row => $row.data('modelVersion'));
+      if (components.rowVersions) {
+        url += '/models/' + rowIds[0] + '/versions/' + rowVersions.join('/');
       } else {
-        url += '/models/' + modelIds.join('/');
+        url += '/models/' + rowIds.join('/');
       }
     }
     else
     {
       url += baseUrls.row;
-      if (components.modelVersions) {
-        url += '/versions/' + components.modelVersions.join('/');
+      if (components.rowVersions) {
+        url += '/versions/' + components.rowVersions.join('/');
       }
     }
 
     if (linesToCompare.col.length > 0)
     {
+      var colType = $(div).data('column-type');
       var cols = linesToCompare.col.map(i => $("#matrix-entry--1-" + i));
-      var protoIds = cols.map($col => $col.data('protoId'));
-      var protoVersions = cols.map($col => $col.data('protoVersion'));
-      if (components.protoVersions) {
-        url += '/protocols/' + protoIds[0] + '/versions/' + protoVersions.join('/');
+
+      var colIds = cols.map($col => $col.data('columnId'));
+      var colVersions = cols.map($col => $col.data('columnVersion'));
+      var colUrlPrefix = '/' + colType + 's/';
+      if (components.columnVersions) {
+        url += colUrlPrefix + colIds[0] + '/versions/' + colVersions.join('/');
       } else {
-        url += '/protocols/' + protoIds.join('/');
+        url += colUrlPrefix + colIds.join('/');
       }
     }
     else
     {
       url += baseUrls.col;
-      if (components.protoVersions) {
-        url += '/versions/' + components.protoVersions.join('/');
+      if (components.columnVersions) {
+        url += '/versions/' + components.columnVersions.join('/');
       }
     }
     document.location.href = url; // TODO: use history API instead?
@@ -642,16 +670,11 @@ function prepareMatrix ()
     return url + '?';
   }
 
-  function getFittingParams() {
-    params = {};
-    if ($('#showFittingExpts').hasClass("selected")) params['show_fits'] = true;
-    return params;
-  }
-
-  function hideModeratedParams(hideModels, hideProtocols) {
-    var params = getFittingParams();
+  function hideModeratedParams(hideModels, hideProtocols, hideDatasets) {
+    var params = {};
     if (hideModels) params['moderated-models'] = false;
     if (hideProtocols) params['moderated-protocols'] = false;
+    if (hideDatasets) params['moderated-datasets'] = false;
     return params;
   }
 
@@ -661,7 +684,7 @@ function prepareMatrix ()
         {
             $('.showButton').removeClass("selected");
             $(this).addClass("selected");
-			document.location.href = getBaseUrl() + $.param(getFittingParams());
+			document.location.href = getBaseUrl();
         }
 	});
 	$("#showPublicExpts").click(function () {
@@ -669,7 +692,7 @@ function prepareMatrix ()
         {
             $('.showButton').removeClass("selected");
             $(this).addClass("selected");
-			document.location.href = getBaseUrl() + $.param(getFittingParams());
+			document.location.href = getBaseUrl();
         }
 	});
 	$("#showAllExpts").click(function () {
@@ -677,7 +700,7 @@ function prepareMatrix ()
         {
             $('.showButton').removeClass("selected");
             $(this).addClass("selected");
-			document.location.href = getBaseUrl() + $.param(getFittingParams());
+			document.location.href = getBaseUrl();
         }
 	});
 	$("#showMyExpts").click(function () {
@@ -685,25 +708,27 @@ function prepareMatrix ()
         {
             $('.showButton').removeClass("selected");
             $(this).addClass("selected");
-			document.location.href = getBaseUrl() + $.param(getFittingParams());
+			document.location.href = getBaseUrl();
         }
 	});
 	$("#showMyExptsModels").click(function () {
 		var hideModels = hiddenToggle($(this)),
 			hideProtocols = $("#showMyExptsProtocols").text().substr(0,4) == 'Show';
-			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols));
+			hideDatasets = $("#showMyExptsDatasets").text().substr(0,4) == 'Show';
+			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
 	});
 	$("#showMyExptsProtocols").click(function () {
 		var hideProtocols = hiddenToggle($(this)),
 			hideModels = $("#showMyExptsModels").text().substr(0,4) == 'Show';
-			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols));
+			hideDatasets = $("#showMyExptsDatasets").text().substr(0,4) == 'Show';
+			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
 	});
-
-    // Hacky fitting experiment support
-    $('.showFitsButton').click(function() {
-        $('.showFitsButton').toggleClass("selected");
-        document.location.href = getBaseUrl() + $.param(getFittingParams());
-    });
+	$("#showMyExptsDatasets").click(function () {
+		var hideDatasets = hiddenToggle($(this)),
+			hideModels = $("#showMyExptsModels").text().substr(0,4) == 'Show';
+			hideProtocols = $("#showMyExptsProtocols").text().substr(0,4) == 'Show';
+			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
+	});
 }
 
 /**

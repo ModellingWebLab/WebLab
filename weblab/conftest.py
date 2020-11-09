@@ -211,6 +211,18 @@ def moderated_protocol(helpers):
 
 
 @pytest.fixture
+def moderated_fittingspec(helpers):
+    fittingspec = recipes.fittingspec.make()
+    helpers.add_version(fittingspec, visibility='moderated')
+    return fittingspec
+
+
+@pytest.fixture
+def moderated_dataset(helpers):
+    return recipes.dataset.make(visibility='moderated')
+
+
+@pytest.fixture
 def private_model(helpers):
     model = recipes.model.make(name='private model')
     helpers.add_version(model, visibility='private')
@@ -263,6 +275,43 @@ def queued_fittingresult(public_model, public_protocol, public_fittingspec, publ
     )
     recipes.running_experiment.make(runnable=version)
     return version
+
+
+@pytest.fixture
+def quick_fittingresult_version(helpers):
+    """A fitting result version that exists only in the DB - no repos, no results."""
+    model = recipes.model.make()
+    model_version = helpers.add_fake_version(model, 'public')
+    protocol = recipes.protocol.make()
+    protocol_version = helpers.add_fake_version(protocol, 'public')
+    fittingspec = recipes.fittingspec.make(protocol=protocol)
+    fittingspec_version = helpers.add_fake_version(fittingspec, 'public')
+    dataset = recipes.dataset.make(visibility='public', protocol=protocol)
+    return recipes.fittingresult_version.make(
+        status='SUCCESS',
+        fittingresult__model=model,
+        fittingresult__model_version=model_version,
+        fittingresult__protocol=protocol,
+        fittingresult__protocol_version=protocol_version,
+        fittingresult__fittingspec=fittingspec,
+        fittingresult__fittingspec_version=fittingspec_version,
+        fittingresult__dataset=dataset,
+    )
+
+
+@pytest.fixture
+def moderated_fittingresult_version(moderated_model, moderated_protocol,
+                                    moderated_fittingspec, moderated_dataset):
+    return recipes.fittingresult_version.make(
+        status='SUCCESS',
+        fittingresult__model=moderated_model,
+        fittingresult__model_version=moderated_model.repocache.latest_version,
+        fittingresult__protocol=moderated_protocol,
+        fittingresult__protocol_version=moderated_protocol.repocache.latest_version,
+        fittingresult__fittingspec=moderated_fittingspec,
+        fittingresult__fittingspec_version=moderated_fittingspec.repocache.latest_version,
+        fittingresult__dataset=moderated_dataset,
+    )
 
 
 @pytest.fixture
@@ -431,6 +480,10 @@ def my_dataset_with_file(logged_in_user, helpers, public_protocol, client):
 
 @pytest.fixture
 def fittingresult_version(public_model, public_protocol, public_fittingspec, public_dataset):
+    public_fittingspec.protocol = public_protocol
+    public_fittingspec.save()
+    public_dataset.protocol = public_protocol
+    public_dataset.save()
     return recipes.fittingresult_version.make(
         status='SUCCESS',
         fittingresult__model=public_model,

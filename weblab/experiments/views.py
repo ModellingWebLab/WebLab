@@ -72,7 +72,7 @@ class ExperimentMatrixJsonView(View):
     Serve up JSON for experiment matrix
     """
     @classmethod
-    def entity_json(cls, entity, version, *, extend_name, visibility, author, friendly_version=''):
+    def entity_json(cls, entity, version, *, extend_name, visibility, author, friendly_version='', ns='entities'):
         if extend_name:
             name = '%s @ %s' % (entity.name, friendly_version or version)
         else:
@@ -86,8 +86,8 @@ class ExperimentMatrixJsonView(View):
             'created': entity.created_at,
             'name': name,
             'url': reverse(
-                'entities:version',
-                args=[entity.entity_type, entity.id, version]
+                '%s:version' % ns,
+                args=[entity.url_type, entity.id, version]
             ),
         }
 
@@ -149,12 +149,11 @@ class ExperimentMatrixJsonView(View):
     def get(self, request, *args, **kwargs):
         # Extract and sanity-check call arguments
         user = request.user
-        model_pks = list(map(int, request.GET.getlist('modelIds[]')))
-        protocol_pks = list(map(int, request.GET.getlist('protoIds[]')))
-        model_versions = request.GET.getlist('modelVersions[]')
-        protocol_versions = request.GET.getlist('protoVersions[]')
+        model_pks = list(map(int, request.GET.getlist('rowIds[]')))
+        protocol_pks = list(map(int, request.GET.getlist('columnIds[]')))
+        model_versions = request.GET.getlist('rowVersions[]')
+        protocol_versions = request.GET.getlist('columnVersions[]')
         subset = request.GET.get('subset', 'all' if model_pks or protocol_pks else 'moderated')
-        show_fits = 'show_fits' in request.GET
 
         if model_versions and len(model_pks) > 1:
             return JsonResponse({
@@ -236,6 +235,7 @@ class ExperimentMatrixJsonView(View):
             visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
 
         # If specific versions have been requested, show at most those
+
         q_model_versions = self.versions_query('model', model_versions, q_models.values('pk'), visibility_where)
         if show_fits:  # Temporary hack
             protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=True)
@@ -291,8 +291,8 @@ class ExperimentMatrixJsonView(View):
 
         return JsonResponse({
             'getMatrix': {
-                'models': model_versions,
-                'protocols': protocol_versions,
+                'rows': model_versions,
+                'columns': protocol_versions,
                 'experiments': experiments,
             }
         })

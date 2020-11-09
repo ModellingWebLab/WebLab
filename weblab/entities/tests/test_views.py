@@ -1319,6 +1319,21 @@ class TestTagging:
         assert len(tags) == 1
         assert tags[commit.sha][0].name == 'v1'
 
+    def test_invalid_tag(self, logged_in_user, client, helpers):
+        model = recipes.model.make(author=logged_in_user)
+        helpers.add_permission(logged_in_user, 'create_model')
+        helpers.add_version(model)
+        commit = model.repo.latest_commit
+
+        response = client.post(
+            '/entities/tag/%d/%s' % (model.pk, commit.sha),
+            data={
+                'tag': '/invalid tag',
+            },
+        )
+        assert response.status_code == 200
+        assert "Please enter a valid tag name" in response.rendered_content
+
     def test_cannot_tag_as_non_owner(self, logged_in_user, client, helpers):
         protocol = recipes.protocol.make()
         commit = helpers.add_version(protocol)
@@ -1795,6 +1810,22 @@ class TestVersionCreation:
         assert response.status_code == 200
         assert model.repo.latest_commit == first_commit
         assert not (model.repo_abs_path / 'model.txt').exists()
+
+    def test_invalid_tag(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model.make(author=logged_in_user)
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': '',
+                'commit_message': 'first commit',
+                'tag': '/invalid tag',
+                'visibility': 'public',
+            },
+        )
+        assert response.status_code == 200
+        assert "Please enter a valid tag name" in response.rendered_content
 
     @pytest.mark.parametrize("route", ['main_form', 'edit_file'])
     def test_rerun_experiments(self, logged_in_user, other_user, client, helpers, route):

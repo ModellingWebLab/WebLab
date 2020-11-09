@@ -2,6 +2,7 @@ import pytest
 from django import forms
 from guardian.shortcuts import assign_perm
 
+from core import recipes
 from entities.forms import EntityChangeVisibilityForm, EntityCollaboratorForm
 
 
@@ -41,6 +42,11 @@ class TestEntityCollaboratorFormSet:
         assert form.is_valid()
         form.add_collaborator()
         assert model_creator.has_perm('edit_entity', public_model)
+
+    def test_cant_add_author_as_collaborator(self, model_creator):
+        model = recipes.model.make(author=model_creator)
+        form = self._form({'email': model_creator.email, 'DELETE': False}, model)
+        assert not form.is_valid()
 
     def test_remove_collaborator(self, public_model, model_creator):
         assign_perm('edit_entity', model_creator, public_model)

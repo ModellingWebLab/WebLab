@@ -137,10 +137,10 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert len(data['getMatrix']['models']) == 1
-        assert str(exp.model_version.sha) in data['getMatrix']['models']
-        assert len(data['getMatrix']['protocols']) == 1
-        assert str(exp.protocol_version.sha) in data['getMatrix']['protocols']
+        assert len(data['getMatrix']['rows']) == 1
+        assert str(exp.model_version.sha) in data['getMatrix']['rows']
+        assert len(data['getMatrix']['columns']) == 1
+        assert str(exp.protocol_version.sha) in data['getMatrix']['columns']
         assert len(data['getMatrix']['experiments']) == 1
         assert str(exp.pk) in data['getMatrix']['experiments']
 
@@ -165,8 +165,8 @@ class TestExperimentMatrix:
         response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert len(data['getMatrix']['models']) == 0
-        assert len(data['getMatrix']['protocols']) == 1
+        assert len(data['getMatrix']['rows']) == 0
+        assert len(data['getMatrix']['columns']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
     def test_view_my_experiments_with_moderated_flags(
@@ -419,8 +419,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [exp.model.pk, non_existent_pk],
-                'protoIds[]': [exp.protocol.pk, non_existent_pk],
+                'rowIds[]': [exp.model.pk, non_existent_pk],
+                'columnIds[]': [exp.protocol.pk, non_existent_pk],
             }
         )
 
@@ -428,13 +428,13 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        models = data['getMatrix']['models']
+        models = data['getMatrix']['rows']
         assert len(models) == 1
         assert str(exp.model_version.sha) in models
         assert models[str(exp.model_version.sha)]['id'] == str(exp.model_version.sha)
         assert models[str(exp.model_version.sha)]['entityId'] == exp.model.pk
 
-        protocols = data['getMatrix']['protocols']
+        protocols = data['getMatrix']['columns']
         assert len(protocols) == 1
         assert str(exp.protocol_version.sha) in protocols
         assert protocols[str(exp.protocol_version.sha)]['id'] == str(exp.protocol_version.sha)
@@ -459,8 +459,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [exp.model.pk],
-                'modelVersions[]': [str(v1.sha), str(v2.sha)],
+                'rowIds[]': [exp.model.pk],
+                'rowVersions[]': [str(v1.sha), str(v2.sha)],
             }
         )
 
@@ -468,7 +468,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(v1.sha), str(v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk)}
 
     def test_submatrix_with_all_model_versions(self, client, helpers, quick_experiment_version):
@@ -491,8 +491,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [exp.model.pk],
-                'modelVersions[]': '*',
+                'rowIds[]': [exp.model.pk],
+                'rowVersions[]': '*',
             }
         )
 
@@ -500,7 +500,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['models'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_submatrix_with_too_many_model_ids(self, client, helpers, quick_experiment_version):
@@ -510,8 +510,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [quick_experiment_version.experiment.model.pk, model.pk],
-                'modelVersions[]': '*',
+                'rowIds[]': [quick_experiment_version.experiment.model.pk, model.pk],
+                'rowVersions[]': '*',
             }
         )
 
@@ -540,8 +540,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'protoIds[]': [exp.protocol.pk],
-                'protoVersions[]': [str(v1.sha), str(v2.sha)],
+                'columnIds[]': [exp.protocol.pk],
+                'columnVersions[]': [str(v1.sha), str(v2.sha)],
             }
         )
 
@@ -549,7 +549,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['protocols'].keys()) == {str(v1.sha), str(v2.sha)}
+        assert set(data['getMatrix']['columns'].keys()) == {str(v1.sha), str(v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_submatrix_with_all_protocol_versions(self, client, helpers, quick_experiment_version):
@@ -573,8 +573,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'protoIds[]': [exp.protocol.pk],
-                'protoVersions[]': '*',
+                'columnIds[]': [exp.protocol.pk],
+                'columnVersions[]': '*',
             }
         )
 
@@ -582,7 +582,7 @@ class TestExperimentMatrix:
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
 
-        assert set(data['getMatrix']['protocols'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
+        assert set(data['getMatrix']['columns'].keys()) == {str(v1.sha), str(v2.sha), str(v3.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp.pk), str(exp2.pk)}
 
     def test_submatrix_with_too_many_protocol_ids(self, client, helpers, quick_experiment_version):
@@ -592,8 +592,8 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'protoIds[]': [quick_experiment_version.experiment.protocol.pk, protocol.pk],
-                'protoVersions[]': '*',
+                'columnIds[]': [quick_experiment_version.experiment.protocol.pk, protocol.pk],
+                'columnVersions[]': '*',
             }
         )
 
@@ -621,18 +621,18 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [m1.pk],
-                'modelVersions[]': '*',
-                'protoIds[]': [p1.pk],
-                'protoVersions[]': '*',
+                'rowIds[]': [m1.pk],
+                'rowVersions[]': '*',
+                'columnIds[]': [p1.pk],
+                'columnVersions[]': '*',
             }
         )
 
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert set(data['getMatrix']['models'].keys()) == {str(m1v1.sha), str(m1v2.sha)}
-        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1.sha), str(p1v2.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(m1v1.sha), str(m1v2.sha)}
+        assert set(data['getMatrix']['columns'].keys()) == {str(p1v1.sha), str(p1v2.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk), str(exp2.pk)}
 
         # Now select only some versions
@@ -640,18 +640,18 @@ class TestExperimentMatrix:
             '/experiments/matrix',
             {
                 'subset': 'all',
-                'modelIds[]': [m1.pk],
-                'modelVersions[]': [str(m1v1.sha)],
-                'protoIds[]': [p1.pk],
-                'protoVersions[]': [str(p1v1.sha)],
+                'rowIds[]': [m1.pk],
+                'rowVersions[]': [str(m1v1.sha)],
+                'columnIds[]': [p1.pk],
+                'columnVersions[]': [str(p1v1.sha)],
             }
         )
 
         assert response.status_code == 200
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert set(data['getMatrix']['models'].keys()) == {str(m1v1.sha)}
-        assert set(data['getMatrix']['protocols'].keys()) == {str(p1v1.sha)}
+        assert set(data['getMatrix']['rows'].keys()) == {str(m1v1.sha)}
+        assert set(data['getMatrix']['columns'].keys()) == {str(p1v1.sha)}
         assert set(data['getMatrix']['experiments'].keys()) == {str(exp1.pk)}
 
     def test_experiment_without_version_is_ignored(
@@ -667,7 +667,7 @@ class TestExperimentMatrix:
         response = client.get('/experiments/matrix?subset=all')
         assert response.status_code == 200
         data = json.loads(response.content.decode())
-        assert len(data['getMatrix']['protocols']) == 1
+        assert len(data['getMatrix']['columns']) == 1
         assert len(data['getMatrix']['experiments']) == 0
 
     def test_old_version_is_hidden(self, client, public_model, experiment_version, helpers):
@@ -678,15 +678,14 @@ class TestExperimentMatrix:
         response = client.get('/experiments/matrix?subset=all')
         data = json.loads(response.content.decode())
         assert 'getMatrix' in data
-        assert str(new_version.sha) in data['getMatrix']['models']
-        assert str(experiment_version.experiment.protocol_version.sha) in data['getMatrix']['protocols']
+        assert str(new_version.sha) in data['getMatrix']['rows']
+        assert str(experiment_version.experiment.protocol_version.sha) in data['getMatrix']['columns']
         assert len(data['getMatrix']['experiments']) == 0
 
 
 @patch('requests.post', side_effect=generate_response())
 @pytest.mark.django_db
 class TestNewExperimentView:
-    @pytest.mark.usefixtures('logged_in_user')
     def test_submits_experiment(
         self, mock_post,
         client, logged_in_user, model_with_version, protocol_with_version, planned_experiments
@@ -772,7 +771,7 @@ class TestNewExperimentView:
         assert data['newExperiment']['expName'] == exp_version2.experiment.name
 
     @pytest.mark.usefixtures('logged_in_user')
-    def test_submit_experiment_requires_permissions(self, mock_post, client, logged_in_user):
+    def test_submit_experiment_requires_permissions(self, mock_post, client):
         response = client.post('/experiments/new', {})
 
         assert response.status_code == 200
@@ -784,7 +783,6 @@ class TestNewExperimentView:
             'You are not allowed to create a new experiment'
         )
 
-    @pytest.mark.usefixtures('logged_in_user')
     def test_failure_keeps_planned_experiment(
         self, mock_post,
         client, logged_in_user, model_with_version, protocol_with_version, planned_experiments
@@ -826,7 +824,6 @@ class TestNewExperimentView:
             protocol=protocol, protocol_version=protocol_version
         ).count() == 1
 
-    @pytest.mark.usefixtures('logged_in_user')
     def test_inapplicable_removes_planned_experiment(
         self, mock_post,
         client, logged_in_user, model_with_version, protocol_with_version, planned_experiments
@@ -867,7 +864,6 @@ class TestNewExperimentView:
             protocol=protocol, protocol_version=protocol_version
         ).count() == 0
 
-    @pytest.mark.usefixtures('logged_in_user')
     def test_rerun_experiment(
         self, mock_post,
         client, logged_in_user, experiment_version
@@ -954,6 +950,18 @@ class TestExperimentVersionView:
         assert response.context['version'] == experiment_version
         assertTemplateUsed(response, 'experiments/experimentversion_detail.html')
         assertContains(response, 'Download archive of all files')
+
+    def test_view_experiment_version_logged_in(self, client, logged_in_user, experiment_version):
+        add_permission(logged_in_user, 'create_experiment')
+        response = client.get(
+            ('/experiments/%d/versions/%d' % (experiment_version.experiment.pk,
+                                              experiment_version.pk))
+        )
+
+        assert response.context['version'] == experiment_version
+        assertTemplateUsed(response, 'experiments/experimentversion_detail.html')
+        assertContains(response, 'Download archive of all files')
+        assertContains(response, 'a id="rerunExperiment"')
 
 
 @pytest.mark.django_db

@@ -32,8 +32,8 @@
         <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
         <span id="exptStatus"></span>
 
-        {% if perms.create_experiment %}
-        <a id="rerunExperiment" data-href="{% url "experiment:new" %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        {% if perms.experiments.create_experiment %}
+        <a id="rerunExperiment" data-href="{% url 'experiments:new' %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
         {% can_delete_entity version as can_delete %}
