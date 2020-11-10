@@ -1,7 +1,7 @@
 {% extends "datasets/base.html" %}
 
 {% block content_detail %}
-<form method="POST" action="">
+<form method="POST" action="" class="dataset-column-mapper">
   {% csrf_token %}
 
   <table class="formset">
@@ -14,10 +14,10 @@
         <td>
           {{ form.column_units }}
         </td>
-        <td>
+        <td class="protocol-version">
           {{ form.protocol_version }}
         </td>
-        <td>
+        <td class="protocol-ioput">
           {{ form.protocol_ioput }}
         </td>
       </tr>

@@ -101,9 +101,28 @@ class BaseDatasetColumnMappingFormSet(forms.BaseInlineFormSet):
         return kwargs
 
 
+class IoputSelect(forms.Select):
+    """
+    Custom version of select widget for ioput field on mapping form
+
+    Allows protocol version ids to be attached to options for filtering
+    """
+    def create_option(self, name, value, *args, **kwargs):
+        option = super().create_option(name, value, *args, **kwargs)
+
+        if value:
+            proto_version = self.choices.field.queryset.get(pk=int(value)).protocol_version
+            option['attrs']['data-protocol-version'] = proto_version.pk
+
+        return option
+
+
 class DatasetColumnMappingForm(forms.ModelForm):
     protocol_version = EntityVersionChoiceField(
         queryset=CachedProtocolVersion.objects.none())
+
+    protocol_ioput = forms.ModelChoiceField(
+        queryset=ProtocolIoputs.objects.all(), widget=IoputSelect)
 
     def __init__(self, *args, **kwargs):
         protocol_versions = kwargs.pop('protocol_versions')
