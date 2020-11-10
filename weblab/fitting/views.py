@@ -214,7 +214,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
             fittingspec=spec,
             model__in=q_models,
             model_version__in=q_model_versions,
-            dataset__in=q_datasets,
+            dataset__in=q_datasets.values('pk'),
         )
         q_fittingresult_versions = FittingResultVersion.objects.filter(
             fittingresult__in=q_fittings,
