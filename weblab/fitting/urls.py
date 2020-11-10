@@ -246,6 +246,6 @@ urlpatterns = [
     ),
 
     url(
-        r'^results/', include((result_patterns,app_name), namespace='result')
+        r'^results/', include((result_patterns, app_name), namespace='result')
     ),
 ]
