@@ -133,6 +133,13 @@ class DatasetColumnMappingForm(forms.ModelForm):
         self.fields['protocol_version'].empty_label = None
         self.fields['protocol_ioput'].queryset = protocol_ioputs
 
+    def clean(self):
+        cleaned_data = super().clean()
+        ioput = cleaned_data.get('protocol_ioput')
+        version = cleaned_data.get('protocol_version')
+        if version and ioput and ioput.protocol_version != version:
+            raise ValidationError({"protocol_ioput": "Ioput must match protocol version"})
+
     class Meta:
         model = DatasetColumnMapping
         fields = ['column_name', 'column_units', 'protocol_version', 'protocol_ioput']
