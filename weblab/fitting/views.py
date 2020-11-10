@@ -212,7 +212,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
         fittingresults = {}
         q_fittings = FittingResult.objects.filter(
             fittingspec=spec,
-            model__in=q_models,
+            model__in=q_models.values('pk'),
             model_version__in=q_model_versions,
             dataset__in=q_datasets,
         )
