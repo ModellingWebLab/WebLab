@@ -1,3 +1,6 @@
+import csv
+from io import TextIOWrapper
+
 from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.text import get_valid_filename
@@ -58,6 +61,16 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
     @property
     def archive_name(self):
         return get_valid_filename(self.name + '.zip')
+
+    @property
+    def column_names(self):
+        # There has to be at least one file in the dataset
+        main_file = self.files[0]
+
+        with self.open_file(main_file.name) as csvfile:
+            colreader = csv.reader(TextIOWrapper(csvfile, 'utf-8'))
+            header = next(colreader)
+            return list(header)
 
 
 class DatasetFile(models.Model):

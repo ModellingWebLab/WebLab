@@ -1,8 +1,38 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.utils import IntegrityError
 
 from core import recipes
 from datasets.models import Dataset
+
+
+@pytest.fixture
+def dataset_creator(logged_in_user, helpers, client, public_protocol):
+    def _creator(files, main_file=None):
+        dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+
+        uploads = []
+        for (file_name, file_contents) in files:
+            recipes.dataset_file.make(
+                dataset=dataset,
+                upload=SimpleUploadedFile(file_name, file_contents),
+                original_name=file_name,
+            )
+            uploads.append(file_name)
+
+        client.post(
+            '/datasets/%d/addfiles' % dataset.pk,
+            data={
+                'filename[]': ['uploads/' + f for f in uploads],
+                'delete_filename[]': [],
+                'mainEntry': [main_file] if main_file else [],
+            },
+        )
+        return dataset
+
+    return _creator
+
 
 
 @pytest.mark.django_db
@@ -36,6 +66,10 @@ class TestDataset:
         assert Dataset.objects.visible_to_user(anon_user).count() == 3
 
         # TODO - No testing of shared datasets - waiting for implementation in front end
+
+    def test_column_names(self, dataset_creator):
+        dataset = dataset_creator([('data1.csv', b'col1,col2')])
+        assert dataset.column_names == ['col1', 'col2']
 
 
 @pytest.mark.django_db
