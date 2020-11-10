@@ -3,9 +3,9 @@ import uuid
 from pathlib import Path
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.urls import reverse
 from django.core.validators import MinLengthValidator
 from django.db import models
+from django.urls import reverse
 from django.utils.functional import cached_property
 from guardian.shortcuts import get_objects_for_user
 

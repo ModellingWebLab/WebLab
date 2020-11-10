@@ -10,7 +10,6 @@ from django.contrib.auth.mixins import (
     PermissionRequiredMixin,
     UserPassesTestMixin,
 )
-from django.urls import reverse
 from django.http import (
     Http404,
     HttpResponse,
@@ -18,6 +17,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.urls import reverse
 from django.views import View
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin

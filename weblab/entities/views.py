@@ -16,7 +16,6 @@ from django.contrib.auth.mixins import (
     UserPassesTestMixin,
 )
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
-from django.urls import reverse
 from django.db.models import Count, F, Q
 from django.http import (
     Http404,
@@ -25,6 +24,7 @@ from django.http import (
     HttpResponseRedirect,
     JsonResponse,
 )
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View

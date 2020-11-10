@@ -1,8 +1,8 @@
 import urllib.parse
 
 from django.conf import settings
-from django.urls import reverse
 from django.db import models
+from django.urls import reverse
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
 from . import visibility
