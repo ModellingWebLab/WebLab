@@ -1,17 +1,19 @@
 import pytest
-from unittest import mock
+from unittest.mock import patch, PropertyMock
 
 from core import recipes
 
-from datasets.forms import DatasetColumnMappingForm, DatasetColumnMappingFormSet
+from datasets.forms import DatasetColumnMappingForm, get_formset_class
 from datasets.models import Dataset
 from repocache.models import ProtocolIoputs
 
 
+DatasetColumnMappingFormSet = get_formset_class(extra=1)
+
 @pytest.mark.django_db
 class TestDatasetColumnMappingFormSet:
     def test_has_formset(self, public_dataset, user):
-        formset = DatasetColumnMappingFormSet(instance=public_dataset, user=user)
+        formset = get_formset_class(extra=1)(instance=public_dataset, user=user)
         assert formset.instance == public_dataset
 
     def test_has_versions(self, user, helpers):
@@ -82,7 +84,7 @@ class TestDatasetColumnMappingFormSet:
         v2_in = recipes.protocol_input.make(protocol_version=proto_v2)
 
         dataset = recipes.dataset.make(visibility='public', protocol=protocol)
-        with mock.patch.object(Dataset, 'column_names', new_callable=mock.PropertyMock, return_value=['col']):
+        with patch.object(Dataset, 'column_names', new_callable=PropertyMock, return_value=['col']):
             form = self._make_form(dataset, user, {
                 'column_name': 'col',
                 'column_units': 'units',
@@ -107,7 +109,7 @@ class TestDatasetColumnMappingFormSet:
         proto1_v1_in = recipes.protocol_input.make(protocol_version=proto1_v1)
 
         dataset = recipes.dataset.make(visibility='public', protocol=proto2)
-        with mock.patch.object(Dataset, 'column_names', new_callable=mock.PropertyMock, return_value=['col']):
+        with patch.object(Dataset, 'column_names', new_callable=PropertyMock, return_value=['col']):
             form = self._make_form(dataset, user, {
                 'column_name': 'col',
                 'column_units': 'units',
@@ -122,7 +124,7 @@ class TestDatasetColumnMappingFormSet:
         proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
 
         dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
-        with mock.patch.object(Dataset, 'column_names', new_callable=mock.PropertyMock, return_value=['col']):
+        with patch.object(Dataset, 'column_names', new_callable=PropertyMock, return_value=['col']):
             form = self._make_form(dataset, user, {
                 'column_name': 'col1',
                 'column_units': 'units',

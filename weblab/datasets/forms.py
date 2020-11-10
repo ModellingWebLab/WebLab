@@ -124,6 +124,9 @@ class DatasetColumnMappingForm(forms.ModelForm):
     protocol_ioput = forms.ModelChoiceField(
         queryset=ProtocolIoputs.objects.all(), widget=IoputSelect)
 
+    column_name = forms.CharField(
+        widget=forms.TextInput(attrs={'readonly':'readonly'}))
+
     def __init__(self, *args, **kwargs):
         protocol_versions = kwargs.pop('protocol_versions')
         protocol_ioputs = kwargs.pop('protocol_ioputs')
@@ -152,9 +155,11 @@ class DatasetColumnMappingForm(forms.ModelForm):
         readonly_fields = ['column_name']
 
 
-DatasetColumnMappingFormSet = inlineformset_factory(
-    Dataset,
-    DatasetColumnMapping,
-    formset=BaseDatasetColumnMappingFormSet,
-    form=DatasetColumnMappingForm,
-)
+def get_formset_class(extra):
+    return inlineformset_factory(
+        Dataset,
+        DatasetColumnMapping,
+        formset=BaseDatasetColumnMappingFormSet,
+        form=DatasetColumnMappingForm,
+        extra=extra
+    )

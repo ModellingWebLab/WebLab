@@ -71,6 +71,10 @@ class TestDataset:
         dataset = dataset_creator([('data1.csv', b'col1,col2')])
         assert dataset.column_names == ['col1', 'col2']
 
+    def test_column_names_empty_if_no_files(self, dataset_creator):
+        dataset = dataset_creator([])
+        assert dataset.column_names == []
+
 
 @pytest.mark.django_db
 class TestDatasetNameUniqueness:

@@ -1,5 +1,4 @@
 import csv
-from io import TextIOWrapper
 
 from django.core.validators import MinLengthValidator
 from django.db import models
@@ -64,13 +63,19 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
 
     @property
     def column_names(self):
-        # There has to be at least one file in the dataset
-        main_file = self.files[0]
+        if self.files:
+            # There has to be at least one file in the dataset
+            main_file = self.files[0]
 
-        with self.open_file(main_file.name) as csvfile:
-            colreader = csv.reader(TextIOWrapper(csvfile, 'utf-8'))
-            header = next(colreader)
-            return list(header)
+            with self.open_file(main_file.name) as csvfile:
+                firstline = csvfile.readline().decode()
+
+                dialect = csv.Sniffer().sniff(firstline, delimiters='\t,')
+                colreader = csv.reader([firstline], dialect)
+                header = next(colreader)
+
+                return list(header)
+        return []
 
 
 class DatasetFile(models.Model):

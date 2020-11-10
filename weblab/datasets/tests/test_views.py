@@ -3,7 +3,7 @@ import json
 import os
 import zipfile
 from io import BytesIO
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -773,11 +773,12 @@ class TestDatasetCompareFittingResultsView:
 @pytest.mark.django_db
 class TestDatasetMapColumnsView:
     def test_mapping_form_has_dataset(self, client, logged_in_user, helpers, public_protocol):
-        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
-        response = client.get('/datasets/%d/map' % dataset.pk)
+        with patch.object(Dataset, 'column_names', new_callable=PropertyMock, return_value=['col']):
+            dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+            response = client.get('/datasets/%d/map' % dataset.pk)
 
-        assert response.status_code == 200
-        assert response.context['formset']
-        assert response.context['formset'][0].dataset == dataset
-        assert response.context['formset'][0].initial['protocol_version'] == public_protocol.repocache.latest_version
+            assert response.status_code == 200
+            assert response.context['formset']
+            assert response.context['formset'][0].dataset == dataset
+            assert response.context['formset'][0].initial['protocol_version'] == public_protocol.repocache.latest_version
 

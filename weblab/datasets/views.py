@@ -31,10 +31,10 @@ from repocache.models import ProtocolIoputs
 
 from .forms import (
     DatasetAddFilesForm,
-    DatasetColumnMappingFormSet,
     DatasetFileUploadForm,
     DatasetForm,
     DatasetRenameForm,
+    get_formset_class,
 )
 from .models import Dataset
 
@@ -376,7 +376,6 @@ class DatasetCompareFittingResultsView(DetailView):
 
 class DatasetMapColumnsView(VisibilityMixin, DetailView):
     model = Dataset
-    formset_class = DatasetColumnMappingFormSet
     template_name = 'datasets/map_columns.html'
 
     def _get_object(self):
@@ -387,12 +386,13 @@ class DatasetMapColumnsView(VisibilityMixin, DetailView):
     def get_formset(self):
         dataset = self._get_object()
         initial = [
-            # TODO: one per dataset field
-            {'protocol_version': dataset.protocol.repocache.latest_version},
-            {'protocol_version': dataset.protocol.repocache.latest_version},
-            {'protocol_version': dataset.protocol.repocache.latest_version},
+            {
+                'protocol_version': dataset.protocol.repocache.latest_version,
+                'column_name': col,
+            }
+            for col in dataset.column_names
         ]
-        return self.formset_class(
+        return get_formset_class(extra=len(initial))(
             instance=dataset,
             user=self.request.user,
             initial=initial

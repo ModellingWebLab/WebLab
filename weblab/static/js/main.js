@@ -167,7 +167,7 @@ function initPage ()
     experiment.initVersionList()
   }
 
-  $("table.formset tbody tr").formset({
+  $("table.formset.allow-add tbody tr").formset({
     addText: 'add another',
     deleteText: 'remove',
   });
