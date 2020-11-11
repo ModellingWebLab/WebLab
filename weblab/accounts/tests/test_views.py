@@ -60,7 +60,7 @@ def test_cannot_delete_other_account(client, logged_in_user, other_user):
         '/accounts/%d/delete/' % other_user.pk,
     )
 
-    assert response.status_code == 302
+    assert response.status_code == 403
     assert User.objects.filter(pk=other_user.pk).exists()
     assert user_directory_repo.exists()
     assert '/login' in response.url
