@@ -1,0 +1,23 @@
+
+{% extends "base.html" %}
+
+{% block title %}Delete User confirmation - {% endblock title %}
+
+{% block content %}
+
+
+  <p>
+    Delete User Account
+  </p>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <p>
+      <button>Delete</button>
+      <a class="button" href="javascript:history.back()" title="Do not delete">Cancel</a>
+
+    </p>
+  </form>
+
+{% endblock content %}
