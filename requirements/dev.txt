@@ -4,7 +4,6 @@
 #
 #    pip-compile --output-file=dev.txt dev.in
 #
-appnope==0.1.0 ; sys_platform == "darwin"  # via -r dev.in, ipython
 atomicwrites==1.4.0       # via pytest
 attrs==20.2.0             # via pytest
 backcall==0.1.0           # via ipython
@@ -12,53 +11,52 @@ certifi==2019.3.9         # via requests
 cffi==1.14.3              # via cryptography
 chardet==3.0.4            # via requests
 click==7.0                # via pip-tools
-codecov==2.0.15           # via -r test.in
+codecov==2.0.15
+colorama==0.4.4           # via ipython, pytest
 coverage==4.5.3           # via codecov, pytest-cov
 cryptography==3.1.1       # via social-auth-core
 decorator==4.4.0          # via ipython, traitlets
 defusedxml==0.5.0         # via python3-openid, social-auth-core
-dj-database-url==0.4.2    # via -r base.in
-django-braces==1.11.0     # via -r base.in
-django-guardian==1.4.9    # via -r base.in
-django==2.2.16            # via -r base.in, model-mommy
-flake8==3.4.1             # via -r dev.in, -r test.in
-gitdb2==2.0.5             # via gitpython
-gitpython==2.1.7          # via -r base.in
+dj-database-url==0.4.2
+django-braces==1.14.0
+django-guardian==2.3.0
+django==2.2.16
+flake8==3.4.1
+gitdb==4.0.5              # via gitpython
+gitpython==3.1.11
 idna==2.8                 # via requests
-ipdb==0.12                # via -r dev.in
+ipdb==0.12
 ipython-genutils==0.2.0   # via traitlets
 ipython==7.4.0            # via ipdb
-isort==4.3.21             # via -r dev.in, -r test.in
+isort==4.3.21
 jedi==0.13.3              # via ipython
 mccabe==0.6.1             # via flake8
-model-mommy==1.5.1        # via -r test.in
+model-bakery==1.2.0
 more-itertools==8.5.0     # via pytest
 oauthlib==3.0.1           # via requests-oauthlib, social-auth-core
 parso==0.3.4              # via jedi
-pexpect==4.6.0            # via ipython
 pickleshare==0.7.5        # via ipython
-pip-tools==5.3.1          # via -r dev.in
+pip-tools==5.3.1
 pluggy==0.6.0             # via pytest
 prompt-toolkit==2.0.9     # via ipython
-psycopg2==2.7.3           # via -r base.in
-ptyprocess==0.6.0         # via pexpect
+psycopg2==2.7.3
 py==1.8.0                 # via pytest
 pycodestyle==2.3.1        # via flake8
 pycparser==2.20           # via cffi
 pyflakes==1.5.0           # via flake8
 pygments==2.3.1           # via ipython
 pyjwt==1.7.1              # via social-auth-core
-pytest-cov==2.5.1         # via -r test.in
-pytest-django==3.8.0      # via -r test.in
-pytest==3.6.0             # via -r test.in, pytest-cov, pytest-django
+pytest-cov==2.5.1
+pytest-django==3.8.0
+pytest==3.6.0
 python3-openid==3.1.0     # via social-auth-core
 pytz==2018.9              # via django
 requests-oauthlib==1.2.0  # via social-auth-core
 requests==2.21.0          # via codecov, requests-oauthlib, rollbar, social-auth-core
-rollbar==0.14.2           # via -r base.in
-six==1.12.0               # via cryptography, django-guardian, model-mommy, pip-tools, prompt-toolkit, pytest, rollbar, social-auth-app-django, social-auth-core, traitlets
-smmap2==2.0.5             # via gitdb2
-social-auth-app-django==4.0.0  # via -r base.in
+rollbar==0.15.1
+six==1.12.0               # via cryptography, django-braces, pip-tools, prompt-toolkit, pytest, rollbar, social-auth-app-django, social-auth-core, traitlets
+smmap==3.0.4              # via gitdb
+social-auth-app-django==4.0.0
 social-auth-core==3.3.3   # via social-auth-app-django
 sqlparse==0.4.1           # via django
 traitlets==4.3.2          # via ipython

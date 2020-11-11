@@ -15,13 +15,13 @@ coverage==4.5.3           # via codecov, pytest-cov
 cryptography==3.1.1       # via social-auth-core
 defusedxml==0.5.0         # via python3-openid, social-auth-core
 dj-database-url==0.4.2
-django-braces==1.11.0
-django-guardian==1.4.9
+django-braces==1.14.0
+django-guardian==2.3.0
 django==2.2.16
 entrypoints==0.3          # via flake8
 flake8==3.7.8
-gitdb2==2.0.5             # via gitpython
-gitpython==2.1.7
+gitdb==4.0.5              # via gitpython
+gitpython==3.1.11
 idna==2.8                 # via requests
 importlib-metadata==2.0.0  # via pluggy, pytest
 iniconfig==1.1.1          # via pytest
@@ -45,9 +45,9 @@ python3-openid==3.1.0     # via social-auth-core
 pytz==2018.9              # via django
 requests-oauthlib==1.2.0  # via social-auth-core
 requests==2.21.0          # via codecov, requests-oauthlib, rollbar, social-auth-core
-rollbar==0.14.2
-six==1.12.0               # via cryptography, django-guardian, packaging, rollbar, social-auth-app-django, social-auth-core
-smmap2==2.0.5             # via gitdb2
+rollbar==0.15.1
+six==1.12.0               # via cryptography, django-braces, packaging, rollbar, social-auth-app-django, social-auth-core
+smmap==3.0.4              # via gitdb
 social-auth-app-django==4.0.0
 social-auth-core==3.3.3   # via social-auth-app-django
 sqlparse==0.4.1           # via django
