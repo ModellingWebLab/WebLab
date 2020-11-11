@@ -6,9 +6,13 @@
 
   <table class="formset">
     <tbody>
+      {{ formset.management_form }}
       {% for form in formset %}
       <tr>
         <td>
+          {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+          {% endfor %}
           {{ form.column_name }}
         </td>
         <td>
@@ -21,6 +25,21 @@
           {{ form.protocol_ioput }}
         </td>
       </tr>
+      {% if form.errors %}
+      <tr>
+        <td>
+        </td>
+        <td>
+          {{ form.column_units.errors }}
+        </td>
+        <td class="protocol-version">
+          {{ form.protocol_version.errors }}
+        </td>
+        <td class="protocol-ioput">
+          {{ form.protocol_ioput.errors }}
+        </td>
+      </tr>
+      {% endif %}
       {% endfor %}
     </tbody >
   </table>

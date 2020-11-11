@@ -65,11 +65,6 @@ class DatasetRenameForm(UserKwargModelFormMixin, forms.ModelForm):
         return name
 
 
-class EntityVersionChoiceField(forms.ModelChoiceField):
-    def label_from_instance(self, obj):
-        return obj.nice_version()
-
-
 class BaseDatasetColumnMappingFormSet(forms.BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
@@ -113,14 +108,11 @@ class IoputSelect(forms.Select):
 
 
 class DatasetColumnMappingForm(forms.ModelForm):
-    protocol_version = EntityVersionChoiceField(
-        queryset=CachedProtocolVersion.objects.none())
-
-    protocol_ioput = forms.ModelChoiceField(
-        queryset=ProtocolIoputs.objects.all(), widget=IoputSelect)
-
-    column_name = forms.CharField(
-        widget=forms.TextInput(attrs={'readonly':'readonly'}))
+    class Meta:
+        model = DatasetColumnMapping
+        fields = ['column_name', 'column_units', 'protocol_version', 'protocol_ioput']
+        widgets = {'protocol_ioput': IoputSelect,
+                   'protocol_version': forms.HiddenInput}
 
     def __init__(self, *args, **kwargs):
         protocol_versions = kwargs.pop('protocol_versions')
@@ -130,6 +122,7 @@ class DatasetColumnMappingForm(forms.ModelForm):
         self.fields['protocol_version'].queryset = protocol_versions
         self.fields['protocol_version'].empty_label = None
         self.fields['protocol_ioput'].queryset = protocol_ioputs
+        self.fields['column_name'].widget.attrs['readonly'] = 'readonly'
 
     def clean(self):
         cleaned_data = super().clean()
@@ -149,13 +142,9 @@ class DatasetColumnMappingForm(forms.ModelForm):
         ureg = UnitRegistry()
         try:
             quantity = ureg(col_unit)
+            return col_unit
         except (UndefinedUnitError, DefinitionSyntaxError):
-            raise ValidationError('Column units must be a valid pint definition string')
-
-    class Meta:
-        model = DatasetColumnMapping
-        fields = ['column_name', 'column_units', 'protocol_version', 'protocol_ioput']
-        readonly_fields = ['column_name']
+            raise ValidationError('Must be a valid pint definition string')
 
 
 def get_formset_class(extra):

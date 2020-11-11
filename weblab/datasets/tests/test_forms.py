@@ -154,6 +154,68 @@ class TestDatasetColumnMappingFormSet:
         assert not form.is_valid()
         assert 'column_units' in form.errors
 
+    def test_creates_new_column_mapping(self, user, public_protocol, mock_col_name):
+        proto_v1 = public_protocol.repocache.latest_version
+        proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
+
+        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+
+        formset = DatasetColumnMappingFormSet({
+                'column_mappings-TOTAL_FORMS': 1,
+                'column_mappings-MAX_NUM_FORMS': 1,
+                'column_mappings-MIN_NUM_FORMS': 0,
+                'column_mappings-INITIAL_FORMS': 0,
+                'column_mappings-0-column_name': 'col',
+                'column_mappings-0-column_units': 'meters',
+                'column_mappings-0-protocol_version': proto_v1.pk,
+                'column_mappings-0-protocol_ioput': proto_v1_in.pk,
+            },
+            instance=dataset,
+            user=user,
+        )
+
+        assert formset.is_valid()
+        formset.save()
+
+        assert dataset.column_mappings.count() == 1
+
+
+#    def test_overwrites_existing_column_mapping(self, user, public_protocol, mock_col_name):
+#        proto_v1 = public_protocol.repocache.latest_version
+#        proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
+#
+#        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+#
+#        mapping = recipes.column_mapping.make(
+#            dataset=dataset,
+#            protocol_version=proto_v1,
+#            protocol_ioput=proto_v1_in,
+#            column_name='col',
+#            column_units='meters'
+#        )
+#
+#        formset = DatasetColumnMappingFormSet({
+#                'column_mappings-TOTAL_FORMS': 1,
+#                'column_mappings-MAX_NUM_FORMS': 1,
+#                'column_mappings-MIN_NUM_FORMS': 0,
+#                'column_mappings-INITIAL_FORMS': 0,
+#                'column_mappings-0-id': mapping.id,
+#                'column_mappings-0-dataset': dataset.id,
+#                'column_mappings-0-column_name': 'col',
+#                'column_mappings-0-column_units': 'seconds',
+#                'column_mappings-0-protocol_version': proto_v1.pk,
+#                'column_mappings-0-protocol_ioput': proto_v1_in.pk,
+#            },
+#            instance=dataset,
+#            user=user,
+#        )
+#
+#        assert formset.is_valid(),formset.errors
+#        formset.save()
+#
+#        assert dataset.column_mappings.count() == 1
+#        assert dataset.column_mappings.get(column_name='col').column_units == 'seconds'
+
     def test_no_duplicate_column_mappings(self):
         pass
 

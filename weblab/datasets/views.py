@@ -385,19 +385,58 @@ class DatasetMapColumnsView(VisibilityMixin, DetailView):
 
     def get_formset(self):
         dataset = self._get_object()
-        initial = [
-            {
-                'protocol_version': dataset.protocol.repocache.latest_version,
-                'column_name': col,
+
+        if self.request.method == 'POST':
+            formset_class = get_formset_class(extra=0)
+            return formset_class(
+                self.request.POST,
+                instance=dataset,
+                user=self.request.user,
+            )
+        else:
+            initial = []
+            existing_mappings = dataset.column_mappings.all()
+            protocol_versions = dataset.protocol.repocache.versions.order_by('-timestamp')
+            all_column_names = set(dataset.column_names)
+
+            mappings_by_version = {
+                version: list(mappings)
+                for version, mappings in groupby(existing_mappings, lambda x: x.protocol_version)
             }
-            for col in dataset.column_names
-        ]
-        return get_formset_class(extra=len(initial))(
-            instance=dataset,
-            user=self.request.user,
-            initial=initial
-        )
+
+            for version in protocol_versions:
+                mappings = mappings_by_version.get(version, [])
+                mapped_column_names = {mapping.column_name for mapping in mappings}
+                missing_columns = sorted(all_column_names - mapped_column_names)
+
+                initial.extend([
+                    {'protocol_version': version,
+                     'column_name': col}
+                    for col in missing_columns
+                ])
+
+            formset_class = get_formset_class(extra=len(initial))
+            return formset_class(
+                instance=dataset,
+                user=self.request.user,
+                initial=initial
+            )
 
     def get_context_data(self, **kwargs):
         kwargs['formset'] = self.get_formset()
         return super().get_context_data(**kwargs)
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        dataset = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':map_columns', args=[dataset.id])
+
+    def post(self, request, *args, **kwargs):
+        self.object = self._get_object()
+        formset = self.get_formset()
+        if formset.is_valid():
+            formset.save()
+            return HttpResponseRedirect(self.get_success_url())
+        else:
+            return self.render_to_response(self.get_context_data(formset=formset))
