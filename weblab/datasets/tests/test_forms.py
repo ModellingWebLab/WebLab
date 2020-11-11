@@ -10,6 +10,13 @@ from repocache.models import ProtocolIoputs
 
 DatasetColumnMappingFormSet = get_formset_class(extra=1)
 
+
+@pytest.yield_fixture
+def mock_col_name():
+    with patch.object(Dataset, 'column_names', new_callable=PropertyMock, return_value=['col']):
+        yield
+
+
 @pytest.mark.django_db
 class TestDatasetColumnMappingFormSet:
     def test_has_formset(self, public_dataset, user):
@@ -87,7 +94,7 @@ class TestDatasetColumnMappingFormSet:
         with patch.object(Dataset, 'column_names', new_callable=PropertyMock, return_value=['col']):
             form = self._make_form(dataset, user, {
                 'column_name': 'col',
-                'column_units': 'units',
+                'column_units': 'meters',
                 'protocol_version': proto_v1.pk,
                 'protocol_ioput': v1_in.pk,
             })
@@ -95,7 +102,7 @@ class TestDatasetColumnMappingFormSet:
 
             form = self._make_form(dataset, user, {
                 'column_name': 'col',
-                'column_units': 'units',
+                'column_units': 'meters',
                 'protocol_version': proto_v1.pk,
                 'protocol_ioput': v2_in.pk,
             })
@@ -112,30 +119,40 @@ class TestDatasetColumnMappingFormSet:
         with patch.object(Dataset, 'column_names', new_callable=PropertyMock, return_value=['col']):
             form = self._make_form(dataset, user, {
                 'column_name': 'col',
-                'column_units': 'units',
+                'column_units': 'meters',
                 'protocol_version': proto1_v1.pk,
                 'protocol_ioput': proto1_v1_in.pk,
             })
             assert not form.is_valid()
             assert 'protocol_version' in form.errors
 
-    def test_column_name_is_valid_for_dataset(self, helpers, user, public_protocol):
+    def test_column_name_is_valid_for_dataset(self, user, public_protocol, mock_col_name):
         proto_v1 = public_protocol.repocache.latest_version
         proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
 
         dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
-        with patch.object(Dataset, 'column_names', new_callable=PropertyMock, return_value=['col']):
-            form = self._make_form(dataset, user, {
-                'column_name': 'col1',
-                'column_units': 'units',
-                'protocol_version': proto_v1.pk,
-                'protocol_ioput': proto_v1_in.pk,
-            })
-            assert not form.is_valid()
-            assert 'column_name' in form.errors
+        form = self._make_form(dataset, user, {
+            'column_name': 'col1',
+            'column_units': 'meters',
+            'protocol_version': proto_v1.pk,
+            'protocol_ioput': proto_v1_in.pk,
+        })
+        assert not form.is_valid()
+        assert 'column_name' in form.errors
 
-    def test_column_units_are_valid_pint(self):
-        pass
+    def test_column_units_must_be_valid_pint(self, user, public_protocol, mock_col_name):
+        proto_v1 = public_protocol.repocache.latest_version
+        proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
+
+        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+        form = self._make_form(dataset, user, {
+            'column_name': 'col',
+            'column_units': 'unknown',
+            'protocol_version': proto_v1.pk,
+            'protocol_ioput': proto_v1_in.pk,
+        })
+        assert not form.is_valid()
+        assert 'column_units' in form.errors
 
     def test_no_duplicate_column_mappings(self):
         pass

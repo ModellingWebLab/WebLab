@@ -20,3 +20,6 @@ rollbar==0.15.1
 
 # Object-level permissions
 django-guardian==2.3.0
+
+# Unit parsing
+pint==0.9

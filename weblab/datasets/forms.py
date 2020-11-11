@@ -1,3 +1,5 @@
+from pint import UnitRegistry
+from pint.errors import DefinitionSyntaxError, UndefinedUnitError
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
@@ -40,13 +42,6 @@ class DatasetAddFilesForm(forms.Form):
     """Used to add files to a new dataset."""
     class Meta:
         model = Dataset
-
-
-# EntityCollaboratorFormSet = formset_factory(
-#     EntityCollaboratorForm,
-#     BaseEntityCollaboratorFormSet,
-#     can_delete=True,
-# )
 
 
 class DatasetFileUploadForm(forms.ModelForm):
@@ -148,6 +143,14 @@ class DatasetColumnMappingForm(forms.ModelForm):
         if col_name not in self.dataset.column_names:
             raise ValidationError('Column name is not valid for this dataset')
         return col_name
+
+    def clean_column_units(self):
+        col_unit = self.cleaned_data['column_units']
+        ureg = UnitRegistry()
+        try:
+            quantity = ureg(col_unit)
+        except (UndefinedUnitError, DefinitionSyntaxError):
+            raise ValidationError('Column units must be a valid pint definition string')
 
     class Meta:
         model = DatasetColumnMapping
