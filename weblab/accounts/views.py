@@ -55,8 +55,8 @@ class MyAccountView(LoginRequiredMixin, UpdateView):
 
 
 class UserDeleteView(UserPassesTestMixin, DeleteView):
-    """	
-       Delete a user	
+    """
+       Delete a user
        """
     template_name = 'registration/account_confirm_delete.html'
     model = User
