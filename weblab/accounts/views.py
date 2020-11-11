@@ -1,10 +1,11 @@
 from django.contrib.auth import login
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Permission
 from django.urls import reverse
-from django.views.generic.edit import FormView, UpdateView
+from django.views.generic.edit import DeleteView, FormView, UpdateView
 
 from .forms import MyAccountForm, RegistrationForm
+from .models import User
 
 
 class RegistrationView(FormView):
@@ -51,3 +52,18 @@ class MyAccountView(LoginRequiredMixin, UpdateView):
             'user_permissions': user_perms,
         })
         return super().get_context_data(**kwargs)
+
+
+class UserDeleteView(UserPassesTestMixin, DeleteView):
+    """	
+       Delete a user	
+       """
+    template_name = 'registration/account_confirm_delete.html'
+    model = User
+
+    def test_func(self):
+        """A user can only delete their own account."""
+        return self.get_object() == self.request.user
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse('home')
