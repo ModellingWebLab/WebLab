@@ -63,11 +63,9 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
 
     @property
     def column_names(self):
-        if self.files:
-            # There has to be at least one file in the dataset
-            main_file = self.files[0]
-
-            with self.open_file(main_file.name) as csvfile:
+        master = self.master_file
+        if master:
+            with self.open_file(master.name) as csvfile:
                 firstline = csvfile.readline().decode()
 
                 dialect = csv.Sniffer().sniff(firstline, delimiters='\t,')

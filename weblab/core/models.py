@@ -136,6 +136,15 @@ class FileCollectionMixin:
         else:
             return []
 
+    @property
+    def master_file(self):
+        """Get the master file, or the first file if there is only one
+        """
+        if len(self.files) == 1:
+            return self.files[0]
+        else:
+            return next((f for f in self.files if f.is_master), None)
+
     def mkdir(self):
         """Create the folder for the backing archive (and parents if needed)."""
         self.abs_path.mkdir(exist_ok=True, parents=True)
