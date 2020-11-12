@@ -772,7 +772,7 @@ class TestDatasetCompareFittingResultsView:
 
 @pytest.mark.django_db
 class TestDatasetMapColumnsView:
-    def test_has_form_for_each_version_and_column(self, client, logged_in_user, helpers, public_protocol, mock_column_names):
+    def test_has_form_for_each_version_and_column(self, client, logged_in_user, helpers, mock_column_names):
         mock_column_names.return_value = ['col1', 'col2']
         protocol = recipes.protocol.make()
         proto_v1 = helpers.add_fake_version(protocol, visibility='public')

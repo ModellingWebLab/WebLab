@@ -1,12 +1,10 @@
-from pint import UnitRegistry
-from pint.errors import DefinitionSyntaxError, UndefinedUnitError
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
-from django.utils.functional import cached_property
+from pint import UnitRegistry
+from pint.errors import DefinitionSyntaxError, UndefinedUnitError
 
 from entities.models import ProtocolEntity
-from repocache.models import CachedProtocolVersion, ProtocolIoputs
 
 from .models import Dataset, DatasetColumnMapping, DatasetFile
 
@@ -65,6 +63,8 @@ class DatasetRenameForm(UserKwargModelFormMixin, forms.ModelForm):
 
 
 class DatasetColumnMappingForm(forms.ModelForm):
+    """For setting up mappings between protocol ioputs
+    and dataset columns"""
     class Meta:
         model = DatasetColumnMapping
         fields = ['dataset', 'protocol_version',
@@ -97,7 +97,7 @@ class DatasetColumnMappingForm(forms.ModelForm):
         col_unit = self.cleaned_data['column_units']
         ureg = UnitRegistry()
         try:
-            quantity = ureg(col_unit)
+            ureg(col_unit)
             return col_unit
         except (UndefinedUnitError, DefinitionSyntaxError):
             raise ValidationError('Must be a valid pint definition string')

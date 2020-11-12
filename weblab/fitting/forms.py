@@ -38,6 +38,7 @@ class FittingSpecRenameForm(EntityRenameForm):
         model = FittingSpec
         fields = ['name']
 
+
 class VersionChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.nice_version()

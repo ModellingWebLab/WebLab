@@ -34,7 +34,6 @@ def dataset_creator(logged_in_user, helpers, client, public_protocol):
     return _creator
 
 
-
 @pytest.mark.django_db
 class TestDataset:
     def test_str(self):

@@ -1,4 +1,5 @@
 from model_bakery.recipe import Recipe, foreign_key, seq
+
 from repocache.models import ProtocolIoputs
 
 

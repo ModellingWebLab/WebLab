@@ -384,31 +384,42 @@ class DatasetMapColumnsView(VisibilityMixin, DetailView):
         return self.object
 
     def get_forms(self):
+        """
+        Construct the forms for this view.
+
+        Populates `self.forms` which is a dict mapping protocol version
+        to a list of forms for that protocol version. Each protocol version
+        has one form per dataset column.
+
+        @return self.forms
+        """
         dataset = self._get_object()
 
         self.forms = {}
+
+        # Group existing mappings by protocol version
         existing_mappings = dataset.column_mappings.all()
         mappings_by_version = {
             version: list(mappings)
             for version, mappings in groupby(existing_mappings, lambda x: x.protocol_version)
         }
 
-        protocol_versions = dataset.protocol.cachedentity.versions.\
-            visible_to_user(self.request.user).order_by('-timestamp')
+        # Full list of protocol versions for this user
+        protocol_versions = dataset.protocol.cachedentity.versions.visible_to_user(self.request.user)
 
         for version in protocol_versions:
             self.forms[version] = []
 
-            ioputs = ProtocolIoputs.objects.filter(
-                kind__in=(ProtocolIoputs.INPUT, ProtocolIoputs.OUTPUT),
-                protocol_version=version,
-            )
+            # Each form will ist all but FLAG ioputs for this protocol version
+            ioputs = version.ioputs.exclude(kind=(ProtocolIoputs.FLAG))
 
+            # Group existing mappings for this version by column name
             mappings = {
                 mapping.column_name: mapping
                 for mapping in mappings_by_version.get(version, [])
             }
 
+            # Create a form for each version/column name combo
             columns = sorted(dataset.column_names)
             for (i, column_name) in enumerate(columns):
                 instance = mappings.get(column_name)
@@ -418,7 +429,7 @@ class DatasetMapColumnsView(VisibilityMixin, DetailView):
                     instance=instance,
                     dataset=dataset,
                     protocol_ioputs=ioputs,
-                    initial = {
+                    initial={
                         'dataset': dataset,
                         'protocol_version': version,
                     },
@@ -429,14 +440,17 @@ class DatasetMapColumnsView(VisibilityMixin, DetailView):
 
     @property
     def all_forms(self):
+        """Iterate through all forms in the view"""
         for _, forms in self.forms.items():
             yield from forms
 
     @property
     def all_forms_valid(self):
+        """Return true if all forms are valid, false otherwise"""
         return all(form.is_valid() for form in self.all_forms)
 
     def save_all_forms(self):
+        """Save all forms in the view"""
         for form in self.all_forms:
             form.save()
 

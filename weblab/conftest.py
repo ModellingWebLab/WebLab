@@ -2,7 +2,7 @@ import datetime
 import os
 import uuid
 from pathlib import Path
-from unittest.mock import patch, PropertyMock
+from unittest.mock import PropertyMock, patch
 
 import pytest
 from django.contrib.auth.models import AnonymousUser, Permission
