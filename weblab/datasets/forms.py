@@ -3,7 +3,6 @@ from pint.errors import DefinitionSyntaxError, UndefinedUnitError
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import inlineformset_factory
 from django.utils.functional import cached_property
 
 from entities.models import ProtocolEntity
@@ -65,71 +64,28 @@ class DatasetRenameForm(UserKwargModelFormMixin, forms.ModelForm):
         return name
 
 
-class BaseDatasetColumnMappingFormSet(forms.BaseInlineFormSet):
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
-
-    @cached_property
-    def proto_versions(self):
-        return self.instance.protocol.cachedentity.versions.visible_to_user(self.user)
-
-    @cached_property
-    def proto_ioputs(self):
-        return ProtocolIoputs.objects.filter(
-            protocol_version__in=self.proto_versions,
-            kind__in=(ProtocolIoputs.INPUT, ProtocolIoputs.OUTPUT)
-        )
-
-    def get_form_kwargs(self, index):
-        kwargs = super().get_form_kwargs(index)
-        kwargs['dataset'] = self.instance
-
-        kwargs['protocol_versions'] = self.proto_versions
-        kwargs['protocol_ioputs'] = self.proto_ioputs
-
-        return kwargs
-
-
-class IoputSelect(forms.Select):
-    """
-    Custom version of select widget for ioput field on mapping form
-
-    Allows protocol version ids to be attached to options for filtering
-    """
-    def create_option(self, name, value, *args, **kwargs):
-        option = super().create_option(name, value, *args, **kwargs)
-
-        if value:
-            proto_version = self.choices.field.queryset.get(pk=int(value)).protocol_version
-            option['attrs']['data-protocol-version'] = proto_version.pk
-
-        return option
-
-
 class DatasetColumnMappingForm(forms.ModelForm):
     class Meta:
         model = DatasetColumnMapping
-        fields = ['column_name', 'column_units', 'protocol_version', 'protocol_ioput']
-        widgets = {'protocol_ioput': IoputSelect,
-                   'protocol_version': forms.HiddenInput}
+        fields = ['dataset', 'protocol_version',
+                  'column_name', 'column_units', 'protocol_ioput']
+        widgets = {
+            'dataset': forms.HiddenInput,
+            'protocol_version': forms.HiddenInput,
+        }
 
     def __init__(self, *args, **kwargs):
-        protocol_versions = kwargs.pop('protocol_versions')
-        protocol_ioputs = kwargs.pop('protocol_ioputs')
         self.dataset = kwargs.pop('dataset')
+        protocol_ioputs = kwargs.pop('protocol_ioputs')
         super().__init__(*args, **kwargs)
-        self.fields['protocol_version'].queryset = protocol_versions
-        self.fields['protocol_version'].empty_label = None
         self.fields['protocol_ioput'].queryset = protocol_ioputs
         self.fields['column_name'].widget.attrs['readonly'] = 'readonly'
 
-    def clean(self):
-        cleaned_data = super().clean()
-        ioput = cleaned_data.get('protocol_ioput')
-        version = cleaned_data.get('protocol_version')
-        if version and ioput and ioput.protocol_version != version:
-            raise ValidationError({"protocol_ioput": "Ioput must match protocol version"})
+    def clean_protocol_version(self):
+        proto_version = self.cleaned_data['protocol_version']
+        if proto_version.protocol != self.dataset.protocol:
+            raise ValidationError('Protocol version must belong to dataset protocol')
+        return proto_version
 
     def clean_column_name(self):
         col_name = self.cleaned_data['column_name']
@@ -145,13 +101,3 @@ class DatasetColumnMappingForm(forms.ModelForm):
             return col_unit
         except (UndefinedUnitError, DefinitionSyntaxError):
             raise ValidationError('Must be a valid pint definition string')
-
-
-def get_formset_class(extra):
-    return inlineformset_factory(
-        Dataset,
-        DatasetColumnMapping,
-        formset=BaseDatasetColumnMappingFormSet,
-        form=DatasetColumnMappingForm,
-        extra=extra
-    )

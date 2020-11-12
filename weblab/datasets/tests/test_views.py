@@ -3,7 +3,7 @@ import json
 import os
 import zipfile
 from io import BytesIO
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -772,13 +772,100 @@ class TestDatasetCompareFittingResultsView:
 
 @pytest.mark.django_db
 class TestDatasetMapColumnsView:
-    def test_mapping_form_has_dataset(self, client, logged_in_user, helpers, public_protocol):
-        with patch.object(Dataset, 'column_names', new_callable=PropertyMock, return_value=['col']):
-            dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
-            response = client.get('/datasets/%d/map' % dataset.pk)
+    def test_has_form_for_each_version_and_column(self, client, logged_in_user, helpers, public_protocol, mock_column_names):
+        mock_column_names.return_value = ['col1', 'col2']
+        protocol = recipes.protocol.make()
+        proto_v1 = helpers.add_fake_version(protocol, visibility='public')
+        proto_v2 = helpers.add_fake_version(protocol, visibility='public')
+        # But not private version
+        proto_v3 = helpers.add_fake_version(protocol, visibility='private')
 
-            assert response.status_code == 200
-            assert response.context['formset']
-            assert response.context['formset'][0].dataset == dataset
-            assert response.context['formset'][0].initial['protocol_version'] == public_protocol.repocache.latest_version
+        dataset = recipes.dataset.make(visibility='public', protocol=protocol)
 
+        response = client.get('/datasets/%d/map' % dataset.pk)
+
+        assert response.status_code == 200
+        assert response.context['forms']
+        forms = response.context['forms']
+        assert proto_v1 in forms
+        assert proto_v2 in forms
+        assert proto_v3 not in forms
+        assert len(forms[proto_v1]) == 2
+        assert len(forms[proto_v2]) == 2
+
+    def test_restricts_ioputs_to_protocol_version(self, client, logged_in_user, helpers, mock_column_names):
+        protocol = recipes.protocol.make()
+        proto_v1 = helpers.add_fake_version(protocol, visibility='public')
+        proto_v2 = helpers.add_fake_version(protocol, visibility='public')
+
+        v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
+        v1_out = recipes.protocol_output.make(protocol_version=proto_v1)
+        v1_flag = recipes.protocol_ioput_flag.make(protocol_version=proto_v1)
+
+        v2_in = recipes.protocol_input.make(protocol_version=proto_v2)
+
+        dataset = recipes.dataset.make(visibility='public', protocol=protocol)
+
+        response = client.get('/datasets/%d/map' % dataset.pk)
+
+        assert response.status_code == 200
+        assert response.context['forms']
+        v1_form = response.context['forms'][proto_v1][0]
+        pv_field = v1_form.fields['protocol_ioput']
+
+        assert pv_field.valid_value(v1_in.pk)
+        assert pv_field.valid_value(v1_out.pk)
+        assert not pv_field.valid_value(v1_flag.pk)
+        assert not pv_field.valid_value(v2_in.pk)
+
+    def test_creates_new_column_mapping(self, client, logged_in_user, public_protocol, mock_column_names):
+        proto_v1 = public_protocol.repocache.latest_version
+        proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
+
+        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+
+        prefix = 'mapping_%d_0-' % proto_v1.pk
+        response = client.post(
+            '/datasets/%d/map' % dataset.pk,
+            {
+                prefix + 'dataset': dataset.pk,
+                prefix + 'column_name': 'col',
+                prefix + 'column_units': 'meters',
+                prefix + 'protocol_version': proto_v1.pk,
+                prefix + 'protocol_ioput': proto_v1_in.pk,
+            },
+        )
+
+        assert response.status_code == 302
+        assert dataset.column_mappings.count() == 1
+
+    def test_overwrites_existing_column_mapping(self, client, logged_in_user, public_protocol, mock_column_names):
+        proto_v1 = public_protocol.repocache.latest_version
+        proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
+
+        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+
+        mapping = recipes.column_mapping.make(
+            dataset=dataset,
+            protocol_version=proto_v1,
+            protocol_ioput=proto_v1_in,
+            column_name='col',
+            column_units='meters'
+        )
+
+        prefix = 'mapping_%d_0-' % proto_v1.pk
+        response = client.post(
+            '/datasets/%d/map' % dataset.pk,
+            {
+                prefix + 'id': mapping.pk,
+                prefix + 'dataset': dataset.pk,
+                prefix + 'column_name': 'col',
+                prefix + 'column_units': 'seconds',
+                prefix + 'protocol_version': proto_v1.pk,
+                prefix + 'protocol_ioput': proto_v1_in.pk,
+            },
+        )
+
+        assert response.status_code == 302
+        assert dataset.column_mappings.count() == 1
+        assert dataset.column_mappings.get(column_name='col').column_units == 'seconds'

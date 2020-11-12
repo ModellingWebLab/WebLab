@@ -4,47 +4,45 @@
 <form method="POST" action="" class="dataset-column-mapper">
   {% csrf_token %}
 
-  <table class="formset">
-    <tbody>
-      {{ formset.management_form }}
-      {% for form in formset %}
-      <tr>
-        <td>
-          {% for hidden in form.hidden_fields %}
-            {{ hidden }}
+  {{ formset.management_form }}
+  {% for version, group in forms.items %}
+      <h3>{{ version.nice_version }}</h3>
+      <table class="formset">
+        <tbody>
+          {% for form in group %}
+          <tr>
+            <td>
+              {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+              {% endfor %}
+              {{ form.column_name }}
+            </td>
+            <td>
+              {{ form.column_units }}
+            </td>
+            <td class="protocol-ioput">
+              {{ form.protocol_version }}
+              {{ form.protocol_ioput }}
+            </td>
+          </tr>
+            {% if form.errors %}
+            <tr>
+              <td>
+              </td>
+              <td>
+                {{ form.column_units.errors }}
+              </td>
+              <td class="protocol-ioput">
+                {{ form.protocol_ioput.errors }}
+              </td>
+            </tr>
+            {% endif %}
           {% endfor %}
-          {{ form.column_name }}
-        </td>
-        <td>
-          {{ form.column_units }}
-        </td>
-        <td class="protocol-version">
-          {{ form.protocol_version }}
-        </td>
-        <td class="protocol-ioput">
-          {{ form.protocol_ioput }}
-        </td>
-      </tr>
-      {% if form.errors %}
-      <tr>
-        <td>
-        </td>
-        <td>
-          {{ form.column_units.errors }}
-        </td>
-        <td class="protocol-version">
-          {{ form.protocol_version.errors }}
-        </td>
-        <td class="protocol-ioput">
-          {{ form.protocol_ioput.errors }}
-        </td>
-      </tr>
-      {% endif %}
-      {% endfor %}
-    </tbody >
-  </table>
-  <p>
-    <button id="savebutton">Save</button>
-  </p>
-</form>
+        </tbody >
+      </table>
+    {% endfor %}
+      <p>
+        <button id="savebutton">Save</button>
+      </p>
+    </form>
 {% endblock content_detail %}

@@ -2,6 +2,7 @@ import datetime
 import os
 import uuid
 from pathlib import Path
+from unittest.mock import patch, PropertyMock
 
 import pytest
 from django.contrib.auth.models import AnonymousUser, Permission
@@ -509,3 +510,10 @@ def fittingresult_with_result(model_with_version, protocol_with_version):
     with (version.abs_path / 'result.txt').open('w') as f:
         f.write('fitting results')
     return version
+
+
+@pytest.yield_fixture
+def mock_column_names():
+    with patch.object(Dataset, 'column_names',
+                      new_callable=PropertyMock, return_value=['col']) as mock_col:
+        yield mock_col

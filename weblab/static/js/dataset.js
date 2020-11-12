@@ -12,10 +12,9 @@ function initColumnMappingForm($form) {
 
     function restrictIoputs() {
       // Restrict protocol ioput dropdown to match protocol versions.
-      var $ioputDropdown = $(this).parents('.protocol-version').siblings('.protocol-ioput').find('select');
+      var $ioputDropdown = $(this).siblings('select');
       var $ioputOptions = $ioputDropdown.find('option');
       var protoVersionId = $(this).val();
-      console.log(protoVersionId);
 
       $ioputOptions.each(function() { 
         var $opt = $(this);

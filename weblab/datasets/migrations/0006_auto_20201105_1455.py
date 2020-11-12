@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('column_name', models.CharField(help_text='name of the column', max_length=200)),
                 ('column_units', models.CharField(blank=True, help_text='units of the column, as a pint definition string', max_length=200)),
                 ('dataset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='column_mappings', to='datasets.Dataset')),
-                ('protocol_ioput', models.ForeignKey(help_text='Protocol input or output to link to', null=True, on_delete=django.db.models.deletion.CASCADE, to='repocache.ProtocolIoputs')),
+                ('protocol_ioput', models.ForeignKey(help_text='Protocol input or output to link to', null=True, blank=True, on_delete=django.db.models.deletion.CASCADE, to='repocache.ProtocolIoputs')),
                 ('protocol_version', models.ForeignKey(help_text='Protocol version to link to', on_delete=django.db.models.deletion.CASCADE, to='repocache.CachedProtocolVersion')),
             ],
         ),
