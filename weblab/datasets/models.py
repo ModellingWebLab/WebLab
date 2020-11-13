@@ -84,6 +84,7 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
     def is_editable_by(self, user):
         return user == self.author
 
+
 class DatasetFile(models.Model):
     dataset = models.ForeignKey(Dataset, related_name='file_uploads', on_delete=models.CASCADE)
     upload = models.FileField(upload_to='uploads')
