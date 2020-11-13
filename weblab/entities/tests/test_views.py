@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from git import GitCommandError
 from guardian.shortcuts import assign_perm
@@ -68,8 +68,7 @@ class TestEntityCreation:
             '/entities/models/new',
             data={},
         )
-        assert response.status_code == 302
-        assert '/login/' in response.url
+        assert response.status_code == 403
 
     def test_create_protocol(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_protocol')
@@ -93,8 +92,7 @@ class TestEntityCreation:
             '/entities/protocols/new',
             data={},
         )
-        assert response.status_code == 302
-        assert '/login/' in response.url
+        assert response.status_code == 403
 
     def test_error_if_later_version(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -1343,7 +1341,7 @@ class TestTagging:
             '/entities/tag/%d/%s' % (protocol.pk, commit.sha),
             data={},
         )
-        assert response.status_code == 302
+        assert response.status_code == 403
 
     def test_can_tag_as_non_owner_with_permissions(self, logged_in_user, client, helpers):
         protocol = recipes.protocol.make()
@@ -1680,8 +1678,7 @@ class TestVersionCreation:
             '/entities/models/%d/versions/new' % model.pk,
             data={},
         )
-        assert response.status_code == 302
-        assert '/login/' in response.url
+        assert response.status_code == 403
 
     @patch('entities.processing.submit_check_protocol_task')
     def test_create_protocol_version(self, mock_check, client, logged_in_user, helpers):
@@ -1789,8 +1786,7 @@ class TestVersionCreation:
             '/entities/protocols/%d/versions/new' % protocol.pk,
             data={},
         )
-        assert response.status_code == 302
-        assert '/login/' in response.url
+        assert response.status_code == 403
 
     def test_rolls_back_if_tag_exists(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
@@ -1938,8 +1934,7 @@ class TestAlterFileView:
     def test_cannot_alter_as_non_owner(self, logged_in_user, client):
         model = recipes.model.make()
         response = client.post('/entities/models/%d/versions/edit' % model.pk, {})
-        assert response.status_code == 302
-        assert '/login/' in response.url
+        assert response.status_code == 403
 
     def test_error_if_bad_args(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')

@@ -81,3 +81,4 @@ urlpatterns = [
         name='compare_fittings',
     ),
 ]
+app_name = 'datasets'

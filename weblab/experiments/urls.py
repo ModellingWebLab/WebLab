@@ -106,3 +106,5 @@ urlpatterns = [
         name='compare_json',
     ),
 ]
+
+app_name = 'experiments'

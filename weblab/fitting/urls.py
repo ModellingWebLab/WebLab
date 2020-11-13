@@ -11,7 +11,7 @@ _FILENAME = r'(?P<filename>[\w\-. \%:]+)'
 _FILEVIEW = r'%s/(?P<viz>\w+)' % _FILENAME
 _ENTITY_TYPE = '(?P<entity_type>%s)s' % FittingSpec.url_type
 
-
+app_name = 'fitting'
 result_patterns = [
     url(
         r'^(?P<pk>\d+)/versions/$',
@@ -246,6 +246,6 @@ urlpatterns = [
     ),
 
     url(
-        r'^results/', include(result_patterns, namespace='result')
+        r'^results/', include((result_patterns, app_name), namespace='result')
     ),
 ]

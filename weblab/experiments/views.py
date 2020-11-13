@@ -3,11 +3,11 @@ import logging
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.core.urlresolvers import reverse
 from django.db.models import F, Q
 from django.db.models.functions import Coalesce
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.text import get_valid_filename
 from django.views import View
@@ -235,9 +235,11 @@ class ExperimentMatrixJsonView(View):
             visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
 
         # If specific versions have been requested, show at most those
-        q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
+
+        q_model_versions = self.versions_query('model', model_versions, q_models.values('pk'), visibility_where)
         protocol_visibility_where = visibility_where & Q(entity__entity__is_fitting_spec=False)
-        q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols, protocol_visibility_where)
+        q_protocol_versions = self.versions_query('protocol', protocol_versions, q_protocols.values('pk'),
+                                                  protocol_visibility_where)
 
         # Get the JSON data needed to display the matrix axes
         model_versions = [self.entity_json(version.entity.entity, version.sha,

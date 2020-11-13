@@ -258,7 +258,7 @@ class CachedModelVersion(CachedEntityVersion):
 
 class CachedModelTag(CachedEntityTag):
     """Cache for a tag in a CellML model's repository."""
-    entity = models.ForeignKey(CachedModel, related_name='tags')
+    entity = models.ForeignKey(CachedModel, related_name='tags', on_delete=models.CASCADE)
     version = models.ForeignKey(CachedModelVersion, on_delete=models.CASCADE, related_name='tags')
 
 
@@ -283,7 +283,7 @@ class CachedProtocolVersion(CachedEntityVersion):
 
 class CachedProtocolTag(CachedEntityTag):
     """Cache for a tag in a protocol's repository."""
-    entity = models.ForeignKey(CachedProtocol, related_name='tags')
+    entity = models.ForeignKey(CachedProtocol, related_name='tags', on_delete=models.CASCADE)
     version = models.ForeignKey(CachedProtocolVersion, on_delete=models.CASCADE, related_name='tags')
 
 
@@ -308,7 +308,7 @@ class CachedFittingSpecVersion(CachedEntityVersion):
 
 class CachedFittingSpecTag(CachedEntityTag):
     """Cache for a tag in a fitting specifications's repository."""
-    entity = models.ForeignKey(CachedFittingSpec, related_name='tags')
+    entity = models.ForeignKey(CachedFittingSpec, related_name='tags', on_delete=models.CASCADE)
     version = models.ForeignKey(CachedFittingSpecVersion, on_delete=models.CASCADE, related_name='tags')
 
 

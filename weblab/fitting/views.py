@@ -195,7 +195,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
             visibility_where = visibility_where | Q(entity__entity__in=visible_entities)
 
         # If specific versions have been requested, show at most those
-        q_model_versions = self.versions_query('model', model_versions, q_models, visibility_where)
+        q_model_versions = self.versions_query('model', model_versions, q_models.values('pk'), visibility_where)
 
         # Get the JSON data needed to display the matrix axes
         model_versions = [self.entity_json(version.entity.entity, version.sha,
@@ -214,7 +214,7 @@ class FittingSpecResultsMatrixJsonView(SingleObjectMixin, ExperimentMatrixJsonVi
             fittingspec=spec,
             model__in=q_models,
             model_version__in=q_model_versions,
-            dataset__in=q_datasets,
+            dataset__in=q_datasets.values('pk'),
         )
         q_fittingresult_versions = FittingResultVersion.objects.filter(
             fittingresult__in=q_fittings,

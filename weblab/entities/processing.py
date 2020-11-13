@@ -3,8 +3,8 @@ from urllib.parse import urljoin
 
 import requests
 from django.conf import settings
-from django.core.urlresolvers import reverse
 from django.db import IntegrityError
+from django.urls import reverse
 
 from experiments.models import PlannedExperiment
 from repocache.models import ProtocolInterface, ProtocolIoputs

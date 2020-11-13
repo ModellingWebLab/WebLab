@@ -30,3 +30,4 @@ urlpatterns = [
     ),
 
 ]
+app_name = 'accounts'

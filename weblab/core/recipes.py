@@ -1,4 +1,4 @@
-from model_mommy.recipe import Recipe, foreign_key, seq
+from model_bakery.recipe import Recipe, foreign_key, seq
 
 
 user = Recipe('accounts.User', institution='UCL', full_name=seq('test user '))

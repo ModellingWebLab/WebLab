@@ -160,3 +160,5 @@ urlpatterns = [
         name='diff',
     ),
 ]
+
+app_name = 'entities'

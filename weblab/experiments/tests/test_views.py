@@ -10,8 +10,8 @@ import pytest
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages import get_messages
-from django.core.urlresolvers import reverse
 from django.test import Client
+from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from pytest_django.asserts import assertContains, assertTemplateUsed
 

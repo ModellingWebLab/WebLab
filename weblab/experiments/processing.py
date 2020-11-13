@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 import requests
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.timezone import now
 
 from .emails import send_experiment_finished_email

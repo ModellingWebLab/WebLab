@@ -1,4 +1,4 @@
-Django==1.11.29
+Django==2.2.16
 
 # Database
 psycopg2==2.7.3
@@ -10,13 +10,13 @@ social-auth-app-django==4.0.0
 dj-database-url==0.4.2
 
 # Git repo management
-GitPython==2.1.7
+GitPython==3.1.11
 
 # django helpers
-django-braces==1.11.0
+django-braces==1.14.0
 
 # Server monitoring
-rollbar==0.14.2
+rollbar==0.15.1
 
 # Object-level permissions
-django-guardian==1.4.9
+django-guardian==2.3.0

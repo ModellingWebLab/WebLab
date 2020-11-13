@@ -1,7 +1,7 @@
 import math
 
 from django import template
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from core.filetypes import get_file_type
 
