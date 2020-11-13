@@ -105,7 +105,7 @@ class DatasetAddFilesView(
 
         # Show the user the dataset
         return HttpResponseRedirect(
-            reverse('datasets:detail', args=[dataset.id]))
+            reverse('datasets:map_columns', args=[dataset.id]))
 
 
 class DatasetFileUploadView(View):

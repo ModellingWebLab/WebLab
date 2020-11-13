@@ -107,7 +107,7 @@ class TestDatasetCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/datasets/%d' % dataset.pk
+        assert response.url == '/datasets/%d/map' % dataset.pk
         # Check uploads have been cleared & files removed
         assert dataset.file_uploads.count() == 0
         assert not os.path.exists(del1.upload.path)
@@ -432,7 +432,7 @@ class TestDatasetFileDownloadView:
         )
         # Check file added OK
         assert response.status_code == 302
-        assert response.url == '/datasets/%d' % dataset.pk
+        assert response.url == '/datasets/%d/map' % dataset.pk
 
         response = client.get(
             reverse('datasets:file_download', args=[dataset.pk, filename])
