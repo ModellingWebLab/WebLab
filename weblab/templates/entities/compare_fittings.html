@@ -29,7 +29,7 @@
                     {% if entity.entity_type == 'protocol' %}
                       {{ fitting|name_of_fittingspec }}
                     {% else %}
-                      {{ fitting|name_of_protocol }}
+                      {{ fitting|name_of_protocol }} using {{ fitting|name_of_fittingspec }}
                     {% endif %}
                   </a>
                 </li>
