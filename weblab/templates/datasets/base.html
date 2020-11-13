@@ -2,6 +2,7 @@
 {% load entities %}
 {% load fittings %}
 {% load staticfiles %}
+{% load datasets %}
 
 {% block content %}
   {% include "./includes/dataset_header.html" %}
@@ -37,7 +38,10 @@
       <div id="entity-view-buttons" class="link-list">
         <a class="button" href="{% url "fitting:result:new" %}?dataset={{dataset.pk}}" title="Run fitting experiment using this dataset">Fit</a>
         <a class="button" href="{% url "datasets:compare_fittings" dataset.pk %}" title="Show results of parameter fitting experiments run using this dataset">Fittings</a>
-        <a class="button" href="{% url "datasets:map_columns" dataset.pk %}" title="Map dataset columns to protocol inputs/outputs">Map columns</a>
+        {% can_modify_dataset dataset as can_modify %}
+        {% if can_modify %}
+          <a class="button" href="{% url "datasets:map_columns" dataset.pk %}" title="Map dataset columns to protocol inputs/outputs">Map columns</a>
+        {% endif %}
       </div>
 
       <p id="description">

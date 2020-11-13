@@ -74,6 +74,11 @@ class TestDataset:
         dataset = dataset_creator([])
         assert dataset.column_names == []
 
+    def test_is_editable_by(self, public_dataset, user, anon_user):
+        assert public_dataset.is_editable_by(public_dataset.author)
+        assert not public_dataset.is_editable_by(user)
+        assert not public_dataset.is_editable_by(anon_user)
+
 
 @pytest.mark.django_db
 class TestDatasetNameUniqueness:

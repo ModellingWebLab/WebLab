@@ -374,9 +374,16 @@ class DatasetCompareFittingResultsView(DetailView):
         return super().get_context_data(**kwargs)
 
 
-class DatasetMapColumnsView(VisibilityMixin, DetailView):
+class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
     model = Dataset
     template_name = 'datasets/map_columns.html'
+
+    # Raise a 403 error rather than redirecting to login,
+    # if the user isn't allowed to modify dataset
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_editable_by(self.request.user)
 
     def _get_object(self):
         if not hasattr(self, 'object'):

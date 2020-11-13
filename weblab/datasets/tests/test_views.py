@@ -585,7 +585,6 @@ class TestDatasetJsonView:
 @pytest.mark.django_db
 @pytest.mark.parametrize("recipe,url", [
     (recipes.dataset, '/datasets/%d'),
-    (recipes.dataset, '/datasets/%d/map'),
     (recipes.dataset, '/datasets/%d/files.json'),
 ])
 class TestDatasetVisibility:
@@ -772,6 +771,26 @@ class TestDatasetCompareFittingResultsView:
 
 @pytest.mark.django_db
 class TestDatasetMapColumnsView:
+    def test_owner_can_map_dataset(self, logged_in_user, public_protocol, client):
+        my_dataset = recipes.dataset.make(
+            author=logged_in_user, visibility='public', protocol=public_protocol)
+        response = client.get('/datasets/%d/map' % my_dataset.pk)
+        assert response.status_code == 200
+
+        response = client.post('/datasets/%d/map' % my_dataset.pk)
+        assert response.status_code == 302
+
+    def test_non_owner_cannot_map_dataset(
+            self, helpers, other_user, logged_in_user, public_protocol, client
+    ):
+        other_dataset = recipes.dataset.make(
+            author=other_user, visibility='public', protocol=public_protocol)
+        response = client.get('/datasets/%d/map' % other_dataset.pk)
+        assert response.status_code == 403
+
+        response = client.post('/datasets/%d/map' % other_dataset.pk)
+        assert response.status_code == 403
+
     def test_has_form_for_each_version_and_column(self, client, logged_in_user, helpers, mock_column_names):
         mock_column_names.return_value = ['col1', 'col2']
         protocol = recipes.protocol.make()
@@ -780,7 +799,7 @@ class TestDatasetMapColumnsView:
         # But not private version
         proto_v3 = helpers.add_fake_version(protocol, visibility='private')
 
-        dataset = recipes.dataset.make(visibility='public', protocol=protocol)
+        dataset = recipes.dataset.make(visibility='public', protocol=protocol, author=logged_in_user)
 
         response = client.get('/datasets/%d/map' % dataset.pk)
 
@@ -804,7 +823,7 @@ class TestDatasetMapColumnsView:
 
         v2_in = recipes.protocol_input.make(protocol_version=proto_v2)
 
-        dataset = recipes.dataset.make(visibility='public', protocol=protocol)
+        dataset = recipes.dataset.make(visibility='public', protocol=protocol, author=logged_in_user)
 
         response = client.get('/datasets/%d/map' % dataset.pk)
 
@@ -822,7 +841,7 @@ class TestDatasetMapColumnsView:
         proto_v1 = public_protocol.repocache.latest_version
         proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
 
-        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol, author=logged_in_user)
 
         prefix = 'mapping_%d_0-' % proto_v1.pk
         response = client.post(
@@ -843,7 +862,8 @@ class TestDatasetMapColumnsView:
         proto_v1 = public_protocol.repocache.latest_version
         proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
 
-        dataset = recipes.dataset.make(visibility='public', protocol=public_protocol)
+        dataset = recipes.dataset.make(
+            visibility='public', protocol=public_protocol, author=logged_in_user)
 
         mapping = recipes.column_mapping.make(
             dataset=dataset,

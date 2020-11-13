@@ -63,6 +63,12 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
 
     @property
     def column_names(self):
+        """
+        Get column names for the dataset, reading from the master file
+
+        @return list of column names as strings,
+            or empty list if no master file found
+        """
         master = self.master_file
         if master:
             with self.open_file(master.name) as csvfile:
@@ -75,6 +81,8 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
                 return list(header)
         return []
 
+    def is_editable_by(self, user):
+        return user == self.author
 
 class DatasetFile(models.Model):
     dataset = models.ForeignKey(Dataset, related_name='file_uploads', on_delete=models.CASCADE)
