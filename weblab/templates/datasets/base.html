@@ -37,6 +37,7 @@
       <div id="entity-view-buttons" class="link-list">
         <a class="button" href="{% url "fitting:result:new" %}?dataset={{dataset.pk}}" title="Run fitting experiment using this dataset">Fit</a>
         <a class="button" href="{% url "datasets:compare_fittings" dataset.pk %}" title="Show results of parameter fitting experiments run using this dataset">Fittings</a>
+        <a class="button" href="{% url "datasets:map_columns" dataset.pk %}" title="Map dataset columns to protocol inputs/outputs">Map columns</a>
       </div>
 
       <p id="description">
