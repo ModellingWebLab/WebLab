@@ -4,7 +4,6 @@
 <form method="POST" action="" class="dataset-column-mapper">
   {% csrf_token %}
 
-  {{ formset.management_form }}
   {% for version, group in forms.items %}
       <div class="{% if forloop.counter == 1 %}latest-version-mappings{% else %}older-version-mappings{% endif %}">
         <h3>Protocol version: {{ version.nice_version }}</h3>
