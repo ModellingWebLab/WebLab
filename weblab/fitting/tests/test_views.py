@@ -1054,11 +1054,11 @@ class TestFittingSpecResultsMatrixJsonView:
     def test_ignores_unrelated_datasets(self, client, helpers):
         related_protocol = recipes.protocol.make()
         helpers.add_fake_version(related_protocol, visibility='public')
-        related_dataset = recipes.dataset.make(protocol=related_protocol)
+        related_dataset = recipes.dataset.make(protocol=related_protocol, visibility='public')
 
         unrelated_protocol = recipes.protocol.make()
         helpers.add_fake_version(unrelated_protocol, visibility='public')
-        unrelated_dataset = recipes.dataset.make(protocol=unrelated_protocol)
+        unrelated_dataset = recipes.dataset.make(protocol=unrelated_protocol, visibility='public')
 
         fittingspec = recipes.fittingspec.make(protocol=related_protocol)
         helpers.add_fake_version(fittingspec, visibility='public')
