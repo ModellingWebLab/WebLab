@@ -13,6 +13,39 @@ var versions = {},
   converter = new showdown.Converter(),
   filesTable = {};
 
+function initVersionList() {
+  // Comparing experiments click events
+  var $exp_list = $(doc.version.experimentpartners).children("ul");
+  $("#entityexperimentlistpartnersactall").click(function () {
+    $exp_list.find("input").filter(":visible").prop('checked', true);
+  });
+  $("#entityexperimentlistpartnersactnone").click(function () {
+    $exp_list.find("input").prop('checked', false);
+  });
+  $("#entityexperimentlistpartnersactlatest").click(function () {
+    $exp_list.children("li").children("input").prop('checked', true);
+    $exp_list.find(".latest-model-version").children("input").prop('checked', true);
+  });
+	$("#entityexperimentlist_showallversions").click(function () {
+		$(this).toggleClass("selected");
+    $exp_list.find(".older-model-version").toggle();
+		$exp_list.find("ul.all-versions").toggle();
+		$("#entityexperimentlist_span_latest").toggle();
+    return false;
+	});
+  $("#entityexperimentlistpartnersactcompare").click(function () {
+    var url = $(this).data('base-href');
+    window.alert('2' + url);
+    $exp_list.find("input:checked").filter(":visible").each(function () {
+      url += '/' + this.value;
+    });
+    if (url)
+      document.location = url; //contextPath + "/compare/e/" + url;
+    else
+      window.alert("You need to select some " + compareType + "s to compare.");
+  });
+}
+
 function init() {
   var plugins = [
     //require('./visualizers/displayBivesDiff/displayBivesDiff.js'),
@@ -961,4 +994,5 @@ function init() {
 
 module.exports = {
   init: init,
+  initVersionList: initVersionList,
 }
