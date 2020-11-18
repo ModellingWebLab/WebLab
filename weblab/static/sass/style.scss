@@ -137,6 +137,8 @@ button,
 
 .navbar-submenu {
   min-width: 100px;
+  position: relative;
+  z-index: 99;
 
   ul {
     display: none; /* Hides the drop-down menu */
