@@ -7,11 +7,31 @@ var versions = {},
   files = {},
   doc,
   basicurl,
-  compareType, allComparisonsUrl,
   entityId,
   curVersion = null,
   converter = new showdown.Converter(),
   filesTable = {};
+
+function initVersionList() {
+  // Comparing experiments click events
+  var $exp_list = $("#entityversionlist_content").children("ul");
+  $("#entityexperimentlistpartnersactall").click(function () {
+    $exp_list.find("input").filter(":visible").prop('checked', true);
+  });
+  $("#entityexperimentlistpartnersactnone").click(function () {
+    $exp_list.find("input").prop('checked', false);
+  });
+  $("#entityexperimentlistpartnersactcompare").click(function () {
+    var url = $(this).data('base-href');
+    $exp_list.find("input:checked").filter(":visible").each(function () {
+      url += '/' + this.value;
+    });
+    if (url != $(this).data('base-href'))
+      document.location = url; //contextPath + "/compare/e/" + url;
+    else
+      window.alert("You need to select some experiments to compare.");
+  });
+}
 
 function init() {
   var plugins = [
@@ -961,4 +981,5 @@ function init() {
 
 module.exports = {
   init: init,
+  initVersionList: initVersionList,
 }

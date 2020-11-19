@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% load staticfiles %}
+{% load experiments %}
 
 {% block title %}Experiment versions - {% endblock title %}
-
+{% block body_id %}experimentversionlist{% endblock %}
 {% block content %}
   {% include "./includes/experiment_header.html" %}
 
@@ -13,7 +14,8 @@
     {% for version in experiment.versions.all|dictsortreversed:"created_at" %}
     <li>
       <p class="experiment-{{ version.status }}">
-        <strong>
+        <input name='experimentVersionIds' value="{{ version.id }}" type="checkbox">
+          <strong>
           <a class="entityversionlink" href="{% url 'experiments:version' experiment.id version.id %}">
             {{ version.name }}
           </a>
@@ -44,5 +46,14 @@
       <span class="experiment-PARTIAL">partial failure</span>
       <span class="experiment-SUCCESS">success</span>
     </p>
+
+    <div id="entityexperimentlistpartnersact">
+        [<a id="entityexperimentlistpartnersactall">select all</a>]
+    [<a id="entityexperimentlistpartnersactnone">select none</a>]
+    <br/>
+    <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_experiment_comparison_base %}">
+        compare selected experiments
+    </button>
+    </div>
   </div>
 {% endblock %}

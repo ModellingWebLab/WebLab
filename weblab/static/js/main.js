@@ -162,8 +162,9 @@ function initPage ()
     experiment.init()
   } else if ($('#entityversion').length > 0) {
     entity.init()
+  } else if ($('#experimentversionlist').length > 0) {
+    experiment.initVersionList()
   }
-
 
   $("table.formset tbody tr").formset({
     addText: 'add another',

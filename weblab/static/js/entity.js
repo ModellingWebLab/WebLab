@@ -909,12 +909,12 @@ function init() {
     $exp_list.find("input:checked").filter(":visible").each(function () {
       url += '/' + this.value;
     });
-    if (url)
+    if (url != $(this).data('base-href'))
       document.location = url; //contextPath + "/compare/e/" + url;
     else
       window.alert("You need to select some " + compareType + "s to compare.");
   });
-	
+
   $("#entityexperimentlist_span_latest").hide();
   $("#entityexperimentlistpartners .older-model-version").hide();
 
