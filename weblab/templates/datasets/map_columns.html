@@ -48,7 +48,7 @@
           </tbody >
         </table>
      </div>
-     {% if forloop.counter == 1 %}<a id="toggle-older-versions">Show older versions</a>{% endif %}
+     {% if forloop.counter == 1 and forms.items|length > 1 %}<a id="toggle-older-versions">Show older versions</a>{% endif %}
   {% endfor %}
   <p>
     <button id="savebutton">Save</button>

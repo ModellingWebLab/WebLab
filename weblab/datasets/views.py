@@ -417,10 +417,10 @@ class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
         for version in protocol_versions:
             self.forms[version] = []
 
-            # Each form will ist all but FLAG ioputs for this protocol version
+            # Each form will list all but FLAG ioputs for this protocol version
             ioputs = version.ioputs.exclude(kind=(ProtocolIoputs.FLAG))
 
-            # Group existing mappings for this version by column name
+            # Index existing mappings for this version by column name
             mappings = {
                 mapping.column_name: mapping
                 for mapping in mappings_by_version.get(version, [])
