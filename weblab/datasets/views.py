@@ -448,7 +448,7 @@ class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
     @property
     def all_forms(self):
         """Iterate through all forms in the view"""
-        for _, forms in self.forms.items():
+        for forms in self.forms.values():
             yield from forms
 
     @property
