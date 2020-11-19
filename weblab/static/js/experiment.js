@@ -7,7 +7,6 @@ var versions = {},
   files = {},
   doc,
   basicurl,
-  compareType, allComparisonsUrl,
   entityId,
   curVersion = null,
   converter = new showdown.Converter(),
@@ -15,7 +14,7 @@ var versions = {},
 
 function initVersionList() {
   // Comparing experiments click events
-  var $exp_list = $("#entityexperimentlistpartners").children("ul");
+  var $exp_list = $("#entityversionlist_content").children("ul");
   $("#entityexperimentlistpartnersactall").click(function () {
     $exp_list.find("input").filter(":visible").prop('checked', true);
   });
@@ -27,10 +26,10 @@ function initVersionList() {
     $exp_list.find("input:checked").filter(":visible").each(function () {
       url += '/' + this.value;
     });
-    if (url =='/experiments/compare')
-      window.alert("You need to select some experiments to compare.");
-    else
+    if (url != $(this).data('base-href'))
       document.location = url; //contextPath + "/compare/e/" + url;
+    else
+      window.alert("You need to select some experiments to compare.");
   });
 }
 

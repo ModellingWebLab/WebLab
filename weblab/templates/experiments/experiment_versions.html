@@ -6,26 +6,25 @@
 {% block title %}Experiment versions - {% endblock title %}
 {% block body_id %}experimentversionlist{% endblock %}
 {% block content %}
-    {% include "./includes/experiment_header.html" %}
+  {% include "./includes/experiment_header.html" %}
 
-    <h2>Versions</h2>
-    <div id="entityexperimentlist">
-     <div id="entityexperimentlistpartners">
-        <ul>
-            {% for version in experiment.versions.all|dictsortreversed:"created_at" %}
-                <li>
-                    <p class="experiment-{{ version.status }}">
-                        <input name='experimentVersionIds' value="{{ version.id }}" type="checkbox">
-                        <strong>
-                            <a class="entityversionlink"
-                               href="{% url 'experiments:version' experiment.id version.id %}">
-                                {{ version.name }}
-                            </a>
-                        </strong>
-                        by <em>{{ version.author.full_name }}</em>
-                        <!-- TODO: Add delete version link -->
-                        <br/>
-                        <span class="suppl">
+  <h2>Versions</h2>
+
+  <div id="entityversionlist_content">
+    <ul>
+    {% for version in experiment.versions.all|dictsortreversed:"created_at" %}
+    <li>
+      <p class="experiment-{{ version.status }}">
+        <input name='experimentVersionIds' value="{{ version.id }}" type="checkbox">
+          <strong>
+          <a class="entityversionlink" href="{% url 'experiments:version' experiment.id version.id %}">
+            {{ version.name }}
+          </a>
+        </strong>
+        by <em>{{ version.author.full_name }}</em>
+        <!-- TODO: Add delete version link -->
+        <br />
+        <span class="suppl">
           <small>created </small> <time>{{ version.created_at }}</time>
           {% with version.files|length as numfiles %}
           <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
@@ -34,28 +33,28 @@
         <span class="suppl">
           {{ version.return_text|safe|linebreaksbr }}
         </span>
-                    </p>
-                </li>
+      </p>
+    </li>
+    {% endfor %}
+    </ul>
 
-            {% endfor %}
-        </ul>
-        <p id='expversioncolorlegend'>
-            Status Legend:
-            <span class="experiment-QUEUED">queued</span>
-            <span class="experiment-RUNNING">running</span>
-            <span class="experiment-INAPPLICABLE">inapplicable</span>
-            <span class="experiment-FAILED">failed</span>
-            <span class="experiment-PARTIAL">partial failure</span>
-            <span class="experiment-SUCCESS">success</span>
-        </p>
-    </div>
+    <p id='expversioncolorlegend'>
+      Status Legend:
+      <span class="experiment-QUEUED">queued</span>
+      <span class="experiment-RUNNING">running</span>
+      <span class="experiment-INAPPLICABLE">inapplicable</span>
+      <span class="experiment-FAILED">failed</span>
+      <span class="experiment-PARTIAL">partial failure</span>
+      <span class="experiment-SUCCESS">success</span>
+    </p>
+
     <div id="entityexperimentlistpartnersact">
         [<a id="entityexperimentlistpartnersactall">select all</a>]
-        [<a id="entityexperimentlistpartnersactnone">select none</a>]
-        <br/>
-        <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_experiment_comparison_base %}">
-            compare selected experiments
-        </button>
+    [<a id="entityexperimentlistpartnersactnone">select none</a>]
+    <br/>
+    <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_experiment_comparison_base %}">
+        compare selected experiments
+    </button>
     </div>
-    </div>
+  </div>
 {% endblock %}
