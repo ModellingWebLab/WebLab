@@ -83,6 +83,7 @@ class DatasetAddFilesView(
             return self.form_invalid(form)
 
         # We're only creating datasets so don't need to handle replacing files
+        main_file = request.POST.get('mainEntry')
         with ZipFile(str(archive_path), mode='w') as archive:
             manifest_writer = ManifestWriter()
             # Copy new files into the archive
@@ -92,7 +93,10 @@ class DatasetAddFilesView(
                     # Avoid duplicates if user changed their mind about a file and replaced it
                     # TODO: Also handling if user changed their mind but did't replace!
                     archive.write(src, upload.original_name)
-                    manifest_writer.add_file(upload.original_name)
+                    manifest_writer.add_file(
+                        upload.original_name,
+                        is_master=(upload.original_name == main_file),
+                    )
 
             # Create a COMBINE manifest in the archive
             import xml.etree.ElementTree as ET

@@ -857,6 +857,11 @@ class TestDatasetMapColumnsView:
 
         assert response.status_code == 302
         assert dataset.column_mappings.count() == 1
+        map0 = dataset.column_mappings.first()
+        assert map0.column_name == 'col'
+        assert map0.column_units == 'meters'
+        assert map0.protocol_version == proto_v1
+        assert map0.protocol_ioput == proto_v1_in
 
     def test_overwrites_existing_column_mapping(self, client, logged_in_user, public_protocol, mock_column_names):
         proto_v1 = public_protocol.repocache.latest_version

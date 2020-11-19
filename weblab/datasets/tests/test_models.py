@@ -66,9 +66,23 @@ class TestDataset:
 
         # TODO - No testing of shared datasets - waiting for implementation in front end
 
-    def test_column_names(self, dataset_creator):
+    def test_column_names_comma_separated(self, dataset_creator):
         dataset = dataset_creator([('data1.csv', b'col1,col2')])
         assert dataset.column_names == ['col1', 'col2']
+
+    def test_column_names_tab_separated(self, dataset_creator):
+        dataset = dataset_creator([('data1.csv', b'col1\tcol2')])
+        assert dataset.column_names == ['col1', 'col2']
+
+    def test_column_names_from_main_file(self, dataset_creator):
+        dataset = dataset_creator(
+            [
+                ('data1.csv', b'col1\tcol2'),
+                ('data2.csv', b'col3\tcol4'),
+            ],
+            main_file='data2.csv'
+        )
+        assert dataset.column_names == ['col3', 'col4']
 
     def test_column_names_empty_if_no_files(self, dataset_creator):
         dataset = dataset_creator([])
