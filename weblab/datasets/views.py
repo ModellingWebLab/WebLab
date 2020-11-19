@@ -5,6 +5,7 @@ from itertools import groupby
 from zipfile import ZipFile
 
 from braces.views import UserFormKwargsMixin
+from django.contrib import messages
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -476,6 +477,7 @@ class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
         forms = self.get_forms()
         if self.all_forms_valid:
             self.save_all_forms()
+            messages.info(self.request, 'Column mappings saved')
             return HttpResponseRedirect(self.get_success_url())
         else:
             return self.render_to_response(self.get_context_data(forms=forms))
