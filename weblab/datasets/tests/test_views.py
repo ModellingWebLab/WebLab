@@ -811,6 +811,7 @@ class TestDatasetMapColumnsView:
         assert proto_v3 not in forms
         assert len(forms[proto_v1]) == 2
         assert len(forms[proto_v2]) == 2
+        assert forms[proto_v1][0]['column_name'].initial == 'col1'
 
     def test_restricts_ioputs_to_protocol_version(self, client, logged_in_user, helpers, mock_column_names):
         protocol = recipes.protocol.make()

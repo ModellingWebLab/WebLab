@@ -444,6 +444,7 @@ class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
                     initial={
                         'dataset': dataset,
                         'protocol_version': version,
+                        'column_name': column_name,
                     },
                 )
                 self.forms[version].append(form)
