@@ -60,7 +60,7 @@ def url_version_comparison_matrix(entity):
 
 
 @register.simple_tag
-def url_protocol_model_version_comparison_matrix(model, protocol):
+def url_model_protocol_version_comparison_matrix(model, protocol):
     """
         Build URL for model/protocol versions submatrix view
     """
