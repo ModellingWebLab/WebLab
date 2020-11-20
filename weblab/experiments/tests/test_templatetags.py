@@ -49,3 +49,6 @@ def test_url_version_comparison_matrix():
     proto = recipes.protocol.make()
     assert ((exp_tags.url_version_comparison_matrix(proto) ==
             '/experiments/protocols/%d/versions/*' % proto.pk))
+
+    assert (exp_tags.url_model_protocol_version_comparison_matrix(model, proto) ==
+            '/experiments/models/%d/versions/*/protocols/%d/versions/*' % (model.pk, proto.pk))

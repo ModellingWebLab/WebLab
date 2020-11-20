@@ -17,7 +17,9 @@
        data-version-json-href="{% url 'experiments:version_json' experiment.id version.id %}">
     <div class="closebtn">
       <small>
-        <a href="{% url 'experiments:versions' experiment.id %}">list all versions</a>
+        <a href="{% url 'experiments:versions' experiment.id %}">list all versions</a> |
+          <a href="{% url_model_protocol_version_comparison_matrix experiment.model experiment.protocol %}">see results from other model/protocol versions</a>
+
       </small>
     </div>
     <h2 id="entityversionname">
