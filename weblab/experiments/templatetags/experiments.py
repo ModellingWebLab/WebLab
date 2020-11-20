@@ -59,6 +59,19 @@ def url_version_comparison_matrix(entity):
     return reverse('experiments:list', kwargs=kwargs)
 
 
+@register.simple_tag
+def url_protocol_model_comparison_matrix(experiment):
+    kwargs = {}
+
+    kwargs['model_pks'] = '/%d' % experiment.model.pk
+    kwargs['model_versions'] = '/*'
+
+    kwargs['protocol_pks'] = '/%d' % experiment.protocol.pk
+    kwargs['protocol_versions'] = '/*'
+
+    return reverse('experiments:list', kwargs=kwargs)
+
+
 @register.simple_tag(takes_context=True)
 def can_delete_entity(context, entity):
     user = context['user']
