@@ -60,13 +60,14 @@ def url_version_comparison_matrix(entity):
 
 
 @register.simple_tag
-def url_protocol_model_comparison_matrix(experiment):
+def url_protocol_model_comparison_matrix(model, protocol):
+    """
+        Build URL for model/protocol versions submatrix view
+    """
     kwargs = {}
-
-    kwargs['model_pks'] = '/%d' % experiment.model.pk
+    kwargs['model_pks'] = '/%d' % model.pk
     kwargs['model_versions'] = '/*'
-
-    kwargs['protocol_pks'] = '/%d' % experiment.protocol.pk
+    kwargs['protocol_pks'] = '/%d' % protocol.pk
     kwargs['protocol_versions'] = '/*'
 
     return reverse('experiments:list', kwargs=kwargs)

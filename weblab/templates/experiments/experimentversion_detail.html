@@ -18,7 +18,7 @@
     <div class="closebtn">
       <small>
         <a href="{% url 'experiments:versions' experiment.id %}">list all versions</a> |
-          <a href="{% url_protocol_model_comparison_matrix experiment %}">see results from other model/protocol versions</a>
+          <a href="{% url_protocol_model_comparison_matrix experiment.model experiment.protocol %}">see results from other model/protocol versions</a>
 
       </small>
     </div>
