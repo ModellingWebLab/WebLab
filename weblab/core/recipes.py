@@ -1,5 +1,7 @@
 from model_bakery.recipe import Recipe, foreign_key, seq
 
+from repocache.models import ProtocolIoputs
+
 
 user = Recipe('accounts.User', institution='UCL', full_name=seq('test user '))
 
@@ -67,3 +69,14 @@ fittingresult = Recipe(
 )
 
 fittingresult_version = Recipe('FittingResultVersion', fittingresult=foreign_key(fittingresult))
+
+protocol_ioput = Recipe('ProtocolIoputs', protocol_version=foreign_key(cached_protocol_version))
+protocol_input = protocol_ioput.extend(kind=ProtocolIoputs.INPUT)
+protocol_output = protocol_ioput.extend(kind=ProtocolIoputs.OUTPUT)
+protocol_ioput_flag = protocol_ioput.extend(kind=ProtocolIoputs.FLAG)
+
+column_mapping = Recipe('DatasetColumnMapping',
+                        protocol_version=foreign_key(cached_protocol_version),
+                        protocol_ioput=foreign_key(protocol_ioput),
+                        dataset=foreign_key(dataset),
+                        )

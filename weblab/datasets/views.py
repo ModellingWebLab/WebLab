@@ -5,6 +5,7 @@ from itertools import groupby
 from zipfile import ZipFile
 
 from braces.views import UserFormKwargsMixin
+from django.contrib import messages
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -27,9 +28,11 @@ from accounts.forms import OwnershipTransferForm
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
 from fitting.models import FittingResult
+from repocache.models import ProtocolIoputs
 
 from .forms import (
     DatasetAddFilesForm,
+    DatasetColumnMappingForm,
     DatasetFileUploadForm,
     DatasetForm,
     DatasetRenameForm,
@@ -80,6 +83,7 @@ class DatasetAddFilesView(
             return self.form_invalid(form)
 
         # We're only creating datasets so don't need to handle replacing files
+        main_file = request.POST.get('mainEntry')
         with ZipFile(str(archive_path), mode='w') as archive:
             manifest_writer = ManifestWriter()
             # Copy new files into the archive
@@ -89,7 +93,10 @@ class DatasetAddFilesView(
                     # Avoid duplicates if user changed their mind about a file and replaced it
                     # TODO: Also handling if user changed their mind but did't replace!
                     archive.write(src, upload.original_name)
-                    manifest_writer.add_file(upload.original_name)
+                    manifest_writer.add_file(
+                        upload.original_name,
+                        is_master=(upload.original_name == main_file),
+                    )
 
             # Create a COMBINE manifest in the archive
             import xml.etree.ElementTree as ET
@@ -103,7 +110,7 @@ class DatasetAddFilesView(
 
         # Show the user the dataset
         return HttpResponseRedirect(
-            reverse('datasets:detail', args=[dataset.id]))
+            reverse('datasets:map_columns', args=[dataset.id]))
 
 
 class DatasetFileUploadView(View):
@@ -370,3 +377,112 @@ class DatasetCompareFittingResultsView(DetailView):
         ]
 
         return super().get_context_data(**kwargs)
+
+
+class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
+    model = Dataset
+    template_name = 'datasets/map_columns.html'
+
+    # Raise a 403 error rather than redirecting to login,
+    # if the user isn't allowed to modify dataset
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_editable_by(self.request.user)
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def get_forms(self):
+        """
+        Construct the forms for this view.
+
+        Populates `self.forms` which is a dict mapping protocol version
+        to a list of forms for that protocol version. Each protocol version
+        has one form per dataset column.
+
+        @return self.forms
+        """
+        dataset = self._get_object()
+
+        self.forms = {}
+
+        # Group existing mappings by protocol version
+        existing_mappings = dataset.column_mappings.all()
+        mappings_by_version = {
+            version: list(mappings)
+            for version, mappings in groupby(existing_mappings, lambda x: x.protocol_version)
+        }
+
+        # Full list of protocol versions for this user
+        protocol_versions = dataset.protocol.cachedentity.versions.visible_to_user(self.request.user)
+
+        for version in protocol_versions:
+            self.forms[version] = []
+
+            # Each form will list all but FLAG ioputs for this protocol version
+            ioputs = version.ioputs.exclude(kind=(ProtocolIoputs.FLAG))
+
+            # Index existing mappings for this version by column name
+            mappings = {
+                mapping.column_name: mapping
+                for mapping in mappings_by_version.get(version, [])
+            }
+
+            # Create a form for each version/column name combo
+            columns = sorted(dataset.column_names)
+            for (i, column_name) in enumerate(columns):
+                instance = mappings.get(column_name)
+                form = DatasetColumnMappingForm(
+                    prefix='mapping_%d_%d' % (version.pk, i),
+                    data=self.request.POST or None,
+                    instance=instance,
+                    dataset=dataset,
+                    protocol_ioputs=ioputs,
+                    initial={
+                        'dataset': dataset,
+                        'protocol_version': version,
+                        'column_name': column_name,
+                    },
+                )
+                self.forms[version].append(form)
+
+        return self.forms
+
+    @property
+    def all_forms(self):
+        """Iterate through all forms in the view"""
+        for forms in self.forms.values():
+            yield from forms
+
+    @property
+    def all_forms_valid(self):
+        """Return true if all forms are valid, false otherwise"""
+        return all(form.is_valid() for form in self.all_forms)
+
+    def save_all_forms(self):
+        """Save all forms in the view"""
+        for form in self.all_forms:
+            form.save()
+
+    def get_context_data(self, **kwargs):
+        kwargs['forms'] = self.get_forms()
+        return super().get_context_data(**kwargs)
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        dataset = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':map_columns', args=[dataset.id])
+
+    def post(self, request, *args, **kwargs):
+        self.object = self._get_object()
+        forms = self.get_forms()
+        if self.all_forms_valid:
+            self.save_all_forms()
+            messages.info(self.request, 'Column mappings saved')
+            return HttpResponseRedirect(self.get_success_url())
+        else:
+            return self.render_to_response(self.get_context_data(forms=forms))

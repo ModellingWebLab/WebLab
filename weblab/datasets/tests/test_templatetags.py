@@ -18,3 +18,9 @@ def test_can_create_dataset_no_permission(user):
 def test_can_create_dataset_permission(dataset_creator):
     context = {'user': dataset_creator}
     assert dataset_tags.can_create_dataset(context)
+
+
+@pytest.mark.django_db
+def test_can_modify_dataset(public_dataset, user):
+    assert dataset_tags.can_modify_dataset({'user': public_dataset.author}, public_dataset)
+    assert not dataset_tags.can_modify_dataset({'user': user}, public_dataset)

@@ -391,3 +391,6 @@ class ProtocolIoputs(models.Model):
 
     class Meta:
         unique_together = ['protocol_version', 'name', 'kind']
+
+    def __str__(self):
+        return '%s: %s (%s)' % (dict(self.KIND_CHOICES)[self.kind], self.name, self.units)

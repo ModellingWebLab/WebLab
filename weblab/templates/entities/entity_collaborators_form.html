@@ -15,7 +15,7 @@
     {{ formset.management_form }}
     <p>Collaborators can create new versions of the {{ entity.display_type }}, add tags and change the {{ entity.display_type }} visibility.</p>
 
-    <table class="formset">
+    <table class="formset allow-add">
       <tbody>
         {% for form in formset.forms %}
 

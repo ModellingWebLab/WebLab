@@ -27,6 +27,7 @@ mccabe==0.6.1             # via flake8
 model-bakery==1.2.0       # via -r test.in
 oauthlib==3.0.1           # via requests-oauthlib, social-auth-core
 packaging==20.4           # via pytest
+pint==0.9                 # via -r base.in
 pluggy==0.13.1            # via pytest
 psycopg2==2.7.3           # via -r base.in
 py==1.9.0                 # via pytest

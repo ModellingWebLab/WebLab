@@ -774,3 +774,10 @@ li.entityviz-PRIVATE
   display: flex;
 }
 
+.dataset-column-mapper input[type=text] {
+  width: 10em;
+}
+
+.dataset-column-mapper .older-version-mappings {
+  display: none;
+}

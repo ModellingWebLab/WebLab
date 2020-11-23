@@ -1,3 +1,5 @@
+import csv
+
 from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.text import get_valid_filename
@@ -5,6 +7,7 @@ from guardian.shortcuts import get_objects_for_user
 
 from core.models import FileCollectionMixin, UserCreatedModelMixin, VisibilityModelMixin
 from entities.models import ProtocolEntity
+from repocache.models import CachedProtocolVersion, ProtocolIoputs
 
 
 class DatasetQuerySet(models.QuerySet):
@@ -58,6 +61,29 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
     def archive_name(self):
         return get_valid_filename(self.name + '.zip')
 
+    @property
+    def column_names(self):
+        """
+        Get column names for the dataset, reading from the master file
+
+        @return list of column names as strings,
+            or empty list if no master file found
+        """
+        master = self.master_file
+        if master:
+            with self.open_file(master.name) as csvfile:
+                firstline = csvfile.readline().decode()
+
+                dialect = csv.Sniffer().sniff(firstline, delimiters='\t,')
+                colreader = csv.reader([firstline], dialect)
+                header = next(colreader)
+
+                return list(header)
+        return []
+
+    def is_editable_by(self, user):
+        return user == self.author
+
 
 class DatasetFile(models.Model):
     dataset = models.ForeignKey(Dataset, related_name='file_uploads', on_delete=models.CASCADE)
@@ -66,3 +92,35 @@ class DatasetFile(models.Model):
 
     def __str__(self):
         return self.original_name
+
+
+class DatasetColumnMapping(models.Model):
+    """
+    Maps dataset columns to protocol inputs/outputs
+    """
+    dataset = models.ForeignKey(Dataset, related_name='column_mappings', on_delete=models.CASCADE)
+
+    column_name = models.CharField(
+        max_length=200,
+        help_text='name of the column')
+
+    column_units = models.CharField(
+        blank=True,
+        max_length=200,
+        help_text='units of the column, as a pint definition string')
+
+    protocol_version = models.ForeignKey(
+        CachedProtocolVersion,
+        help_text='Protocol version to link to',
+        on_delete=models.CASCADE,
+    )
+
+    protocol_ioput = models.ForeignKey(
+        ProtocolIoputs,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        help_text='Protocol input or output to link to')
+
+    class Meta:
+        unique_together = ['dataset', 'column_name', 'protocol_version']

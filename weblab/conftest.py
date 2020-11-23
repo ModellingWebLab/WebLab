@@ -2,6 +2,7 @@ import datetime
 import os
 import uuid
 from pathlib import Path
+from unittest.mock import PropertyMock, patch
 
 import pytest
 from django.contrib.auth.models import AnonymousUser, Permission
@@ -58,7 +59,7 @@ class Helpers:
         """Add a new commit/version only in the cache, not in git."""
         version = entity.repocache.CachedVersionClass.objects.create(
             entity=entity.repocache,
-            sha=uuid.uuid4(),
+            sha=str(uuid.uuid4()),
             message=message,
             timestamp=date or Now(),
             visibility=visibility,
@@ -509,3 +510,10 @@ def fittingresult_with_result(model_with_version, protocol_with_version):
     with (version.abs_path / 'result.txt').open('w') as f:
         f.write('fitting results')
     return version
+
+
+@pytest.yield_fixture
+def mock_column_names():
+    with patch.object(Dataset, 'column_names',
+                      new_callable=PropertyMock, return_value=['col']) as mock_col:
+        yield mock_col

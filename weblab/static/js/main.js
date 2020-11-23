@@ -9,6 +9,7 @@ var entity = require('./entity.js');
 var experiment = require('./experiment.js');
 var notifications = require('./lib/notifications.js');
 var fitting = require('./fitting.js');
+var dataset = require('./dataset.js');
 require('./compare.js');
 require('./entity_version_list.js');
 require('./experiment_tasks.js');
@@ -166,7 +167,7 @@ function initPage ()
     experiment.initVersionList()
   }
 
-  $("table.formset tbody tr").formset({
+  $("table.formset.allow-add tbody tr").formset({
     addText: 'add another',
     deleteText: 'remove',
   });
@@ -174,6 +175,8 @@ function initPage ()
   if ($('#fitting-result-submit').length > 0) {
     fitting.init();
   }
+
+  dataset.init();
 }
 
 document.addEventListener("DOMContentLoaded", initPage, false);
