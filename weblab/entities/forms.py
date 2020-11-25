@@ -69,7 +69,6 @@ class ProtocolEntityForm(EntityForm):
         fields = ['name']
 
 
-
 class EntityVersionForm(forms.Form):
     """Used to create a new version of an existing entity."""
     parent_hexsha = forms.CharField(required=False, widget=forms.HiddenInput)
