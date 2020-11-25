@@ -52,14 +52,14 @@ class UserCreatedModelMixin(models.Model):
         has_perm = user.has_perm('entities.create_{}'.format(self.entity_type))
         return has_perm and (
             user == self.author or
-            user.has_perm('edit_entity', self)
+            user.has_perm('entities.edit_entity', self)
         )
 
     def add_collaborator(self, user):
-        assign_perm('edit_entity', user, self)
+        assign_perm('entities.edit_entity', user, self)
 
     def remove_collaborator(self, user):
-        remove_perm('edit_entity', user, self)
+        remove_perm('entities.edit_entity', user, self)
 
     @property
     def collaborators(self):
