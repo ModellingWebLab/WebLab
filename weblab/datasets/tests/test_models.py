@@ -64,7 +64,10 @@ class TestDataset:
         assert Dataset.objects.visible_to_user(logged_in_user).count() == 4
         assert Dataset.objects.visible_to_user(anon_user).count() == 3
 
-        # TODO - No testing of shared datasets - waiting for implementation in front end
+        shared_dataset = recipes.dataset.make(author=logged_in_user, name='mydataset6', visibility='private', protocol=protocol)
+        shared_dataset.add_collaborator(other_user)
+
+        assert list(Dataset.objects.shared_with_user(other_user).all()) == [shared_dataset]
 
     def test_column_names_comma_separated(self, dataset_creator):
         dataset = dataset_creator([('data1.csv', b'col1,col2')])
