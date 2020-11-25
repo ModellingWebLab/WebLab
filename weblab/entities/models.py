@@ -65,10 +65,15 @@ class Entity(UserCreatedModelMixin, models.Model):
             ('create_model', 'Can create models'),
             ('create_protocol', 'Can create protocols'),
             ('create_fittingspec', 'Can create fitting specifications'),
-            # Edit entity is used as an object-level permission
-            ('edit_entity', 'Can edit entity'),
             ('moderator', 'Can promote public entity versions to moderated'),
+            # Edit entity is used as an object-level permission for the collaborator functionality
+            ('edit_entity', 'Can edit entity'),
         )
+
+    @property
+    def create_permission(self):
+        """For UserCreatedModelMixin.is_editable_by"""
+        return 'entities.create_{}'.format(self.entity_type)
 
     def __str__(self):
         return self.name

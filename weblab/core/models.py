@@ -49,17 +49,17 @@ class UserCreatedModelMixin(models.Model):
         return user.is_superuser or user == self.author
 
     def is_editable_by(self, user):
-        has_perm = user.has_perm('entities.create_{}'.format(self.entity_type))
+        has_perm = user.has_perm(self.create_permission)
         return has_perm and (
             user == self.author or
-            user.has_perm('entities.edit_entity', self)
+            user.has_perm('edit_entity', self)
         )
 
     def add_collaborator(self, user):
-        assign_perm('entities.edit_entity', user, self)
+        assign_perm('edit_entity', user, self)
 
     def remove_collaborator(self, user):
-        remove_perm('entities.edit_entity', user, self)
+        remove_perm('edit_entity', user, self)
 
     @property
     def collaborators(self):
