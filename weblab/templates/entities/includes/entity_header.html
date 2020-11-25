@@ -2,7 +2,7 @@
 {% load entities %}
 
 <h1 id="entityname">
-  <a href="{% ns_url 'detail' entity.url_type entity.id %}"><small>{% if entity.is_fitting_spec %}Parameter fitting specification{% else %}{{ type|capfirst }}{% endif %}: </small><span>{{ entity.name }}</span></a>
+  <a href="{% ns_url 'detail' entity.url_type entity.id %}"><span>{{ entity.name }}</span></a>
 </h1>
 
 <div class="suppl">
