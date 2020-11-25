@@ -864,7 +864,9 @@ class TestDatasetMapColumnsView:
         assert map0.protocol_version == proto_v1
         assert map0.protocol_ioput == proto_v1_in
 
-    def test_overwrites_existing_column_mapping(self, client, logged_in_user, public_protocol, mock_column_names):
+    def test_overwrites_existing_column_mapping(self, helpers, client, logged_in_user,
+                                                public_protocol, mock_column_names):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         proto_v1 = public_protocol.repocache.latest_version
         proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
 
