@@ -86,5 +86,11 @@ urlpatterns = [
         views.DatasetMapColumnsView.as_view(),
         name='map_columns',
     ),
+
+    url(
+        r'^(?P<pk>\d+)/collaborators$',
+        views.DatasetCollaboratorsView.as_view(),
+        name='entity_collaborators',
+    ),
 ]
 app_name = 'datasets'
