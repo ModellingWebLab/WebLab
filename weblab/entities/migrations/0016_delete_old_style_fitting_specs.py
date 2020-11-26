@@ -3,10 +3,10 @@
 from django.db import migrations
 
 
-def delete_protocols(apps, schema_editor):
+def delete_old_style_fitting_specs(apps, schema_editor):
     Protocol = apps.get_model('entities', 'ProtocolEntity')
     for protocol in Protocol.objects.filter(is_fitting_spec=True):
-        protocol.delete();
+        protocol.delete()
 
 
 class Migration(migrations.Migration):
@@ -15,5 +15,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(delete_protocols),
+        migrations.RunPython(delete_old_style_fitting_specs),
     ]
