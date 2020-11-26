@@ -3,7 +3,7 @@
 from django.db import migrations
 
 
-def delete_protocols(apps):
+def delete_protocols(apps, schema_editor):
     Protocol = apps.get_model('entities', 'ProtocolEntity')
     for protocol in Protocol.objects.filter(is_fitting_spec=True):
         protocol.delete();
