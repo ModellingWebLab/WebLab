@@ -26,7 +26,6 @@ class FittingSpec(Entity):
     """
     entity_type = Entity.ENTITY_TYPE_FITTINGSPEC
     other_type = Entity.ENTITY_TYPE_MODEL
-    is_fitting_spec = True
 
     protocol = models.ForeignKey(
         ProtocolEntity, related_name='fitting_specs',

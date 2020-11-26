@@ -66,12 +66,7 @@ class ModelEntityForm(EntityForm):
 class ProtocolEntityForm(EntityForm):
     class Meta:
         model = ProtocolEntity
-        fields = ['name', 'is_fitting_spec']
-
-    is_fitting_spec = forms.BooleanField(
-        label='This protocol is a parameter fitting specification',
-        widget=forms.CheckboxInput(attrs={'class': 'inline'}),
-        required=False)
+        fields = ['name']
 
 
 class EntityVersionForm(forms.Form):
