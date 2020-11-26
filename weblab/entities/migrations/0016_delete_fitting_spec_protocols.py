@@ -2,16 +2,14 @@
 
 from django.db import migrations
 
-def delete_protocols(apps, schema_editor):
 
+def delete_protocols(apps):
     Protocol = apps.get_model('entities', 'ProtocolEntity')
-    for protocol in Protocol.objects.all():
-        if protocol.is_fitting_spec:
-            protocol.delete();
+    for protocol in Protocol.objects.filter(is_fitting_spec=True):
+        protocol.delete();
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('entities', '0015_auto_20191128_1601'),
     ]
