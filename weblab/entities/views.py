@@ -948,9 +948,8 @@ class RenameView(LoginRequiredMixin, UserFormKwargsMixin, UserPassesTestMixin, F
         return reverse(ns + ':detail', args=[entity.url_type, entity.id])
 
 
-class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTypeMixin, DetailView):
+class EditCollaboratorsAbstractView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     formset_class = EntityCollaboratorFormSet
-    template_name = 'entities/entity_collaborators_form.html'
     context_object_name = 'entity'
 
     def _get_object(self):
@@ -997,6 +996,13 @@ class EntityCollaboratorsView(LoginRequiredMixin, UserPassesTestMixin, EntityTyp
     def get_context_data(self, **kwargs):
         if 'formset' not in kwargs:
             kwargs['formset'] = self.get_formset()
+        return super().get_context_data(**kwargs)
+
+
+class EntityCollaboratorsView(EntityTypeMixin, EditCollaboratorsAbstractView):
+    template_name = 'entities/entity_collaborators_form.html'
+
+    def get_context_data(self, **kwargs):
         kwargs['type'] = self.object.entity_type
         return super().get_context_data(**kwargs)
 
@@ -1229,3 +1235,4 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
             version_to_use = kwargs['sha']
         return HttpResponseRedirect(
             reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], version_to_use]))
+

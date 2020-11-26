@@ -38,7 +38,8 @@ from .forms import (
     DatasetRenameForm,
 )
 from .models import Dataset
-from entities.views import EntityCollaboratorsView
+
+from entities.views import EditCollaboratorsAbstractView
 
 
 class DatasetCreateView(
@@ -489,8 +490,5 @@ class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
             return self.render_to_response(self.get_context_data(forms=forms))
 
 
-class DatasetCollaboratorsView(EntityCollaboratorsView):
+class DatasetCollaboratorsView(EditCollaboratorsAbstractView):
     template_name = 'datasets/dataset_collaborators_form.html'
-
-    def get_context_data(self):
-        return super().get_context_data()
