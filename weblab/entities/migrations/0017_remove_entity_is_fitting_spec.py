@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('entities', '0016_delete_fitting_spec_protocols'),
+        ('entities', '0016_delete_old_style_fitting_specs'),
     ]
 
     operations = [
