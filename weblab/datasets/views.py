@@ -492,3 +492,5 @@ class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
 
 class DatasetCollaboratorsView(EditCollaboratorsAbstractView):
     template_name = 'datasets/dataset_collaborators_form.html'
+    model = Dataset
+
