@@ -494,3 +494,6 @@ class DatasetCollaboratorsView(EditCollaboratorsAbstractView):
     template_name = 'datasets/dataset_collaborators_form.html'
     model = Dataset
 
+    def get_context_data(self, **kwargs):
+        kwargs['dataset'] = self.object
+        return super().get_context_data(**kwargs)
