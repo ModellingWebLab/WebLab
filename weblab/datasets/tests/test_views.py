@@ -913,6 +913,7 @@ class TestDatasetCollaboratorsView:
                                    'form-INITIAL_FORMS': 0,
                                })
         assert response.status_code == 302
+        assert response.url == '/datasets/%d/collaborators' % shared_dataset.pk
         assert other_user.has_perm('edit_entity', shared_dataset)
 
 
