@@ -903,7 +903,7 @@ class TestDatasetCollaboratorsView:
     def test_can_share_dataset(self, logged_in_user, other_user, public_protocol, client):
         shared_dataset = recipes.dataset.make(
             author=logged_in_user, name='mydataset', visibility='private', protocol=public_protocol)
-
+        assert not other_user.has_perm('edit_entity', shared_dataset)
         response = client.post('/datasets/%d/collaborators' % shared_dataset.pk,
                                {
                                    'form-0-email': other_user.email,
@@ -913,7 +913,7 @@ class TestDatasetCollaboratorsView:
                                    'form-INITIAL_FORMS': 0,
                                })
         assert response.status_code == 302
-        # assert other_user.has_perm('edit_dataset', shared_dataset)
+        assert other_user.has_perm('edit_entity', shared_dataset)
 
 
 
