@@ -897,3 +897,20 @@ class TestDatasetMapColumnsView:
         assert response.status_code == 302
         assert dataset.column_mappings.count() == 1
         assert dataset.column_mappings.get(column_name='col').column_units == 'seconds'
+
+@pytest.mark.django_db
+class TestDatasetCollaboratorsView:
+    def test_can_share_dataset(self, logged_in_user, other_user, public_protocol, client):
+        shared_dataset = recipes.dataset.make(
+            author=logged_in_user, name='mydataset', visibility='private', protocol=public_protocol)
+        response = client.post('/datasets/%d/collaborators' % shared_dataset.pk,
+                               {
+                                   'form-0-email': other_user.email,
+                                   'form-TOTAL_FORMS': 1,
+                                   'form-MAX_NUM_FORMS': 1000,
+                                   'form-MIN_NUM_FORMS': 0,
+                                   'form-INITIAL_FORMS': 0,
+                               })
+        assert response.status_code == 200
+
+
