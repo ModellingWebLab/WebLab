@@ -497,3 +497,9 @@ class DatasetCollaboratorsView(EditCollaboratorsAbstractView):
     def get_context_data(self, **kwargs):
         kwargs['dataset'] = self.object
         return super().get_context_data(**kwargs)
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        dataset = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':entity_collaborators', args=[dataset.id])
