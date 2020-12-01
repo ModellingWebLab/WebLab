@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
-
+from .visibility import HELP_TEXT as VIS_HELP_TEXT
 from . import visibility
 from .combine import ArchiveReader
 
@@ -29,6 +29,8 @@ class UserCreatedModelMixin(models.Model):
     """
     created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    VISIBILITY_HELP = VIS_HELP_TEXT
 
     def is_deletable_by(self, user):
         """

@@ -38,6 +38,7 @@ from .forms import (
     DatasetRenameForm,
 )
 from .models import Dataset
+from entities.forms import EntityChangeVisibilityForm
 
 
 class DatasetCreateView(
@@ -163,6 +164,16 @@ class DatasetView(VisibilityMixin, DetailView):
     model = Dataset
     context_object_name = 'dataset'
     template_name = 'datasets/dataset_detail.html'
+
+    def get_context_data(self, **kwargs):
+        dataset = self.get_object()
+        visibility = dataset.visibility
+        kwargs['form'] = EntityChangeVisibilityForm(
+            user=self.request.user,
+            initial={
+                'visibility': visibility,
+            })
+        return super().get_context_data(**kwargs)
 
 
 class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
@@ -486,3 +497,39 @@ class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
             return HttpResponseRedirect(self.get_success_url())
         else:
             return self.render_to_response(self.get_context_data(forms=forms))
+
+
+class ChangeVisibilityView(UserPassesTestMixin, DetailView):
+    model = Dataset
+
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have the correct permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self._get_object().is_visibility_editable_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Check the form and possibly set the visibility
+
+        Called by Django when a form is submitted.
+        """
+        form = EntityChangeVisibilityForm(self.request.POST, user=self.request.user)
+        if form.is_valid():
+            obj = self._get_object()
+            obj.visibility = self.request.POST['visibility']
+            response = {
+                'updateVisibility': {
+                    'response': True,
+                    'responseText': 'successfully updated',
+                }
+            }
+        else:
+            response = {
+                'notifications': {
+                    'errors': ['updating visibility failed']
+                }
+            }
+
+        return JsonResponse(response)

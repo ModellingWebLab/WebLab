@@ -5,7 +5,10 @@
 {% load datasets %}
 
 {% block content %}
-  {% include "./includes/dataset_header.html" %}
+    {% include "./includes/dataset_header.html" %}
+    {% can_modify_dataset dataset as permission %}
+
+
     <div id="entitydetails"></div>
 
     <div id="entityversion"
@@ -15,23 +18,23 @@
       </div>
       <div class="suppl">
         <small>
-          Created <time id="entityversiontime">{{ dataset.created_at }}</time>
+        Created <time id="entityversiontime">{{ dataset.created_at }}</time>
           by <em id="entityversionauthor">{{ dataset.author.full_name }}</em>.
-          Visibility: <span>{{ dataset.visibility }}</span>
-          <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />.
-
-{% comment %}
-        {% can_delete_entity version as can_delete %}
-        {% if can_delete %}
-          Delete experiment version:
-          <a title="delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
-            <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
-                title="delete this version of this experiment"/></a>
-        {% endif %}
-{% endcomment %}
-
-          <br/>Corresponding protocol:
+            <div id="versionVisibility" data-change-href="{% url 'datasets:change_visibility' dataset.id %}">
+            Corresponding protocol:
             <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
+                {% if permission %}
+            <form method="POST" action="" style="display: inline;">
+              Change visibility: {{ form.visibility }}
+              <img src="{% static 'img/info.png' %}" alt="help" title="{{ dataset.VISIBILITY_HELP }}" />
+              <span id="versionVisibilityAction"></span>
+           </form>
+           {% else %}
+            Visibility: {{ visibility }}
+            <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />
+          {% endif %}
+        </div>
+        </br>
 
         </small>
       </div>
