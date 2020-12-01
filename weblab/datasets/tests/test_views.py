@@ -898,6 +898,7 @@ class TestDatasetMapColumnsView:
         assert dataset.column_mappings.count() == 1
         assert dataset.column_mappings.get(column_name='col').column_units == 'seconds'
 
+
 @pytest.mark.django_db
 class TestDatasetCollaboratorsView:
     def test_can_share_dataset(self, logged_in_user, other_user, public_protocol, client):
@@ -915,6 +916,3 @@ class TestDatasetCollaboratorsView:
         assert response.status_code == 302
         assert response.url == '/datasets/%d/collaborators' % shared_dataset.pk
         assert other_user.has_perm('edit_entity', shared_dataset)
-
-
-

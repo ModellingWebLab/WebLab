@@ -1235,4 +1235,3 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
             version_to_use = kwargs['sha']
         return HttpResponseRedirect(
             reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], version_to_use]))
-
