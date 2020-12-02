@@ -896,6 +896,7 @@ class TestDatasetMapColumnsView:
         assert dataset.column_mappings.count() == 1
         assert dataset.column_mappings.get(column_name='col').column_units == 'seconds'
 
+
 @pytest.mark.django_db
 class TestChangeVisibility:
     def test_change_visibility(self, client, logged_in_user, public_protocol):

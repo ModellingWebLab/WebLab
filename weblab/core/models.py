@@ -4,9 +4,10 @@ from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
-from .visibility import HELP_TEXT as VIS_HELP_TEXT
+
 from . import visibility
 from .combine import ArchiveReader
+from .visibility import HELP_TEXT as VIS_HELP_TEXT
 
 
 class VisibilityModelMixin(models.Model):

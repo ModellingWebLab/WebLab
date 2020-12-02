@@ -11,7 +11,6 @@ from guardian.shortcuts import get_objects_for_user
 
 from core.filetypes import get_file_type
 from core.models import UserCreatedModelMixin
-
 from core.visibility import Visibility, visibility_check
 from repocache.exceptions import RepoCacheMiss
 
@@ -34,7 +33,6 @@ class Entity(UserCreatedModelMixin, models.Model):
     - ``url_type`` is used as a URL fragment to refer to this entity type
     """
     DEFAULT_VISIBILITY = Visibility.PRIVATE
-
 
     ENTITY_TYPE_MODEL = 'model'
     ENTITY_TYPE_PROTOCOL = 'protocol'
