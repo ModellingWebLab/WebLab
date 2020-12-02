@@ -895,3 +895,16 @@ class TestDatasetMapColumnsView:
         assert response.status_code == 302
         assert dataset.column_mappings.count() == 1
         assert dataset.column_mappings.get(column_name='col').column_units == 'seconds'
+
+@pytest.mark.django_db
+class TestChangeVisibility:
+    def test_change_visibility(self, client, logged_in_user, public_protocol):
+        dataset = recipes.dataset.make(visibility='private', protocol=public_protocol, author=logged_in_user)
+        response = client.post(
+            '/datasets/%d/visibility' % dataset.pk,
+            data={
+                'visibility': 'public',
+            })
+        assert response.status_code == 200
+        dataset.refresh_from_db()
+        assert dataset.visibility == 'public'

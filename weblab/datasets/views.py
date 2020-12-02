@@ -507,7 +507,7 @@ class ChangeVisibilityView(UserPassesTestMixin, DetailView):
     raise_exception = True
 
     def test_func(self):
-        return self._get_object().is_visibility_editable_by(self.request.user)
+        return self.get_object().is_visibility_editable_by(self.request.user)
 
     def post(self, request, *args, **kwargs):
         """
@@ -517,8 +517,9 @@ class ChangeVisibilityView(UserPassesTestMixin, DetailView):
         """
         form = EntityChangeVisibilityForm(self.request.POST, user=self.request.user)
         if form.is_valid():
-            obj = self._get_object()
+            obj = self.get_object()
             obj.visibility = self.request.POST['visibility']
+            obj.save()
             response = {
                 'updateVisibility': {
                     'response': True,
