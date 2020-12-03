@@ -18,24 +18,22 @@
       </div>
       <div class="suppl">
         <small>
-        Created <time id="entityversiontime">{{ dataset.created_at }}</time>
-          by <em id="entityversionauthor">{{ dataset.author.full_name }}</em>.
-            <div id="versionVisibility" data-change-href="{% url 'datasets:change_visibility' dataset.id %}">
-            Corresponding protocol:
-            <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
-                {% if permission %}
-            <form method="POST" action="" style="display: inline;">
-              Change visibility: {{ form.visibility }}
-              <img src="{% static 'img/info.png' %}" alt="help" title="{{ dataset.VISIBILITY_HELP }}" />
-              <span id="versionVisibilityAction"></span>
-           </form>
+          <span style="display:none;">Created <time id="entityversiontime">{{ dataset.created_at }}</time>
+          by <em id="entityversionauthor">{{ dataset.author.full_name }}</em>.</span>
+          <div id="versionVisibility" data-change-href="{% url 'datasets:change_visibility' dataset.id %}">
+            {% if permission %}
+              <form method="POST" action="" style="display: inline;">
+                Change visibility: {{ form.visibility }}
+                <img src="{% static 'img/info.png' %}" alt="help" title="{{ dataset.VISIBILITY_HELP }}" />
+                <span id="versionVisibilityAction"></span>
+             </form>
            {% else %}
-            Visibility: {{ visibility }}
-            <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />
-          {% endif %}
-        </div>
-        </br>
-
+             Visibility: {{ dataset.visibility }}
+             <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />
+           {% endif %}
+          </div>
+          Corresponding protocol:
+          <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
         </small>
       </div>
       <div id="entity-view-buttons" class="link-list">
