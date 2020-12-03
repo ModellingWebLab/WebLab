@@ -95,7 +95,8 @@ class TestDataset:
         dataset = dataset_creator([])
         assert dataset.column_names == []
 
-    def test_is_editable_by(self, public_dataset, user, anon_user):
+    def test_is_editable_by(self, helpers, public_dataset, user, anon_user):
+        helpers.add_permission(public_dataset.author, 'create_dataset', public_dataset)
         assert public_dataset.is_editable_by(public_dataset.author)
         assert not public_dataset.is_editable_by(user)
         assert not public_dataset.is_editable_by(anon_user)
