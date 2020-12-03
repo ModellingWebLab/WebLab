@@ -360,23 +360,6 @@ function init() {
     $('#exptStatus').text("Status: " + v.status + ".");
     //}
 
-    if (dv.visibility)
-    {
-      // Show chooser for changing entity visibility
-      dv.visibility = removeListeners (dv.visibility);
-
-      document.getElementById("visibility-" + v.visibility).selected=true;
-
-      dv.visibility.addEventListener("change", function () {
-        /*console.log (v.id);
-          console.log (dv.visibility.options[dv.visibility.selectedIndex].value);*/
-        updateVisibility ({
-          task: "updateVisibility",
-          version: v.id,
-          visibility: dv.visibility.options[dv.visibility.selectedIndex].value
-        }, dv.visibilityAction);
-      }, true);
-    }
 
     if (dv.deleteBtn)
     {

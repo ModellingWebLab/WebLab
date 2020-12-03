@@ -7,6 +7,7 @@ from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
 from . import visibility
 from .combine import ArchiveReader
+from .visibility import HELP_TEXT as VIS_HELP_TEXT
 
 
 class VisibilityModelMixin(models.Model):
@@ -29,6 +30,8 @@ class UserCreatedModelMixin(models.Model):
     """
     created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    VISIBILITY_HELP = VIS_HELP_TEXT
 
     def is_deletable_by(self, user):
         """

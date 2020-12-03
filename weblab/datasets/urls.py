@@ -86,5 +86,11 @@ urlpatterns = [
         views.DatasetMapColumnsView.as_view(),
         name='map_columns',
     ),
+
+    url(
+        r'^(?P<pk>\d+)/visibility$',
+        views.ChangeVisibilityView.as_view(),
+        name='change_visibility',
+    ),
 ]
 app_name = 'datasets'
