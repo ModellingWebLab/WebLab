@@ -9,6 +9,7 @@ class Visibility:
 
 
 HELP_TEXT = (
+    'Moderated = public and checked by a moderator\n'
     'Public = anyone can view\n'
     'Private = only you can view'
 )
