@@ -771,7 +771,8 @@ class TestDatasetCompareFittingResultsView:
 
 @pytest.mark.django_db
 class TestDatasetMapColumnsView:
-    def test_owner_can_map_dataset(self, logged_in_user, public_protocol, client):
+    def test_owner_can_map_dataset(self, logged_in_user, public_protocol, helpers, client):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         my_dataset = recipes.dataset.make(
             author=logged_in_user, visibility='public', protocol=public_protocol)
         response = client.get('/datasets/%d/map' % my_dataset.pk)
@@ -783,6 +784,7 @@ class TestDatasetMapColumnsView:
     def test_non_owner_cannot_map_dataset(
             self, helpers, other_user, logged_in_user, public_protocol, client
     ):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         other_dataset = recipes.dataset.make(
             author=other_user, visibility='public', protocol=public_protocol)
         response = client.get('/datasets/%d/map' % other_dataset.pk)
@@ -792,6 +794,7 @@ class TestDatasetMapColumnsView:
         assert response.status_code == 403
 
     def test_has_form_for_each_version_and_column(self, client, logged_in_user, helpers, mock_column_names):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         mock_column_names.return_value = ['col1', 'col2']
         protocol = recipes.protocol.make()
         proto_v1 = helpers.add_fake_version(protocol, visibility='public')
@@ -814,6 +817,7 @@ class TestDatasetMapColumnsView:
         assert forms[proto_v1][0]['column_name'].initial == 'col1'
 
     def test_restricts_ioputs_to_protocol_version(self, client, logged_in_user, helpers, mock_column_names):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         protocol = recipes.protocol.make()
         proto_v1 = helpers.add_fake_version(protocol, visibility='public')
         proto_v2 = helpers.add_fake_version(protocol, visibility='public')
@@ -838,7 +842,8 @@ class TestDatasetMapColumnsView:
         assert not pv_field.valid_value(v1_flag.pk)
         assert not pv_field.valid_value(v2_in.pk)
 
-    def test_creates_new_column_mapping(self, client, logged_in_user, public_protocol, mock_column_names):
+    def test_creates_new_column_mapping(self, client, logged_in_user, public_protocol, helpers, mock_column_names):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         proto_v1 = public_protocol.repocache.latest_version
         proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
 
