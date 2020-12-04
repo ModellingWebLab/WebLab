@@ -923,6 +923,7 @@ class TestDatasetCollaboratorsView:
         assert other_user.has_perm('edit_entity', shared_dataset)
 
 
+@pytest.mark.django_db
 class TestChangeVisibility:
     def test_change_visibility(self, client, logged_in_user, public_protocol):
         dataset = recipes.dataset.make(visibility='private', protocol=public_protocol, author=logged_in_user)
