@@ -5,14 +5,19 @@ var notifications = require('./lib/notifications.js');
 
 
 var Upload = function(){
+  // A simple list of file names being uploaded to the server.
   this.uploading = new Array();
+  // Once each upload is complete an entry is ALSO added to this.uploaded.
+  // It contains objects with fields 'fileName' and 'fileType'.
   this.uploaded = new Array();
 
   // Names that aren't allowed to be uploaded
   this.reserved_names = ['errors.txt', 'manifest.xml', 'metadata.rdf'];
 
+  // The table of files uploaded, either already in the current version or pending for a new version
   this.$table = $("#entityversionfilestable");
 
+  // Read the HTML table to fill in this.uploaded with the list of files currently present
   var self = this;
   this.$table.find("tbody tr").each(function(i, tr) {
     var $tr = $(tr);
@@ -61,6 +66,7 @@ Upload.prototype = {
   },
 
   toggleDelete: function($tr) {
+    // Toggle whether an existing/uploaded file is to be deleted (or not)
     var self = this;
     $td = $tr.find(".filename");
     var filename = $td.text().trim();
@@ -120,6 +126,7 @@ Upload.prototype = {
   },
 
   addRow: function(data) {
+    // Add a new row to the table for a file upload that has just started
     var file = data.files[0];
     var $tr = $('<tr class="new-file">').appendTo(this.$table);
     data.context = $tr;
@@ -142,6 +149,7 @@ Upload.prototype = {
   },
 
   showUpload: function(data, file, types) {
+    // Called when a file upload has completed
     var $tr = data.context;
     var $name = $tr.find(".filename code");
     var $type = $tr.find(".type small");

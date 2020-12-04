@@ -559,6 +559,16 @@ class EntityNewVersionView(
 ):
     """
     Create a new version of an entity.
+
+    This interacts with the version_files.html template (included by entity_newversion.html) and upload.js processing
+    code on the front-end, which submits individual files via FileUploadView (storing them in EntityFile instances).
+    This view is responsible for providing the initial list of the files in the current version of the entity (if any)
+    and creating a new version when the form (with version metadata and uploaded file names) is posted.
+
+    The control flow is complicated because users need to be able to delete files as well as add them when creating
+    new versions, and indeed replace existing files by new versions. The latter is represented as a delete+add in the
+    front-end. They may also upload a file then change their mind and remove it before finally creating the new
+    version.
     """
     context_object_name = 'entity'
     template_name = 'entities/entity_newversion.html'
