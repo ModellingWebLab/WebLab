@@ -921,3 +921,16 @@ class TestDatasetCollaboratorsView:
         assert response.status_code == 302
         assert response.url == '/datasets/%d/collaborators' % shared_dataset.pk
         assert other_user.has_perm('edit_entity', shared_dataset)
+
+
+class TestChangeVisibility:
+    def test_change_visibility(self, client, logged_in_user, public_protocol):
+        dataset = recipes.dataset.make(visibility='private', protocol=public_protocol, author=logged_in_user)
+        response = client.post(
+            '/datasets/%d/visibility' % dataset.pk,
+            data={
+                'visibility': 'public',
+            })
+        assert response.status_code == 200
+        dataset.refresh_from_db()
+        assert dataset.visibility == 'public'

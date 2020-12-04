@@ -28,6 +28,7 @@ from accounts.forms import OwnershipTransferForm
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
 from entities.views import EditCollaboratorsAbstractView
+from entities.forms import EntityChangeVisibilityForm
 from fitting.models import FittingResult
 from repocache.models import ProtocolIoputs
 
@@ -164,6 +165,16 @@ class DatasetView(VisibilityMixin, DetailView):
     model = Dataset
     context_object_name = 'dataset'
     template_name = 'datasets/dataset_detail.html'
+
+    def get_context_data(self, **kwargs):
+        dataset = self.get_object()
+        visibility = dataset.visibility
+        kwargs['form'] = EntityChangeVisibilityForm(
+            user=self.request.user,
+            initial={
+                'visibility': visibility,
+            })
+        return super().get_context_data(**kwargs)
 
 
 class DatasetJsonView(VisibilityMixin, SingleObjectMixin, View):
@@ -502,3 +513,41 @@ class DatasetCollaboratorsView(EditCollaboratorsAbstractView):
         dataset = self.object
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':entity_collaborators', args=[dataset.id])
+
+
+class ChangeVisibilityView(UserPassesTestMixin, DetailView):
+    model = Dataset
+
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have the correct permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_visibility_editable_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Check the form and possibly set the visibility
+
+        Called by Django when a form is submitted.
+        """
+        form = EntityChangeVisibilityForm(self.request.POST, user=self.request.user)
+        if form.is_valid():
+            obj = self.get_object()
+            obj.visibility = self.request.POST['visibility']
+            obj.save()
+            response = {
+                'updateVisibility': {
+                    'response': True,
+                    'responseText': 'successfully updated',
+                }
+            }
+        else:
+            response = {
+                'notifications': {
+                    'errors': ['updating visibility failed']
+                }
+            }
+
+        return JsonResponse(response)
+
