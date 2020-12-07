@@ -11,14 +11,15 @@
   <small>Created <time>{{dataset.created_at}}</time> by <em>{{dataset.author.full_name}}</em>.
     {% can_delete_entity dataset as can_delete %}
     {% if can_delete %}
-      Delete dataset:
+
       <a title="delete dataset" href="{% url 'datasets:delete' dataset.id %}">
+          Delete dataset:
         <img src="{% static 'img/delete.png' %}" alt="delete dataset"
              title="delete dataset"/></a>
     {% endif %}
 
     <a title="Transfer ownership of dataset" href="{% url 'datasets:transfer' dataset.id %}">
-      Transfer ownership |</a>
+    | Transfer ownership |</a>
     <a title="Rename dataset" href="{% url 'datasets:rename' dataset.id %}">
         Rename dataset
       </a>
