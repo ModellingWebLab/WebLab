@@ -27,7 +27,7 @@
           </strong>
           by <em>{{ commit.author }}</em><br />
           <span class="suppl">
-            <small>created </small> <time>{{commit.timestamp}}</time>
+            <small>Created </small> <time>{{commit.timestamp}}</time>
             <small>containing</small> {{ commit.numfiles }} file{{ commit.numfiles|pluralize}}
           </span><br />
           <span class="suppl">
@@ -39,10 +39,10 @@
       </ul>
     </div>
     <div id="compareVersionsSelectors">
-        [<small><a id="compareVersionsSelectorsAll">select all</a></small>]
-        [<small><a id="compareVersionsSelectorsNone">select none</a></small>]
+        [<small><a id="compareVersionsSelectorsAll">Select all</a></small>]
+        [<small><a id="compareVersionsSelectorsNone">Select none</a></small>]
     </div>
-    <button id="compareVersions" data-base-href="{% url_entity_comparison_base entity.url_type %}">compare selected versions</button>
+    <button id="compareVersions" data-base-href="{% url_entity_comparison_base entity.url_type %}">Compare selected versions</button>
   </div>
 
 

@@ -8,7 +8,7 @@
 <div class="suppl">
   <small>Created <time>{{entity.created_at}}</time> by <em>{{entity.author.full_name}}</em>.
     {% can_delete_entity entity as can_delete %}
-    {% if can_delete %}
+    {% if can_delete %}git
       <a title="delete all versions of this {{ type }}" href="{% entity_url 'delete' entity %}">
       Delete {{ type }}:
         <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"

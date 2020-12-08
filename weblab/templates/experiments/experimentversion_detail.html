@@ -17,8 +17,8 @@
        data-version-json-href="{% url 'experiments:version_json' experiment.id version.id %}">
     <div class="closebtn">
       <small>
-        <a href="{% url 'experiments:versions' experiment.id %}">list all versions</a> |
-          <a href="{% url_model_protocol_version_comparison_matrix experiment.model experiment.protocol %}">see results from other model/protocol versions</a>
+        <a href="{% url 'experiments:versions' experiment.id %}">List all versions</a> |
+          <a href="{% url_model_protocol_version_comparison_matrix experiment.model experiment.protocol %}">See results from other model/protocol versions</a>
 
       </small>
     </div>
@@ -84,9 +84,9 @@
     <div id="entityversiondetails">
       <div id="entityversionfiledetails">
           <div class="closebtn"><small>
-              <a id="exportPlot" style="display: none;">export plot data |</a>
+              <a id="exportPlot" style="display: none;">Export plot data |</a>
           <a id="zoomFile">zoom |</a>
-              <a id="entityversionfileclose">&otimes; close</a>
+              <a id="entityversionfileclose">&otimes; Close</a>
           </small></div>
           <h3 id="entityversionfilename"></h3>
           <div class="suppl"><small>Created <time id="entityversionfiletime"></time> by

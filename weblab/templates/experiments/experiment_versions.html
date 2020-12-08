@@ -24,7 +24,7 @@
         <!-- TODO: Add delete version link -->
         <br />
         <span class="suppl">
-          <small>created </small> <time>{{ version.created_at }}</time>
+          <small>Created </small> <time>{{ version.created_at }}</time>
           {% with version.files|length as numfiles %}
           <small>containing</small> {{ numfiles }} file{{ numfiles|pluralize }}
           {% endwith %}
@@ -48,11 +48,11 @@
     </p>
 
     <div id="entityexperimentlistpartnersact">
-        [<a id="entityexperimentlistpartnersactall">select all</a>]
-    [<a id="entityexperimentlistpartnersactnone">select none</a>]
+        [<a id="entityexperimentlistpartnersactall">Select all</a>]
+    [<a id="entityexperimentlistpartnersactnone">Select none</a>]
     <br/>
     <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_experiment_comparison_base %}">
-        compare selected experiments
+        Compare selected experiments
     </button>
     </div>
   </div>
