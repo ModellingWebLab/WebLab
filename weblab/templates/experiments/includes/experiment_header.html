@@ -10,7 +10,7 @@
     {% can_delete_entity experiment as can_delete %}
     {% if can_delete %}
       <a title="delete all versions of this experiment" href="{% url 'experiments:delete' experiment.id %}">
-        Delete experiment:
+        Delete experiment
           <img src="{% static 'img/delete.png' %}" alt="delete all versions of this experiment"
             title="delete all versions of this experiment"/></a>
     {% endif %}

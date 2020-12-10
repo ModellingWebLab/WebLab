@@ -35,7 +35,7 @@
               Change visibility: {{ form.visibility }}
               <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
               <span id="versionVisibilityAction"></span>
-              <a href="{% tag_version_url entity version %}">Add tag</a>|
+              <a href="{% tag_version_url entity version %}">Add tag</a> |
            </form>
            {% else %}
             Visibility: {{ visibility }}
@@ -43,8 +43,8 @@
           {% endif %}
           {% if perms.experiments.create_experiment %}{% if type == 'model' or type == 'protocol' %}
             <a title="Run experiments" href="{{ entity|url_run_experiments:version }}">
-              Run experiments:
-                <img src="{% static 'img/batch.png' %}" alt="Run experiments:"
+              Run experiments
+                <img src="{% static 'img/batch.png' %}" alt="Run experiments"
                    title="Run experiments using this {{ type }}"/>
             </a>
           {% endif %}{% endif %}

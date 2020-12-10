@@ -12,22 +12,23 @@
       <a title="delete all versions of this {{ type }}" href="{% entity_url 'delete' entity %}">
       Delete {{ type }}
         <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
-             title="delete all versions of this {{type}}"/></a>
+             title="delete all versions of this {{type}}"/></a> |
     {% endif %}
     {% can_manage_entity entity as can_manage %}
     {% if can_manage %}
       &nbsp;
       <a title="manage collaborators for this {{ type }}" href="{% entity_url 'entity_collaborators' entity %}">
-      |  Manage collaborators |
+          Manage collaborators |
       </a>
       <a title="Transfer ownership of {{ type }}" href="{% entity_url 'transfer' entity %}">
         Transfer ownership |
       </a>
 
-    {% endif %}
-    <a title="Rename {{ type }}" href="{% entity_url 'rename' entity %}">
+        <a title="Rename {{ type }}" href="{% entity_url 'rename' entity %}">
         Rename {{ type }}
       </a>
+    {% endif %}
+
       <br>
     {% if entity.protocol %}
       Linked protocol:

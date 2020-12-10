@@ -30,3 +30,9 @@ def can_delete_entity(context, entity):
 def can_modify_dataset(context, dataset):
     user = context['user']
     return dataset.is_editable_by(user)
+
+
+@register.simple_tag(takes_context=True)
+def can_manage_dataset(context, dataset):
+    user = context['user']
+    return dataset.is_managed_by(user)

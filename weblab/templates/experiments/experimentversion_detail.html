@@ -35,14 +35,16 @@
         <span id="exptStatus"></span>
 
         {% if perms.experiments.create_experiment %}
-        <a id="rerunExperiment" data-href="{% url 'experiments:new' %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        <a id="rerunExperiment" data-href="{% url 'experiments:new' %}">
+            Re-run
+            <img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
         {% can_delete_entity version as can_delete %}
         {% if can_delete %}
-          Delete experiment version:
           <a title="delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
-            <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
+            Delete experiment version
+              <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
                 title="delete this version of this experiment"/></a>
         {% endif %}
 

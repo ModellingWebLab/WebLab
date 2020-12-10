@@ -13,17 +13,23 @@
     {% if can_delete %}
 
       <a title="delete dataset" href="{% url 'datasets:delete' dataset.id %}">
-          Delete dataset:
+          Delete dataset
         <img src="{% static 'img/delete.png' %}" alt="delete dataset"
-             title="delete dataset"/></a>
+             title="delete dataset"/></a> |
     {% endif %}
 
-    <a title="Transfer ownership of dataset" href="{% url 'datasets:transfer' dataset.id %}">
-    | Transfer ownership |</a>
-    <a title="Rename dataset" href="{% url 'datasets:rename' dataset.id %}">
+      {% can_manage_dataset dataset as can_manage %}
+      {% if can_manage %}
+        <a title="Transfer ownership of dataset" href="{% url 'datasets:transfer' dataset.id %}">
+        Transfer ownership |</a>
+        <a title="Rename dataset" href="{% url 'datasets:rename' dataset.id %}">
         Rename dataset
       </a>
+  {% endif %}
     <br>
-
+    {% if dataset.protocol %}
+      Linked protocol:
+      <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
+    {% endif %}
   </small>
 </div>
