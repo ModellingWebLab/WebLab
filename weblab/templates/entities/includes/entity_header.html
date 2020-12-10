@@ -10,7 +10,7 @@
     {% can_delete_entity entity as can_delete %}
     {% if can_delete %}git
       <a title="delete all versions of this {{ type }}" href="{% entity_url 'delete' entity %}">
-      Delete {{ type }}:
+      Delete {{ type }}
         <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
              title="delete all versions of this {{type}}"/></a>
     {% endif %}
