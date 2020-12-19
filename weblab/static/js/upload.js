@@ -149,7 +149,21 @@ Upload.prototype = {
   },
 
   showUpload: function(data, file, types) {
-    // Called when a file upload has completed
+    /**
+     * Called when a file upload has completed.
+     *
+     * Adds an object with fields 'fileName' and 'fileType' to this.uploaded, creates the file type drop-down
+     * select, and adds a hidden form input providing the server's name for the file in the filename[] list.
+     *
+     * @param data  the blueimp-file-upload data object. Contains a 'context' field with the jQuery table row.
+     * @param file  the information returned from our FileUpload view: a JSON object with fields:
+     *     - is_valid: True
+     *     - size: file size in bytes
+     *     - name: original name of the file on the user's system
+     *     - stored_name: the name of the temporary file this has been uploaded as on the server
+     *     - url: ???
+     * @param types  the parameter passed to Upload.init: an array of valid file types for uploads
+     */
     var $tr = data.context;
     var $name = $tr.find(".filename code");
     var $type = $tr.find(".type small");

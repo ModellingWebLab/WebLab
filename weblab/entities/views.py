@@ -606,6 +606,23 @@ class EntityNewVersionView(
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
+        """Try to create a new entity version.
+
+        The form fields are:
+        - parent_hexsha  if this is not the first version, the SHA for what was the latest commit when the used first
+                         accessed the form, so we can spot simultaneous edits
+        - filename[]  a list of uploaded files, containing the names used in the temporary uploads folder,
+                      as stored in EntityFile.upload
+        - delete_filename[]  a list of files to delete, containing the original file names, and hence the ones used in
+                             the git repository
+                             TODO: Would it be better to use the upload name if an upload is deleted, and original name
+                             only for files existing in the previous version? Would avoid duplicates.
+        - commit_message  commit message to use for the new version
+        - mainEntry  the (original) name of the primary file in this entity, as recorded in the manifest
+        - visibility  the visibility of the new version
+        - tag  if present, a tag to use for the version (an error will be shown if it already exists)
+        - rerun_expts  whether to re-run experiments involving a previous (visible) version of this entity
+        """
 
         entity = self.object = self.get_object()
         form = self.get_form()
@@ -627,7 +644,7 @@ class EntityNewVersionView(
                 return self.form_invalid(form)
 
         # Copy files into the index
-        for upload in entity.files.filter(upload__in=additions).order_by('pk'):
+        for upload in entity.files.filter(upload__in=additions).order_by('pk'):  # Earliest uploaded comes first
             src = upload.upload.path
             dest = str(entity.repo_abs_path / upload.original_name)
             files_to_delete.add(src)
@@ -642,6 +659,7 @@ class EntityNewVersionView(
             try:
                 entity.repo.add_file(dest)
             except GitCommandError as e:
+                # TODO: Move the file back into the uploads and remove from files_to_delete?
                 git_errors.append(e.stderr)
 
         # Delete files from the index
@@ -656,6 +674,7 @@ class EntityNewVersionView(
             # If there were any errors with adding or deleting files,
             # inform the user and reset the index / working tree
             # (as resubmission of the form will do it all again).
+            # TODO: Don't hard_reset if this is the first commit; just clean the folder
             entity.repo.hard_reset()
             return self.fail_with_git_errors(git_errors, form)
 
@@ -675,7 +694,7 @@ class EntityNewVersionView(
                 try:
                     entity.add_tag(tag, commit.sha)
                 except GitCommandError as e:
-                    entity.repo.rollback()
+                    entity.repo.rollback()  # TODO: Don't rollback, just don't tag?
                     return self.fail_with_git_errors([e.stderr], form)
 
             # Temporary upload files have been safely committed, so can be deleted
@@ -695,7 +714,6 @@ class EntityNewVersionView(
                 reverse(ns + ':version', args=[entity.url_type, entity.id, commit.sha]))
         else:
             # Nothing changed, so inform the user and do nothing else.
-
             form.add_error(None, 'No changes were made for this version')
             return self.form_invalid(form)
 
