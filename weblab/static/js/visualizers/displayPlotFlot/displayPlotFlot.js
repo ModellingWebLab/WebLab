@@ -45,14 +45,14 @@ function createAppendResetButton(parentDiv) {
     resetButton.id = resetButtonId;
     resetButton.title = 'Reset graph zoom based on currently selected datasets';
     resetButton.type = 'button';
-    resetButton.value = 'reset zoom';
+    resetButton.value = 'Reset zoom';
     resetButtonDiv.appendChild (resetButton);
 
     var legendHideButton = document.createElement('input');
     legendHideButton.id = legendHideButtonId;
     legendHideButton.title = 'Toggle the visibility of the legend.';
     legendHideButton.type = 'button';
-    legendHideButton.value = 'toggle legend';
+    legendHideButton.value = 'Toggle legend';
     resetButtonDiv.appendChild (legendHideButton);
 }
 
@@ -65,7 +65,7 @@ function createAppendSelectToggler(parentDiv) {
 
     var label = document.createElement('label');
     label.setAttribute('for', selectTogglerId);
-    label.innerHTML = 'select all';
+    label.innerHTML = 'Select all';
     parentDiv.appendChild(label);
 
     var selectToggler = $('#' + selectTogglerId);

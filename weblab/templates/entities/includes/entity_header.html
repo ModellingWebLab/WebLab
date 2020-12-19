@@ -9,27 +9,25 @@
   <small>Created <time>{{entity.created_at}}</time> by <em>{{entity.author.full_name}}</em>.
     {% can_delete_entity entity as can_delete %}
     {% if can_delete %}
-      Delete {{ type }}:
-      <a title="delete all versions of this {{ type }}" href="{% entity_url 'delete' entity %}">
-        <img src="{% static 'img/delete.png' %}" alt="delete all versions of this {{ type }}"
-             title="delete all versions of this {{type}}"/></a>
+      <a title="Delete all versions of this {{ type }}" href="{% entity_url 'delete' entity %}">
+        <img src="{% static 'img/delete.png' %}" alt="Delete all versions of this {{ type }}"/>
+        Delete {{ type }}
+      </a> |
     {% endif %}
     {% can_manage_entity entity as can_manage %}
     {% if can_manage %}
-      &nbsp;
-      <a title="manage collaborators for this {{ type }}" href="{% entity_url 'entity_collaborators' entity %}">
-        Manage collaborators
+      <a title="Manage collaborators for this {{ type }}" href="{% entity_url 'entity_collaborators' entity %}">
+        Manage collaborators |
       </a>
-      <a title="Transfer ownership of {{ type }}" href="{% entity_url 'transfer' entity %}">
-        Transfer ownership
+      <a title="Transfer ownership of this {{ type }}" href="{% entity_url 'transfer' entity %}">
+        Transfer ownership |
       </a>
-
-    {% endif %}
-    <a title="Rename {{ type }}" href="{% entity_url 'rename' entity %}">
+        <a title="Rename {{ type }}" href="{% entity_url 'rename' entity %}">
         Rename {{ type }}
       </a>
-      <br>
+    {% endif %}
     {% if entity.protocol %}
+      <br>
       Linked protocol:
       <a href="{% url 'entities:detail' 'protocol' entity.protocol.pk %}">{{ entity.protocol.name }}</a>
     {% endif %}

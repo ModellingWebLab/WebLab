@@ -66,16 +66,16 @@
       </div>
 
       <div id="entityexperimentlistpartnersact">
-        [<a id="entityexperimentlistpartnersactall">select all</a>]
-        <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">select latest model versions</a>]</span>
-        [<a id="entityexperimentlistpartnersactnone">select none</a>]
+        [<a id="entityexperimentlistpartnersactall">Select all</a>]
+        <span id="entityexperimentlist_span_latest">[<a id="entityexperimentlistpartnersactlatest">Select latest model versions</a>]</span>
+        [<a id="entityexperimentlistpartnersactnone">Select none</a>]
         <br/>
         {% if entity.entity_type != 'model' %}
-        <button id="entityexperimentlist_showallversions">show all model versions</button>
+        <button id="entityexperimentlist_showallversions">Show all model versions</button>
         {% endif %}
-        <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_fitting_comparison_base %}">compare selected fittings</button>
+        <button id="entityexperimentlistpartnersactcompare" data-base-href="{% url_fitting_comparison_base %}">Compare selected fittings</button>
         {% if entity.entity_type == 'fittingspec' %}
-        <a class="button" href="{% url "fitting:matrix" 'spec' entity.id %}" title="View results for this fitting spec as a matrix">view as matrix</a>
+        <a class="button" href="{% url "fitting:matrix" 'spec' entity.id %}" title="View results for this fitting spec as a matrix">View as matrix</a>
         {% endif %}
       </div>
     </div>

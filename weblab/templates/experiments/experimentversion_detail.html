@@ -17,9 +17,8 @@
        data-version-json-href="{% url 'experiments:version_json' experiment.id version.id %}">
     <div class="closebtn">
       <small>
-        <a href="{% url 'experiments:versions' experiment.id %}">list all versions</a> |
-          <a href="{% url_model_protocol_version_comparison_matrix experiment.model experiment.protocol %}">see results from other model/protocol versions</a>
-
+        <a href="{% url 'experiments:versions' experiment.id %}">List all versions</a> |
+          <a href="{% url_model_protocol_version_comparison_matrix experiment.model experiment.protocol %}">See results from other model/protocol versions</a>
       </small>
     </div>
     <h2 id="entityversionname">
@@ -35,15 +34,18 @@
         <span id="exptStatus"></span>
 
         {% if perms.experiments.create_experiment %}
-        <a id="rerunExperiment" data-href="{% url 'experiments:new' %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+          <a id="rerunExperiment" data-href="{% url 'experiments:new' %}" title="Re-run experiment">
+            <img src="{% static 'img/refresh.png' %}" alt="Re-run experiment"/>
+            Re-run
+          </a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
         {% can_delete_entity version as can_delete %}
         {% if can_delete %}
-          Delete experiment version:
-          <a title="delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
-            <img src="{% static 'img/delete.png' %}" alt="delete this version of this experiment"
-                title="delete this version of this experiment"/></a>
+          <a title="Delete this version of this experiment" href="{% url 'experiments:delete_version' experiment.id version.id %}">
+            <img src="{% static 'img/delete.png' %}" alt="Delete this version of this experiment"/>
+            Delete experiment version
+          </a>
         {% endif %}
 
         <br/>Corresponding model:
@@ -84,8 +86,8 @@
     <div id="entityversiondetails">
       <div id="entityversionfiledetails">
           <div class="closebtn"><small>
-              <a id="exportPlot" style="display: none;">export plot data |</a>
-          <a id="zoomFile">zoom |</a>
+              <a id="exportPlot" style="display: none;">Export plot data |</a>
+              <a id="zoomFile">zoom |</a>
               <a id="entityversionfileclose">&otimes; close</a>
           </small></div>
           <h3 id="entityversionfilename"></h3>

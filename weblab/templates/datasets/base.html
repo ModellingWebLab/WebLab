@@ -32,8 +32,6 @@
              <img src="{% static 'img/info.png' %}" alt="help" title="{{ VISIBILITY_HELP }}" />
            {% endif %}
           </div>
-          Corresponding protocol:
-          <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
         </small>
       </div>
       <div id="entity-view-buttons" class="link-list">
