@@ -771,7 +771,8 @@ class TestDatasetCompareFittingResultsView:
 
 @pytest.mark.django_db
 class TestDatasetMapColumnsView:
-    def test_owner_can_map_dataset(self, logged_in_user, public_protocol, client):
+    def test_owner_can_map_dataset(self, logged_in_user, public_protocol, helpers, client):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         my_dataset = recipes.dataset.make(
             author=logged_in_user, visibility='public', protocol=public_protocol)
         response = client.get('/datasets/%d/map' % my_dataset.pk)
@@ -783,6 +784,7 @@ class TestDatasetMapColumnsView:
     def test_non_owner_cannot_map_dataset(
             self, helpers, other_user, logged_in_user, public_protocol, client
     ):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         other_dataset = recipes.dataset.make(
             author=other_user, visibility='public', protocol=public_protocol)
         response = client.get('/datasets/%d/map' % other_dataset.pk)
@@ -792,6 +794,7 @@ class TestDatasetMapColumnsView:
         assert response.status_code == 403
 
     def test_has_form_for_each_version_and_column(self, client, logged_in_user, helpers, mock_column_names):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         mock_column_names.return_value = ['col1', 'col2']
         protocol = recipes.protocol.make()
         proto_v1 = helpers.add_fake_version(protocol, visibility='public')
@@ -814,6 +817,7 @@ class TestDatasetMapColumnsView:
         assert forms[proto_v1][0]['column_name'].initial == 'col1'
 
     def test_restricts_ioputs_to_protocol_version(self, client, logged_in_user, helpers, mock_column_names):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         protocol = recipes.protocol.make()
         proto_v1 = helpers.add_fake_version(protocol, visibility='public')
         proto_v2 = helpers.add_fake_version(protocol, visibility='public')
@@ -838,7 +842,8 @@ class TestDatasetMapColumnsView:
         assert not pv_field.valid_value(v1_flag.pk)
         assert not pv_field.valid_value(v2_in.pk)
 
-    def test_creates_new_column_mapping(self, client, logged_in_user, public_protocol, mock_column_names):
+    def test_creates_new_column_mapping(self, client, logged_in_user, public_protocol, helpers, mock_column_names):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         proto_v1 = public_protocol.repocache.latest_version
         proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
 
@@ -864,7 +869,9 @@ class TestDatasetMapColumnsView:
         assert map0.protocol_version == proto_v1
         assert map0.protocol_ioput == proto_v1_in
 
-    def test_overwrites_existing_column_mapping(self, client, logged_in_user, public_protocol, mock_column_names):
+    def test_overwrites_existing_column_mapping(self, helpers, client, logged_in_user,
+                                                public_protocol, mock_column_names):
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         proto_v1 = public_protocol.repocache.latest_version
         proto_v1_in = recipes.protocol_input.make(protocol_version=proto_v1)
 
@@ -895,6 +902,25 @@ class TestDatasetMapColumnsView:
         assert response.status_code == 302
         assert dataset.column_mappings.count() == 1
         assert dataset.column_mappings.get(column_name='col').column_units == 'seconds'
+
+
+@pytest.mark.django_db
+class TestDatasetCollaboratorsView:
+    def test_can_share_dataset(self, logged_in_user, other_user, public_protocol, client):
+        shared_dataset = recipes.dataset.make(
+            author=logged_in_user, name='mydataset', visibility='private', protocol=public_protocol)
+        assert not other_user.has_perm('edit_entity', shared_dataset)
+        response = client.post('/datasets/%d/collaborators' % shared_dataset.pk,
+                               {
+                                   'form-0-email': other_user.email,
+                                   'form-TOTAL_FORMS': 1,
+                                   'form-MAX_NUM_FORMS': 1,
+                                   'form-MIN_NUM_FORMS': 0,
+                                   'form-INITIAL_FORMS': 0,
+                               })
+        assert response.status_code == 302
+        assert response.url == '/datasets/%d/collaborators' % shared_dataset.pk
+        assert other_user.has_perm('edit_entity', shared_dataset)
 
 
 @pytest.mark.django_db

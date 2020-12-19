@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load entities %}
+{% load staticfiles %}
+
+{% block title %}dataset collaborators - {% endblock title %}
+
+{% block content %}
+  {% include "./includes/dataset_header.html" %}
+
+  <h2><small>Add or remove collaborators for this dataset</small></h2>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+
+    {{ formset.management_form }}
+    <p>Collaborators can create new versions of the dataset, add tags and change the dataset visibility.</p>
+
+    <table class="formset allow-add">
+      <tbody>
+        {% for form in formset.forms %}
+
+          <tr>
+              <td>
+                {% if form.collaborator %}
+                  {{ form.collaborator.get_full_name }}
+                {% endif %}
+                {{ form.email }}
+                {{ form.email.errors.as_ul }}
+              </td>
+              <td>
+                <a href="#" class="delete-row">
+                  {{ form.DELETE }}
+                  <img src="{% static 'img/delete.png' %}" alt="remove collaborator" title="remove collaborator"/>
+                </a>
+              </td>
+          </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+
+    <p>
+      <button id="savebutton">Save</button>
+    </p>
+  </form>
+
+{% endblock content %}

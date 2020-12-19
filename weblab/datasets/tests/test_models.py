@@ -46,7 +46,7 @@ class TestDataset:
         assert dataset.protocol == protocol
 
     @pytest.mark.django_db
-    def test_visibility_and_sharing(self, logged_in_user, other_user, anon_user):
+    def test_visibility_and_sharing(self, logged_in_user, other_user, anon_user, helpers):
         protocol = recipes.protocol.make()
         recipes.dataset.make(author=logged_in_user, name='mydataset', visibility='public', protocol=protocol)
         assert Dataset.objects.visible_to_user(logged_in_user).count() == 1
@@ -64,7 +64,14 @@ class TestDataset:
         assert Dataset.objects.visible_to_user(logged_in_user).count() == 4
         assert Dataset.objects.visible_to_user(anon_user).count() == 3
 
-        # TODO - No testing of shared datasets - waiting for implementation in front end
+        shared_dataset = recipes.dataset.make(
+            author=logged_in_user, name='mydataset6', visibility='private', protocol=protocol)
+        shared_dataset.add_collaborator(other_user)
+
+        assert shared_dataset.collaborators == [other_user]
+        assert list(Dataset.objects.shared_with_user(other_user).all()) == [shared_dataset]
+        helpers.add_permission(other_user, 'create_dataset', Dataset)
+        assert shared_dataset.is_editable_by(other_user)
 
     def test_column_names_comma_separated(self, dataset_creator):
         dataset = dataset_creator([('data1.csv', b'col1,col2')])
@@ -88,7 +95,8 @@ class TestDataset:
         dataset = dataset_creator([])
         assert dataset.column_names == []
 
-    def test_is_editable_by(self, public_dataset, user, anon_user):
+    def test_is_editable_by(self, helpers, public_dataset, user, anon_user):
+        helpers.add_permission(public_dataset.author, 'create_dataset', public_dataset)
         assert public_dataset.is_editable_by(public_dataset.author)
         assert not public_dataset.is_editable_by(user)
         assert not public_dataset.is_editable_by(anon_user)

@@ -88,6 +88,12 @@ urlpatterns = [
     ),
 
     url(
+        r'^(?P<pk>\d+)/collaborators$',
+        views.DatasetCollaboratorsView.as_view(),
+        name='entity_collaborators',
+    ),
+
+    url(
         r'^(?P<pk>\d+)/visibility$',
         views.ChangeVisibilityView.as_view(),
         name='change_visibility',
