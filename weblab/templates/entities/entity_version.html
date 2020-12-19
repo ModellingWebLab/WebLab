@@ -35,17 +35,16 @@
               Change visibility: {{ form.visibility }}
               <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
               <span id="versionVisibilityAction"></span>
-              <a href="{% tag_version_url entity version %}">Add tag</a> |
-           </form>
-           {% else %}
+              <a href="{% tag_version_url entity version %}" title="Tag this version with a short label">Add tag</a>
+            </form>
+          {% else %}
             Visibility: {{ visibility }}
             <img src="{% static 'img/info.png' %}" alt="help" title="{{ entity.VISIBILITY_HELP }}" />
           {% endif %}
           {% if perms.experiments.create_experiment %}{% if type == 'model' or type == 'protocol' %}
-            <a title="Run experiments" href="{{ entity|url_run_experiments:version }}">
+            <a title="Run experiments using this {{type}}" href="{{ entity|url_run_experiments:version }}">
+              <img src="{% static 'img/batch.png' %}" alt="Run experiments using this {{ type }}"/>
               Run experiments
-                <img src="{% static 'img/batch.png' %}" alt="Run experiments"
-                   title="Run experiments using this {{ type }}"/>
             </a>
           {% endif %}{% endif %}
         </div>
@@ -68,7 +67,7 @@
         <li><a href="{{ entity|url_compare_experiments:version }}" title="Compare experiment results of {% if type == 'model' %}protocols run on this model version{% else %}this protocol version run on different models{% endif %}">Results with different {{ other_type }}s</a></li>
         <li><a href="{{ entity|url_version_comparison_matrix }}" title="Compare experiment results from other versions of this {{ type }}">Results from other versions</a></li>
         {% else %}
-        <li><a href="{% url "fitting:matrix" 'spec' entity.id %}" title="Compare fitting results run with this spec">Fitting results for this spec</a></li>
+        <li><a href="{% url 'fitting:matrix' 'spec' entity.id %}" title="Compare fitting results run with this spec">Fitting results for this spec</a></li>
         {% endif %}
         <li><a href="{% entity_url 'version_list' entity %}" title="Show differences between versions of this {{ type }}">Other versions</a></li>
       </ul></div>
@@ -80,8 +79,8 @@
       <div id="entityversionfiledetails">
           <div class="closebtn"><small>
               <a id="exportPlot" style="display: none;">Export plot data |</a>
-          <a id="zoomFile">zoom |</a>
-              <a id="entityversionfileclose">&otimes; Close</a>
+              <a id="zoomFile">zoom |</a>
+              <a id="entityversionfileclose">&otimes; close</a>
           </small></div>
           <h3 id="entityversionfilename"></h3>
           <div class="suppl"><small>Created <time id="entityversionfiletime"></time> by

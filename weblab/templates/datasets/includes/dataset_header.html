@@ -11,23 +11,22 @@
   <small>Created <time>{{dataset.created_at}}</time> by <em>{{dataset.author.full_name}}</em>.
     {% can_delete_entity dataset as can_delete %}
     {% if can_delete %}
-
       <a title="delete dataset" href="{% url 'datasets:delete' dataset.id %}">
-          Delete dataset
-        <img src="{% static 'img/delete.png' %}" alt="delete dataset"
-             title="delete dataset"/></a> |
+        <img src="{% static 'img/delete.png' %}" alt="Delete dataset"/>
+        Delete dataset
+      </a> |
     {% endif %}
-
-      {% can_manage_dataset dataset as can_manage %}
-      {% if can_manage %}
-        <a title="Transfer ownership of dataset" href="{% url 'datasets:transfer' dataset.id %}">
-        Transfer ownership |</a>
-        <a title="Rename dataset" href="{% url 'datasets:rename' dataset.id %}">
+    {% can_manage_dataset dataset as can_manage %}
+    {% if can_manage %}
+      <a title="Transfer ownership of dataset" href="{% url 'datasets:transfer' dataset.id %}">
+        Transfer ownership |
+      </a>
+      <a title="Rename dataset" href="{% url 'datasets:rename' dataset.id %}">
         Rename dataset
       </a>
-  {% endif %}
-    <br>
+    {% endif %}
     {% if dataset.protocol %}
+      <br>
       Linked protocol:
       <a href="{% url 'entities:detail' 'protocol' dataset.protocol.pk %}">{{ dataset.protocol.name }}</a>
     {% endif %}

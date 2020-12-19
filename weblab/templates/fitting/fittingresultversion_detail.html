@@ -33,7 +33,7 @@
         <span id="exptStatus"></span>
 
         {% if perms.run_fits %}
-        <a id="rerunExperiment" data-href="{% url "fitting:result:rerun" %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
+        <a id="rerunExperiment" data-href="{% url 'fitting:result:rerun' %}"><img src="{% static 'img/refresh.png' %}" alt="rerun experiment" title="rerun experiment"/></a> <span id="rerunExperimentAction"></span>
         {% endif %}
 
         {% can_delete_entity version as can_delete %}
@@ -85,8 +85,8 @@
       <div id="entityversionfiledetails">
           <div class="closebtn"><small>
               <a id="exportPlot" style="display: none;">Export plot data |</a>
-          <a id="zoomFile">zoom |</a>
-              <a id="entityversionfileclose">&otimes; Close</a>
+              <a id="zoomFile">zoom |</a>
+              <a id="entityversionfileclose">&otimes; close</a>
           </small></div>
           <h3 id="entityversionfilename"></h3>
           <div class="suppl"><small>Created <time id="entityversionfiletime"></time> by

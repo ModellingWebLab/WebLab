@@ -9,10 +9,10 @@
   <small>Created <time>{{experiment.created_at}}</time> by <em>{{experiment.author.full_name}}</em>.
     {% can_delete_entity experiment as can_delete %}
     {% if can_delete %}
-      <a title="delete all versions of this experiment" href="{% url 'experiments:delete' experiment.id %}">
+      <a title="Delete all versions of this experiment" href="{% url 'experiments:delete' experiment.id %}">
+        <img src="{% static 'img/delete.png' %}" alt="Delete all versions of this experiment"/>
         Delete experiment
-          <img src="{% static 'img/delete.png' %}" alt="delete all versions of this experiment"
-            title="delete all versions of this experiment"/></a>
+      </a>
     {% endif %}
   </small>
 </div>
