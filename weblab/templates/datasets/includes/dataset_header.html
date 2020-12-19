@@ -16,7 +16,8 @@
         <img src="{% static 'img/delete.png' %}" alt="delete dataset"
              title="delete dataset"/></a>
     {% endif %}
-
+    <a title="manage collaborators for this dataset" href="{% url 'datasets:entity_collaborators' dataset.id %}">
+        Manage collaborators</a>
     <a title="Transfer ownership of dataset" href="{% url 'datasets:transfer' dataset.id %}">
       Transfer ownership </a>
     <a title="Rename dataset" href="{% url 'datasets:rename' dataset.id %}">

@@ -27,6 +27,7 @@ from django.views.generic.list import ListView
 from accounts.forms import OwnershipTransferForm
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
+from entities.views import EditCollaboratorsAbstractView
 from entities.forms import EntityChangeVisibilityForm
 from fitting.models import FittingResult
 from repocache.models import ProtocolIoputs
@@ -499,6 +500,21 @@ class DatasetMapColumnsView(UserPassesTestMixin, VisibilityMixin, DetailView):
             return self.render_to_response(self.get_context_data(forms=forms))
 
 
+class DatasetCollaboratorsView(EditCollaboratorsAbstractView):
+    template_name = 'datasets/dataset_collaborators_form.html'
+    model = Dataset
+
+    def get_context_data(self, **kwargs):
+        kwargs['dataset'] = self.object
+        return super().get_context_data(**kwargs)
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        dataset = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':entity_collaborators', args=[dataset.id])
+
+
 class ChangeVisibilityView(UserPassesTestMixin, DetailView):
     model = Dataset
 
@@ -534,3 +550,4 @@ class ChangeVisibilityView(UserPassesTestMixin, DetailView):
             }
 
         return JsonResponse(response)
+

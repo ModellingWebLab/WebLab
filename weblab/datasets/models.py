@@ -23,7 +23,7 @@ class DatasetQuerySet(models.QuerySet):
         """Query over all datasets shared explicitly with the given user."""
         if user.is_authenticated:
             shared_pks = get_objects_for_user(
-                user, 'entities.edit_entity', with_superuser=False).values_list('pk', flat=True)
+                user, 'datasets.edit_entity', with_superuser=False).values_list('pk', flat=True)
             return self.filter(pk__in=shared_pks)
         else:
             return self.none()
@@ -48,7 +48,11 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
 
         permissions = (
             ('create_dataset', 'Can create experimental datasets'),
+            # Edit entity is used as an object-level permission for the collaborator functionality
+            ('edit_entity', 'Can edit entity'),
         )
+
+    create_permission = 'datasets.create_dataset'  # For UserCreatedModelMixin.is_editable_by
 
     def __str__(self):
         return self.name
@@ -80,9 +84,6 @@ class Dataset(UserCreatedModelMixin, VisibilityModelMixin, FileCollectionMixin, 
 
                 return list(header)
         return []
-
-    def is_editable_by(self, user):
-        return user == self.author
 
 
 class DatasetFile(models.Model):
