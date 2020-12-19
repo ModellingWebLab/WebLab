@@ -1,5 +1,4 @@
 var utils = require('../../lib/utils.js');
-var utils = require('../../lib/utils.js');
 var common = require('../../expt_common.js');
 
 var choicesDivId = 'choices',
