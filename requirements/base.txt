@@ -18,7 +18,7 @@ gitpython==3.1.11         # via -r base.in
 idna==2.8                 # via requests
 oauthlib==3.0.1           # via requests-oauthlib, social-auth-core
 pint==0.9                 # via -r base.in
-psycopg2==2.7.3           # via -r base.in
+psycopg2==2.7.4           # via -r base.in
 pycparser==2.20           # via cffi
 pyjwt==1.7.1              # via social-auth-core
 python3-openid==3.1.0     # via social-auth-core
