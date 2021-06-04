@@ -4,31 +4,74 @@
 #
 #    pip-compile --output-file=base.txt base.in
 #
-certifi==2019.3.9         # via requests
-cffi==1.14.3              # via cryptography
-chardet==3.0.4            # via requests
-cryptography==3.2         # via social-auth-core
-defusedxml==0.5.0         # via python3-openid, social-auth-core
-dj-database-url==0.4.2    # via -r base.in
-django-braces==1.14.0     # via -r base.in
-django-guardian==2.3.0    # via -r base.in
-django==2.2.16            # via -r base.in, django-braces, django-guardian
-gitdb==4.0.5              # via gitpython
-gitpython==3.1.11         # via -r base.in
-idna==2.8                 # via requests
-oauthlib==3.0.1           # via requests-oauthlib, social-auth-core
-pint==0.9                 # via -r base.in
-psycopg2==2.7.7           # via -r base.in
-pycparser==2.20           # via cffi
-pyjwt==1.7.1              # via social-auth-core
-python3-openid==3.1.0     # via social-auth-core
-pytz==2018.9              # via django
-requests-oauthlib==1.2.0  # via social-auth-core
-requests==2.21.0          # via requests-oauthlib, rollbar, social-auth-core
-rollbar==0.15.1           # via -r base.in
-six==1.12.0               # via cryptography, django-braces, rollbar, social-auth-app-django, social-auth-core
-smmap==3.0.4              # via gitdb
-social-auth-app-django==4.0.0  # via -r base.in
-social-auth-core==3.3.3   # via social-auth-app-django
-sqlparse==0.4.1           # via django
-urllib3==1.24.2           # via requests
+certifi==2019.3.9
+    # via requests
+cffi==1.14.3
+    # via cryptography
+chardet==3.0.4
+    # via requests
+cryptography==3.2
+    # via social-auth-core
+defusedxml==0.5.0
+    # via
+    #   python3-openid
+    #   social-auth-core
+dj-database-url==0.4.2
+    # via -r base.in
+django-braces==1.14.0
+    # via -r base.in
+django-guardian==2.3.0
+    # via -r base.in
+django==2.2.21
+    # via
+    #   -r base.in
+    #   django-braces
+    #   django-guardian
+gitdb==4.0.5
+    # via gitpython
+gitpython==3.1.11
+    # via -r base.in
+idna==2.8
+    # via requests
+oauthlib==3.0.1
+    # via
+    #   requests-oauthlib
+    #   social-auth-core
+pint==0.9
+    # via -r base.in
+psycopg2==2.7.7
+    # via -r base.in
+pycparser==2.20
+    # via cffi
+pyjwt==1.7.1
+    # via social-auth-core
+python3-openid==3.1.0
+    # via social-auth-core
+pytz==2018.9
+    # via django
+requests-oauthlib==1.2.0
+    # via social-auth-core
+requests==2.21.0
+    # via
+    #   requests-oauthlib
+    #   rollbar
+    #   social-auth-core
+rollbar==0.15.1
+    # via -r base.in
+six==1.12.0
+    # via
+    #   cryptography
+    #   django-braces
+    #   rollbar
+    #   social-auth-app-django
+    #   social-auth-core
+smmap==3.0.4
+    # via gitdb
+social-auth-app-django==4.0.0
+    # via -r base.in
+social-auth-core==3.3.3
+    # via social-auth-app-django
+sqlparse==0.4.1
+    # via django
+urllib3==1.24.2
+    # via requests
