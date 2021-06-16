@@ -748,7 +748,7 @@ function init() {
       // Submit the first planned experiment to the queue
       var exptSpec = plannedExperiments.pop();
       exptSpec["planned"] = true;
-      $.post('/experiments/new', exptSpec, function(data) {
+      $.post('experiments/new', exptSpec, function(data) {
         var msg = data.newExperiment.responseText;
         if (data.newExperiment.response)
           notifications.add(msg, "info");
