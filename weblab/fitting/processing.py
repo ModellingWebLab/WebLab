@@ -76,11 +76,6 @@ def submit_fitting(
         args=[dataset.pk]
     )
 
-#    if hasattr(settings, 'FORCE_SCRIPT_NAME'):
-#        model_url = model_url.replace(settings.FORCE_SCRIPT_NAME, '')
-#        protocol_url = protocol_url.replace(settings.FORCE_SCRIPT_NAME, '')
-#        fittingspec_url = fittingspec_url.replace(settings.FORCE_SCRIPT_NAME, '')
-#        dataset_url = dataset_url.replace(settings.FORCE_SCRIPT_NAME, '')
     body = {
         'model': prepend_callback_base(model_url),
         'protocol': prepend_callback_base(protocol_url),
