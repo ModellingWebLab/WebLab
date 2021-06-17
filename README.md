@@ -91,9 +91,15 @@ The Ansible deployment will install the XML/RDF file from https://github.com/Mod
 If you wish to have the latest annotations available in the metadata editor on your local development setup, you can copy `oxford-metadata.rdf` from that repository into `weblab/static/js/visualizers/editMetadata`.
 
 
-## Run unit tests
+## Run unit tests (needs requirements installed e.g. in virtual environment)
 
 ```
 cd weblab
 pytest
+```
+
+If you encounter database access issues. You may need to give the weblab user rights to create databases:
+```
+sudo -u postgres psql postgres
+ALTER USER weblab CREATEDB;
 ```
