@@ -57,7 +57,6 @@ def submit_runnable(runnable, body, user):
 
     body.update({
         'signature': runnable.signature,
-#        'callBack': urljoin(settings.CALLBACK_BASE_URL, reverse('experiments:callback')),
         'callBack': prepend_callback_base(reverse('experiments:callback')),
         'user': user.full_name,
         'password': settings.CHASTE_PASSWORD,
@@ -147,14 +146,8 @@ def submit_experiment(model_version, protocol_version, user, rerun_ok):
         args=['protocol', protocol_version.protocol.pk, protocol_version.sha]
     )
 
-#    if hasattr(settings, 'FORCE_SCRIPT_NAME'):
-#         model_url = model_url.replace(settings.FORCE_SCRIPT_NAME, '')
-#         protocol_url =  protocol_url.replace(settings.FORCE_SCRIPT_NAME, '')
-
     body = {
-#        'model': urljoin(settings.CALLBACK_BASE_URL, model_url),
         'model': prepend_callback_base(model_url),
-#        'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
         'protocol': prepend_callback_base(protocol_url),
     }
 
