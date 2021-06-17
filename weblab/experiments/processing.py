@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.urls import reverse
 from django.utils.timezone import now
+from core.processing import prepend_callback_base
 
 from .emails import send_experiment_finished_email
 from .models import (
@@ -56,7 +57,8 @@ def submit_runnable(runnable, body, user):
 
     body.update({
         'signature': runnable.signature,
-        'callBack': urljoin(settings.CALLBACK_BASE_URL, reverse('experiments:callback')),
+#        'callBack': urljoin(settings.CALLBACK_BASE_URL, reverse('experiments:callback')),
+        'callBack': prepend_callback_base(reverse('experiments:callback')),
         'user': user.full_name,
         'password': settings.CHASTE_PASSWORD,
         'isAdmin': user.is_staff,
@@ -144,9 +146,16 @@ def submit_experiment(model_version, protocol_version, user, rerun_ok):
         'entities:entity_archive',
         args=['protocol', protocol_version.protocol.pk, protocol_version.sha]
     )
+
+#    if hasattr(settings, 'FORCE_SCRIPT_NAME'):
+#         model_url = model_url.replace(settings.FORCE_SCRIPT_NAME, '')
+#         protocol_url =  protocol_url.replace(settings.FORCE_SCRIPT_NAME, '')
+
     body = {
-        'model': urljoin(settings.CALLBACK_BASE_URL, model_url),
-        'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
+#        'model': urljoin(settings.CALLBACK_BASE_URL, model_url),
+        'model': prepend_callback_base(model_url),
+#        'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
+        'protocol': prepend_callback_base(protocol_url),
     }
 
     submit_runnable(version, body, user)

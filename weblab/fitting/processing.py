@@ -4,6 +4,8 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.urls import reverse
+from core.processing import prepend_callback_base
+
 
 from experiments.processing import submit_runnable
 
@@ -73,11 +75,17 @@ def submit_fitting(
         'datasets:archive',
         args=[dataset.pk]
     )
+
+#    if hasattr(settings, 'FORCE_SCRIPT_NAME'):
+#        model_url = model_url.replace(settings.FORCE_SCRIPT_NAME, '')
+#        protocol_url = protocol_url.replace(settings.FORCE_SCRIPT_NAME, '')
+#        fittingspec_url = fittingspec_url.replace(settings.FORCE_SCRIPT_NAME, '')
+#        dataset_url = dataset_url.replace(settings.FORCE_SCRIPT_NAME, '')
     body = {
-        'model': urljoin(settings.CALLBACK_BASE_URL, model_url),
-        'protocol': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
-        'fittingSpec': urljoin(settings.CALLBACK_BASE_URL, fittingspec_url),
-        'dataset': urljoin(settings.CALLBACK_BASE_URL, dataset_url),
+        'model': prepend_callback_base(model_url),
+        'protocol': prepend_callback_base(protocol_url),
+        'fittingSpec': prepend_callback_base(fittingspec_url),
+        'dataset': prepend_callback_base(dataset_url),
     }
 
     submit_runnable(version, body, user)

@@ -5,6 +5,7 @@ import requests
 from django.conf import settings
 from django.db import IntegrityError
 from django.urls import reverse
+from core.processing import prepend_callback_base
 
 from experiments.models import PlannedExperiment
 from repocache.models import ProtocolInterface, ProtocolIoputs
@@ -49,9 +50,9 @@ def submit_check_protocol_task(protocol, protocol_version):
         args=['protocol', protocol.pk, protocol_version]
     )
     body = {
-        'getProtoInterface': urljoin(settings.CALLBACK_BASE_URL, protocol_url),
+        'getProtoInterface': prepend_callback_base(protocol_url),
         'signature': signature,
-        'callBack': urljoin(settings.CALLBACK_BASE_URL, reverse('entities:protocol_check_callback')),
+        'callBack': prepend_callback_base(reverse('entities:protocol_check_callback')),
         'password': settings.CHASTE_PASSWORD,
     }
 
