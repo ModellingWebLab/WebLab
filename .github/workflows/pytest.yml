@@ -22,14 +22,14 @@ jobs:
         pip install -r requirements/test.txt
     - name: Lint with flake8
       run: |
-        python -m flake8
+        python -m flake8 weblab
     - name: Test sorting wioth isort
       run: |
-        python -m isort --verbose --check-only --diff chaste_codegen tests setup.py
+        python -m isort --verbose --check-only --diff recursive weblab
     - name: Test with pytest
       run: |
         export DJANGO_SETTINGS_MODULE=mysite.settings
-        python -m pytest --cov --cov-config=.coveragerc
+        python -m pytest --fail-on-template-vars --cov=weblab --cov-config=weblab/.coveragerc weblab
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
