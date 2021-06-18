@@ -6,28 +6,15 @@ jobs:
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8, 3.9]
-    # Service containers to run with `container-job`
-    services:
-      # Label used to access the service container
-      postgres:
-        # Docker Hub image
-        image: postgres
-        # Provide the password for postgres
-        env:
-          POSTGRES_USER: weblab
-          POSTGRES_PASSWORD: weblab
-          POSTGRES_DB: not-so-secret django db password
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
 
-    steps:         
+    steps:
+    - name: Start PostgreSQL on Ubuntu
+      run: |
+        sudo systemctl start postgresql.service
+        pg_isready
+    - name: Create scheduler user
+      run: |
+        sudo -u postgres psql --command="CREATE USER scheduler PASSWORD 'somestrong'" --command="\du"
     - name: Checkout repository and submodules
       uses: actions/checkout@v1
       with:
