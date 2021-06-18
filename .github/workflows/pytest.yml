@@ -6,7 +6,6 @@ jobs:
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8, 3.9]
-
     steps:
     - name: Start PostgreSQL on Ubuntu
       run: |
@@ -14,7 +13,8 @@ jobs:
         pg_isready
     - name: Create scheduler user
       run: |
-        sudo -u postgres psql --command="CREATE USER scheduler PASSWORD 'somestrong'" --command="\du"
+        sudo -u postgres psql --command="CREATE USER weblab PASSWORD 'not-so-secret django db password'" --command="\du"
+        sudo -u postgres psql --command="ALTER USER weblab CREATEDB;" --command="\du"
     - name: Checkout repository and submodules
       uses: actions/checkout@v1
       with:
