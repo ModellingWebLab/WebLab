@@ -6,6 +6,12 @@ jobs:
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8, 3.9]
+    services:
+      # Label used to access the service container
+      postgres:
+         postgresql
+      env:
+         DATABASE_URL=postgres://postgres:@localhost:5432/weblab
     steps:
     - name: Checkout repository and submodules
       uses: actions/checkout@v1
