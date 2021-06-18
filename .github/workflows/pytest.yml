@@ -41,7 +41,7 @@ jobs:
       run: |
         python -m pytest --cov=weblab --cov-config=weblab/.coveragerc weblab
       env:
-        DATABASE_URL: postgres://weblab:@localhost:5432/weblab
+        DATABASE_URL: postgres://weblab:not-so-secret django db password@localhost:5432/weblab
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
