@@ -1,7 +1,5 @@
 import logging
-from urllib.parse import urljoin
 
-from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
 from django.urls import reverse
 from core.processing import prepend_callback_base
