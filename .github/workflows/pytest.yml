@@ -28,7 +28,7 @@ jobs:
         python -m isort --verbose --check-only --diff recursive weblab
     - name: Setup secrets
       run: |
-        cp  config/settings/secrets.example.py  config/settings/secrets.py
+        cp  weblab/config/settings/secrets.example.py  weblab/config/settings/secrets.py
     - name: Test with pytest
       run: |
         python -m pytest --fail-on-template-vars --cov=weblab --cov-config=weblab/.coveragerc weblab
