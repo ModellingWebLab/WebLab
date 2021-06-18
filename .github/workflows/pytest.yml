@@ -7,6 +7,9 @@ jobs:
       matrix:
         python-version: [3.6]
     steps:
+    - name: Update timezone info (for psycopg2)
+      run: |
+        sudo apt install tzdata --reinstall
     - name: Start PostgreSQL on Ubuntu
       run: |
         sudo systemctl start postgresql.service
