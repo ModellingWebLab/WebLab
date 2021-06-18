@@ -23,6 +23,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
+    - name: Enable create database previlages
+      run: |
+        psql postgres -c 'ALTER USER weblab CREATEDB;'
     - name: Checkout repository and submodules
       uses: actions/checkout@v1
       with:
