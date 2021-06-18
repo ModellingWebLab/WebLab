@@ -14,18 +14,21 @@ jobs:
         image: postgres
         # Provide the password for postgres
         env:
-          POSTGRES_PASSWORD: postgres
-          DATABASE_URL: postgres://postgres:@localhost:5432/weblab
+          POSTGRES_PASSWORD: weblab
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+
     steps:
-    - name: Enable create database previlages
+    - name: Enable create database privileges
       run: |
-        psql postgres -c 'ALTER USER weblab CREATEDB;'
+        psql -c 'ALTER USER weblab CREATEDB;'
     - name: Checkout repository and submodules
       uses: actions/checkout@v1
       with:
@@ -51,6 +54,8 @@ jobs:
     - name: Test with pytest
       run: |
         python -m pytest --cov=weblab --cov-config=weblab/.coveragerc weblab
+      env:
+        DATABASE_URL: postgres://postgres:@localhost:5432/weblab
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
