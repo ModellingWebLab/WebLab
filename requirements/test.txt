@@ -29,7 +29,7 @@ oauthlib==3.0.1           # via requests-oauthlib, social-auth-core
 packaging==20.4           # via pytest
 pint==0.9                 # via -r base.in
 pluggy==0.13.1            # via pytest
-psycopg2>=2.7.7           # via -r base.in
+psycopg2==2.7.7           # via -r base.in
 py==1.9.0                 # via pytest
 pycodestyle==2.5.0        # via flake8
 pycparser==2.20           # via cffi
