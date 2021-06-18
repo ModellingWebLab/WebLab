@@ -47,7 +47,7 @@ jobs:
         tar -xvf .actions.tar
     - name: Test with pytest
       run: |
-        python -m pytest --fail-on-template-vars --cov=weblab --cov-config=weblab/.coveragerc weblab
+        python -m pytest --cov=weblab --cov-config=weblab/.coveragerc weblab
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
