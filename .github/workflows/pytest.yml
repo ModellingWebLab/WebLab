@@ -26,10 +26,6 @@ jobs:
     - name: Test sorting wioth isort
       run: |
         python -m isort --verbose --check-only --diff recursive weblab
-    - name: Setup secrets
-      run: |
-        openssl aes-256-cbc -K d20cfcf2e381 -iv d20cfcf2e381 -in .travis.tar.enc -out .travis.tar -d
-        tar xvf .travis.tar
     - name: Test with pytest
       run: |
         python -m pytest --fail-on-template-vars --cov=weblab --cov-config=weblab/.coveragerc weblab
