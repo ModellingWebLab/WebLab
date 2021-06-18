@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.5, 3.6, 3.7, 3.8]
     steps:
     - name: Start PostgreSQL on Ubuntu
       run: |
@@ -15,10 +15,6 @@ jobs:
       run: |
         sudo -u postgres psql --command="CREATE USER weblab PASSWORD 'not-so-secret django db password'" --command="\du"
         sudo -u postgres psql --command="ALTER USER weblab CREATEDB;" --command="\du"
-    - name: Update timezone (for psycopg2 issue)
-      run: |
-        sudo apt-get install --reinstall tzdata
-        sudo systemctl restart postgresql
     - name: Edit git settings
       run: |
         git config --global user.email "github.actions@CI.com"  
