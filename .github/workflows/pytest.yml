@@ -28,7 +28,7 @@ jobs:
         python -m isort --verbose --check-only --diff recursive weblab
     - name: Test with pytest
       run: |
-        export DJANGO_SETTINGS_MODULE=mysite.settings
+        export DJANGO_SETTINGS_MODULE=weblab.settings
         python -m pytest --fail-on-template-vars --cov=weblab --cov-config=weblab/.coveragerc weblab
     - uses: codecov/codecov-action@v1
       with:
