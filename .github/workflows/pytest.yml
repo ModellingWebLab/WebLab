@@ -14,7 +14,9 @@ jobs:
         image: postgres
         # Provide the password for postgres
         env:
+          POSTGRES_USER: weblab
           POSTGRES_PASSWORD: weblab
+          POSTGRES_DB: weblab
         # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
