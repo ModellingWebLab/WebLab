@@ -30,7 +30,7 @@ jobs:
     steps:
     - name: Enable create database privileges
       run: |
-        sudo -u postgres psql -c 'ALTER USER weblab2 CREATEDB;'       
+        sudo -u postgres psql -h localhost -p 5432 -c 'ALTER USER weblab2 CREATEDB;'       
     - name: Checkout repository and submodules
       uses: actions/checkout@v1
       with:
