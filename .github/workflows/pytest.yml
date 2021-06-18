@@ -17,7 +17,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        export DJANGO_SETTINGS_MODULE=mysite.settings
+        export DJANGO_SETTINGS_MODULE=test_settings
         python -m pip install --upgrade pip wheel
         pip install flake8 pytest
         pip install -r requirements/test.txt
