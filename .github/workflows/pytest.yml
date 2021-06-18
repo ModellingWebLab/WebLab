@@ -17,8 +17,8 @@ jobs:
         sudo -u postgres psql --command="ALTER USER weblab CREATEDB;" --command="\du"
     - name: Edit git settings
       run: |
-        git config --global user.email "you@example.com"  
-        git config --global user.name "Your Name"        
+        git config --global user.email "github.actions@CI.com"  
+        git config --global user.name "Github Actions"
     - name: Checkout repository and submodules
       uses: actions/checkout@v1
       with:
