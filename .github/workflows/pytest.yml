@@ -6,12 +6,21 @@ jobs:
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8, 3.9]
+    # Service containers to run with `container-job`
     services:
       # Label used to access the service container
       postgres:
-         postgresql
-      env:
-         DATABASE_URL=postgres://postgres:@localhost:5432/weblab
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          DATABASE_URL: postgres://postgres:@localhost:5432/weblab
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - name: Checkout repository and submodules
       uses: actions/checkout@v1
