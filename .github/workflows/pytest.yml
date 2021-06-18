@@ -11,7 +11,7 @@ jobs:
       run: |
         sudo systemctl start postgresql.service
         pg_isready
-    - name: Create scheduler user
+    - name: Create weblab user
       run: |
         sudo -u postgres psql --command="CREATE USER weblab PASSWORD 'not-so-secret django db password'" --command="\du"
         sudo -u postgres psql --command="ALTER USER weblab CREATEDB;" --command="\du"
@@ -40,8 +40,6 @@ jobs:
     - name: Test with pytest
       run: |
         python -m pytest --cov=weblab --cov-config=weblab/.coveragerc weblab
-      env:
-        DATABASE_URL: postgres://postgres:@localhost:5432/weblab
     - uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
