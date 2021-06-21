@@ -88,7 +88,7 @@ class TestManifestWriter:
 
         doc = ET.tostring(writer.xml_doc.getroot()).decode()
         manifest_str = ET.tostring(ET.fromstring(manifest))
-        assert doc == manifest_str != None
+        assert doc == manifest_str is not None
 
 
 class TestManifestReader:
