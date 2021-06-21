@@ -76,8 +76,7 @@ class ManifestWriter:
         else:
             format_ = self.identify_combine_format(path) or self.identify_mime_type(path)
 
-        #self._files.append((path, format_, is_master))
-        self._files.append((format_, path, is_master))
+        self._files.append((path, format_, is_master))
 
     @property
     def xml_doc(self):
