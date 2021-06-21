@@ -98,7 +98,7 @@ cd weblab
 pytest
 ```
 
-If you encounter database access issues. You may need to give the weblab user rights to create databases:
+If you encounter database access issues, you may need to give the weblab user rights to create databases:
 ```
 sudo -u postgres psql postgres
 ALTER USER weblab CREATEDB;
