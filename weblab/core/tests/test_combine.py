@@ -26,9 +26,13 @@ def reader():
 @pytest.fixture
 def manifest():
     return (
+#        '<omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">'
+#        '<content format="txt" location="main.txt" master="true" />'
+#        '<content format="txt" location="test.txt" master="false" />'
+#        '</omexManifest>'
         '<omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">'
-        '<content format="txt" location="main.txt" master="true" />'
-        '<content format="txt" location="test.txt" master="false" />'
+        '<content location="main.txt" format="txt" master="true" />'
+        '<content location="test.txt" format="txt" master="false" />'
         '</omexManifest>'
     )
 
@@ -87,8 +91,7 @@ class TestManifestWriter:
         writer.add_file('test.txt', fmt='txt')
 
         doc = ET.tostring(writer.xml_doc.getroot()).decode()
-        manifest_str = ET.tostring(ET.fromstring(manifest)).decode()
-        assert doc == manifest_str is not None
+        assert doc == manifest
 
 
 class TestManifestReader:
