@@ -26,10 +26,6 @@ def reader():
 @pytest.fixture
 def manifest():
     return (
-#        '<omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">'
-#        '<content format="txt" location="main.txt" master="true" />'
-#        '<content format="txt" location="test.txt" master="false" />'
-#        '</omexManifest>'
         '<omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">'
         '<content location="main.txt" format="txt" master="true" />'
         '<content location="test.txt" format="txt" master="false" />'
