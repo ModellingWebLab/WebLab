@@ -87,7 +87,8 @@ class TestManifestWriter:
         writer.add_file('test.txt', fmt='txt')
 
         doc = ET.tostring(writer.xml_doc.getroot()).decode()
-        assert doc == manifest
+        manifest_str = ET.tostring(ET.fromstring(manifest))
+        assert doc == manifest_str != None
 
 
 class TestManifestReader:
