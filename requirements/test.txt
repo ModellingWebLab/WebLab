@@ -11,7 +11,7 @@ chardet==3.0.4            # via requests
 codecov==2.0.15           # via -r test.in
 coverage==4.5.3           # via codecov, pytest-cov
 cryptography==3.2         # via social-auth-core
-defusedxml==0.5.0         #==0.5.0         # via python3-openid, social-auth-core
+defusedxml==0.7.1         # via python3-openid, social-auth-core
 dj-database-url==0.4.2    # via -r base.in
 django-braces==1.14.0     # via -r base.in
 django-guardian==2.3.0    # via -r base.in
@@ -39,7 +39,7 @@ pyparsing==2.4.7          # via packaging
 pytest-cov==2.5.1         # via -r test.in
 pytest-django==4.1.0      # via -r test.in
 pytest==6.1.2             # via -r test.in, pytest-cov, pytest-django
-python3-openid            #==3.1.0     # via social-auth-core
+python3-openid==3.1.0     # via social-auth-core
 pytz==2018.9              # via django
 requests-oauthlib==1.2.0  # via social-auth-core
 requests==2.21.0          # via codecov, requests-oauthlib, rollbar, social-auth-core
