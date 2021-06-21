@@ -35,7 +35,7 @@ jobs:
     - name: Lint with flake8
       run: |
         python -m flake8 weblab
-    - name: Test sorting wioth isort
+    - name: Test sorting with isort
       run: |
         python -m isort --verbose --check-only --diff recursive weblab
     - name: Setup secrets
