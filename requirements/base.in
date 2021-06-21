@@ -1,7 +1,7 @@
 Django==2.2.16
 
 # Database
-psycopg2<2.8
+psycopg2>=2.7.7,<2.9
 
 # Social authentication
 social-auth-app-django==4.0.0

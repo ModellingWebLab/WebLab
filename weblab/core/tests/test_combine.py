@@ -34,6 +34,16 @@ def manifest():
 
 
 @pytest.fixture
+def manifest_ordered():
+    return (
+        '<omexManifest xmlns="http://identifiers.org/combine.specifications/omex-manifest">'
+        '<content location="main.txt" format="txt" master="true" />'
+        '<content location="test.txt" format="txt" master="false" />'
+        '</omexManifest>'
+    )
+
+
+@pytest.fixture
 def zipped_archive(manifest):
     archive = io.BytesIO()
     with zipfile.ZipFile(archive, 'w') as input_zip:
@@ -82,12 +92,12 @@ class TestManifestWriter:
         writer.add_file('file.nonexistent_type')
         assert ('file.nonexistent_type', '', False) in writer._files
 
-    def test_xml_doc(self, writer, manifest):
+    def test_xml_doc(self, writer, manifest, manifest_ordered):
         writer.add_file('main.txt', fmt='txt', is_master=True)
         writer.add_file('test.txt', fmt='txt')
 
         doc = ET.tostring(writer.xml_doc.getroot()).decode()
-        assert doc == manifest
+        assert doc == manifest or doc == manifest_ordered
 
 
 class TestManifestReader:
