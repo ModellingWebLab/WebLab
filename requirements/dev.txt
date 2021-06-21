@@ -15,7 +15,7 @@ codecov==2.0.15           # via -r test.in
 coverage==4.5.3           # via codecov, pytest-cov
 cryptography==3.2         # via social-auth-core
 decorator==4.4.0          # via ipython, traitlets
-defusedxml==0.5.0         # via python3-openid, social-auth-core
+defusedxml==0.7.1         # via python3-openid, social-auth-core
 dj-database-url==0.4.2    # via -r base.in
 django-braces==1.14.0     # via -r base.in
 django-guardian==2.3.0    # via -r base.in
