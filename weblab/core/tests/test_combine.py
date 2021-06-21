@@ -86,8 +86,8 @@ class TestManifestWriter:
         writer.add_file('main.txt', fmt='txt', is_master=True)
         writer.add_file('test.txt', fmt='txt')
 
-        doc = ET.tostring(writer.xml_doc.getroot()).decode()
-        manifest_str = ET.tostring(ET.fromstring(manifest))
+        doc = str(ET.tostring(writer.xml_doc.getroot()).decode())
+        manifest_str = str(ET.tostring(ET.fromstring(manifest)))
         assert doc == manifest_str is not None
 
 
