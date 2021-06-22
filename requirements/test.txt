@@ -10,8 +10,8 @@ cffi==1.14.3              # via cryptography
 chardet==3.0.4            # via requests
 codecov==2.0.15           # via -r test.in
 coverage==4.5.3           # via codecov, pytest-cov
-cryptography==3.2.1; python_version < '2.6'
-cryptography==3.3.2; python_version >= '2.6'
+cryptography==3.2.1; python_version<"2.6"
+cryptography==3.3.2; python_version>"2.6"
 # via social-auth-core
 
 defusedxml==0.7.1         # via python3-openid, social-auth-core
