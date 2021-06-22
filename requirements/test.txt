@@ -4,120 +4,50 @@
 #
 #    pip-compile --output-file=test.txt test.in
 #
-attrs==20.2.0
-    # via pytest
-certifi==2019.3.9
-    # via requests
-cffi==1.14.3
-    # via cryptography
-chardet==3.0.4
-    # via requests
-codecov==2.0.15
-    # via -r test.in
-coverage==4.5.3
-    # via
-    #   codecov
-    #   pytest-cov
-cryptography==3.2
-    # via social-auth-core
-defusedxml==0.7.1
-    # via
-    #   python3-openid
-    #   social-auth-core
-dj-database-url==0.4.2
-    # via -r base.in
-django-braces==1.14.0
-    # via -r base.in
-django-guardian==2.3.0
-    # via -r base.in
-django==2.2.16
-    # via
-    #   -r base.in
-    #   django-braces
-    #   django-guardian
-    #   model-bakery
-entrypoints==0.3
-    # via flake8
-flake8==3.7.8
-    # via -r test.in
-gitdb==4.0.5
-    # via gitpython
-gitpython==3.1.11
-    # via -r base.in
-idna==2.8
-    # via requests
-iniconfig==1.1.1
-    # via pytest
-isort==4.3.21
-    # via -r test.in
-mccabe==0.6.1
-    # via flake8
-model-bakery==1.2.0
-    # via -r test.in
-oauthlib==3.0.1
-    # via
-    #   requests-oauthlib
-    #   social-auth-core
-packaging==20.4
-    # via pytest
-pint==0.9
-    # via -r base.in
-pluggy==0.13.1
-    # via pytest
-psycopg2==2.8.6
-    # via -r base.in
-py==1.10.0
-    # via pytest
-pycodestyle==2.5.0
-    # via flake8
-pycparser==2.20
-    # via cffi
-pyflakes==2.1.1
-    # via flake8
-pyjwt==1.7.1
-    # via social-auth-core
-pyparsing==2.4.7
-    # via packaging
-pytest-cov==2.5.1
-    # via -r test.in
-pytest-django==4.1.0
-    # via -r test.in
-pytest==6.1.2
-    # via
-    #   -r test.in
-    #   pytest-cov
-    #   pytest-django
-python3-openid==3.1.0
-    # via social-auth-core
-pytz==2018.9
-    # via django
-requests-oauthlib==1.2.0
-    # via social-auth-core
-requests==2.21.0
-    # via
-    #   codecov
-    #   requests-oauthlib
-    #   rollbar
-    #   social-auth-core
-rollbar==0.15.1
-    # via -r base.in
-six==1.12.0
-    # via
-    #   cryptography
-    #   django-braces
-    #   packaging
-    #   rollbar
-    #   social-auth-app-django
-    #   social-auth-core
-smmap==3.0.4
-    # via gitdb
-social-auth-app-django==4.0.0
-    # via -r base.in
-social-auth-core==3.3.3
-    # via social-auth-app-django
-sqlparse==0.4.1
-    # via django
-toml==0.10.2
-    # via pytest
-urllib3==1.24.2
-    # via requests
+attrs==20.2.0             # via pytest
+certifi==2019.3.9         # via requests
+cffi==1.14.3              # via cryptography
+chardet==3.0.4            # via requests
+codecov==2.0.15           # via -r test.in
+coverage==4.5.3           # via codecov, pytest-cov
+cryptography==3.2         # via social-auth-core
+defusedxml==0.7.1         # via python3-openid, social-auth-core
+dj-database-url==0.4.2    # via -r base.in
+django-braces==1.14.0     # via -r base.in
+django-guardian==2.3.0    # via -r base.in
+django==2.2.16            # via -r base.in, django-braces, django-guardian, model-bakery
+entrypoints==0.3          # via flake8
+flake8==3.7.8             # via -r test.in
+gitdb==4.0.5              # via gitpython
+gitpython==3.1.11         # via -r base.in
+idna==2.8                 # via requests
+iniconfig==1.1.1          # via pytest
+isort==4.3.21             # via -r test.in
+mccabe==0.6.1             # via flake8
+model-bakery==1.2.0       # via -r test.in
+oauthlib==3.0.1           # via requests-oauthlib, social-auth-core
+packaging==20.4           # via pytest
+pint==0.9                 # via -r base.in
+pluggy==0.13.1            # via pytest
+psycopg2==2.8.6           # via -r base.in
+py==1.10.0                # via pytest
+pycodestyle==2.5.0        # via flake8
+pycparser==2.20           # via cffi
+pyflakes==2.1.1           # via flake8
+pyjwt==1.7.1              # via social-auth-core
+pyparsing==2.4.7          # via packaging
+pytest-cov==2.5.1         # via -r test.in
+pytest-django==4.1.0      # via -r test.in
+pytest==6.1.2             # via -r test.in, pytest-cov, pytest-django
+python3-openid==3.1.0     # via social-auth-core
+pytz==2018.9              # via django
+requests-oauthlib==1.2.0  # via social-auth-core
+requests==2.21.0          # via codecov, requests-oauthlib, rollbar, social-auth-core
+rollbar==0.15.1           # via -r base.in
+six==1.12.0               # via cryptography, django-braces, packaging, rollbar, social-auth-app-django, social-auth-core
+smmap==3.0.4              # via gitdb
+social-auth-app-django==4.0.0  # via -r base.in
+social-auth-core==3.3.3   # via social-auth-app-django
+sqlparse==0.4.1           # via django
+toml==0.10.2              # via pytest
+urllib3==1.24.2           # via requests
