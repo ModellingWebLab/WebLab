@@ -91,9 +91,21 @@ The Ansible deployment will install the XML/RDF file from https://github.com/Mod
 If you wish to have the latest annotations available in the metadata editor on your local development setup, you can copy `oxford-metadata.rdf` from that repository into `weblab/static/js/visualizers/editMetadata`.
 
 
-## Run unit tests
+## Run unit tests (needs requirements installed e.g. in virtual environment)
 
 ```
 cd weblab
 pytest
 ```
+
+If you encounter database access issues, you may need to give the weblab user rights to create databases:
+```
+sudo -u postgres psql postgres
+ALTER USER weblab CREATEDB;
+```
+When running these tests in a vagant VM (using the vagant file & ansible playbook provided in [deployment](https://github.com/ModellingWebLab/deployment):
+Edit pytest.ini and change DJANGO_SETTINGS_MODULE to: 
+```
+DJANGO_SETTINGS_MODULE=vagrant
+```
+*Make sure not to commit the modified pytest.ini!*
