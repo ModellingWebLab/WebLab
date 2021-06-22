@@ -19,7 +19,7 @@ defusedxml==0.7.1         # via python3-openid, social-auth-core
 dj-database-url==0.4.2    # via -r base.in
 django-braces==1.14.0     # via -r base.in
 django-guardian==2.3.0    # via -r base.in
-django==2.2.16            # via -r base.in, django-braces, django-guardian, model-bakery
+django==2.2.24            # via -r base.in, django-braces, django-guardian, model-bakery
 flake8==3.4.1             # via -r test.in
 gitdb==4.0.5              # via gitpython
 gitpython==3.1.11         # via -r base.in
