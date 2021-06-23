@@ -13,8 +13,7 @@ chardet==4.0.0            # via requests
 click==8.0.1              # via pip-tools
 codecov==2.1.11           # via -r test.in
 coverage==5.5             # via codecov, pytest-cov
-cryptography==3.4.7 ; python_version >= '3.6'  # via social-auth-core
-cryptography==3.2.1 ; python_version <= '3.5'  # via social-auth-core
+cryptography==3.4.7       # via social-auth-core
 decorator==5.0.9          # via ipdb, ipython, traitlets
 defusedxml==0.7.1         # via python3-openid, social-auth-core
 dj-database-url==0.4.2    # via -r base.in
