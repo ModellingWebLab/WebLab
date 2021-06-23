@@ -202,8 +202,8 @@ metadataEditor.prototype.getContentsCallback = function (succ)
         console.log("Found " + rdf.databank.size() + " triples");
 //        console.log(rdf);
 
-        // If ontology is available too, set up linking functionality
-        if (this.loadedOntology)
+        // If ontology & filters are available too, set up linking functionality
+        if (this.loadedOntology && this.loadedFilters)
             this.ready();
     }
 };
@@ -397,8 +397,8 @@ metadataEditor.prototype.ontologyLoaded = function (data, status, jqXHR)
     // Show available terms
     this.fillMainAnnotationTree();
 
-    // If model is available too, set up linking functionality
-    if (this.loadedModel)
+    // If model & filters are available too, set up linking functionality
+    if (this.loadedModel && this.loadedFilters)
         this.ready();
 }
 
@@ -581,6 +581,11 @@ metadataEditor.prototype.filtersLoaded = function (data)
         self.filtAnnotDiv.empty(); // No need to keep it around - will be recreated afresh if needed
         self.mainAnnotDiv.show();
     });
+
+    // Note that we are done. If ontology & model are available too, set up linking functionality.
+    this.loadedFilters = true;
+    if (this.loadedModel && this.loadedOntology)
+        this.ready();
 }
 
 /**
