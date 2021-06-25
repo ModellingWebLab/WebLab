@@ -459,8 +459,8 @@ metadataEditor.prototype.addCustomAnnotationTerm = function (term)
     if (non_oxmeta)
     {
         // Make this non-oxmeta term recognised as an annotation in the custom category
-        this.rdf.add('<' + term + '> a oxmeta:Annotation');
-        this.rdf.add('<' + term + '> a oxmeta:CustomAnnotations');
+        this.ontoRdf.add('<' + term + '> a oxmeta:Annotation');
+        this.ontoRdf.add('<' + term + '> a oxmeta:CustomAnnotations');
         console.log('Adding custom annotation', term);
     }
     return non_oxmeta;
