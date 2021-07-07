@@ -453,3 +453,13 @@ class AnalysisTask(models.Model):
     class Meta:
         # Don't analyse the same entity version twice at the same time!
         unique_together = ['entity', 'version']
+
+
+class ModelGroup(models.Model):
+    title = models.CharField(max_length=100)
+    models = models.ManyToManyField(ModelEntity)
+    class Meta:
+        ordering = ['title']
+        unique_together = ['title']
+    def __str__(self):
+        return self.title

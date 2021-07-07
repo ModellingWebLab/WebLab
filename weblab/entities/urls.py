@@ -159,6 +159,13 @@ urlpatterns = [
         views.EntityDiffView.as_view(),
         name='diff',
     ),
+
+    url(
+        r'^modelgroups/$',
+        views.GroupsListView.as_view(),
+        name='list',
+    ),
+
 ]
 
 app_name = 'entities'
