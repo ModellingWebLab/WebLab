@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load entities %}
+
+{% block title %}Your model groups {% endblock title %}
+
+{% block content %}
+
+  <a class="button" href="{% url 'entities:list' 'model' %}">models</a>
+  <a class="button selected" href="{% url 'entities:modelgroup' %}">model groups</a>
+  <a class="button" href="{% url 'entities:list' 'protocol' %}">protocols</a>
+  <a class="button" href="{% url 'datasets:list' %}">datasets</a>
+  <a class="button" href="{% url 'fitting:list' 'spec' %}">fitting specifications</a>
+
+  <section id="modelgrouplist">
+    <h2>Your model groups</h2>
+
+    {% can_create_entity entity_type as permission %}
+    {% if permission %}
+    <small><a href="" class="pointer">Create a new model group</a></small>
+    {% else %}
+    <small>Your account doesn't have the authority to create new model groups; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
+    {% endif %}
+
+    <ul>
+      {% for modelgroup in object_list %}
+        <li title="{{ modelgroup.title }}">
+          <strong><a href="">{{ modelgroup.title }}</a></strong>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endblock content %}
+

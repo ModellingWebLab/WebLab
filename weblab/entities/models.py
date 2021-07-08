@@ -455,7 +455,7 @@ class AnalysisTask(models.Model):
         unique_together = ['entity', 'version']
 
 
-class ModelGroup(models.Model):
+class ModelGroup(UserCreatedModelMixin):
     title = models.CharField(max_length=100)
     models = models.ManyToManyField(ModelEntity)
     class Meta:

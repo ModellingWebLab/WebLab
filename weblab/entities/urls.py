@@ -162,8 +162,8 @@ urlpatterns = [
 
     url(
         r'^modelgroups/$',
-        views.GroupsListView.as_view(),
-        name='list',
+        views.ModelGroupListView.as_view(),
+        name='modelgroup',
     ),
 
 ]

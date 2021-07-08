@@ -55,7 +55,7 @@ from .forms import (
     ProtocolEntityForm,
     ProtocolEntityRenameForm,
 )
-from .models import Entity, ModelEntity, ProtocolEntity
+from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup
 from .processing import process_check_protocol_callback, record_experiments_to_run
 
 
@@ -1235,3 +1235,14 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
             version_to_use = kwargs['sha']
         return HttpResponseRedirect(
             reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], version_to_use]))
+
+
+class ModelGroupListView(LoginRequiredMixin, ListView):
+    """
+    List all user's entities of the given type
+    """
+    template_name = 'entities/modelgroup_list.html'
+
+    def get_queryset(self):
+        #return self.model.objects.filter(author=self.request.user)
+        return ModelGroup.objects.filter(author=self.request.user)
