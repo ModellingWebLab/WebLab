@@ -166,6 +166,14 @@ urlpatterns = [
         name='modelgroup',
     ),
 
+
+    url(
+        r'^modelgroups/new/$',
+        views.ModelGroupCreateView.as_view(),
+        name='modelgroupcreate',
+    ),
+
+
 ]
 
 app_name = 'entities'

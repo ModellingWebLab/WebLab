@@ -54,6 +54,7 @@ from .forms import (
     ModelEntityRenameForm,
     ProtocolEntityForm,
     ProtocolEntityRenameForm,
+    ModelGroupForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup
 from .processing import process_check_protocol_callback, record_experiments_to_run
@@ -1239,10 +1240,29 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
 
 class ModelGroupListView(LoginRequiredMixin, ListView):
     """
-    List all user's entities of the given type
+    List all user's model groups
     """
     template_name = 'entities/modelgroup_list.html'
 
     def get_queryset(self):
-        #return self.model.objects.filter(author=self.request.user)
         return ModelGroup.objects.filter(author=self.request.user)
+
+class ModelGroupCreateView(
+    LoginRequiredMixin, PermissionRequiredMixin,
+    UserFormKwargsMixin, CreateView
+):
+    """
+    Create new model group
+    """
+    template_name = 'entities/modelgroup_form.html'
+
+    @property
+    def permission_required(self):
+        return 'entities.create_model'
+
+    @property
+    def form_class(self):
+        return ModelGroupForm
+
+    def get_success_url(self):
+        return reverse('entities:modelgroup')

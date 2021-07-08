@@ -7,7 +7,7 @@ from django.forms import formset_factory
 from accounts.models import User
 from core import visibility
 
-from .models import EntityFile, ModelEntity, ProtocolEntity
+from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -180,3 +180,24 @@ class FileUploadForm(forms.ModelForm):
     class Meta:
         model = EntityFile
         fields = ['upload']
+
+class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for creating a new model group."""
+    class Meta:
+        model = ModelGroup
+        fields = ['title', 'models']
+
+    def clean_name(self):
+        name = self.cleaned_data['title']
+        if self._meta.model.objects.filter(name=name, author=self.user).exists():
+            raise ValidationError(
+                'You already have a %s named "%s"' % (self._meta.model.display_type, name))
+
+        return name
+
+    def save(self, **kwargs):
+        modelgroup = super().save(commit=False)
+        modelgroup.author = self.user
+        modelgroup.save()
+        self.save_m2m()
+        return modelgroup
