@@ -1269,13 +1269,17 @@ class ModelGroupCreateView(
         return reverse('entities:modelgroup')
 
 
-class ModelGroupView(UpdateView):
+class ModelGroupView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """
     View for editing modelgroups
     """
     model = ModelGroup
     fields = ['title', 'models']
     template_name = 'entities/modelgroup.html'
+
+    @property
+    def permission_required(self):
+        return 'entities.create_model'
 
     def get_success_url(self):
         return reverse('entities:modelgroup')
