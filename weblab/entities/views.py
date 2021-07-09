@@ -32,7 +32,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import CreateView, DeleteView, FormMixin
+from django.views.generic.edit import CreateView, DeleteView, FormMixin, UpdateView
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
@@ -1247,6 +1247,7 @@ class ModelGroupListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return ModelGroup.objects.filter(author=self.request.user)
 
+
 class ModelGroupCreateView(
     LoginRequiredMixin, PermissionRequiredMixin,
     UserFormKwargsMixin, CreateView
@@ -1263,6 +1264,18 @@ class ModelGroupCreateView(
     @property
     def form_class(self):
         return ModelGroupForm
+
+    def get_success_url(self):
+        return reverse('entities:modelgroup')
+
+
+class ModelGroupView(UpdateView):
+    """
+    View for editing modelgroups
+    """
+    model = ModelGroup
+    fields = ['title', 'models']
+    template_name = 'entities/modelgroup.html'
 
     def get_success_url(self):
         return reverse('entities:modelgroup')

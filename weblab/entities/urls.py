@@ -173,6 +173,11 @@ urlpatterns = [
         name='modelgroupcreate',
     ),
 
+    url(
+        r'^modelgroups/(?P<pk>\d+)$',
+        views.ModelGroupView.as_view(),
+        name='modelgroupedit',
+    ),
 
 ]
 

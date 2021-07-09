@@ -24,7 +24,7 @@
     <ul>
       {% for modelgroup in object_list %}
         <li title="{{ modelgroup.title }}">
-          <strong><a href="">{{ modelgroup.title }}</a></strong>
+            <strong><a href="{% url 'entities:modelgroupedit' modelgroup.id %}">{{ modelgroup.title }}</a></strong>
         </li>
       {% endfor %}
     </ul>
