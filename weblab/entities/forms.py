@@ -183,6 +183,11 @@ class FileUploadForm(forms.ModelForm):
 
 class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating a new model group."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show models I can can see
+        self.fields['models'].queryset =  ModelEntity.objects.visible_to_user(self.user)
+
     class Meta:
         model = ModelGroup
         fields = ['title', 'models']
