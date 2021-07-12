@@ -179,6 +179,12 @@ urlpatterns = [
         name='modelgroupedit',
     ),
 
+    url(
+        r'^modelgroups/(?P<pk>\d+)/delete$',
+        views.ModelGroupDeleteView.as_view(),
+        name='modelgroupdelete',
+    ),
+
 ]
 
 app_name = 'entities'

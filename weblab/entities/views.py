@@ -1266,7 +1266,8 @@ class ModelGroupCreateView(
         return ModelGroupForm
 
     def get_success_url(self):
-        return reverse('entities:modelgroup')
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':modelgroup')
 
 
 class ModelGroupView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -1282,4 +1283,23 @@ class ModelGroupView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return 'entities.create_model'
 
     def get_success_url(self):
-        return reverse('entities:modelgroup')
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':modelgroup')
+
+
+class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):
+    """
+    Delete a model group
+    """
+    model = ModelGroup
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have delete permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':modelgroup')
+

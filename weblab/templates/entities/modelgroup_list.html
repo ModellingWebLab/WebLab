@@ -14,7 +14,7 @@
   <section id="modelgrouplist">
     <h2>Your model groups</h2>
 
-    {% can_create_entity entity_type as permission %}
+    {% can_create_modelgroup as permission %}
     {% if permission %}
     <small><a href="{% url 'entities:modelgroupcreate' %}" class="pointer">Create a new model group</a></small>
     {% else %}

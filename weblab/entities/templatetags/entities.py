@@ -186,3 +186,16 @@ def can_delete_entity(context, entity):
 def can_manage_entity(context, entity):
     user = context['user']
     return entity.is_managed_by(user)
+
+
+@register.simple_tag(takes_context=True)
+def can_create_modelgroup(context):
+    user = context['user']
+    return user.has_perm('entities.create_modelgroup')
+
+
+@register.simple_tag(takes_context=True)
+def can_delete_modelgroup(context, entity):
+    user = context['user']
+    return entity.is_deletable_by(user)
+
