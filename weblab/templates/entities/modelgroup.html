@@ -9,7 +9,7 @@
 
 {% can_delete_entity object as can_delete %}
 {% if can_delete %}
-  <a title="Delete this model group" href="{% url 'entities:modelgroupdelete' object.id %}">
+  <a title="Delete this model group" href="{% url 'entities:modelgroup_delete' object.id %}">
     <img src="{% static 'img/delete.png' %}" alt="Delete this model group"/>
     Delete {{object.title}}
   </a>

@@ -16,7 +16,7 @@
 
     {% can_create_modelgroup as permission %}
     {% if permission %}
-    <small><a href="{% url 'entities:modelgroupcreate' %}" class="pointer">Create a new model group</a></small>
+    <small><a href="{% url 'entities:modelgroup_create' %}" class="pointer">Create a new model group</a></small>
     {% else %}
     <small>Your account doesn't have the authority to create new model groups; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
     {% endif %}
@@ -24,7 +24,7 @@
     <ul>
       {% for modelgroup in object_list %}
         <li title="{{ modelgroup.title }}">
-            <strong><a href="{% url 'entities:modelgroupedit' modelgroup.id %}">{{ modelgroup.title }}</a></strong>
+            <strong><a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{{ modelgroup.title }}</a></strong>
         </li>
       {% endfor %}
     </ul>

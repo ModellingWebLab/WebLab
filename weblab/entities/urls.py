@@ -170,19 +170,19 @@ urlpatterns = [
     url(
         r'^modelgroups/new/$',
         views.ModelGroupCreateView.as_view(),
-        name='modelgroupcreate',
+        name='modelgroup_create',
     ),
 
     url(
         r'^modelgroups/(?P<pk>\d+)$',
         views.ModelGroupView.as_view(),
-        name='modelgroupedit',
+        name='modelgroup_edit',
     ),
 
     url(
         r'^modelgroups/(?P<pk>\d+)/delete$',
         views.ModelGroupDeleteView.as_view(),
-        name='modelgroupdelete',
+        name='modelgroup_delete',
     ),
 
 ]
