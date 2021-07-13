@@ -465,7 +465,7 @@ class ModelGroup(UserCreatedModelMixin, VisibilityModelMixin):
     models = models.ManyToManyField(ModelEntity)
 
     class Meta:
-        ordering = ['visibility', 'title']
+        ordering = ['title']
         unique_together = ['title']
     def __str__(self):
         return self.title
