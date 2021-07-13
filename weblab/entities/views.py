@@ -1275,12 +1275,16 @@ class ModelGroupView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     View for editing modelgroups
     """
     model = ModelGroup
-    fields = ['title', 'models']
-    template_name = 'entities/modelgroup.html'
+    fields = ['title', 'visibility', 'models']
+    template_name = 'entities/modelgroup_form.html'
 
     @property
     def permission_required(self):
         return 'entities.create_model'
+
+#    @property
+#    def form_class(self):
+#        return ModelGroupForm
 
     def get_success_url(self):
         ns = self.request.resolver_match.namespace
