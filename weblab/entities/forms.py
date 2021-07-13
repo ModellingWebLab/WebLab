@@ -187,10 +187,14 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Only show models I can can see
         self.fields['models'].queryset =  ModelEntity.objects.visible_to_user(self.user)
+        self.fields['visibility'] = forms.ChoiceField(
+            choices=visibility.CHOICES,
+            help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
+        )
 
     class Meta:
         model = ModelGroup
-        fields = ['title', 'models']
+        fields = ['title', 'visibility', 'models']
 
     def clean_name(self):
         name = self.cleaned_data['title']

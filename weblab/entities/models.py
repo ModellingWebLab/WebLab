@@ -12,6 +12,7 @@ from guardian.shortcuts import get_objects_for_user
 from core.filetypes import get_file_type
 from core.models import UserCreatedModelMixin
 from core.visibility import Visibility, visibility_check
+from core.models import VisibilityModelMixin
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
@@ -455,11 +456,16 @@ class AnalysisTask(models.Model):
         unique_together = ['entity', 'version']
 
 
-class ModelGroup(UserCreatedModelMixin):
-    title = models.CharField(max_length=100)
+class ModelGroup(UserCreatedModelMixin, VisibilityModelMixin):
+    """
+    A group of models used for creating stories about aspects of several models together.
+    """
+
+    title = models.CharField(max_length=255)
     models = models.ManyToManyField(ModelEntity)
+
     class Meta:
-        ordering = ['title']
+        ordering = ['visibility', 'title']
         unique_together = ['title']
     def __str__(self):
         return self.title
