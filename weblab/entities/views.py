@@ -1276,15 +1276,11 @@ class ModelGroupView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """
     model = ModelGroup
     fields = ['title', 'visibility', 'models']
-    template_name = 'entities/modelgroup_form.html'
+    template_name = 'entities/modelgroup.html'
 
     @property
     def permission_required(self):
         return 'entities.create_model'
-
-#    @property
-#    def form_class(self):
-#        return ModelGroupForm
 
     def get_success_url(self):
         ns = self.request.resolver_match.namespace
@@ -1307,3 +1303,26 @@ class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':modelgroup')
 
+
+class ModelGroupCollaboratorsView(EditCollaboratorsAbstractView):
+    """
+    Edit collaborators for model groups
+    """
+    model = ModelGroup
+    template_name = 'entities/modelgroup_collaborators_form.html'
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':modelgroup_collaborators', args=[entity.id])
+
+    def post(self, request, *args, **kwargs):
+        self.object = self._get_object()
+        formset = self.get_formset()
+        return HttpResponse("bla")
+#        if formset.is_valid():
+#            formset.save()
+#            return HttpResponseRedirect(self.get_success_url())
+#        else:
+#        return self.render_to_response(self.get_context_data(formset=formset))

@@ -1,4 +1,5 @@
 {% load staticfiles %}
+{% load entities %}
 
 <h1>Model group: {{ object.title }}</h1>
 <small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.

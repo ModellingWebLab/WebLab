@@ -185,6 +185,12 @@ urlpatterns = [
         name='modelgroup_delete',
     ),
 
+    url(
+         r'^modelgroups/(?P<pk>\d+)/collaborators$',
+        views.ModelGroupCollaboratorsView.as_view(),
+        name='modelgroup_collaborators',
+    ),
+
 ]
 
 app_name = 'entities'

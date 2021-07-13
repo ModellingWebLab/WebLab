@@ -4,7 +4,7 @@
 
 {% block title %}Model group -{{ object.title }} {% endblock title %}
 {% block content %}
-  {% include "./includes/moelgroup_header.html" %}
+  {% include "./includes/modelgroup_header.html" %}
 
 <form method="post">{% csrf_token %}
     {{ form.as_p }}
