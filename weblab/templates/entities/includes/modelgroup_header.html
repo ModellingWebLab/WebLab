@@ -1,7 +1,7 @@
 {% load staticfiles %}
 {% load entities %}
 
-<h1>Model group: {{ object.title }}</h1>
+<a href="{% url 'entities:modelgroup_edit' object.id %}"><h1>Model group: {{ object.title }}</h1></a>
 <small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.
 
 {% can_delete_entity object as can_delete %}
@@ -9,6 +9,9 @@
   <a title="Delete this model group" href="{% url 'entities:modelgroup_delete' object.id %}">
     <img src="{% static 'img/delete.png' %}" alt="Delete this model group"/>
     Delete {{object.title}}
+  </a> |
+  <a title="Manage collaborators for this model group" href="{% url 'entities:modelgroup_collaborators' object.id %}">
+    Manage collaborators
   </a>
 {% endif %}
 

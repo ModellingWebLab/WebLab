@@ -467,5 +467,10 @@ class ModelGroup(UserCreatedModelMixin, VisibilityModelMixin):
     class Meta:
         ordering = ['title']
         unique_together = ['title']
+        permissions = (
+            # Edit entity is used as an object-level permission for the collaborator functionality
+            ('edit_entity', 'Can edit modelgroup'),
+        )
+
     def __str__(self):
         return self.title
