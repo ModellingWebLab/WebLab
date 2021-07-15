@@ -191,6 +191,12 @@ urlpatterns = [
         name='modelgroup_collaborators',
     ),
 
+    url(
+        r'^modelgroups/(?P<pk>\d+)/transfer$',
+        views.ModelGroupTransferView.as_view(),
+        name='modelgroup_transfer',
+    ),
+
 ]
 
 app_name = 'entities'

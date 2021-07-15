@@ -24,7 +24,7 @@
     <ul>
       {% for modelgroup in object_list %}
         <li title="{{ modelgroup.title }}">
-            <strong><a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{{ modelgroup.title }}</a></strong>
+            <strong><a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{{ modelgroup.title }} </strong><em>(by {{ modelgroup.author.full_name  }})</a></em>
         </li>
       {% endfor %}
     </ul>

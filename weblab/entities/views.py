@@ -1312,9 +1312,53 @@ class ModelGroupCollaboratorsView(EditCollaboratorsAbstractView):
     context_object_name = 'modelgroup'
     template_name = 'entities/modelgroup_collaborators_form.html'
 
-def get_success_url(self):
+    def get_success_url(self):
         """What page to show when the form was processed OK."""
         entity = self.object
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':modelgroup_collaborators', args=[entity.id])
 
+
+class ModelGroupTransferView(LoginRequiredMixin, UserPassesTestMixin,
+                             FormMixin, DetailView):
+    model = ModelGroup
+    template_name = 'entities/modelgroup_transfer_ownership.html'
+    context_object_name = 'modelgroup'
+    form_class = OwnershipTransferForm
+
+    def _get_object(self):
+        if not hasattr(self, 'object'):
+            self.object = self.get_object()
+        return self.object
+
+    def test_func(self):
+        return self._get_object().is_managed_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """Check the form and transfer ownership of the entity.
+
+        Called by Django when a form is submitted.
+        """
+        form = self.get_form()
+
+        if form.is_valid():
+            user = form.cleaned_data['user']
+            modelgroup = self.get_object()
+            if self.model.objects.filter(title=modelgroup.title, author=user).exists():
+                form.add_error(None, "User already has a model group called %s" % (modelgroup.title))
+                return self.form_invalid(form)
+
+#            old_path = modelgroup.repo_abs_path
+            modelgroup.author = user
+            modelgroup.save()
+#            new_path = modelgroup.repo_abs_path
+#            new_path.parent.mkdir(exist_ok=True, parents=True)
+#
+#            os.rename(str(old_path), str(new_path))
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':modelgroup')
