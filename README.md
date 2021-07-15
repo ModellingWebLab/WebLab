@@ -104,9 +104,8 @@ sudo -u postgres psql postgres
 ALTER USER weblab CREATEDB;
 ```
 When running these tests in a vagant VM (using the vagant file & ansible playbook provided in [deployment](https://github.com/ModellingWebLab/deployment):
-`sudo -u weblab_django DJANGO_SETTINGS_MODULE=config.settings.vagrant pytest`
-Or Edit pytest.ini and change DJANGO_SETTINGS_MODULE to: 
+Edit pytest.ini and change DJANGO_SETTINGS_MODULE to: 
 ```
-DJANGO_SETTINGS_MODULE=vagrant
+DJANGO_SETTINGS_MODULE=config.settings.vagrant
 ```
 *Make sure not to commit the modified pytest.ini!*
