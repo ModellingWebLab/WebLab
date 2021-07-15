@@ -186,7 +186,8 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Only show models I can can see
-        self.fields['models'].queryset =  ModelEntity.objects.visible_to_user(self.user)
+        ModelEntity.objects.visible_to_user(self.user)
+#        self.fields['models'].queryset =  ModelEntity.objects.visible_to_user(self.user)
         self.fields['visibility'] = forms.ChoiceField(
             choices=visibility.CHOICES,
             help_text=visibility.HELP_TEXT.replace('\n', '<br />'),

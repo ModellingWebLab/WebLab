@@ -1255,6 +1255,7 @@ class ModelGroupCreateView(
     """
     Create new model group
     """
+#    model = ModelGroup
     template_name = 'entities/modelgroup_form.html'
 
     @property
@@ -1348,13 +1349,8 @@ class ModelGroupTransferView(LoginRequiredMixin, UserPassesTestMixin,
                 form.add_error(None, "User already has a model group called %s" % (modelgroup.title))
                 return self.form_invalid(form)
 
-#            old_path = modelgroup.repo_abs_path
             modelgroup.author = user
             modelgroup.save()
-#            new_path = modelgroup.repo_abs_path
-#            new_path.parent.mkdir(exist_ok=True, parents=True)
-#
-#            os.rename(str(old_path), str(new_path))
             return self.form_valid(form)
         else:
             return self.form_invalid(form)

@@ -360,6 +360,7 @@ class EntityManager(models.Manager):
     def shared_with_user(self, user):
         """Query over all managed entities shared explicitly with the given user."""
         if user.is_authenticated:
+            shared_pks = get_objects_for_user(user, 'modelgroups.edit_entity', with_superuser=False)
             shared_pks = get_objects_for_user(
                 user, 'entities.edit_entity', with_superuser=False).values_list('pk', flat=True)
             return self.get_queryset().filter(pk__in=shared_pks)
