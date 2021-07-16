@@ -1252,10 +1252,12 @@ class ModelGroupCreateView(
     LoginRequiredMixin, PermissionRequiredMixin,
     UserFormKwargsMixin, CreateView
 ):
+#class ModelGroupCreateView(PermissionRequiredMixin, CreateView):
+#    fields = ['title', 'visibility', 'models']
     """
     Create new model group
     """
-#    model = ModelGroup
+    model = ModelGroup
     template_name = 'entities/modelgroup_form.html'
 
     @property

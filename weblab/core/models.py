@@ -28,6 +28,7 @@ class UserCreatedModelMixin(models.Model):
     """
     Model mixin for user-created objects
     """
+    permission_str = 'edit_entity'
     created_at = models.DateTimeField(auto_now_add=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
@@ -55,14 +56,14 @@ class UserCreatedModelMixin(models.Model):
         has_perm = user.has_perm(self.create_permission)
         return has_perm and (
             user == self.author or
-            user.has_perm('edit_entity', self)
+            user.has_perm(self.permission_str, self)
         )
 
     def add_collaborator(self, user):
-        assign_perm('edit_entity', user, self)
+        assign_perm(self.permission_str, user, self)
 
     def remove_collaborator(self, user):
-        remove_perm('edit_entity', user, self)
+        remove_perm(self.permission_str, user, self)
 
     @property
     def collaborators(self):
@@ -74,7 +75,7 @@ class UserCreatedModelMixin(models.Model):
         return [
             user
             for (user, perms) in get_users_with_perms(self, attach_perms=True).items()
-            if 'edit_entity' in perms
+            if self.permission_str in perms
         ]
 
     @property

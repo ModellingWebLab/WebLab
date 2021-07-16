@@ -360,7 +360,6 @@ class EntityManager(models.Manager):
     def shared_with_user(self, user):
         """Query over all managed entities shared explicitly with the given user."""
         if user.is_authenticated:
-            shared_pks = get_objects_for_user(user, 'modelgroups.edit_entity', with_superuser=False)
             shared_pks = get_objects_for_user(
                 user, 'entities.edit_entity', with_superuser=False).values_list('pk', flat=True)
             return self.get_queryset().filter(pk__in=shared_pks)
@@ -461,7 +460,7 @@ class ModelGroup(UserCreatedModelMixin, VisibilityModelMixin):
     """
     A group of models used for creating stories about aspects of several models together.
     """
-
+    permission_str = 'edit_modelgroup'
     title = models.CharField(max_length=255)
     models = models.ManyToManyField(ModelEntity)
 
@@ -469,8 +468,8 @@ class ModelGroup(UserCreatedModelMixin, VisibilityModelMixin):
         ordering = ['title']
         unique_together = ['title']
         permissions = (
-            # Edit entity is used as an object-level permission for the collaborator functionality
-            ('edit_entity', 'Can edit modelgroup'),
+            # edit_modelgroup is used as an object-level permission for the collaborator functionality
+            ('edit_modelgroup', 'Can edit modelgroup'),
         )
 
     def __str__(self):
