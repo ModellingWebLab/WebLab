@@ -3,7 +3,7 @@ from django import forms
 from guardian.shortcuts import assign_perm
 
 from core import recipes
-from entities.forms import EntityChangeVisibilityForm, EntityCollaboratorForm
+from entities.forms import EntityChangeVisibilityForm, EntityCollaboratorForm, ModelGroupForm
 
 
 @pytest.mark.django_db
@@ -67,3 +67,32 @@ class TestEntityVisibilityForm:
     def test_shows_moderated_option_for_moderator(self, moderator):
         form = EntityChangeVisibilityForm(user=moderator)
         assert form.fields['visibility'].valid_value('moderated')
+
+
+@pytest.mark.django_db
+class TestModelGroupForm:
+    def test_shows_public_and_private_for_regular_user(self, user):
+        form = ModelGroupForm(user=user)
+        assert form.fields['visibility'].valid_value('public')
+        assert form.fields['visibility'].valid_value('private')
+        assert not form.fields['visibility'].valid_value('moderated')
+
+    def test_shows_moderated_option_for_moderator(self, moderator):
+        form = ModelGroupForm(user=moderator)
+        assert form.fields['visibility'].valid_value('moderated')
+
+    def test_shows_all_and_only_visible_models(self, user, other_user, helpers):
+        models = recipes.model.make(_quantity=2, author=user)
+        other_models = recipes.model.make(_quantity=2, author=other_user)
+
+        form = ModelGroupForm(user=user)
+        assert [(m.id, m.name) for m in models] == [i for i in form.fields['models'].choices]
+
+        form = ModelGroupForm(user=other_user)
+        assert [(m.id, m.name) for m in other_models] == [i for i in form.fields['models'].choices]
+
+        helpers.add_version(models[0], visibility='public')
+        assign_perm('edit_entity', other_user, models[1])
+
+        form = ModelGroupForm(user=other_user)
+        assert [(m.id, m.name) for m in models + other_models] == [i for i in form.fields['models'].choices]

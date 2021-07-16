@@ -1252,8 +1252,6 @@ class ModelGroupCreateView(
     LoginRequiredMixin, PermissionRequiredMixin,
     UserFormKwargsMixin, CreateView
 ):
-#class ModelGroupCreateView(PermissionRequiredMixin, CreateView):
-#    fields = ['title', 'visibility', 'models']
     """
     Create new model group
     """
