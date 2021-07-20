@@ -1,34 +1,14 @@
-{% extends "base.html" %}
-
-{% block title %}New model group - {% endblock title %}
-
-{% block content %}
-<style>
-.field-checks {
-  color: black;
-  display: inline-block;
-  margin:auto;
-  vertical-align: middle;
-}
-</style>
-
-<div id='newmodelgroupform'>
-  <h1>Create model group</h1>
-
   <form method="POST" action="">
     {% csrf_token %}
     <p>{{ form.title.label_tag }} {{ form.title }}</p>
     <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
     <p>{{ form.models.label_tag }} 
-    <ul id="id_models" class="field-checks">
+    <ul id="id_models" class="checkboxesList">
     {% for model in form.models.field.queryset %}
         <li><label for="id_models_{{ forloop.counter0 }}"><input type="checkbox" name="models" value="{{ model.id }}" class="field-checks" id="id_models_{{ forloop.counter0 }}"> {{ model.name }} <em>(by {{ model.author.full_name }})</em></label></li>
     {% endfor %}
    </ul></p>
     <p>
-    <button id="savebutton">Create model group</button>
+    <button id="savebutton">{{ save_button_text }}</button>
     </p>
   </form>
-</div>
-{% endblock %}
-

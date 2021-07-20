@@ -190,13 +190,11 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        user = kwargs.pop('user')
+        user = self.user#kwargs.pop('user')
         # Only show models I can can see
         self.fields['models'].widget = forms.CheckboxSelectMultiple(choices = [])
         self.fields['models'].queryset = ModelEntity.objects.visible_to_user(user)
-#        for model in self.fields['models'].choices:
-#            assert False, str(model)
-        self.fields['models'].widget.attrs.update({'class': 'field-checks'})
+        self.fields['models'].widget.attrs.update({'class': 'checkboxesList'})
         if not user.has_perm('entities.moderator'):
             self.fields['visibility'].choices.remove((
                 visibility.Visibility.MODERATED, 'Moderated')

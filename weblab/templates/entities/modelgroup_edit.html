@@ -6,6 +6,8 @@
 {% block content %}
   {% include "./includes/modelgroup_header.html" %}
 
+  {% include "./includes/modelgroup_form.html" with save_button_text="Save model group"%}
+
 <form method="post">{% csrf_token %}
     {{ form.as_p }}
     <button id="savebutton">Save</button>
