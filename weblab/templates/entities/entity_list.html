@@ -23,7 +23,7 @@
     <ul>
       {% for entity in object_list %}
         <li title="{{ entity.name }}">
-          <strong><a href="{% entity_url 'detail' entity %}">{{ entity.name }}</a></strong>
+          <strong><a href="{% entity_url 'detail' entity %}">{{ entity.name }}</strong><em style="margin-right:0.25em"> (by {{ entity.author.full_name }}) </em></a>
 
           {% can_create_version entity as permission %}
           {% if permission %}
