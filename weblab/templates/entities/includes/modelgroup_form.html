@@ -1,13 +1,24 @@
+{% load staticfiles %}
+
+
   <form method="POST" action="">
     {% csrf_token %}
+
     <p>{{ form.title.label_tag }} {{ form.title }}</p>
+    {% if  form.title.errors  %}
+        <ul class="errorlist"><li>{{ form.title.errors }}</li></ul>
+    {% endif %}
     <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
-    <p>{{ form.models.label_tag }} 
+
+    <p>{{ form.models.label_tag }}
+    {% if  form.models.errors  %}
+        <ul class="errorlist"><li>{{ form.models.errors }}</li></ul>
+    {% endif %}
     <ul id="id_models" class="checkboxesList">
     {% for model in form.models.field.queryset %}
-        <li><label for="id_models_{{ forloop.counter0 }}"><input type="checkbox" name="models" value="{{ model.id }}" class="field-checks" id="id_models_{{ forloop.counter0 }}"> {{ model.name }} <em>(by {{ model.author.full_name }})</em></label></li>
+        <li><label for="id_models_{{ forloop.counter0 }}"><input {% if  model in object.models.all %} checked {% endif %} type="checkbox" name="models" value="{{ model.id }}" class="checkboxesList" id="id_models_{{ forloop.counter0 }}"> {{ model.name  }}  {% if model.author != user %}<em>(by {{ model.author.full_name }})</em>{% endif %}</label></li>
     {% endfor %}
-   </ul></p>
+    </ul></p>
     <p>
     <button id="savebutton">{{ save_button_text }}</button>
     </p>

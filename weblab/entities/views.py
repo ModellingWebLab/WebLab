@@ -1245,18 +1245,20 @@ class ModelGroupListView(LoginRequiredMixin, ListView):
     template_name = 'entities/modelgroup_list.html'
 
     def get_queryset(self):
-        return ModelGroup.objects.filter(author=self.request.user)
+        owned = ModelGroup.objects.filter(author=self.request.user)
+        shared_ids = [model.id for model in ModelGroup.objects.all() if self.request.user.has_perm('edit_modelgroup', model)]
+        shared = ModelGroup.objects.filter(id__in=shared_ids)
+        return owned | shared
 
 
-class ModelGroupCreateView(
+class ModelGroupView(
     LoginRequiredMixin, PermissionRequiredMixin,
-    UserFormKwargsMixin, CreateView
-):
+    UserFormKwargsMixin):
     """
-    Create new model group
+    Base view for creating or editing model groups
     """
     model = ModelGroup
-    template_name = 'entities/modelgroup_create.html'
+    template_name = ''
 
     @property
     def permission_required(self):
@@ -1271,24 +1273,19 @@ class ModelGroupCreateView(
         return reverse(ns + ':modelgroup')
 
 
-class ModelGroupView(LoginRequiredMixin, PermissionRequiredMixin, UserFormKwargsMixin, UpdateView):
+class ModelGroupCreateView(ModelGroupView, CreateView):
+    """
+    Create new model group
+    """
+    template_name = 'entities/modelgroup_create.html'
+
+
+class ModelGroupEditView(ModelGroupView, UpdateView):
     """
     View for editing modelgroups
     """
     model = ModelGroup
     template_name = 'entities/modelgroup_edit.html'
-
-    @property
-    def permission_required(self):
-        return 'entities.create_model'
-
-    @property
-    def form_class(self):
-        return ModelGroupForm
-
-    def get_success_url(self):
-        ns = self.request.resolver_match.namespace
-        return reverse(ns + ':modelgroup')
 
 
 class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):

@@ -190,12 +190,12 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        user = self.user#kwargs.pop('user')
+        #Save current title if we have one
+        self.current_title = kwargs['instance'].title if kwargs['instance'] else None
         # Only show models I can can see
-        self.fields['models'].widget = forms.CheckboxSelectMultiple(choices = [])
-        self.fields['models'].queryset = ModelEntity.objects.visible_to_user(user)
-        self.fields['models'].widget.attrs.update({'class': 'checkboxesList'})
-        if not user.has_perm('entities.moderator'):
+        self.fields['models'].queryset = ModelEntity.objects.visible_to_user(self.user)
+
+        if not self.user.has_perm('entities.moderator'):
             self.fields['visibility'].choices.remove((
                 visibility.Visibility.MODERATED, 'Moderated')
             )
@@ -204,17 +204,17 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
         model = ModelGroup
         fields = ['title', 'visibility', 'models']
 
-    def clean_name(self):
-        name = self.cleaned_data['title']
-        if self._meta.model.objects.filter(name=name, author=self.user).exists():
+    def clean_title(self):
+        title = self.cleaned_data['title']
+        if title != self.current_title and self._meta.model.objects.filter(title=title, author=self.user).exists():
             raise ValidationError(
-                'You already have a %s named "%s"' % (self._meta.model.display_type, name))
-
-        return name
+                'You already have a model group named "%s"' % title)
+        return title
 
     def save(self, **kwargs):
         modelgroup = super().save(commit=False)
-        modelgroup.author = self.user
+        if not hasattr(modelgroup, 'author') or modelgroup.author is None:
+            modelgroup.author = self.user
         modelgroup.save()
         self.save_m2m()
         return modelgroup

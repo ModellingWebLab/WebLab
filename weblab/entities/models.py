@@ -466,7 +466,7 @@ class ModelGroup(UserCreatedModelMixin, VisibilityModelMixin):
 
     class Meta:
         ordering = ['title']
-        unique_together = ['title']
+        unique_together = ['title', 'author']
         permissions = (
             # edit_modelgroup is used as an object-level permission for the collaborator functionality
             ('edit_modelgroup', 'Can edit modelgroup'),

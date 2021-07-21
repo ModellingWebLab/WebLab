@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load entities %}
 
-{% block title %}Your model groups {% endblock title %}
+{% block title %}Model groups you can edit - {% endblock title %}
 
 {% block content %}
 
@@ -23,11 +23,26 @@
 
     <ul>
       {% for modelgroup in object_list %}
-        <li title="{{ modelgroup.title }}">
-            <strong><a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{{ modelgroup.title }} </strong><em>(by {{ modelgroup.author.full_name  }})</a></em>
-        </li>
+        {% if modelgroup.author == user %}
+          <li title="{{ modelgroup.title }}">
+              <strong><a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{{ modelgroup.title }} </strong></a>
+          </li>
+        {% endif %}
       {% endfor %}
     </ul>
+
+    <h2>Other model groups you can edit</h2>
+
+    <ul>
+      {% for modelgroup in object_list %}
+        {% if modelgroup.author != user %}
+          <li title="{{ modelgroup.title }}">
+              <strong><a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{{ modelgroup.title }} </strong><em>(by {{ modelgroup.author.full_name }})</em></a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+
   </section>
 {% endblock content %}
 
