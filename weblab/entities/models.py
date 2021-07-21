@@ -472,5 +472,11 @@ class ModelGroup(UserCreatedModelMixin, VisibilityModelMixin):
             ('edit_modelgroup', 'Can edit modelgroup'),
         )
 
+    def is_editable_by(self, user):
+        return (
+            user == self.author or
+            user.has_perm(self.permission_str, self)
+        )
+
     def __str__(self):
         return self.title

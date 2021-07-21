@@ -1245,14 +1245,13 @@ class ModelGroupListView(LoginRequiredMixin, ListView):
     template_name = 'entities/modelgroup_list.html'
 
     def get_queryset(self):
-        owned = ModelGroup.objects.filter(author=self.request.user)
-        shared_ids = [model.id for model in ModelGroup.objects.all() if self.request.user.has_perm('edit_modelgroup', model)]
-        shared = ModelGroup.objects.filter(id__in=shared_ids)
-        return owned | shared
+        return ModelGroup.objects.filter(
+            id__in=[model.id for model in ModelGroup.objects.all() if model.is_editable_by(self.request.user)]
+        )
 
 
 class ModelGroupView(
-    LoginRequiredMixin, PermissionRequiredMixin,
+    LoginRequiredMixin, UserPassesTestMixin,
     UserFormKwargsMixin):
     """
     Base view for creating or editing model groups
@@ -1263,6 +1262,9 @@ class ModelGroupView(
     @property
     def permission_required(self):
         return 'entities.create_model'
+
+    def test_func(self):
+        return self.get_object().is_editable_by(self.request.user)
 
     @property
     def form_class(self):
