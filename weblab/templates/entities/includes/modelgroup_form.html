@@ -17,7 +17,11 @@
     {% endif %}
     <ul id="id_models" class="checkboxesList">
     {% for model in form.models.field.queryset %}
-        <li><label for="id_models_{{ forloop.counter0 }}"><input {% if  model in object.models.all %} checked {% endif %} type="checkbox" name="models" value="{{ model.id }}" class="checkboxesList" id="id_models_{{ forloop.counter0 }}"> {{ model.name  }}  {% if model.author != user %}<em>(by {{ model.author.full_name }})</em>{% endif %}</label></li>
+    {% can_view_entity model as can_view %}
+        <li><label for="id_models_{{ forloop.counter0 }}"><input {% if model in object.models.all %} checked {% endif %} {% if not can_view %} disabled {% endif %} type="checkbox" name="models" value="{{ model.id }}" class="checkboxesList" id="id_models_{{ forloop.counter0 }}">
+          {% if can_view %}<a href="{% entity_url 'detail' model %}">{% endif %} {{ model.name  }}  {% if model.author != user %}<em>(by {{ model.author.full_name }})</em>{% endif %}{% if can_view %}</a>{% endif %}
+          {% if not can_view %} <input type="hidden"  name="models" value="{{ model.id }}" id="id_models_{{ forloop.counter0 }}" value=on> {% endif %}
+        </label></li>
     {% endfor %}
     </ul></p>
     <p>

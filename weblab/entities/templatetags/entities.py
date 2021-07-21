@@ -5,6 +5,8 @@ from django.urls import reverse
 
 from core.filetypes import get_file_type
 
+from entities.models import ModelEntity
+
 
 register = template.Library()
 
@@ -198,4 +200,10 @@ def can_create_modelgroup(context):
 def can_delete_modelgroup(context, entity):
     user = context['user']
     return entity.is_deletable_by(user)
+
+
+@register.simple_tag(takes_context=True)
+def can_view_entity(context, entity):
+    user = context['user']
+    return entity in ModelEntity.objects.visible_to_user(user)
 

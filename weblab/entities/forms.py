@@ -190,12 +190,15 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        #Save current title if we have one
+        # Only show models I can can see
+        self.fields['models'].queryset = ModelEntity.objects.visible_to_user(self.user)
+        #Save current details if we have them
         if kwargs['instance']:
             self.current_title = kwargs['instance'].title
             self.fields['visibility'].disabled = not kwargs['instance'].is_visibility_editable_by(self.user)
-        # Only show models I can can see
-        self.fields['models'].queryset = ModelEntity.objects.visible_to_user(self.user)
+            #make sure currently selected models are not filtered out even if they are not visible to the current user
+            current_models_ids =[model.id for model in kwargs['instance'].models.all()]
+            self.fields['models'].queryset |= ModelEntity.objects.filter(id__in=current_models_ids)
 
         if not self.user.has_perm('entities.moderator'):
             self.fields['visibility'].choices.remove((
