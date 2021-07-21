@@ -191,7 +191,9 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         #Save current title if we have one
-        self.current_title = kwargs['instance'].title if kwargs['instance'] else None
+        if kwargs['instance']:
+            self.current_title = kwargs['instance'].title
+            self.fields['visibility'].disabled = not kwargs['instance'].is_visibility_editable_by(self.user)
         # Only show models I can can see
         self.fields['models'].queryset = ModelEntity.objects.visible_to_user(self.user)
 
