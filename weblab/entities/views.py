@@ -1263,9 +1263,6 @@ class ModelGroupView(
     def permission_required(self):
         return 'entities.create_model'
 
-    def test_func(self):
-        return self.get_object().is_editable_by(self.request.user)
-
     @property
     def form_class(self):
         return ModelGroupForm
@@ -1281,6 +1278,9 @@ class ModelGroupCreateView(ModelGroupView, CreateView):
     """
     template_name = 'entities/modelgroup_create.html'
 
+    def test_func(self):
+        return self.request.user.has_perm('models.create_model')
+
 
 class ModelGroupEditView(ModelGroupView, UpdateView):
     """
@@ -1288,6 +1288,9 @@ class ModelGroupEditView(ModelGroupView, UpdateView):
     """
     model = ModelGroup
     template_name = 'entities/modelgroup_edit.html'
+
+    def test_func(self):
+        return self.get_object().is_editable_by(self.request.user)
 
 
 class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):
