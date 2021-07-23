@@ -37,7 +37,7 @@ jobs:
         python -m flake8 weblab
     - name: Test sorting with isort
       run: |
-        python -m isort --verbose --check-only --diff recursive weblab
+        python -m isort --verbose --check-only --diff
     - name: Setup secrets
       run: |
         tar -xvf .actions.tar
