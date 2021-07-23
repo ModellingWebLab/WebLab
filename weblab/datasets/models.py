@@ -1,12 +1,11 @@
 import csv
 
+from core.models import FileCollectionMixin, UserCreatedModelMixin, VisibilityModelMixin
 from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.text import get_valid_filename
-from guardian.shortcuts import get_objects_for_user
-
-from core.models import FileCollectionMixin, UserCreatedModelMixin, VisibilityModelMixin
 from entities.models import ProtocolEntity
+from guardian.shortcuts import get_objects_for_user
 from repocache.models import CachedProtocolVersion, ProtocolIoputs
 
 

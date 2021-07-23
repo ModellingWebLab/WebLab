@@ -1,11 +1,10 @@
 import logging
 
 import requests
+from core.processing import prepend_callback_base
 from django.conf import settings
 from django.db import IntegrityError
 from django.urls import reverse
-
-from core.processing import prepend_callback_base
 from experiments.models import PlannedExperiment
 from repocache.models import ProtocolInterface, ProtocolIoputs
 

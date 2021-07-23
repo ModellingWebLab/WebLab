@@ -2,10 +2,9 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from core import recipes
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
-
-from core import recipes
 from experiments.models import RunningExperiment
 from experiments.processing import ProcessingException
 from fitting.models import FittingResult, FittingResultVersion

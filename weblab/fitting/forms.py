@@ -1,8 +1,7 @@
 from braces.forms import UserKwargModelFormMixin
+from datasets.models import Dataset
 from django import forms
 from django.core.exceptions import ValidationError
-
-from datasets.models import Dataset
 from entities.forms import EntityForm, EntityRenameForm, EntityVersionForm
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion

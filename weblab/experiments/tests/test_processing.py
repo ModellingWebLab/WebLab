@@ -4,12 +4,11 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from core import recipes
 from django.conf import settings
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils.timezone import now
-
-from core import recipes
 from experiments.models import Experiment, ExperimentVersion, RunningExperiment
 from experiments.processing import ProcessingException, process_callback, submit_experiment
 

@@ -1,5 +1,4 @@
 from django.conf.urls import include, url
-
 from entities import views as entity_views
 
 from . import views

@@ -1,7 +1,6 @@
 import pytest
-from django.core import mail
-
 from accounts.models import User
+from django.core import mail
 
 
 @pytest.fixture

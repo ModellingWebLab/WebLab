@@ -11,6 +11,9 @@ by removing the hardcoded 'entities:' namespace from reverse() calls.
 """
 
 from braces.views import UserFormKwargsMixin
+from core.visibility import VisibilityMixin
+from datasets import views as dataset_views
+from datasets.models import Dataset
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
@@ -23,14 +26,10 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, FormView
-from guardian.shortcuts import get_objects_for_user
-
-from core.visibility import VisibilityMixin
-from datasets import views as dataset_views
-from datasets.models import Dataset
 from entities.models import ModelEntity, ProtocolEntity
 from entities.views import EntityNewVersionView, EntityTypeMixin, RenameView
 from experiments.views import ExperimentMatrixJsonView
+from guardian.shortcuts import get_objects_for_user
 from repocache.models import CachedFittingSpecVersion, CachedModelVersion, CachedProtocolVersion
 
 from .forms import (

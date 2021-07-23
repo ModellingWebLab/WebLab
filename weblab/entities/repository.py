@@ -8,6 +8,12 @@ from pathlib import Path
 from shutil import rmtree
 from tempfile import TemporaryDirectory
 
+from core.combine import (
+    MANIFEST_FILENAME,
+    ArchiveWriter,
+    ManifestReader,
+    ManifestWriter,
+)
 from django.utils.functional import cached_property
 from django.utils.timezone import utc
 from git import (
@@ -15,13 +21,6 @@ from git import (
     Blob,
     GitCommandError,
     Repo,
-)
-
-from core.combine import (
-    MANIFEST_FILENAME,
-    ArchiveWriter,
-    ManifestReader,
-    ManifestWriter,
 )
 
 

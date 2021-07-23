@@ -1,5 +1,7 @@
 import logging
 
+from core.visibility import VisibilityMixin
+from datasets import views as dataset_views
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -15,11 +17,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, TemplateView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import FormMixin
-from guardian.shortcuts import get_objects_for_user
-
-from core.visibility import VisibilityMixin
-from datasets import views as dataset_views
 from entities.models import ModelEntity, ProtocolEntity
+from guardian.shortcuts import get_objects_for_user
 from repocache.models import CACHED_VERSION_TYPE_MAP
 
 from .forms import ExperimentSimulateCallbackForm

@@ -1,9 +1,8 @@
 import pytest
-from django import forms
-from guardian.shortcuts import assign_perm
-
 from core import recipes
+from django import forms
 from entities.forms import EntityChangeVisibilityForm, EntityCollaboratorForm
+from guardian.shortcuts import assign_perm
 
 
 @pytest.mark.django_db

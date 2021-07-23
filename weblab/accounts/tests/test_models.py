@@ -1,5 +1,4 @@
 import pytest
-
 from accounts.models import User
 
 

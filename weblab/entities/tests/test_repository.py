@@ -4,10 +4,9 @@ import zipfile
 from pathlib import Path
 
 import pytest
-from git import GitCommandError
-
 from accounts.models import User
 from entities.repository import Repository
+from git import GitCommandError
 
 
 @pytest.fixture

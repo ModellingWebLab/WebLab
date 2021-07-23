@@ -6,12 +6,11 @@ from io import BytesIO
 from unittest.mock import patch
 
 import pytest
+from core import recipes
+from datasets.models import Dataset
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
-
-from core import recipes
-from datasets.models import Dataset
 
 
 @pytest.mark.django_db

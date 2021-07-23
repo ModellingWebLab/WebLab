@@ -10,15 +10,14 @@ from unittest.mock import patch
 
 import pytest
 import requests
+from core import recipes
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
-from git import GitCommandError
-from guardian.shortcuts import assign_perm
-
-from core import recipes
 from entities.models import AnalysisTask, ModelEntity, ProtocolEntity
 from experiments.models import Experiment, PlannedExperiment
+from git import GitCommandError
+from guardian.shortcuts import assign_perm
 from repocache.models import CachedProtocolVersion, ProtocolInterface, ProtocolIoputs
 from repocache.populate import populate_entity_cache
 

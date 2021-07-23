@@ -1,8 +1,7 @@
-from django.db import models
-
 from core.models import UserCreatedModelMixin
 from core.visibility import get_joint_visibility
 from datasets.models import Dataset
+from django.db import models
 from entities.models import (
     Entity,
     EntityManager,

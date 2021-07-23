@@ -1,9 +1,8 @@
 import pytest
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.db.utils import IntegrityError
-
 from core import recipes
 from datasets.models import Dataset
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.utils import IntegrityError
 
 
 @pytest.fixture

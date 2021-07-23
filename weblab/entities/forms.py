@@ -1,11 +1,10 @@
+from accounts.models import User
 from braces.forms import UserKwargModelFormMixin
+from core import visibility
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.forms import formset_factory
-
-from accounts.models import User
-from core import visibility
 
 from .models import EntityFile, ModelEntity, ProtocolEntity
 

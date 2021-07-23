@@ -1,9 +1,8 @@
+from core.models import VisibilityModelMixin
+from core.visibility import Visibility
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from guardian.shortcuts import get_objects_for_user
-
-from core.models import VisibilityModelMixin
-from core.visibility import Visibility
 
 from .exceptions import RepoCacheMiss
 

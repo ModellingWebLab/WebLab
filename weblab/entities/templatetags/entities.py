@@ -1,9 +1,8 @@
 import math
 
+from core.filetypes import get_file_type
 from django import template
 from django.urls import reverse
-
-from core.filetypes import get_file_type
 
 
 register = template.Library()

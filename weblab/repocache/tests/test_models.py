@@ -1,7 +1,6 @@
 import pytest
-from django.db.utils import IntegrityError
-
 from core import recipes
+from django.db.utils import IntegrityError
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import (
     CachedFittingSpec,

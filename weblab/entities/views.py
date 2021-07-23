@@ -7,7 +7,9 @@ from itertools import groupby
 from tempfile import NamedTemporaryFile
 
 import requests
+from accounts.forms import OwnershipTransferForm
 from braces.views import UserFormKwargsMixin
+from core.visibility import Visibility, VisibilityMixin
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import (
@@ -34,13 +36,10 @@ from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
-from git import BadName, GitCommandError
-from guardian.shortcuts import get_objects_for_user
-
-from accounts.forms import OwnershipTransferForm
-from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingResult, FittingSpec
+from git import BadName, GitCommandError
+from guardian.shortcuts import get_objects_for_user
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedProtocolVersion
 

@@ -7,21 +7,20 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from core import recipes
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.messages import get_messages
 from django.test import Client
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
-from pytest_django.asserts import assertContains, assertTemplateUsed
-
-from core import recipes
 from experiments.models import (
     Experiment,
     ExperimentVersion,
     PlannedExperiment,
     RunningExperiment,
 )
+from pytest_django.asserts import assertContains, assertTemplateUsed
 from repocache.populate import populate_entity_cache
 
 

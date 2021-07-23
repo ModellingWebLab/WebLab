@@ -1,6 +1,5 @@
 from django.apps import AppConfig
 from django.db.models.signals import post_save, pre_delete
-
 from entities.signals import entity_created, entity_deleted
 
 

@@ -2,16 +2,15 @@ import binascii
 import uuid
 from pathlib import Path
 
+from core.filetypes import get_file_type
+from core.models import UserCreatedModelMixin
+from core.visibility import Visibility, visibility_check
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.functional import cached_property
 from guardian.shortcuts import get_objects_for_user
-
-from core.filetypes import get_file_type
-from core.models import UserCreatedModelMixin
-from core.visibility import Visibility, visibility_check
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository

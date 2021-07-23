@@ -5,14 +5,13 @@ from pathlib import Path
 from unittest.mock import PropertyMock, patch
 
 import pytest
+from accounts.models import User
+from core import recipes
+from datasets.models import Dataset
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db.models.functions import Now
-
-from accounts.models import User
-from core import recipes
-from datasets.models import Dataset
 from entities.models import Entity
 from fitting.models import FittingResult
 from repocache.populate import populate_entity_cache

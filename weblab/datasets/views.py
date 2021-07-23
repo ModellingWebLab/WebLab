@@ -4,7 +4,10 @@ import shutil
 from itertools import groupby
 from zipfile import ZipFile
 
+from accounts.forms import OwnershipTransferForm
 from braces.views import UserFormKwargsMixin
+from core.combine import ManifestWriter
+from core.visibility import VisibilityMixin
 from django.contrib import messages
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
@@ -23,12 +26,8 @@ from django.views import View
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, FormMixin
 from django.views.generic.list import ListView
-
-from accounts.forms import OwnershipTransferForm
-from core.combine import ManifestWriter
-from core.visibility import VisibilityMixin
-from entities.views import EditCollaboratorsAbstractView
 from entities.forms import EntityChangeVisibilityForm
+from entities.views import EditCollaboratorsAbstractView
 from fitting.models import FittingResult
 from repocache.models import ProtocolIoputs
 

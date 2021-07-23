@@ -1,11 +1,10 @@
 import uuid
 from pathlib import Path
 
-from django.conf import settings
-from django.db import models
-
 from core.models import FileCollectionMixin, UserCreatedModelMixin
 from core.visibility import Visibility, get_joint_visibility, visibility_check
+from django.conf import settings
+from django.db import models
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.models import CachedModelVersion, CachedProtocolVersion
 

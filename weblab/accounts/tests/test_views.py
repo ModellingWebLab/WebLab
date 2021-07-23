@@ -1,9 +1,8 @@
 import pytest
-from django.urls import reverse
-
 from accounts.models import User
 from core import recipes
 from datasets.models import Dataset
+from django.urls import reverse
 
 
 def test_my_account_view_requires_login(client):

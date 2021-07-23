@@ -1,9 +1,8 @@
 import logging
 
+from core.processing import prepend_callback_base
 from django.core.exceptions import MultipleObjectsReturned
 from django.urls import reverse
-
-from core.processing import prepend_callback_base
 from experiments.processing import submit_runnable
 
 from .models import FittingResult, FittingResultVersion

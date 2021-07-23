@@ -1,12 +1,11 @@
 from datetime import date
 
 import pytest
+from core import recipes
+from datasets.models import Dataset
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from guardian.shortcuts import assign_perm
-
-from core import recipes
-from datasets.models import Dataset
 from repocache.models import CachedFittingSpec
 from repocache.populate import populate_entity_cache
 

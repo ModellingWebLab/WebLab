@@ -6,12 +6,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from core import recipes
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
-from pytest_django.asserts import assertContains, assertTemplateUsed
-
-from core import recipes
 from fitting.models import FittingResult, FittingResultVersion, FittingSpec
+from pytest_django.asserts import assertContains, assertTemplateUsed
 from repocache.populate import populate_entity_cache
 
 

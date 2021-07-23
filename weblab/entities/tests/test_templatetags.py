@@ -1,6 +1,5 @@
-import pytest
-
 import entities.templatetags.entities as entity_tags
+import pytest
 from core import recipes
 from repocache.populate import populate_entity_cache
 

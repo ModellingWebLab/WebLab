@@ -1,7 +1,6 @@
 import pytest
-from guardian.shortcuts import assign_perm
-
 from core import recipes
+from guardian.shortcuts import assign_perm
 
 
 @pytest.mark.django_db
