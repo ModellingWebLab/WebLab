@@ -549,4 +549,3 @@ class ChangeVisibilityView(UserPassesTestMixin, DetailView):
             }
 
         return JsonResponse(response)
-

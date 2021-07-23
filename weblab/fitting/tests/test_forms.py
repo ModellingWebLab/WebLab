@@ -1,4 +1,5 @@
 import pytest
+
 from core import recipes
 from fitting.forms import FittingResultCreateForm
 

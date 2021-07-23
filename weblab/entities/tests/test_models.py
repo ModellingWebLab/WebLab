@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from core import recipes
 from django.db.utils import IntegrityError
 from entities.models import Entity, ModelEntity, ProtocolEntity

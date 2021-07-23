@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 import pytest
+
 from core.combine import (
     ArchiveReader,
     ArchiveWriter,

@@ -7,6 +7,7 @@ from itertools import groupby
 from tempfile import NamedTemporaryFile
 
 import requests
+
 from accounts.forms import OwnershipTransferForm
 from braces.views import UserFormKwargsMixin
 from core.visibility import Visibility, VisibilityMixin

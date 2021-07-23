@@ -1,5 +1,6 @@
-import experiments.templatetags.experiments as exp_tags
 import pytest
+
+import experiments.templatetags.experiments as exp_tags
 from core import recipes
 from django.urls import reverse
 

@@ -1,5 +1,6 @@
-import datasets.templatetags.datasets as dataset_tags
 import pytest
+
+import datasets.templatetags.datasets as dataset_tags
 
 
 @pytest.mark.django_db

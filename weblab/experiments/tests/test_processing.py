@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+
 from core import recipes
 from django.conf import settings
 from django.core import mail

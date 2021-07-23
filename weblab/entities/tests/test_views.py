@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import pytest
 import requests
+
 from core import recipes
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse

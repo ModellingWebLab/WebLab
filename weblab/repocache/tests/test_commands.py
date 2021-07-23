@@ -1,6 +1,7 @@
 from unittest.mock import call, patch
 
 import pytest
+
 from core import recipes
 from repocache.management.commands.populate_entity_cache import Command as PopulateCommand
 

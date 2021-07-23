@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+
 from core import recipes
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType

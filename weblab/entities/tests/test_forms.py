@@ -1,4 +1,5 @@
 import pytest
+
 from core import recipes
 from django import forms
 from entities.forms import EntityChangeVisibilityForm, EntityCollaboratorForm

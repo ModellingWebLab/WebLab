@@ -1,6 +1,7 @@
 from unittest.mock import call, patch
 
 import pytest
+
 from core import recipes
 from entities.management.commands.analyse_entity_versions import Command as AnalyseCommand
 

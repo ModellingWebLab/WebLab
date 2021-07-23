@@ -1,4 +1,5 @@
 import pytest
+
 from core.processing import prepend_callback_base
 
 

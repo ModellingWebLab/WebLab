@@ -1,4 +1,5 @@
 import pytest
+
 from core.visibility import (
     Visibility,
     get_joint_visibility,
