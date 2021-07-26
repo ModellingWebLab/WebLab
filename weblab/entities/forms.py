@@ -7,7 +7,7 @@ from django.forms import formset_factory
 from accounts.models import User
 from core import visibility
 
-from .models import EntityFile, ModelEntity, ProtocolEntity
+from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -180,3 +180,52 @@ class FileUploadForm(forms.ModelForm):
     class Meta:
         model = EntityFile
         fields = ['upload']
+
+
+class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for creating a new model group."""
+    visibility = forms.ChoiceField(
+        choices=visibility.CHOICES,
+        help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Only show models I can can see
+        self.current_title = None
+        self.fields['models'].queryset = ModelEntity.objects.visible_to_user(self.user)
+
+        # Save current details if we have them
+        instance = kwargs.get('instance', None)
+        if instance:
+            self.current_title = instance.title
+            self.fields['visibility'].disabled = not instance.is_visibility_editable_by(self.user)
+
+            # make sure currently selected models are not filtered out even if they are not visible to the current user
+            current_models_ids = [model.id for model in instance.models.all()]
+            self.fields['models'].queryset |= ModelEntity.objects.filter(id__in=current_models_ids)
+
+        if not self.user.has_perm('entities.moderator'):
+            self.fields['visibility'].choices.remove((
+                visibility.Visibility.MODERATED, 'Moderated')
+            )
+
+    class Meta:
+        model = ModelGroup
+        fields = ['title', 'visibility', 'models']
+
+    def clean_title(self):
+        title = self.cleaned_data['title']
+        if title != self.current_title and self._meta.model.objects.filter(title=title, author=self.user).exists():
+            raise ValidationError(
+                'You already have a model group named "%s"' % title)
+        return title
+
+    def save(self, **kwargs):
+        modelgroup = super().save(commit=False)
+        if not hasattr(modelgroup, 'author') or modelgroup.author is None:
+            modelgroup.author = self.user
+        modelgroup.save()
+        self.save_m2m()
+        return modelgroup

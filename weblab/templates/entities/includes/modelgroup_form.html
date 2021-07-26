@@ -1,0 +1,30 @@
+{% load staticfiles %}
+{% load entities %}
+
+
+  <form method="POST" action="">
+    {% csrf_token %}
+
+    <p>{{ form.title.label_tag }} {{ form.title }}</p>
+    {% if  form.title.errors  %}
+        <ul class="errorlist"><li>{{ form.title.errors }}</li></ul>
+    {% endif %}
+    <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
+
+    <p>{{ form.models.label_tag }}
+    {% if  form.models.errors  %}
+        <ul class="errorlist"><li>{{ form.models.errors }}</li></ul>
+    {% endif %}
+    <ul id="id_models" class="checkboxesList">
+    {% for model in form.models.field.queryset %}
+    {% can_view_entity model as can_view %}
+        <li><label for="id_models_{{ forloop.counter0 }}"><input {% if model in object.models.all %} checked {% endif %} {% if not can_view %} disabled {% endif %} type="checkbox" name="models" value="{{ model.id }}" class="checkboxesList" id="id_models_{{ forloop.counter0 }}">
+          {% if can_view %}<a href="{% entity_url 'detail' model %}">{% endif %} {{ model.name  }}  {% if model.author != user %}<em>(by {{ model.author.full_name }})</em>{% endif %}{% if can_view %}</a>{% endif %}
+          {% if not can_view %} <input type="hidden"  name="models" value="{{ model.id }}" id="id_models_{{ forloop.counter0 }}" value=on> {% endif %}
+        </label></li>
+    {% endfor %}
+    </ul></p>
+    <p>
+    <button id="savebutton">{{ save_button_text }}</button>
+    </p>
+  </form>

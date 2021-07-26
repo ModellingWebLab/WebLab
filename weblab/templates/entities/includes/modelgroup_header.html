@@ -1,0 +1,23 @@
+{% load staticfiles %}
+{% load entities %}
+
+<a href="{% url 'entities:modelgroup_edit' object.id %}"><h1>Model group: {{ object.title }}</h1></a>
+<small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.
+
+{% can_delete_entity object as can_delete %}
+{% if can_delete %}
+  <a title="Delete this model group" href="{% url 'entities:modelgroup_delete' object.id %}">
+    <img src="{% static 'img/delete.png' %}" alt="Delete this model group"/>
+    Delete {{object.title}}
+  </a> |
+{% endif %}
+{% can_manage_entity object as can_manage %}
+{% if can_manage %}
+  <a title="Manage collaborators for this model group" href="{% url 'entities:modelgroup_collaborators' object.id %}">
+    Manage collaborators | 
+  </a>
+  <a title="Transfer ownership of this model group" href="{%  url 'entities:modelgroup_transfer' object.id %}">
+    Transfer ownership
+  </a>
+{% endif %}
+

@@ -9,6 +9,10 @@ model = Recipe(
     'ModelEntity',
     entity_type='model', name=seq('my model')
 )
+modelgroup = Recipe(
+    'ModelGroup',
+    title=seq('my model group')
+)
 protocol = Recipe(
     'ProtocolEntity',
     entity_type='protocol', name=seq('my protocol')

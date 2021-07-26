@@ -292,6 +292,21 @@ input.inline+span {
     width: $page-width;
 }
 
+/* Useful for checkbox-style inputs */
+input.inline {
+  display: inline;
+  margin-left: 0;
+}
+
+input.inline+span {
+  display: inline;
+}
+
+#notifications {
+    position: absolute;
+    width: $page-width;
+}
+
 #error {
 	background-color: #e5cece;
 	border: 2px solid #7d3e3e;
@@ -780,4 +795,11 @@ li.entityviz-PRIVATE
 
 .dataset-column-mapper .older-version-mappings {
   display: none;
+}
+
+.checkboxesList {
+  color: black;
+  display: inline-block;
+  margin:auto;
+  vertical-align: middle;
 }

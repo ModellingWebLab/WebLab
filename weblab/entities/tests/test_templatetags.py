@@ -186,32 +186,79 @@ def test_can_create_version(anon_user, model_creator, admin_user):
 @pytest.mark.django_db
 def test_can_delete_entity(anon_user, model_creator, admin_user):
     model = recipes.model.make()
+    protocol = recipes.protocol.make()
+    modelgroup = recipes.modelgroup.make()
     context = {'user': anon_user}
     assert not entity_tags.can_delete_entity(context, model)
+    assert not entity_tags.can_delete_entity(context, protocol)
+    assert not entity_tags.can_delete_entity(context, modelgroup)
 
     context = {'user': model_creator}
     assert not entity_tags.can_delete_entity(context, model)
+    assert not entity_tags.can_delete_entity(context, protocol)
+    assert not entity_tags.can_delete_entity(context, modelgroup)
 
     context = {'user': admin_user}
     assert entity_tags.can_delete_entity(context, model)
+    assert entity_tags.can_delete_entity(context, protocol)
+    assert entity_tags.can_delete_entity(context, modelgroup)
 
     model = recipes.model.make(author=model_creator)
+    protocol = recipes.protocol.make(author=model_creator)
+    modelgroup = recipes.modelgroup.make(author=model_creator)
     context = {'user': model_creator}
     assert entity_tags.can_delete_entity(context, model)
+    assert entity_tags.can_delete_entity(context, protocol)
+    assert entity_tags.can_delete_entity(context, modelgroup)
 
 
 @pytest.mark.django_db
 def test_can_manage_entity(anon_user, model_creator, admin_user):
     model = recipes.model.make()
+    protocol = recipes.protocol.make()
+    modelgroup = recipes.modelgroup.make()
     context = {'user': anon_user}
     assert not entity_tags.can_manage_entity(context, model)
+    assert not entity_tags.can_manage_entity(context, protocol)
+    assert not entity_tags.can_manage_entity(context, modelgroup)
 
     context = {'user': model_creator}
     assert not entity_tags.can_manage_entity(context, model)
+    assert not entity_tags.can_manage_entity(context, modelgroup)
 
     context = {'user': admin_user}
     assert entity_tags.can_manage_entity(context, model)
+    assert entity_tags.can_manage_entity(context, protocol)
+    assert entity_tags.can_manage_entity(context, modelgroup)
 
     model = recipes.model.make(author=model_creator)
+    protocol = recipes.protocol.make(author=model_creator)
+    modelgroup = recipes.modelgroup.make(author=model_creator)
     context = {'user': model_creator}
     assert entity_tags.can_manage_entity(context, model)
+    assert entity_tags.can_manage_entity(context, protocol)
+    assert entity_tags.can_manage_entity(context, modelgroup)
+
+
+@pytest.mark.django_db
+def test_can_view_entity(user, model_creator, helpers):
+    model = recipes.model.make()
+    protocol = recipes.protocol.make()
+    context = {'user': user}
+    assert not entity_tags.can_view_entity(context, model)
+    assert not entity_tags.can_view_entity(context, protocol)
+
+    model.add_collaborator(user)
+    protocol.add_collaborator(user)
+    assert entity_tags.can_view_entity(context, model)
+    assert entity_tags.can_view_entity(context, protocol)
+    model.remove_collaborator(user)
+    protocol.remove_collaborator(user)
+    assert not entity_tags.can_view_entity(context, model)
+    assert not entity_tags.can_view_entity(context, protocol)
+
+    helpers.add_version(model, visibility='public')
+    helpers.add_version(protocol, visibility='public')
+    assert entity_tags.can_view_entity(context, model)
+    assert entity_tags.can_view_entity(context, protocol)
+

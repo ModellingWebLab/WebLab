@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block title %}Model group collaborators - {% endblock title %}
+{% block content %}
+  {% include "./includes/modelgroup_header.html" %}
+
+<h2><small>Add or remove collaborators for this model group</small></h2>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+
+    {{ formset.management_form }}
+    <p>Collaborators can edit or delete this model group and change the change the visibility.</p>
+
+    <table class="formset allow-add">
+      <tbody>
+        {% for form in formset.forms %}
+
+          <tr>
+              <td>
+                {% if form.collaborator %}
+                  Collaborator
+                  {{ form.collaborator.get_full_name }}
+                {% else %}
+                  no collaborators
+                {% endif %}
+                {{ form.email }}
+                {{ form.email.errors.as_ul }}
+              </td>
+              <td>
+                <a href="#" class="delete-row">
+                  {{ form.DELETE }}
+                  <img src="{% static 'img/delete.png' %}" alt="remove collaborator" title="remove collaborator"/>
+                </a>
+              </td>
+          </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+
+    <p>
+      <button id="savebutton">Save</button>
+    </p>
+  </form>
+
+{% endblock content %}
