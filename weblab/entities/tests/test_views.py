@@ -17,7 +17,7 @@ from git import GitCommandError
 from guardian.shortcuts import assign_perm
 
 from core import recipes
-from entities.models import AnalysisTask, ModelEntity, ProtocolEntity
+from entities.models import AnalysisTask, ModelEntity, ProtocolEntity, ModelGroup
 from experiments.models import Experiment, PlannedExperiment
 from repocache.models import CachedProtocolVersion, ProtocolInterface, ProtocolIoputs
 from repocache.populate import populate_entity_cache
@@ -3469,3 +3469,146 @@ class TestEntityRunExperiment:
             assert planned_experiment.protocol == protocol
             assert planned_experiment.protocol_version == proto_commit1.sha
             assert (planned_experiment.model, planned_experiment.model_version) in expected_model_versions
+
+
+@pytest.mark.django_db
+class TestModelGroupViews:
+    def test_create_modelgroup(self, logged_in_user, client, helpers):
+        assert ModelGroup.objects.count() == 0
+        helpers.add_permission(logged_in_user, 'create_model')
+
+        assert ModelGroup.objects.count() == 0
+        model = recipes.model.make(author=logged_in_user)
+        response = client.post('/entities/modelgroups/new', data={
+            'title': 'mymodelgroup',
+            'visibility': 'private',
+            'models': model.pk,
+        })
+        assert response.status_code == 302
+        assert ModelGroup.objects.count() == 1
+        modelgroup = ModelGroup.objects.first()
+        assert modelgroup.title == 'mymodelgroup'
+        assert modelgroup.visibility == 'private'
+        assert list(modelgroup.models.all()) == [model]
+
+    def test_create_modelgroup_with_same_name(self, logged_in_user, other_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        helpers.add_permission(other_user, 'create_model')
+
+        model = recipes.model.make(author=logged_in_user)
+        recipes.modelgroup.make(author=logged_in_user, title='mymodelgroup')
+
+        # can't create duplicate model for author
+        response = client.post('/entities/modelgroups/new', data={
+            'title': 'mymodelgroup',
+            'visibility': 'private',
+            'models': model.pk,
+        })
+        assert response.status_code == 200
+        assert ModelGroup.objects.count() == 1
+
+        helpers.login(client, other_user)
+        model.add_collaborator(other_user)
+        # can create duplicate model for another author
+        response = client.post('/entities/modelgroups/new', data={
+            'title': 'mymodelgroup',
+            'visibility': 'private',
+            'models': model.pk,
+        })
+        assert response.status_code == 302
+        assert ModelGroup.objects.count() == 2
+
+    def test_create_modelgroup_requires_permissions(self, logged_in_user, client):
+        response = client.post(
+            '/entities/modelgroups/new',
+            data={},
+        )
+        assert response.status_code == 403
+
+    def test_cannot_edit_modelgroup_without_edit_permission(self, logged_in_user, other_user, client):
+        modelgroup = recipes.modelgroup.make(author=other_user, title='mg', visibility='private')
+        model = recipes.model.make(author=other_user)
+
+        assign_perm('edit_entity', logged_in_user, model)
+
+        response = client.post('/entities/modelgroups/%s/' % modelgroup.pk, data={
+            'id': modelgroup.pk,
+            'title': 'mymodelgroup',
+            'visibility': 'private',
+            'models': model.pk,
+        })
+        assert response.status_code == 404
+        assert ModelGroup.objects.count() == 1
+
+        assert ModelGroup.objects.first().title == 'mg'
+        assert ModelGroup.objects.first().visibility == 'private'
+        assert len(ModelGroup.objects.first().models.all()) == 0
+
+        assign_perm('edit_entity', logged_in_user, model)
+        assign_perm('edit_modelgroup', logged_in_user, modelgroup)
+        response = client.post('/entities/modelgroups/%s' % modelgroup.pk, data={
+            'title': 'new title',
+            'visibility': 'private',
+            'models': model.pk,
+        })
+        assert response.status_code == 302
+        assert ModelGroup.objects.count() == 1
+        assert ModelGroup.objects.first().title == 'new title'
+        assert ModelGroup.objects.first().visibility == 'private'
+        assert list(ModelGroup.objects.first().models.all()) == [model]
+
+    def test_delete_modelgroup(self, logged_in_user, other_user, client):
+        modelgroup = recipes.modelgroup.make(author=other_user)
+        modelgroup2 = recipes.modelgroup.make(author=logged_in_user)
+        assert ModelGroup.objects.count() == 2
+
+        # can't delete modelgroup you don't have access to
+        response = client.post('/entities/modelgroups/%s/delete' % modelgroup.pk, data={})
+        assert response.status_code == 403
+        assert ModelGroup.objects.count() == 2
+
+        # can delete own model group
+        response = client.post('/entities/modelgroups/%s/delete' % modelgroup2.pk, data={})
+        assert response.status_code == 302
+        assert ModelGroup.objects.count() == 1
+
+    def test_collaborator(self, logged_in_user, other_user, client):
+        modelgroup = recipes.modelgroup.make(author=logged_in_user)
+        assert ModelGroup.objects.count() == 1
+        assert ModelGroup.objects.first().collaborators == []
+
+        response = client.post('/entities/modelgroups/%s/collaborators' % modelgroup.pk,
+                               data={'form-0-email': other_user.email,
+                                     'form-MAX_NUM_FORMS': 1000,
+                                     'form-0-DELETE': '',
+                                     'form-INITIAL_FORMS': 0,
+                                     'form-MIN_NUM_FORMS': 0,
+                                     'form-TOTAL_FORMS': 1,
+                                     })
+        assert response.status_code == 302
+        assert ModelGroup.objects.count() == 1
+        assert ModelGroup.objects.first().collaborators == [other_user]
+
+    def test_transfer_owner(self, logged_in_user, other_user, client):
+        modelgroup = recipes.modelgroup.make(author=logged_in_user)
+        assert ModelGroup.objects.count() == 1
+        assert ModelGroup.objects.first().author == logged_in_user
+
+        response = client.post('/entities/modelgroups/%s/transfer' % modelgroup.pk,
+                               data={'email': other_user.email})
+        assert response.status_code == 302
+        assert ModelGroup.objects.count() == 1
+        assert ModelGroup.objects.first().author == other_user
+
+    def test_modelgroup_list_not_logged_in(self, user, client):
+        recipes.modelgroup.make(author=user, _quantity=2)
+        response = client.get('/entities/modelgroups/')
+        assert response.status_code == 302
+        assert 'login' in response.url
+
+    def test_modelgroup_list_logged_in(self, logged_in_user, client):
+        modelgroups = recipes.modelgroup.make(author=logged_in_user, _quantity=2)
+        response = client.get('/entities/modelgroups/')
+        assert response.status_code == 200
+        assert list(response.context_data['modelgroup_list'].all()) == modelgroups
+

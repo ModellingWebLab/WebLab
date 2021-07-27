@@ -168,7 +168,7 @@ urlpatterns = [
 
 
     url(
-        r'^modelgroups/new/$',
+        r'^modelgroups/new$',
         views.ModelGroupCreateView.as_view(),
         name='modelgroup_create',
     ),

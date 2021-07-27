@@ -94,10 +94,10 @@ class TestModelGroupForm:
 
     def test_shows_all_and_only_visible_models(self, user, other_user, helpers, models, other_models):
         form = ModelGroupForm(user=user)
-        assert [(m.id, m.name) for m in models] == [i for i in form.fields['models'].choices]
+        assert [(m.id, m.name) for m in models] == list(form.fields['models'].choices)
 
         form = ModelGroupForm(user=other_user)
-        assert [(m.id, m.name) for m in other_models] == [i for i in form.fields['models'].choices]
+        assert [(m.id, m.name) for m in other_models] == list(form.fields['models'].choices)
 
         helpers.add_version(models[0], visibility='public')
         assign_perm('edit_entity', other_user, models[1])
@@ -116,7 +116,7 @@ class TestModelGroupForm:
         assert len(ModelGroup.objects.all()) == 1
         assert ModelGroup.objects.all()[0].title == 'new model group'
         assert ModelGroup.objects.all()[0].author == user
-        assert [m for m in ModelGroup.objects.all()[0].models.all()] == [models[0]]
+        assert list(ModelGroup.objects.all()[0].models.all()) == [models[0]]
 
         # no tite selected
         form_data = {'title': '', 'visibility': 'private', 'models': [models[0]]}
@@ -137,11 +137,11 @@ class TestModelGroupForm:
     def test_edit_show_models(self, user, other_user, models, other_models):
         modelgroup = recipes.modelgroup.make(author=user, models=[models[0]])
         form = ModelGroupForm(user=user, instance=modelgroup)
-        assert [(m.id, m.name) for m in models] == [i for i in form.fields['models'].choices]
+        assert [(m.id, m.name) for m in models] == list(form.fields['models'].choices)
         assert not form.fields['visibility'].disabled
 
         form = ModelGroupForm(user=other_user, instance=modelgroup)
-        assert [(m.id, m.name) for m in [models[0]] + other_models] == [i for i in form.fields['models'].choices]
+        assert [(m.id, m.name) for m in [models[0]] + other_models] == list(form.fields['models'].choices)
         assert form.fields['visibility'].disabled
 
     def test_moderated_only_for_admin_user(self, user, admin_user, models):
@@ -169,16 +169,16 @@ class TestModelGroupForm:
         assert form.is_valid()
         # test save
         assert len(ModelGroup.objects.all()) == 1
-        assert ModelGroup.objects.all()[0].title == 'new model group'
-        assert ModelGroup.objects.all()[0].author == user
-        assert ModelGroup.objects.all()[0].visibility == 'private'
-        assert [m for m in ModelGroup.objects.all()[0].models.all()] == [models[0]]
+        assert ModelGroup.objects.first().title == 'new model group'
+        assert ModelGroup.objects.first().author == user
+        assert ModelGroup.objects.first().visibility == 'private'
+        assert list(ModelGroup.objects.all()[0].models.all()) == [models[0]]
         modelgroup = form.save()
         assert len(ModelGroup.objects.all()) == 1
-        assert ModelGroup.objects.all()[0].title == 'edited model group'
-        assert ModelGroup.objects.all()[0].author == user
-        assert ModelGroup.objects.all()[0].visibility == 'public'
-        assert [m for m in ModelGroup.objects.all()[0].models.all()] == [models[1]]
+        assert ModelGroup.objects.first().title == 'edited model group'
+        assert ModelGroup.objects.first().author == user
+        assert ModelGroup.objects.first().visibility == 'public'
+        assert list(ModelGroup.objects.first().models.all()) == [models[1]]
 
         # own title is fine
         form_data = {'title': modelgroup.title, 'visibility': 'private', 'models': [models[0]], }
@@ -187,10 +187,10 @@ class TestModelGroupForm:
         # test save
         modelgroup = form.save()
         assert len(ModelGroup.objects.all()) == 1
-        assert ModelGroup.objects.all()[0].title == 'edited model group'
-        assert ModelGroup.objects.all()[0].author == user
-        assert ModelGroup.objects.all()[0].visibility == 'private'
-        assert [m for m in ModelGroup.objects.all()[0].models.all()] == [models[0]]
+        assert ModelGroup.objects.first().title == 'edited model group'
+        assert ModelGroup.objects.first().author == user
+        assert ModelGroup.objects.first().visibility == 'private'
+        assert list(ModelGroup.objects.first().models.all()) == [models[0]]
 
         # no tite selected
         form_data = {'title': '', 'visibility': 'private', 'models': [models[0]]}

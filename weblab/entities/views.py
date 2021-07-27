@@ -1250,8 +1250,7 @@ class ModelGroupListView(LoginRequiredMixin, ListView):
         )
 
 
-class ModelGroupView(LoginRequiredMixin, UserPassesTestMixin,
-                     UserFormKwargsMixin):
+class ModelGroupView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
     """
     Base view for creating or editing model groups
     """
@@ -1278,8 +1277,7 @@ class ModelGroupCreateView(ModelGroupView, CreateView):
     template_name = 'entities/modelgroup_create.html'
 
     def test_func(self):
-        return self.request.user.has_perm('models.create_model')
-
+        return self.request.user.has_perm('entities.create_model')
 
 class ModelGroupEditView(ModelGroupView, UpdateView):
     """
