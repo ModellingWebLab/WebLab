@@ -3600,6 +3600,17 @@ class TestModelGroupViews:
         assert ModelGroup.objects.count() == 1
         assert ModelGroup.objects.first().author == other_user
 
+    def test_transfer_invalid_other_user(self, logged_in_user, client):
+        modelgroup = recipes.modelgroup.make(author=logged_in_user)
+        assert ModelGroup.objects.count() == 1
+        assert ModelGroup.objects.first().author == logged_in_user
+
+        response = client.post('/entities/modelgroups/%s/transfer' % modelgroup.pk,
+                               data={'email': 'users.does.not@exist.com'})
+        assert response.status_code == 200
+        assert ModelGroup.objects.count() == 1
+        assert ModelGroup.objects.first().author == logged_in_user
+
     def test_cannot_transfer_if_user_has_model_with_name(self, logged_in_user,
                                                          other_user, client):
         recipes.modelgroup.make(author=other_user, title='my modelgroup')
