@@ -1279,6 +1279,7 @@ class ModelGroupCreateView(ModelGroupView, CreateView):
     def test_func(self):
         return self.request.user.has_perm('entities.create_model')
 
+
 class ModelGroupEditView(ModelGroupView, UpdateView):
     """
     View for editing modelgroups
