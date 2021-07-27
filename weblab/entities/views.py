@@ -1258,10 +1258,6 @@ class ModelGroupView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixi
     template_name = ''
 
     @property
-    def permission_required(self):
-        return 'entities.create_model'
-
-    @property
     def form_class(self):
         return ModelGroupForm
 
@@ -1330,13 +1326,9 @@ class ModelGroupTransferView(LoginRequiredMixin, UserPassesTestMixin,
     context_object_name = 'modelgroup'
     form_class = OwnershipTransferForm
 
-    def _get_object(self):
-        if not hasattr(self, 'object'):
-            self.object = self.get_object()
-        return self.object
-
     def test_func(self):
-        return self._get_object().is_managed_by(self.request.user)
+        self.object = self.get_object()
+        return self.object.is_managed_by(self.request.user)
 
     def post(self, request, *args, **kwargs):
         """Check the form and transfer ownership of the entity.

@@ -3562,7 +3562,7 @@ class TestModelGroupViews:
         modelgroup2 = recipes.modelgroup.make(author=logged_in_user)
         assert ModelGroup.objects.count() == 2
 
-        # can't delete modelgroup you don't have access to
+        # cannot delete modelgroup you don't have access to
         response = client.post('/entities/modelgroups/%s/delete' % modelgroup.pk, data={})
         assert response.status_code == 403
         assert ModelGroup.objects.count() == 2
@@ -3600,6 +3600,19 @@ class TestModelGroupViews:
         assert ModelGroup.objects.count() == 1
         assert ModelGroup.objects.first().author == other_user
 
+    def test_cannot_transfer_if_user_has_model_with_name(self, logged_in_user,
+                                                         other_user, client):
+        recipes.modelgroup.make(author=other_user, title='my modelgroup')
+        modelgroup = recipes.modelgroup.make(author=logged_in_user, title='my modelgroup')
+        assert ModelGroup.objects.count() == 2
+        assert set([m.author for m in ModelGroup.objects.all()]) == {logged_in_user, other_user}
+
+        response = client.post('/entities/modelgroups/%s/transfer' % modelgroup.pk,
+                               data={'email': other_user.email})
+        assert response.status_code == 200
+        assert ModelGroup.objects.count() == 2
+        assert set([m.author for m in ModelGroup.objects.all()]) == {logged_in_user, other_user}
+
     def test_modelgroup_list_not_logged_in(self, user, client):
         recipes.modelgroup.make(author=user, _quantity=2)
         response = client.get('/entities/modelgroups/')
@@ -3611,4 +3624,3 @@ class TestModelGroupViews:
         response = client.get('/entities/modelgroups/')
         assert response.status_code == 200
         assert list(response.context_data['modelgroup_list'].all()) == modelgroups
-
