@@ -56,7 +56,7 @@ from .forms import (
     ProtocolEntityRenameForm,
     ModelGroupForm,
 )
-from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup
+from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup, Story
 from .processing import process_check_protocol_callback, record_experiments_to_run
 
 
@@ -1246,7 +1246,7 @@ class ModelGroupListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return ModelGroup.objects.filter(
-            id__in=[model.id for model in ModelGroup.objects.all() if model.is_editable_by(self.request.user)]
+            id__in=[modelgroup.id for modelgroup in ModelGroup.objects.all() if modelgroup.is_editable_by(self.request.user)]
         )
 
 
@@ -1353,3 +1353,24 @@ class ModelGroupTransferView(LoginRequiredMixin, UserPassesTestMixin,
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':modelgroup')
+
+
+class StoryListView(LoginRequiredMixin, ListView):
+    """
+    List all user's stories
+    """
+    template_name = 'entities/story_list.html'
+
+    def get_queryset(self):
+        return Story.objects.filter(
+            id__in=[story.id for story in Story.objects.all() if story.is_editable_by(self.request.user)]
+        )
+
+class StoryCreateView(ModelGroupView, CreateView):
+    """
+    Create new model story
+    """
+    template_name = 'entities/story_create.html'
+
+    def test_func(self):
+        return self.request.user.has_perm('entities.create_model')

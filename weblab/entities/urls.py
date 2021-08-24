@@ -197,6 +197,18 @@ urlpatterns = [
         name='modelgroup_transfer',
     ),
 
+    url(
+        r'^stories/$',
+        views.StoryListView.as_view(),
+        name='stories',
+    ),
+
+    url(
+        r'^stories/new$',
+        views.StoryCreateView.as_view(),
+        name='story_create',
+    ),
+
 ]
 
 app_name = 'entities'

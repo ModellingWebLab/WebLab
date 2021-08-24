@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load entities %}
+
+{% block title %}Stories groups you can edit - {% endblock title %}
+
+{% block content %}
+
+
+  <a class="button" href="{% url 'entities:list' 'model' %}">models</a>
+  <a class="button" href="{% url 'entities:modelgroup' %}">model groups</a>
+  <a class="button selected" href="{% url 'entities:stories' %}">stories</a>
+  <a class="button" href="{% url 'entities:list' 'protocol' %}">protocols</a>
+  <a class="button" href="{% url 'datasets:list' %}">datasets</a>
+  <a class="button" href="{% url 'fitting:list' 'spec' %}">fitting specifications</a>
+
+  <section id="storygrouplist">
+    <h2>Your stories</h2>
+
+    {% can_create_entity 'model' as permission %}
+    {% if permission %}
+    <small><a href="{% url 'entities:story_create' %}" class="pointer">Create a new story</a></small>
+    {% else %}
+    <small>Your account doesn't have the authority to create new stories; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
+    {% endif %}
+
+    <ul>
+      {% for story in object_list %}
+        {% if story.author == user %}
+          <li title="{{ story.title }}">
+              <strong><a href="{% url 'entities:story_edit' story.id %}">{{ story.title }} </strong></a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+
+    <h2>Other stories you can edit</h2>
+
+    <ul>
+      {% for story in object_list %}
+        {% if story.author != user %}
+          <li title="{{ story.title }}">
+              <strong><a href="{% url 'entities:story_edit' story.id %}">{{ story.title }} </strong><em>(by {{ story.author.full_name }})</em></a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+
+  </section>
+
+{% endblock content %}
+
