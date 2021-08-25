@@ -55,6 +55,7 @@ from .forms import (
     ProtocolEntityForm,
     ProtocolEntityRenameForm,
     ModelGroupForm,
+    StoryForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup, Story
 from .processing import process_check_protocol_callback, record_experiments_to_run
@@ -1366,7 +1367,23 @@ class StoryListView(LoginRequiredMixin, ListView):
             id__in=[story.id for story in Story.objects.all() if story.is_editable_by(self.request.user)]
         )
 
-class StoryCreateView(ModelGroupView, CreateView):
+
+class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
+    """
+    Base view for creating or editing stories
+    """
+    model = Story
+    template_name = ''
+
+    @property
+    def form_class(self):
+        return StoryForm
+
+    def get_success_url(self):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':stories')
+
+class StoryCreateView(StoryView, CreateView):
     """
     Create new model story
     """
@@ -1374,3 +1391,16 @@ class StoryCreateView(ModelGroupView, CreateView):
 
     def test_func(self):
         return self.request.user.has_perm('entities.create_model')
+
+
+class StoryEditView(UpdateView, StoryView) : #LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
+    """
+    View for editing stories
+    """
+    model = Story
+    fields = '__all__'
+
+    template_name = 'entities/story_edit.html'
+
+    def test_func(self):
+        return self.get_object().is_editable_by(self.request.user)

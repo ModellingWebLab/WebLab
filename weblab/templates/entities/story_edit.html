@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block title %}Story {{ object.title }} - {% endblock title %}
+
+{% block content %}
+  {% include "./includes/story_header.html" %}
+<div id='newmodelgroupform'>
+  <h1>Create model group</h1>
+
+    {% include "./includes/story_form.html" with save_button_text="Save story"%}
+</div>
+{% endblock %}
+

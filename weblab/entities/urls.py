@@ -209,6 +209,12 @@ urlpatterns = [
         name='story_create',
     ),
 
+    url(
+        r'^stories/(?P<pk>\d+)$',
+        views.StoryEditView.as_view(),
+        name='story_edit',
+    ),
+
 ]
 
 app_name = 'entities'

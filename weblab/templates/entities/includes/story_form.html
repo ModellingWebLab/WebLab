@@ -1,0 +1,55 @@
+{% load staticfiles %}
+{% load entities %}
+
+
+  <form method="POST" action="">
+    {% csrf_token %}
+
+    <p>{{ form.title.label_tag }} {{ form.title }}</p>
+    {% if  form.title.errors  %}
+        <ul class="errorlist"><li>{{ form.title.errors }}</li></ul>
+    {% endif %}
+    <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
+
+    <p>{{ form.modelgroups.label_tag }}
+    {% if  form.modelgroups.errors  %}
+        <ul class="errorlist"><li>{{ form.modelgroups.errors }}</li></ul>
+    {% endif %}
+    <ul id="id_modelgroups" class="checkboxesList">
+    {% for modelgroup in form.modelgroups.field.queryset %}
+        {% can_view_modelgroup modelgroup as can_view %}
+        <li><label for="id_modelgroups_{{ forloop.counter0 }}"><input {% if modelgroup in object.modelgroups.all %} checked {% endif %} {% if not can_view %} disabled {% endif %} type="checkbox" name="modelgroups" value="{{ modelgroup.id }}" class="checkboxesList" id="id_modelgroups_{{ forloop.counter0 }}">
+          {% if can_view %}<a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{% endif %} {{ modelgroup.title  }}  {% if modelgroup.author != user %}<em>(by {{ modelgroup.author.full_name }})</em>{% endif %}{% if can_view %}</a>{% endif %}
+          {% if not can_view %} <input type="hidden"  name="modelgroups" value="{{ modelgroup.id }}" id="id_modelgroups_{{ forloop.counter0 }}" value=on> {% endif %}
+        </label></li>
+    {% endfor %}
+    </ul></p>
+
+    <p>{{ form.othermodels.label_tag }}
+    {% if  form.othermodels.errors  %}
+        <ul class="errorlist"><li>{{ form.othermodels.errors }}</li></ul>
+    {% endif %}
+    <ul id="id_othermodels" class="checkboxesList">
+    {% for othermodel in form.othermodels.field.queryset %}
+        {% can_view_entity othermodel as can_view %}
+        <li><label for="id_othermodels_{{ forloop.counter0 }}"><input {% if othermodel in object.othermodels.all %} checked {% endif %} {% if not can_view %} disabled {% endif %} type="checkbox" name="othermodels" value="{{ othermodel.id }}" class="checkboxesList" id="id_othermodels_{{ forloop.counter0 }}">
+          {% if can_view %}<a href="{% entity_url 'detail' othermodel %}">{% endif %} {{ othermodel.name  }}  {% if othermodel.author != user %}<em>(by {{ othermodel.author.full_name }})</em>{% endif %}{% if can_view %}</a>{% endif %}
+          {% if not can_view %} <input type="hidden"  name="othermodels" value="{{ othermodel.id }}" id="id_othermodels_{{ forloop.counter0 }}" value=on> {% endif %}
+        </label></li>
+    {% endfor %}
+    </ul></p>
+
+
+    <p>{{ form.description.label_tag }}
+    {% if  form.description.errors  %}
+        <ul class="errorlist"><li>{{ form.description.errors }}</li></ul>
+    {% endif %}
+   <label for="description">
+      <textarea name="description" cols="40" rows="10" required id="id_description">{% if form.description.value %}{{ form.description.value }}{% endif %}</textarea>
+   </label>
+   </ul></p>
+
+    <p>
+    <button id="savebutton">{{ save_button_text }}</button>
+    </p>
+  </form>

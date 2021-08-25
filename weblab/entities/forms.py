@@ -7,7 +7,7 @@ from django.forms import formset_factory
 from accounts.models import User
 from core import visibility
 
-from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup
+from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup, Story
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -192,14 +192,15 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.current_title = None  # current title
         # Only show models I can can see
-        self.current_title = None
         self.fields['models'].queryset = ModelEntity.objects.visible_to_user(self.user)
 
         # Save current details if we have them
         instance = kwargs.get('instance', None)
         if instance:
             self.current_title = instance.title
+            # only author can change visibility
             self.fields['visibility'].disabled = not instance.is_visibility_editable_by(self.user)
 
             # make sure currently selected models are not filtered out even if they are not visible to the current user
@@ -229,3 +230,57 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
         modelgroup.save()
         self.save_m2m()
         return modelgroup
+
+
+class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for creating a new story."""
+    visibility = forms.ChoiceField(
+        choices=visibility.CHOICES,
+        help_text=visibility.HELP_TEXT.replace('\n', '<br />'),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.current_title = None  # current title
+        # Only show models and modelgroups I can can see
+        self.fields['othermodels'].queryset = ModelEntity.objects.visible_to_user(self.user)
+        visible_modelgroups = [m.pk for m in ModelGroup.objects.all() if m.visible_to_user(self.user)]
+        self.fields['modelgroups'].queryset = ModelGroup.objects.filter(pk__in=visible_modelgroups) #[m for m in ModelGroup.objects.all() if m.visible_to_user(self.user)]
+
+        # Save current details if we have them
+        instance = kwargs.get('instance', None)
+        if instance:
+            self.current_title = instance.title
+            # only author can change visibility
+            self.fields['visibility'].disabled = not instance.is_visibility_editable_by(self.user)
+
+            # make sure currently selected models and model groups are not filtered out even if they are not visible to the current user
+            current_othermodels_ids = [model.id for model in instance.othermodels.all()]
+            current_modelgroups_ids = [model.id for model in instance.modelgroups.all()]
+            self.fields['othermodels'].queryset |= ModelEntity.objects.filter(id__in=current_othermodels_ids)
+            self.fields['modelgroups'].queryset |= ModelEntity.objects.filter(id__in=current_modelgroups_ids)
+
+        if not self.user.has_perm('entities.moderator'):
+            self.fields['visibility'].choices.remove((
+                visibility.Visibility.MODERATED, 'Moderated')
+            )
+
+    class Meta:
+        model = Story
+        fields = ['title', 'visibility', 'modelgroups', 'othermodels', 'description']
+
+    def clean_title(self):
+        title = self.cleaned_data['title']
+        if title != self.current_title and self._meta.model.objects.filter(title=title, author=self.user).exists():
+            raise ValidationError(
+                'You already have a model group named "%s"' % title)
+        return title
+
+    def save(self, **kwargs):
+        story = super().save(commit=False)
+        if not hasattr(story, 'author') or story.author is None:
+            story.author = self.user
+        story.save()
+        self.save_m2m()
+        return story

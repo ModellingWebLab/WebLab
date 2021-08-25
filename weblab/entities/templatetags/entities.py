@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from core.filetypes import get_file_type
 
-from entities.models import ModelEntity, ProtocolEntity
+from entities.models import ModelEntity, ProtocolEntity, ModelGroup
 
 
 register = template.Library()
@@ -195,4 +195,10 @@ def can_view_entity(context, entity):
     user = context['user']
     return entity in ModelEntity.objects.visible_to_user(user) or \
         entity in ProtocolEntity.objects.visible_to_user(user)
+
+
+@register.simple_tag(takes_context=True)
+def can_view_modelgroup(context, modelgroup):
+    user = context['user']
+    return modelgroup in [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
 
