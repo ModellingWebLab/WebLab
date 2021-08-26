@@ -1,6 +1,13 @@
+{% extends "base.html" %}
 {% load staticfiles %}
 {% load entities %}
 
+{% block title %}{% if form.title.value %}Story {{ object.title }}{% else %}New Story{% endif %} - {% endblock title %}
+
+{% block content %}
+  {% if form.title.value %}{% include "./includes/story_header.html" %}{% endif %}
+<div id='newstoryform'>
+  {% if not form.title.value %}<h1>Create story</h1>{% endif %}
 
   <form method="POST" action="">
     {% csrf_token %}
@@ -18,7 +25,7 @@
     <ul id="id_modelgroups" class="checkboxesList">
     {% for modelgroup in form.modelgroups.field.queryset %}
         {% can_view_modelgroup modelgroup as can_view %}
-        <li><label for="id_modelgroups_{{ forloop.counter0 }}"><input {% if modelgroup in object.modelgroups.all %} checked {% endif %} {% if not can_view %} disabled {% endif %} type="checkbox" name="modelgroups" value="{{ modelgroup.id }}" class="checkboxesList" id="id_modelgroups_{{ forloop.counter0 }}">
+        <li><label for="id_modelgroups_{{ forloop.counter0 }}"><input {% if modelgroup in object.othermodels.all %} checked {% endif %} {% if not can_view %} disabled {% endif %} type="checkbox" name="modelgroups" value="{{ modelgroup.id }}" class="checkboxesList" id="id_modelgroups_{{ forloop.counter0 }}">
           {% if can_view %}<a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{% endif %} {{ modelgroup.title  }}  {% if modelgroup.author != user %}<em>(by {{ modelgroup.author.full_name }})</em>{% endif %}{% if can_view %}</a>{% endif %}
           {% if not can_view %} <input type="hidden"  name="modelgroups" value="{{ modelgroup.id }}" id="id_modelgroups_{{ forloop.counter0 }}" value=on> {% endif %}
         </label></li>
@@ -50,6 +57,9 @@
    </ul></p>
 
     <p>
-    <button id="savebutton">{{ save_button_text }}</button>
+    <button id="savebutton">Save Story</button>
     </p>
   </form>
+
+</div>
+{% endblock %}

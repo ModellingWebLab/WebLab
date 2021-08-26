@@ -1,6 +1,12 @@
+{% extends "base.html" %}
 {% load staticfiles %}
 {% load entities %}
+  {% block title %}{% if form.title.value %}Model group {{ object.title }}{% else %}New model group{% endif %} - {% endblock title %}
 
+{% block content %}
+{% if form.title.value %}{% include "./includes/modelgroup_header.html" %}{% endif %}
+<div id='newmodelgroupform'>
+  {% if not form.title.value %}<h1>Create model group</h1>{% endif %}
 
   <form method="POST" action="">
     {% csrf_token %}
@@ -25,6 +31,10 @@
     {% endfor %}
     </ul></p>
     <p>
-    <button id="savebutton">{{ save_button_text }}</button>
+    <button id="savebutton">Save model group</button>
     </p>
   </form>
+
+</div>
+
+{% endblock %}

@@ -246,7 +246,7 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
         # Only show models and modelgroups I can can see
         self.fields['othermodels'].queryset = ModelEntity.objects.visible_to_user(self.user)
         visible_modelgroups = [m.pk for m in ModelGroup.objects.all() if m.visible_to_user(self.user)]
-        self.fields['modelgroups'].queryset = ModelGroup.objects.filter(pk__in=visible_modelgroups) #[m for m in ModelGroup.objects.all() if m.visible_to_user(self.user)]
+        self.fields['modelgroups'].queryset = ModelGroup.objects.filter(pk__in=visible_modelgroups)
 
         # Save current details if we have them
         instance = kwargs.get('instance', None)
@@ -259,7 +259,7 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
             current_othermodels_ids = [model.id for model in instance.othermodels.all()]
             current_modelgroups_ids = [model.id for model in instance.modelgroups.all()]
             self.fields['othermodels'].queryset |= ModelEntity.objects.filter(id__in=current_othermodels_ids)
-            self.fields['modelgroups'].queryset |= ModelEntity.objects.filter(id__in=current_modelgroups_ids)
+            self.fields['modelgroups'].queryset |= ModelGroup.objects.filter(id__in=current_modelgroups_ids)
 
         if not self.user.has_perm('entities.moderator'):
             self.fields['visibility'].choices.remove((
