@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block title %}Change owner for story {{ story.title }}{% endblock title %}
+
+{% block content %}
+  {% include "./includes/story_header.html" %}
+
+  <h2><small>Transfer ownership of {{ story.title }}</small></h2>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button>Transfer</button>
+  </form>
+
+{% endblock content %}
