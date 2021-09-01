@@ -50,13 +50,19 @@
     {% if  form.description.errors  %}
       <ul class="errorlist"><li>{{ form.description.errors }}</li></ul>
     {% endif %}
-    {{ form.description  }}
-   </ul></p>
-
+    {{ form.description }}
+    </ul></p>
     <p>
     <button id="savebutton">Save Story</button>
     </p>
   </form>
 
 </div>
+
+<link rel="stylesheet" href="{% static 'simplemde/simplemde.min.css' %}">
+<script src="{% static 'simplemde/simplemde.min.js' %}"></script>
+<script>
+var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo']});
+</script>
+
 {% endblock %}

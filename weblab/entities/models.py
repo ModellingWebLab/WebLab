@@ -14,6 +14,7 @@ from core.models import UserCreatedModelMixin
 from core.visibility import Visibility, visibility_check
 from core.models import VisibilityModelMixin
 from repocache.exceptions import RepoCacheMiss
+from markdownx.models import MarkdownxField
 
 from .repository import Repository
 
@@ -495,7 +496,7 @@ class Story(UserCreatedModelMixin, VisibilityModelMixin):
 
     permission_str = 'edit_story'
     title = models.CharField(max_length=255)
-    description = models.TextField("Description")
+    description = MarkdownxField()
     modelgroups = models.ManyToManyField(ModelGroup)
     othermodels = models.ManyToManyField(ModelEntity)
 
