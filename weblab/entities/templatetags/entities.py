@@ -196,9 +196,3 @@ def can_view_entity(context, entity):
     return entity in ModelEntity.objects.visible_to_user(user) or \
         entity in ProtocolEntity.objects.visible_to_user(user)
 
-
-@register.simple_tag(takes_context=True)
-def can_view_modelgroup(context, modelgroup):
-    user = context['user']
-    return modelgroup in [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
-

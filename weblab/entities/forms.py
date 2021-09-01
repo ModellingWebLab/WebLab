@@ -10,6 +10,12 @@ from core import visibility
 from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup, Story
 
 
+# Helper dictionary for determining whether visibility of model groups / stories and their models works together
+vis_ord = {'private': 0,
+           'moderated': 1,
+           'public': 2}
+
+
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating an entirely new entity."""
     def clean_name(self):
@@ -224,9 +230,6 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
         return title
 
     def clean_models(self):
-        vis_ord = {'private': 0,
-                   'moderated': 1,
-                   'public': 2}
         models = self.cleaned_data['models']
         visibility = self.cleaned_data['visibility']
         if any([vis_ord[m.visibility] < vis_ord[visibility] for m in models]):
@@ -287,6 +290,23 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
             raise ValidationError(
                 'You already have a model group named "%s"' % title)
         return title
+
+    def clean_modelgroups(self):
+        modelgroups = self.cleaned_data['modelgroups']
+        visibility = self.cleaned_data['visibility']
+        if any([vis_ord[m.visibility] < vis_ord[visibility] for m in modelgroups]):
+            raise ValidationError(
+                'The visibility of your selected model groups is too restrictive for the selected visibility of this story')
+        return modelgroups
+
+
+    def clean_othermodels(self):
+        othermodels = self.cleaned_data['othermodels']
+        visibility = self.cleaned_data['visibility']
+        if any([vis_ord[m.visibility] < vis_ord[visibility] for m in othermodels]):
+            raise ValidationError(
+                'The visibility of your selected models is too restrictive for the selected visibility of this story')
+        return othermodels
 
     def save(self, **kwargs):
         story = super().save(commit=False)

@@ -24,10 +24,8 @@
     {% endif %}
     <ul id="id_modelgroups" class="checkboxesList">
     {% for modelgroup in form.modelgroups.field.queryset %}
-        {% can_view_modelgroup modelgroup as can_view %}
-        <li><label for="id_modelgroups_{{ forloop.counter0 }}"><input {% if modelgroup in object.modelgroups.all %} checked {% endif %} {% if not can_view %} disabled {% endif %} type="checkbox" name="modelgroups" value="{{ modelgroup.id }}" class="checkboxesList" id="id_modelgroups_{{ forloop.counter0 }}">
-          {% if can_view %}<a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{% endif %} {{ modelgroup.title  }}  {% if modelgroup.author != user %}<em>(by {{ modelgroup.author.full_name }})</em>{% endif %}{% if can_view %}</a>{% endif %}
-          {% if not can_view %} <input type="hidden"  name="modelgroups" value="{{ modelgroup.id }}" id="id_modelgroups_{{ forloop.counter0 }}" value=on> {% endif %}
+        <li><label for="id_modelgroups_{{ forloop.counter0 }}"><input {% if modelgroup in object.modelgroups.all %} checked {% endif %} type="checkbox" name="modelgroups" value="{{ modelgroup.id }}" class="checkboxesList" id="id_modelgroups_{{ forloop.counter0 }}">
+            <a href="{% url 'entities:modelgroup_edit' modelgroup.id %}"> {{ modelgroup.title  }}  (<em>visibility: {{ othermodel.visibility }}{% if othermodel.author != user %}, by {{ modelgroup.author.full_name }}{% endif %}</em>)</a>
         </label></li>
     {% endfor %}
     </ul></p>
@@ -38,12 +36,11 @@
     {% endif %}
     <ul id="id_othermodels" class="checkboxesList">
     {% for othermodel in form.othermodels.field.queryset %}
-        {% can_view_entity othermodel as can_view %}
-        <li><label for="id_othermodels_{{ forloop.counter0 }}"><input {% if othermodel in object.othermodels.all %} checked {% endif %} {% if not can_view %} disabled {% endif %} type="checkbox" name="othermodels" value="{{ othermodel.id }}" class="checkboxesList" id="id_othermodels_{{ forloop.counter0 }}">
-          {% if can_view %}<a href="{% entity_url 'detail' othermodel %}">{% endif %} {{ othermodel.name  }}  {% if othermodel.author != user %}<em>(by {{ othermodel.author.full_name }})</em>{% endif %}{% if can_view %}</a>{% endif %}
-          {% if not can_view %} <input type="hidden"  name="othermodels" value="{{ othermodel.id }}" id="id_othermodels_{{ forloop.counter0 }}" value=on> {% endif %}
+        <li><label for="id_othermodels_{{ forloop.counter0 }}"><input {% if othermodel in object.othermodels.all %} checked {% endif %} type="checkbox" name="othermodels" value="{{ othermodel.id }}" class="checkboxesList" id="id_othermodels_{{ forloop.counter0 }}">
+            <a href="{% entity_url 'detail' othermodel %}"> {{ othermodel.name  }}  (<em>visibility: {{ othermodel.visibility }}{% if othermodel.author != user %}, by {{ othermodel.author.full_name }}{% endif %}</em>)</a>
         </label></li>
     {% endfor %}
+
     </ul></p>
 
     <p>{{ form.description.label_tag }}
