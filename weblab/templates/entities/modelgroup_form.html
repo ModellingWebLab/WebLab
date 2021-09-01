@@ -4,7 +4,7 @@
   {% block title %}{% if form.title.value %}Model group {{ object.title }}{% else %}New model group{% endif %} - {% endblock title %}
 
 {% block content %}
-{% if form.title.value %}{% include "./includes/modelgroup_header.html" %}{% endif %}
+{% if object.title %}{% include "./includes/modelgroup_header.html" %}{% endif %}
 <div id='newmodelgroupform'>
   {% if not form.title.value %}<h1>Create model group</h1>{% endif %}
 
@@ -25,7 +25,7 @@
     {% for model in form.models.field.queryset %}
     {% can_view_entity model as can_view %}
         <li><label for="id_models_{{ forloop.counter0 }}"><input {% if model in object.models.all %} checked {% endif %} {% if not can_view %} disabled {% endif %} type="checkbox" name="models" value="{{ model.id }}" class="checkboxesList" id="id_models_{{ forloop.counter0 }}">
-          {% if can_view %}<a href="{% entity_url 'detail' model %}">{% endif %} {{ model.name  }}  {% if model.author != user %}<em>(by {{ model.author.full_name }})</em>{% endif %}{% if can_view %}</a>{% endif %}
+          {% if can_view %}<a href="{% entity_url 'detail' model %}">{% endif %} {{ model.name  }}  (<em>visibility: {{ model.visibility }}{% if model.author != user %}, by {{ model.author.full_name }}{% endif %}</em>){% if can_view %}</a>{% endif %}
           {% if not can_view %} <input type="hidden"  name="models" value="{{ model.id }}" id="id_models_{{ forloop.counter0 }}" value=on> {% endif %}
         </label></li>
     {% endfor %}

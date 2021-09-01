@@ -2,10 +2,10 @@
 {% load staticfiles %}
 {% load entities %}
 
-{% block title %}{% if form.title.value %}Story {{ object.title }}{% else %}New Story{% endif %} - {% endblock title %}
+{% block title %}{% if object.id %}Story {{ object.title }}{% else %}New Story{% endif %} - {% endblock title %}
 
 {% block content %}
-  {% if form.title.value %}{% include "./includes/story_header.html" %}{% endif %}
+  {% if object.id %}{% include "./includes/story_header.html" %}{% endif %}
 <div id='newstoryform'>
   {% if not form.title.value %}<h1>Create story</h1>{% endif %}
 
