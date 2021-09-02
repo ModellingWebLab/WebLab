@@ -6,7 +6,7 @@
 {% block content %}
 {% if object.title %}{% include "./includes/modelgroup_header.html" %}{% endif %}
 <div id='newmodelgroupform'>
-  {% if not form.title.value %}<h1>Create model group</h1>{% endif %}
+  {% if not object.id %}<h1>Create model group</h1>{% endif %}
 
   <form method="POST" action="">
     {% csrf_token %}

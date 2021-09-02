@@ -54,6 +54,7 @@ from .forms import (
     ModelEntityRenameForm,
     ProtocolEntityForm,
     ProtocolEntityRenameForm,
+    ModelGroupCollaboratorFormSet,
     ModelGroupForm,
     StoryForm,
 )
@@ -1309,6 +1310,7 @@ class ModelGroupCollaboratorsView(EditCollaboratorsAbstractView):
     model = ModelGroup
     context_object_name = 'modelgroup'
     template_name = 'entities/modelgroup_collaborators_form.html'
+    formset_class = ModelGroupCollaboratorFormSet
 
     def get_success_url(self):
         """What page to show when the form was processed OK."""

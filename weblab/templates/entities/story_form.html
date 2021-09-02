@@ -25,7 +25,7 @@
     <ul id="id_modelgroups" class="checkboxesList">
     {% for modelgroup in form.modelgroups.field.queryset %}
         <li><label for="id_modelgroups_{{ forloop.counter0 }}"><input {% if modelgroup in object.modelgroups.all %} checked {% endif %} type="checkbox" name="modelgroups" value="{{ modelgroup.id }}" class="checkboxesList" id="id_modelgroups_{{ forloop.counter0 }}">
-            <a href="{% url 'entities:modelgroup_edit' modelgroup.id %}"> {{ modelgroup.title  }}  (<em>visibility: {{ othermodel.visibility }}{% if othermodel.author != user %}, by {{ modelgroup.author.full_name }}{% endif %}</em>)</a>
+            <a href="{% url 'entities:modelgroup_edit' modelgroup.id %}"> {{ modelgroup.title  }}  (<em>visibility: {{ modelgroup.visibility }}{% if modelgroup.author != user %}, by {{ modelgroup.author.full_name }}{% endif %}</em>)</a>
         </label></li>
     {% endfor %}
     </ul></p>
