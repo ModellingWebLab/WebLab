@@ -9,7 +9,7 @@
 <div id='newstoryform'>
   {% if not form.title.value %}<h1>Create story</h1>{% endif %}
 
-  <form method="POST" action="">
+  <form method="POST" action="" novalidate>
     {% csrf_token %}
 
     <p>{{ form.title.label_tag }} {{ form.title }}</p>
@@ -50,10 +50,9 @@
     {{ form.description }}
     </ul></p>
     <p>
-    <button id="savebutton">Save Story</button>
+    <button id="savebutton" onclick="alaert('bla');">Save Story</button>
     </p>
   </form>
-
 </div>
 
 <link rel="stylesheet" href="{% static 'simplemde/simplemde.min.css' %}">

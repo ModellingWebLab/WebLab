@@ -4,9 +4,10 @@
   {% block title %}{% if form.title.value %}Model group {{ object.title }}{% else %}New model group{% endif %} - {% endblock title %}
 
 {% block content %}
-{% if object.title %}{% include "./includes/modelgroup_header.html" %}{% endif %}
+
+{% if object.title%}{% include "./includes/modelgroup_header.html" %}{% endif %}
 <div id='newmodelgroupform'>
-  {% if not object.id %}<h1>Create model group</h1>{% endif %}
+  {% if not object.id %}<h1>Create model group</h1>{% can_edit object as editable %}{% endif %}
 
   <form method="POST" action="">
     {% csrf_token %}
@@ -23,13 +24,13 @@
     {% endif %}
     <ul id="id_models" class="checkboxesList">
     {% for model in form.models.field.queryset %}
-        <li><label for="id_models_{{ forloop.counter0 }}"><input {% if model in object.models.all %} checked {% endif %} type="checkbox" name="models" value="{{ model.id }}" class="checkboxesList" id="id_models_{{ forloop.counter0 }}">
+        <li><label for="id_models_{{ forloop.counter0 }}"><input {%if form.models.field.disabled%} disabled {% endif %}{% if model in object.models.all %} checked {% endif %} type="checkbox" name="models" value="{{ model.id }}" class="checkboxesList" id="id_models_{{ forloop.counter0 }}">
             <a href="{% entity_url 'detail' model %}"> {{ model.name  }}  (<em>visibility: {{ model.visibility }}{% if model.author != user %}, by {{ model.author.full_name }}{% endif %}</em>)</a>
         </label></li>
     {% endfor %}
     </ul></p>
     <p>
-    <button id="savebutton">Save model group</button>
+    {% if not object.title or editable %}<button id="savebutton">Save model group</button>{% endif %}
     </p>
   </form>
 

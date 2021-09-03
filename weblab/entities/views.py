@@ -56,6 +56,7 @@ from .forms import (
     ProtocolEntityRenameForm,
     ModelGroupCollaboratorFormSet,
     ModelGroupForm,
+    StoryCollaboratorFormSet,
     StoryForm,
 )
 from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup, Story
@@ -1283,7 +1284,7 @@ class ModelGroupEditView(ModelGroupView, UpdateView):
     """
 
     def test_func(self):
-        return self.get_object().is_editable_by(self.request.user)
+        return self.get_object().visible_to_user(self.request.user)
 
 
 class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):
@@ -1340,8 +1341,13 @@ class ModelGroupTransferView(LoginRequiredMixin, UserPassesTestMixin,
         if form.is_valid():
             user = form.cleaned_data['user']
             modelgroup = self.get_object()
-            if self.model.objects.filter(title=modelgroup.title, author=user).exists():
+            models = modelgroup.models.all()
+            visible_entities = ModelEntity.objects.visible_to_user(user)
+            if ModelGroup.objects.filter(title=modelgroup.title, author=user).exists():
                 form.add_error(None, "User already has a model group called %s" % (modelgroup.title))
+                return self.form_invalid(form)
+            if any (m not in visible_entities for m in models):
+                form.add_error(None, "User %s does not have access to all models in the model group" % (user.full_name))
                 return self.form_invalid(form)
 
             modelgroup.author = user
@@ -1425,6 +1431,7 @@ class StoryCollaboratorsView(EditCollaboratorsAbstractView):
     model =Story
     context_object_name = 'story'
     template_name = 'entities/story_collaborators_form.html'
+    formset_class = StoryCollaboratorFormSet
 
     def get_success_url(self):
         """What page to show when the form was processed OK."""
@@ -1453,13 +1460,23 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
 
         if form.is_valid():
             user = form.cleaned_data['user']
-            modelgroup = self.get_object()
-            if self.model.objects.filter(title=modelgroup.title, author=user).exists():
+            story = self.get_object()
+            othermodels = story.othermodels.all()
+            modelgroups = story.modelgroups.all()
+            visible_entities = ModelEntity.objects.visible_to_user(user)
+            visible_model_groups = [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
+            if Story.objects.filter(title=story.title, author=user).exists():
                 form.add_error(None, "User already has a story called %s" % (modelgroup.title))
                 return self.form_invalid(form)
+            if any (m not in visible_entities for m in othermodels):
+                form.add_error(None, "User %s does not have access to all models in the model group" % (user.full_name))
+                return self.form_invalid(form)
+            if any (m not in visible_model_groups for m in modelgroups):
+                form.add_error(None, "User %s does not have access to all model groups in the story" % (user.full_name))
+                return self.form_invalid(form)
 
-            modelgroup.author = user
-            modelgroup.save()
+            story.author = user
+            story.save()
             return self.form_valid(form)
         else:
             return self.form_invalid(form)

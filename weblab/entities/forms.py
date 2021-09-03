@@ -6,6 +6,7 @@ from django.core.validators import RegexValidator
 from django.forms import formset_factory
 
 from accounts.models import User
+from accounts.forms import OwnershipTransferForm
 from core import visibility
 
 from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup, Story
@@ -188,6 +189,7 @@ class FileUploadForm(forms.ModelForm):
         model = EntityFile
         fields = ['upload']
 
+
 class ModelGroupCollaboratorForm(EntityCollaboratorForm):
     def clean_email(self):
         email = super().clean_email()
@@ -195,8 +197,9 @@ class ModelGroupCollaboratorForm(EntityCollaboratorForm):
         models = self.entity.models.all()
         visible_entities = ModelEntity.objects.visible_to_user(user)
         if any (m not in visible_entities for m in models):
-            raise ValidationError("User %s does not have access to all models in the model group" % user)
+            raise ValidationError("User %s does not have access to all models in the model group" % (user.full_name))
         return email
+
 
 ModelGroupCollaboratorFormSet = formset_factory(
     ModelGroupCollaboratorForm,
@@ -204,12 +207,12 @@ ModelGroupCollaboratorFormSet = formset_factory(
     can_delete=True,
 )
 
+
 class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating a new model group."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.current_title = None  # current title
         # Only show models I can can see
         self.fields['models'].queryset = ModelEntity.objects.visible_to_user(self.user)
@@ -218,6 +221,9 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
         instance = kwargs.get('instance', None)
         if instance:
             self.current_title = instance.title
+            self.fields['title'].disabled = not instance.is_editable_by(self.user)
+            self.fields['models'].disabled = self.fields['title'].disabled
+
 
         choices = list(visibility.CHOICES)
         help_text = visibility.HELP_TEXT
@@ -228,6 +234,7 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['visibility'] = forms.ChoiceField(
             choices=choices,
             help_text=help_text.replace('\n', '<br />'),
+            disabled = self.fields['title'].disabled
         )
 
     class Meta:
@@ -258,6 +265,28 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
         return modelgroup
 
 
+class StoryCollaboratorForm(EntityCollaboratorForm):
+    def clean_email(self):
+        email = super().clean_email()
+        user = self._get_user(email)
+        othermodels = self.entity.othermodels.all()
+        modelgroups = self.entity.modelgroups.all()
+        visible_entities = ModelEntity.objects.visible_to_user(user)
+        visible_model_groups = [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
+        if any (m not in visible_entities for m in othermodels):
+            raise ValidationError("User %s does not have access to all models in the story" % (user.full_name))
+        if any (m not in visible_model_groups for m in modelgroups):
+            raise ValidationError("User %s does not have access to all model groups in the story" % (user.full_name))
+        return email
+
+
+StoryCollaboratorFormSet = formset_factory(
+    StoryCollaboratorForm,
+    BaseEntityCollaboratorFormSet,
+    can_delete=True,
+)
+
+
 class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating a new story."""
 
@@ -284,6 +313,7 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['visibility'] = forms.ChoiceField(
             choices=choices,
             help_text=help_text.replace('\n', '<br />'),
+            disabled = self.fields['visibility'].disabled
         )
 
     class Meta:

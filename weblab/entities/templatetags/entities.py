@@ -196,3 +196,9 @@ def can_view_entity(context, entity):
     return entity in ModelEntity.objects.visible_to_user(user) or \
         entity in ProtocolEntity.objects.visible_to_user(user)
 
+
+@register.simple_tag(takes_context=True)
+def can_edit(context, entity):
+    return True
+#    assert False, '|'+str(entity) + '|' + str(entity=='')
+#    return entity.is_editable_by(context['user'])
