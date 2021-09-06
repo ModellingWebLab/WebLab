@@ -32,6 +32,7 @@ urlpatterns = [
     url(r'^accounts/', include('django.contrib.auth.urls')),
     url(r'^social/', include('social_django.urls', namespace='social')),
     url(r'^entities/', include('entities.urls', namespace='entities')),
+    url(r'^stories/', include('stories.urls', namespace='stories')),
     url(r'^datasets/', include('datasets.urls', namespace='datasets')),
     url(r'^experiments/', include('experiments.urls', namespace='experiments')),
     url(r'^fitting/', include('fitting.urls', namespace='fitting')),

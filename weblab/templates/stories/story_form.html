@@ -22,6 +22,10 @@
     {% if  form.modelgroups.errors  %}
         <ul class="errorlist"><li>{{ form.modelgroups.errors }}</li></ul>
     {% endif %}
+    {% can_create_entity 'model' as permission %}
+    {% if permission %}
+    <small><a href="{% url 'entities:modelgroup_create' %}" class="pointer">Create a new model group</a></small>
+    {% endif %}
     <ul id="id_modelgroups" class="checkboxesList">
     {% for modelgroup in form.modelgroups.field.queryset %}
         <li><label for="id_modelgroups_{{ forloop.counter0 }}"><input {% if modelgroup in object.modelgroups.all %} checked {% endif %} type="checkbox" name="modelgroups" value="{{ modelgroup.id }}" class="checkboxesList" id="id_modelgroups_{{ forloop.counter0 }}">
@@ -37,7 +41,7 @@
     <ul id="id_othermodels" class="checkboxesList">
     {% for othermodel in form.othermodels.field.queryset %}
         <li><label for="id_othermodels_{{ forloop.counter0 }}"><input {% if othermodel in object.othermodels.all %} checked {% endif %} type="checkbox" name="othermodels" value="{{ othermodel.id }}" class="checkboxesList" id="id_othermodels_{{ forloop.counter0 }}">
-            <a href="{% entity_url 'detail' othermodel %}"> {{ othermodel.name  }}  (<em>visibility: {{ othermodel.visibility }}{% if othermodel.author != user %}, by {{ othermodel.author.full_name }}{% endif %}</em>)</a>
+            <a href="{% url 'entities:detail' 'model' othermodel.pk %}"> {{ othermodel.name  }}  (<em>visibility: {{ othermodel.visibility }}{% if othermodel.author != user %}, by {{ othermodel.author.full_name }}{% endif %}</em>)</a>
         </label></li>
     {% endfor %}
 

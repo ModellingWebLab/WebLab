@@ -199,6 +199,4 @@ def can_view_entity(context, entity):
 
 @register.simple_tag(takes_context=True)
 def can_edit(context, entity):
-    return True
-#    assert False, '|'+str(entity) + '|' + str(entity=='')
-#    return entity.is_editable_by(context['user'])
+    return entity.is_editable_by(context['user'])
