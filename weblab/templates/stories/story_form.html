@@ -44,8 +44,20 @@
             <a href="{% url 'entities:detail' 'model' othermodel.pk %}"> {{ othermodel.name  }}  (<em>visibility: {{ othermodel.visibility }}{% if othermodel.author != user %}, by {{ othermodel.author.full_name }}{% endif %}</em>)</a>
         </label></li>
     {% endfor %}
-
     </ul></p>
+
+    <p>{{ form.experiments.label_tag }}
+    {% if  form.experiments.errors  %}
+        <ul class="errorlist"><li>{{ form.experiments.errors }}</li></ul>
+    {% endif %}
+    <ul id="id_experiments" class="checkboxesList">
+    {% for experiments in form.experiments.field.queryset %}
+        <li><label for="id_experiments_{{ forloop.counter0 }}"><input {% if experiments in object.experiments.all %} checked {% endif %} type="checkbox" name="experiments" value="{{ experiments.id }}" class="checkboxesList" id="id_experiments_{{ forloop.counter0 }}">
+            <a href="{% url 'entities:detail' 'model' experiments.pk %}"> {{ experiments.name  }}  (<em>visibility: {{ experiments.visibility }}{% if experiments.author != user %}, by {{ experiments.author.full_name }}{% endif %}</em>)</a>
+        </label></li>
+    {% endfor %}
+    </ul></p>
+
 
     <p>{{ form.description.label_tag }}
     {% if  form.description.errors  %}
@@ -65,4 +77,5 @@
 var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo']});
 </script>
 
+{{ storytexts.management_form }}
 {% endblock %}

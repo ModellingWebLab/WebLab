@@ -6,39 +6,46 @@ from . import views
 
 urlpatterns = [
     url(
-        r'^stories/$',
+        r'^$',
         views.StoryListView.as_view(),
         name='stories',
     ),
 
     url(
-        r'^stories/new$',
+        r'^new$',
         views.StoryCreateView.as_view(),
         name='story_create',
     ),
 
     url(
-        r'^stories/(?P<pk>\d+)$',
+        r'^(?P<pk>\d+)$',
         views.StoryEditView.as_view(),
         name='story_edit',
     ),
 
     url(
-        r'^stories/(?P<pk>\d+)/delete$',
+        r'^(?P<pk>\d+)/delete$',
         views.StoryDeleteView.as_view(),
         name='story_delete',
     ),
 
     url(
-        r'^stories/(?P<pk>\d+)/collaborators$',
+        r'^(?P<pk>\d+)/collaborators$',
         views.StoryCollaboratorsView.as_view(),
         name='story_collaborators',
     ),
 
     url(
-        r'^stories/(?P<pk>\d+)/transfer$',
+        r'^(?P<pk>\d+)/transfer$',
         views.StoryTransferView.as_view(),
         name='story_transfer',
+    ),
+
+
+    url(
+        r'^tst2$',
+        views.NewStoryView.as_view(),
+        name='story_tst2',
     ),
 ]
 

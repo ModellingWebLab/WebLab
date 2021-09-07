@@ -2,13 +2,14 @@ import re
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import formset_factory
+from django.forms import formset_factory, inlineformset_factory
 
 from accounts.models import User
 from core import visibility
 
 from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
 from entities.models import ModelEntity, ModelGroup
+from experiments.models import Experiment
 from .models import Story
 
 
@@ -24,12 +25,16 @@ class StoryCollaboratorForm(EntityCollaboratorForm):
         user = self._get_user(email)
         othermodels = self.entity.othermodels.all()
         modelgroups = self.entity.modelgroups.all()
+        experiments = self.entity.experiments.all()
         visible_entities = ModelEntity.objects.visible_to_user(user)
         visible_model_groups = [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
+        visible_experiments = [e for e in Experiment.objects.all() if e.is_visible_to_user(user)]
         if any (m not in visible_entities for m in othermodels):
             raise ValidationError("User %s does not have access to all models in the story" % (user.full_name))
         if any (m not in visible_model_groups for m in modelgroups):
             raise ValidationError("User %s does not have access to all model groups in the story" % (user.full_name))
+        if any (e not in visible_experiments for e in experiments):
+            raise ValidationError("User %s does not have access to all experiments in the story" % (user.full_name))
         return email
 
 
@@ -38,6 +43,11 @@ StoryCollaboratorFormSet = formset_factory(
     BaseEntityCollaboratorFormSet,
     can_delete=True,
 )
+
+
+class StoryDescriptionForm(forms.Form):
+    """Graph and description element of a story."""
+    description = forms.Textarea()
 
 
 class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -71,7 +81,7 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
 
     class Meta:
         model = Story
-        fields = ['title', 'visibility', 'modelgroups', 'othermodels', 'description']
+        fields = ['title', 'visibility', 'modelgroups', 'othermodels', 'description', 'experiments']
 
     def clean_title(self):
         title = self.cleaned_data['title']
@@ -96,6 +106,14 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
             raise ValidationError(
                 'The visibility of your selected models is too restrictive for the selected visibility of this story')
         return othermodels
+
+    def clean_experiments(self):
+        experiments = self.cleaned_data['experiments']
+        visibility = self.cleaned_data['visibility']
+        if any([vis_ord[m.visibility] < vis_ord[visibility] for m in experiments]):
+            raise ValidationError(
+                'The visibility of your selected experiments is too restrictive for the selected visibility of this story')
+        return experiments
 
     def save(self, **kwargs):
         story = super().save(commit=False)

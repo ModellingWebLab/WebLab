@@ -4,6 +4,7 @@ from core.visibility import Visibility
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
 
 from entities.models import ModelEntity, ModelGroup
+from experiments.models import Experiment
 #from markdownx.models import MarkdownxField
 
 
@@ -18,6 +19,7 @@ class Story(UserCreatedModelMixin, VisibilityModelMixin):
     description = TextField()
     modelgroups = models.ManyToManyField(ModelGroup)
     othermodels = models.ManyToManyField(ModelEntity)
+    experiments =  models.ManyToManyField(Experiment)
 
     class Meta:
         ordering = ['title']
@@ -39,3 +41,10 @@ class Story(UserCreatedModelMixin, VisibilityModelMixin):
     def __str__(self):
         return self.title
 
+
+#class StoryText(models.Model):
+#    text = TextField()
+#    recipe = models.ForeignKey(Story, null=False, blank=False, on_delete=models.CASCADE, related_name="storytexts")
+#
+#    def __str__(self):
+#        return self.text
