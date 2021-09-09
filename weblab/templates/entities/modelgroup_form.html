@@ -5,9 +5,9 @@
 
 {% block content %}
 
-{% if object.title%}{% include "./includes/modelgroup_header.html" %}{% endif %}
+{% if object.id%}{% include "./includes/modelgroup_header.html" %}{% can_edit object as editable %}{% endif %}
 <div id='newmodelgroupform'>
-  {% if not object.id %}<h1>Create model group</h1>{% can_edit object as editable %}{% endif %}
+  {% if not object.id %}<h1>Create model group</h1>{% endif %}
 
   <form method="POST" action="">
     {% csrf_token %}
@@ -30,7 +30,7 @@
     {% endfor %}
     </ul></p>
     <p>
-    {% if not object.title or editable %}<button id="savebutton">Save model group</button>{% endif %}
+    {% if not object.id or editable %}<button id="savebutton">Save model group</button>{% endif %}
     </p>
   </form>
 

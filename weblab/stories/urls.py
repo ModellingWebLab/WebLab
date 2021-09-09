@@ -40,13 +40,6 @@ urlpatterns = [
         views.StoryTransferView.as_view(),
         name='story_transfer',
     ),
-
-
-    url(
-        r'^tst2$',
-        views.NewStoryView.as_view(),
-        name='story_tst2',
-    ),
 ]
 
 app_name = 'stories'

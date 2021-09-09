@@ -10,7 +10,7 @@ from core import visibility
 from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
 from entities.models import ModelEntity, ModelGroup
 from experiments.models import Experiment
-from .models import Story, SimpleStory
+from .models import Story
 
 
 # Helper dictionary for determining whether visibility of model groups / stories and their models works together
@@ -43,6 +43,11 @@ StoryCollaboratorFormSet = formset_factory(
     BaseEntityCollaboratorFormSet,
     can_delete=True,
 )
+
+
+class StoryDescriptionForm(forms.Form):
+    """Graph and description element of a story."""
+    description = forms.Textarea()
 
 
 class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -137,42 +142,40 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
 
 
 class StoryPartForm(forms.Form):
-    description = forms.CharField(widget=forms.Textarea)
-#    email = forms.EmailField(
-#        widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
-#    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
+    )
 
     def __init__(self, *args, **kwargs):
+        self.entity = kwargs.pop('entity')
         super().__init__(*args, **kwargs)
-#        if self.initial.get('email'):
-#            self.fields['email'].widget = forms.HiddenInput()
-#            self.collaborator = self._get_user(self.initial['email'])
-#
-#    def _get_user(self, email):
-#        try:
-#            return User.objects.get(email=email)
-#        except User.DoesNotExist:
-#            return None
-#
-#    def clean_email(self):
-#        email = self.cleaned_data['email']
-#        user = self._get_user(email)
-#        if not user:
-#            raise ValidationError('User not found')
-#        if user == self.entity.author:
-#            raise ValidationError("Cannot add because user is the author")
-#        self.cleaned_data['user'] = user
-#        return email
-#
-#    def add_collaborator(self):
+        if self.initial.get('email'):
+            self.fields['email'].widget = forms.HiddenInput()
+            self.collaborator = self._get_user(self.initial['email'])
+
+    def _get_user(self, email):
+        try:
+            return User.objects.get(email=email)
+        except User.DoesNotExist:
+            return None
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        user = self._get_user(email)
+        if not user:
+            raise ValidationError('User not found')
+        if user == self.entity.author:
+            raise ValidationError("Cannot add because user is the author")
+        self.cleaned_data['user'] = user
+        return email
+
+    def add_collaborator(self):
+        if 'user' in self.cleaned_data:
+            self.entity.add_collaborator(self.cleaned_data['user'])
+
+    def remove_collaborator(self):
 #        if 'user' in self.cleaned_data:
-#            self.entity.add_collaborator(self.cleaned_data['user'])
-#
-#    def remove_collaborator(self):
-#        if 'user' in self.cleaned_data:
-#            self.entity.remove_collaborator(self.cleaned_data['user'])
-#    def clean_description(self):
-#        assert False, "descr "+ str(self.cleaned_data['description'])
+ #           self.entity.remove_collaborator(self.cleaned_data['user'])
 
 
 class BaseStoryPartFormSet(forms.BaseFormSet):
@@ -189,51 +192,5 @@ StoryPartFormSet = formset_factory(
     StoryPartForm,
     BaseStoryPartFormSet,
     can_delete=True,
-#    extra=2,
 #    can_order=True,
 )
-
-
-class SimpleStoryForm(UserKwargModelFormMixin, forms.ModelForm):
-    """Used for creating a new story."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-#        self.user = kwargs.pop('user',None)
-        # Only show models and modelgroups I can can see
-#        self.fields['othermodels'].queryset = ModelEntity.objects.visible_to_user(self.user)
-#        visible_modelgroups = [m.pk for m in ModelGroup.objects.all() if m.visible_to_user(self.user)]
-#        self.fields['modelgroups'].queryset = ModelGroup.objects.filter(pk__in=visible_modelgroups)
-
-        choices = list(visibility.CHOICES)
-        help_text = visibility.HELP_TEXT
-        if not self.user.has_perm('entities.moderator') and not (instance and instance.visibility == visibility.Visibility.MODERATED):
-            choices.remove((visibility.Visibility.MODERATED, 'Moderated'))
-            help_text = re.sub('Moderated.*\n', '', help_text)
-
-        self.fields['visibility'] = forms.ChoiceField(
-            choices=choices,
-            help_text=help_text.replace('\n', '<br />'),
-            disabled = self.fields['visibility'].disabled
-        )
-
-    class Meta:
-        model = SimpleStory
-        fields = ['title', 'visibility']
-
-    def clean_title(self):
-        title = self.cleaned_data['title']
-        if SimpleStory.objects.filter(title=title, author=self.user).exists():
-            raise ValidationError(
-                'You already have a story named "%s"' % title)
-        return title
-
-#    def save(self, **kwargs):
-#        pass
-#        assert False, str(kwargs)
-#        simplestory = super().save(commit=False)
-#        if not hasattr(simplestory, 'author') or simplestory.author is None:
-#            simplestory.author = self.user
-#        simplestory.save()
-#        self.save_m2m()
-#        return simplestory

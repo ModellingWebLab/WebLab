@@ -15,12 +15,11 @@ from accounts.forms import OwnershipTransferForm
 from .forms import (
     StoryCollaboratorFormSet,
     StoryForm,
-    SimpleStoryForm,
 )
 from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
 from experiments.models import Experiment
-from .models import Story, SimpleStory
+from .models import Story, Profile, FamilyMember
 
 
 class StoryListView(LoginRequiredMixin, ListView):
@@ -51,12 +50,12 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         return reverse(ns + ':stories')
 
 
-#class StoryCreateView(StoryView, CreateView):
-#    """
-#    Create new model story
-#    """
-#    def test_func(self):
-#        return self.request.user.has_perm('entities.create_model')
+class StoryCreateView(StoryView, CreateView):
+    """
+    Create new model story
+    """
+    def test_func(self):
+        return self.request.user.has_perm('entities.create_model')
 
 
 class StoryEditView(StoryView, UpdateView):
@@ -154,50 +153,77 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
 
 
 
-
-from .forms import StoryPartFormSet
-
-
-class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin, CreateView):
-    """
-    Create new model story
-    """
-    model = SimpleStory
-    form_class = SimpleStoryForm
-#    slug_field = 'simplestory_slug'
-    formset_class = StoryPartFormSet
-    template_name = 'stories/simplestory_form.html'
+from .forms import FamilyMemberFormSet
+class ProfileList(ListView):
+    model = Profile
+class ProfileFamilyMemberCreate(CreateView):
+    model = Profile
+    fields = ['first_name', 'last_name']
 
     def get_success_url(self):
-        ns = self.request.resolver_match.namespace
-        return reverse(ns + ':stories')
+        return reverse('stories:stories')
 
+    def get_context_data(self, **kwargs):
+        data = super(ProfileFamilyMemberCreate, self).get_context_data(**kwargs)
+        if self.request.POST:
+            data['familymembers'] = FamilyMemberFormSet(self.request.POST)
+        else:
+            data['familymembers'] = FamilyMemberFormSet()
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        familymembers = context['familymembers']
+        with transaction.atomic():
+            self.object = form.save()
+
+            if familymembers.is_valid():
+                familymembers.instance = self.object
+                familymembers.save()
+        return super(ProfileFamilyMemberCreate, self).form_valid(form)
+
+from entities.forms import EntityCollaboratorFormSet
+class NewStoryView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    formset_class = EntityCollaboratorFormSet
+    context_object_name = 'entity'
+
+#    def _get_object(self):
+#        if not hasattr(self, 'object'):
+#            self.object = self.get_object()
+#        return self.object
+#
     def test_func(self):
         return self.request.user.has_perm('entities.create_model')
 
     def get_formset(self):
+#        entity = self._get_object()
+#        initial = [{'email': u.email} for u in entity.collaborators]
+#        form_kwargs = {'entity': entity}
         if self.request.method == 'POST':
             return self.formset_class(
-                self.request.POST)
+                self.request.POST,
+ #               initial=initial,
+                form_kwargs=form_kwargs)
         else:
-            return self.formset_class()
+#            return self.formset_class(initial=initial, form_kwargs=form_kwargs)
+#            return self.formset_class()
+#
+#    def post(self, request, *args, **kwargs):
+#        self.object = self._get_object()
+#        formset = self.get_formset()
+#        if formset.is_valid():
+#            formset.save()
+#            return HttpResponseRedirect(self.get_success_url())
+#        else:
+#            return self.render_to_response(self.get_context_data(formset=formset))
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':entity_collaborators', args=[entity.url_type, entity.id])
 
     def get_context_data(self, **kwargs):
         if 'formset' not in kwargs:
             kwargs['formset'] = self.get_formset()
         return super().get_context_data(**kwargs)
-
-    def post(self, request, *args, **kwargs):
-#        super().post(request, *args, **kwargs)
-        form = self.get_form()
-        formset = self.get_formset()
-#        simplestory = self.get_object()
-#        form.add_error(None, "User already has a story called")
-        if form.is_valid():
-#            form.add_error(None, "User already has a story called")
-            assert formset.is_valid()
-            assert False, str(formset.cleaned_data)
-            return self.form_valid(form)
-        else:
-            assert False, "invalid"
-            return self.form_invalid(form)
