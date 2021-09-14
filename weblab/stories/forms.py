@@ -231,10 +231,8 @@ class SimpleStoryForm(UserKwargModelFormMixin, forms.ModelForm):
                 'You already have a story named "%s"' % title)
         return title
 
-#    def save(self, **kwargs):
-#        pass
-#        assert False, str(kwargs)
-#        simplestory = super().save(commit=False)
+    def save(self, **kwargs):
+        simplestory = super().save(commit=False)
 #        if not hasattr(simplestory, 'author') or simplestory.author is None:
 #            simplestory.author = self.user
 #        simplestory.save()

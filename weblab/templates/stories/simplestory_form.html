@@ -31,10 +31,13 @@ function moveDown(id){
 
 function remove(clicked){
     id = $(clicked.closest('tr')).find('.order').attr('id');
-    id = id.replace("ORDER", "DELETE");
     name =  $(clicked.closest('tr')).find('.order').attr('name');
+    order = $(clicked.closest('tr')).find('.order').val();
+    $("#storyform").append(`<input class="order" type="hidden" name="${name}" id="${id}" value="${order}">`);
+
+    id = id.replace("ORDER", "DELETE");
     name = name.replace("ORDER", "DELETE");
-    $("#storyform").append(`<input type="hidden" name="${name}" id="${id}" value="true">`)
+    $("#storyform").append(`<input type="hidden" name="${name}" id="${id}" value="true">`);
     $(clicked.closest('tr')).remove();
 }
 
@@ -95,6 +98,7 @@ function renderMde(){
 function insertStoryPartForm(descriptionValue, descriptionErrors, order, del){
     if (del){
         html=`<input type="hidden" name="form-${storyPartCount}-DELETE" id="id_form-${storyPartCount}-DELETE" value="true">`;
+        $('#storyform').append(html);  // add new hidden delete form
     }else{
         html=`
               <tr>
@@ -106,12 +110,12 @@ function insertStoryPartForm(descriptionValue, descriptionErrors, order, del){
                     <input type="button" value="▲" onclick="moveUp(this);" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                     <input type="button" value="▼" onclick="moveDown(this);" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
                     <img src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part" onclick="remove(this)"/><br/>
-                    <input class="order" type="hidden" name="form-${storyPartCount}-ORDER" id="id_form-${storyPartCount}-ORDER" value='${order}'>
+                    <input class="order" type="hidden" name="form-${storyPartCount}-ORDER" id="id_form-${storyPartCount}-ORDER" value="${order}">
                   </td>
               </tr>`;
+        $('#storyparts  > tbody').append(html);  // add new form
+        renderMde();
     }
-    $('#storyparts  > tbody').append(html);  // add new form
-    renderMde();
 }
 
 // render the pre-set story parts in the correct order
@@ -119,7 +123,6 @@ $( document ).ready(function() {
     Object.keys(existingParts).sort().forEach(function(key) {
         insertStoryPartForm.apply(this, existingParts[key]);
     });
-
 });
 
 </script>
