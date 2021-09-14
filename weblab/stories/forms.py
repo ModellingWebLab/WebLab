@@ -190,7 +190,7 @@ StoryPartFormSet = formset_factory(
     BaseStoryPartFormSet,
     can_delete=True,
 #    extra=2,
-#    can_order=True,
+    can_order=True,
 )
 
 

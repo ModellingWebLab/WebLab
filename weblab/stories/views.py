@@ -164,7 +164,6 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
     """
     model = SimpleStory
     form_class = SimpleStoryForm
-#    slug_field = 'simplestory_slug'
     formset_class = StoryPartFormSet
     template_name = 'stories/simplestory_form.html'
 
@@ -188,7 +187,7 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
-#        super().post(request, *args, **kwargs)
+        super().post(request, *args, **kwargs)
         form = self.get_form()
         formset = self.get_formset()
 #        simplestory = self.get_object()
@@ -196,8 +195,9 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         if form.is_valid():
 #            form.add_error(None, "User already has a story called")
             assert formset.is_valid()
-            assert False, str(formset.cleaned_data)
+            assert False, str([f.cleaned_data for f in formset.ordered_forms])
             return self.form_valid(form)
         else:
-            assert False, "invalid"
+#            assert False, str([f.cleaned_data for f in formset.ordered_forms])
+            form.title='blabla'
             return self.form_invalid(form)

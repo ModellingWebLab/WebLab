@@ -3,61 +3,38 @@
 {% load entities %}
 
 {% block title %}{% if object.id %}Story {{ object.title }}{% else %}New Story{% endif %} - {% endblock title %}
+
 {% block content %}
-  {% if object.id %}{% include "./includes/story_header.html" %}{% endif %}
-<div id='newstoryform'>
-  {% if not form.title.value %}<h1>Create story</h1>{% endif %}
-
-  <form method="POST" action="" novalidate>
-    {% csrf_token %}
-
-    <p>{{ form.title.label_tag }} {{ form.title }}</p>
-    {% if  form.title.errors  %}
-        <ul class="errorlist"><li>{{ form.title.errors }}</li></ul>
-    {% endif %}
-    <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
-
-
-{{ formset.management_form }}
-    <table class="formset manual-add" id="storyparts">
-      <tbody>
-        {% for form in formset.forms %}
-            <script>
-            $( document ).ready(function() {
-                insertStoryPartForm({% if form.title.value %}`{{form.description.value}}`{% else %} ''{% endif %}, {% if form.title.errors %}`<ul class="errorlist"><li>{{ form.title.errors }}</li></ul>`{% else %} ''{% endif %});
-            });
-            </script>
-        {% endfor %}
-      </tbody>
-        <tfoot>
-        <tr class="dynamic-form-add">
-            <td class="django-formset-add td" colspan="2">
-                <a class="add-row" href="javascript:insertStoryPartForm('', '')">add another</a>
-            </td>
-        </tr>
-        </tfoot>
-    </table>
-
-    <button id="savebutton">Save Story</button>
-    </p>
-  </form>
-</div>
 
 <link rel="stylesheet" href="{% static 'simplemde/simplemde.min.css' %}">
-<script src="{% static 'simplemde/simplemde.min.js' %}"></script>
-<script>
+<script type='text/javascript'>
 var storyPartCount = 0;
 
+function renderMde(){
+    element = document.getElementById('id_form-' + storyPartCount + '-description'); //grab new text area
+    // initialise editor
+    var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo'], element:element});
+    simplemde.render();
+    storyPartCount ++;  //keep track of number of forms
+}
+
 function moveUp(id){
-    $me = $(id.closest('tr'));
-    $previous = $me.prev();
-    $me.insertBefore($previous);
+    me = $(id.closest('tr'));
+    moveDown(me.prev());
 }
 
 function moveDown(id){
-    $me = $(id.closest('tr'));
-    $next = $me.next();
-    $me.insertAfter($next);
+    me = $(id.closest('tr'));
+    next = me.next();
+    if (me.length && next.length){  // check we're not going off the start / end
+        me.insertAfter(next);  // move
+        // swap value of order for processing on server side
+        order = me.find('.order');
+        next_order = next.find('.order');
+        current_order_val = order.val();
+        order.val(next_order.val());
+        next_order.val(current_order_val);
+    }
 }
 
 function remove(clicked){
@@ -75,19 +52,56 @@ function insertStoryPartForm(descriptionValue, descriptionErrors){
                 <input type="button" value="▲" onclick="moveUp(this);" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                 <input type="button" value="▼" onclick="moveDown(this);" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
                 <img src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part" onclick="remove(this)"/><br/>
+                <input class="order" type="hidden" name="form-${storyPartCount}-ORDER" id="id_form-${storyPartCount}-ORDER" value="${storyPartCount}">
               </td>
           </tr>`;
 
     $('#storyparts  > tbody').append($html);  // add new form
-    element = document.getElementById('id_form-' + storyPartCount + '-description'); //grab new text area
-    // initialise editor
-    var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo'], element:element});
-    simplemde.render();
-    storyPartCount ++;  //keep track of number of forms
+    renderMde();
     $("#id_form-TOTAL_FORMS").val(storyPartCount);  // update number of forms
 }
 
 </script>
+
+  {% if object.id %}{% include "./includes/story_header.html" %}{% endif %}
+<div id='newstoryform'>
+  {% if not form.title.value %}<h1>Create story</h1>{% endif %}
+
+  <form method="POST" action="" novalidate>
+    {% csrf_token %}
+
+    <p>{{ form.title.label_tag }} {{ form.title }}</p>
+    {% if  form.title.errors  %}
+        <ul class="errorlist"><li>{{ form.title.errors }}</li></ul>
+    {% endif %}
+    <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
+
+{{ formset.management_form }}
+    <table class="formset manual-add" id="storyparts">
+      <tbody>
+        {% for form in formset.forms %}
+            {{form.description}}
+            <script>
+            // render markdown editor
+            $( document ).ready(function() {
+                renderMde();
+            });
+            </script>
+        {% endfor %}
+      </tbody>
+        <tfoot>
+        <tr class="dynamic-form-add">
+            <td class="django-formset-add td" colspan="2">
+                <a class="add-row" href="javascript:insertStoryPartForm('', '')">add another</a>
+            </td>
+        </tr>
+        </tfoot>
+    </table>
+
+    <button id="savebutton">Save Story</button>
+    </p>
+  </form>
+</div>
 
 {% endblock %}
 
