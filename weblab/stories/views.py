@@ -194,10 +194,9 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
 #        form.add_error(None, "User already has a story called")
         if form.is_valid():
 #            form.add_error(None, "User already has a story called")
-            assert formset.is_valid()
+#            assert formset.is_valid()
             assert False, str([f.cleaned_data for f in formset.ordered_forms])
             return self.form_valid(form)
         else:
 #            assert False, str([f.cleaned_data for f in formset.ordered_forms])
-            form.title='blabla'
             return self.form_invalid(form)

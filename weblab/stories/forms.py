@@ -137,6 +137,7 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
 
 
 class StoryPartForm(forms.Form):
+    template_name = 'templates/stories/story_part_form.html'
     description = forms.CharField(widget=forms.Textarea)
 #    email = forms.EmailField(
 #        widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
@@ -176,6 +177,8 @@ class StoryPartForm(forms.Form):
 
 
 class BaseStoryPartFormSet(forms.BaseFormSet):
+    template_name = 'templates/stories/story_part_form.html'
+
     def save(self):
         assert False, str(self.forms)
 #        for form in self.forms:
@@ -199,7 +202,7 @@ class SimpleStoryForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-#        self.user = kwargs.pop('user',None)
+        self.user = kwargs.pop('user',None)
         # Only show models and modelgroups I can can see
 #        self.fields['othermodels'].queryset = ModelEntity.objects.visible_to_user(self.user)
 #        visible_modelgroups = [m.pk for m in ModelGroup.objects.all() if m.visible_to_user(self.user)]
