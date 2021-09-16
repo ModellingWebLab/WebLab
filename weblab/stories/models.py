@@ -72,9 +72,14 @@ class SimpleStory(UserCreatedModelMixin, VisibilityModelMixin):
 
 
 
-#class StoryText(models.Model):
-#    text = TextField()
-#    recipe = models.ForeignKey(Story, null=False, blank=False, on_delete=models.CASCADE, related_name="storytexts")
-#
-#    def __str__(self):
-#        return self.text
+class StoryPart(UserCreatedModelMixin):
+    """
+    A part of a story.
+    """
+
+    description = TextField(blank=True, default='')
+    story = models.ForeignKey(SimpleStory, null=False, blank=False, on_delete=models.CASCADE, related_name="storyparts")
+    order = models.IntegerField()
+
+    def __str__(self):
+        return self.description

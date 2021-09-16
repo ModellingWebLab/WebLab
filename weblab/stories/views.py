@@ -20,7 +20,7 @@ from .forms import (
 from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
 from experiments.models import Experiment
-from .models import Story, SimpleStory
+from .models import Story, SimpleStory, StoryPart
 
 
 class StoryListView(LoginRequiredMixin, ListView):
@@ -165,7 +165,7 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
     model = SimpleStory
     form_class = SimpleStoryForm
     formset_class = StoryPartFormSet
-    template_name = 'stories/simplestory_form.html'
+    initial = []
 
     def get_success_url(self):
         ns = self.request.resolver_match.namespace
@@ -175,11 +175,17 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         return self.request.user.has_perm('entities.create_model')
 
     def get_formset(self):
-        if self.request.method == 'POST':
-            return self.formset_class(
-                self.request.POST)
-        else:
-            return self.formset_class()
+        if not hasattr(self, 'formset') or self.formset is None:
+            initial = []
+            form_kwargs = {'user': self.request.user}
+            if self.request.method == 'POST':
+                self.formset = self.formset_class(
+                    self.request.POST,
+                    initial=initial,
+                    form_kwargs=form_kwargs)
+            else:
+                self.formset = self.formset_class(initial=initial,form_kwargs=form_kwargs)
+        return self.formset
 
     def get_context_data(self, **kwargs):
         if 'formset' not in kwargs:
@@ -187,15 +193,12 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
-        super().post(request, *args, **kwargs)
         form = self.get_form()
         formset = self.get_formset()
-#        assert False, "hre"
-#        simplestory = self.get_object()
-#        form.add_error(None, "User already has a story called")
         if form.is_valid() and formset.is_valid():
-            assert formset.is_valid()
-            assert False, str([f.cleaned_data for f in formset.ordered_forms]) + "--"
+            simplestory = form.save()
+            storyparts = formset.save(simplestory=simplestory)
             return self.form_valid(form)
         else:
+            self.object = None
             return self.form_invalid(form)

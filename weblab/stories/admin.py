@@ -1,10 +1,12 @@
 from django.contrib import admin
 
-from .models import Story, SimpleStory
+from .models import Story, SimpleStory, StoryPart
 
 
 admin.site.register(Story)
 admin.site.register(SimpleStory)
+admin.site.register(StoryPart)
+
 
 
 #class StoryTextInline(admin.TabularInline):

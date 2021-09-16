@@ -2,7 +2,7 @@ import re
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import formset_factory, inlineformset_factory
+from django.forms import formset_factory, inlineformset_factory, modelformset_factory
 
 from accounts.models import User
 from core import visibility
@@ -10,7 +10,7 @@ from core import visibility
 from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
 from entities.models import ModelEntity, ModelGroup
 from experiments.models import Experiment
-from .models import Story, SimpleStory
+from .models import Story, SimpleStory, StoryPart
 
 
 # Helper dictionary for determining whether visibility of model groups / stories and their models works together
@@ -136,73 +136,54 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
 
 
 
-class StoryPartForm(forms.Form):
-    template_name = 'templates/stories/story_part_form.html'
-    description = forms.CharField(widget=forms.Textarea)
-#    email = forms.EmailField(
-#        widget=forms.EmailInput(attrs={'placeholder': 'Email address of user'})
-#    )
+class StoryPartForm(UserKwargModelFormMixin, forms.ModelForm):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-#        if self.initial.get('email'):
-#            self.fields['email'].widget = forms.HiddenInput()
-#            self.collaborator = self._get_user(self.initial['email'])
-#
-#    def _get_user(self, email):
-#        try:
-#            return User.objects.get(email=email)
-#        except User.DoesNotExist:
-#            return None
-#
-#    def clean_email(self):
-#        email = self.cleaned_data['email']
-#        user = self._get_user(email)
-#        if not user:
-#            raise ValidationError('User not found')
-#        if user == self.entity.author:
-#            raise ValidationError("Cannot add because user is the author")
-#        self.cleaned_data['user'] = user
-#        return email
-#
-#    def add_collaborator(self):
-#        if 'user' in self.cleaned_data:
-#            self.entity.add_collaborator(self.cleaned_data['user'])
-#
-#    def remove_collaborator(self):
-#        if 'user' in self.cleaned_data:
-#            self.entity.remove_collaborator(self.cleaned_data['user'])
-#    def clean_description(self):
-#        assert False, "descr "+ str(self.cleaned_data['description'])
+    class Meta:
+        model = StoryPart
+        fields = ['description']
 
+    def save(self, simplestory=None, order=0, **kwargs):
+        storypart = super().save(commit=False)
+        storypart.order = order
+        if not hasattr(storypart, 'author') or storypart.author is None:
+            storypart.author = self.user
+        storypart.story=simplestory
+        storypart.save()
+        return storypart
+
+    @property
+    def order(self):
+        return float('inf') if self.cleaned_data['DELETE'] else self.cleaned_data['ORDER']
 
 class BaseStoryPartFormSet(forms.BaseFormSet):
-    template_name = 'templates/stories/story_part_form.html'
+    def save(self, simplestory=None, **kwargs):
+        # delete deleted parts if there are any
 
-    def save(self):
-        assert False, str(self.forms)
-#        for form in self.forms:
-#            form.add_collaborator()
-#
-#        for form in self.deleted_forms:
-#            form.remove_collaborator()
+        return [form.save(simplestory=simplestory, order=order, **kwargs) 
+                for order, form in enumerate(sorted(self.ordered_forms, key=lambda f: f.order))]
 
 
-StoryPartFormSet = formset_factory(
-    StoryPartForm,
-    BaseStoryPartFormSet,
+StoryPartFormSet = inlineformset_factory(
+    parent_model=SimpleStory,
+    model=StoryPart,
+    form=StoryPartForm,
+    formset=BaseStoryPartFormSet,
+    fields=['description'],
     can_delete=True,
-#    extra=2,
     can_order=True,
+    extra=0,
+    min_num=1,
 )
 
 
 class SimpleStoryForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating a new story."""
 
+    template_name = 'stories/simplestory_form.html'
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user = kwargs.pop('user',None)
+        self.user = kwargs.pop('user', None)
         # Only show models and modelgroups I can can see
 #        self.fields['othermodels'].queryset = ModelEntity.objects.visible_to_user(self.user)
 #        visible_modelgroups = [m.pk for m in ModelGroup.objects.all() if m.visible_to_user(self.user)]
@@ -233,8 +214,7 @@ class SimpleStoryForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def save(self, **kwargs):
         simplestory = super().save(commit=False)
-#        if not hasattr(simplestory, 'author') or simplestory.author is None:
-#            simplestory.author = self.user
-#        simplestory.save()
-#        self.save_m2m()
-#        return simplestory
+        if not hasattr(simplestory, 'author') or simplestory.author is None:
+            simplestory.author = self.user
+        simplestory.save()
+        return simplestory
