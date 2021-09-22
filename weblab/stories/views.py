@@ -15,12 +15,12 @@ from accounts.forms import OwnershipTransferForm
 from .forms import (
     StoryCollaboratorFormSet,
     StoryForm,
-    SimpleStoryForm,
+    StoryPartFormSet,
 )
 from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
 from experiments.models import Experiment
-from .models import Story, SimpleStory, StoryPart
+from .models import Story, StoryPart
 
 
 class StoryListView(LoginRequiredMixin, ListView):
@@ -153,17 +153,12 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
         return reverse(ns + ':stories')
 
 
-
-
-from .forms import StoryPartFormSet
-
-
 class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin, CreateView):
     """
     Create new model story
     """
-    model = SimpleStory
-    form_class = SimpleStoryForm
+    model = Story
+    form_class = StoryForm
     formset_class = StoryPartFormSet
     initial = []
 
@@ -196,8 +191,8 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         form = self.get_form()
         formset = self.get_formset()
         if form.is_valid() and formset.is_valid():
-            simplestory = form.save()
-            storyparts = formset.save(simplestory=simplestory)
+            story = form.save()
+            storyparts = formset.save(story=story)
             return self.form_valid(form)
         else:
             self.object = None
