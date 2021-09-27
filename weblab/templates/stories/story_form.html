@@ -1,3 +1,7 @@
+<script type='text/javascript'>
+    var comparisonModeOn = true;
+</script>
+
 {% extends "base.html" %}
 {% load staticfiles %}
 {% load entities %}
@@ -80,7 +84,8 @@ function renderMde(){
         <tfoot>
         <tr class="dynamic-form-add">
             <td class="django-formset-add td" colspan="2">
-                <a class="add-row" href="javascript:insertStoryPartForm('', '', storyPartCount, false)">add another</a>
+                <a class="add-row" href="javascript:insertStoryPartForm('', '', storyPartCount, false)">add text field</a>
+                <a class="add-row" href="javascript:insertStoryPartForm('', '', storyPartCount, false)">add graph</a>
             </td>
         </tr>
         </tfoot>
@@ -93,8 +98,7 @@ function renderMde(){
 
 <link rel="stylesheet" href="{% static 'simplemde/simplemde.min.css' %}">
 <script src="{% static 'simplemde/simplemde.min.js' %}"></script>
-<script>
-
+<script  type='text/javascript'>
 function insertStoryPartForm(descriptionValue, descriptionErrors, order, del){
     if (del){
         html=`<input type="hidden" name="form-${storyPartCount}-DELETE" id="id_form-${storyPartCount}-DELETE" value="true">`;
@@ -103,6 +107,7 @@ function insertStoryPartForm(descriptionValue, descriptionErrors, order, del){
         html=`
               <tr>
                   <td style="vertical-align: top;">
+                    <h2>Text field</h2>
                     ${descriptionErrors}
                     <textarea name="form-${storyPartCount}-description" cols="40" rows="10" id="id_form-${storyPartCount}-description">${descriptionValue}</textarea>
                   </td>
@@ -126,6 +131,29 @@ $( document ).ready(function() {
 });
 
 </script>
+
+
+{% load experiments %}
+  <section id="matrixTab">
+ <h2>Graph</h2>
+    <p>
+    Select experiments for the desired graph
+    <span id="comparisonModeActions">
+        <!-- <button id="comparisonLink" data-comparison-href="{% url_experiment_comparison_base %}">Select graph</button> -->
+<button id="comparisonLink" data-comparison-href="alert('yes');">Select graph</button>
+    </span>
+    </p>
+    <div id="matrixdiv"
+      data-base-json-href="{% url 'experiments:matrix' %}"
+      data-base-href="{% url 'experiments:list' %}"
+      data-new-href="{% url 'experiments:new' %}"
+      data-row-type="model"
+      data-column-type="protocol"
+      data-experiment-type="experiment"
+      ></div>
+    <br/>
+  </section>
+
 {% endblock %}
 
 

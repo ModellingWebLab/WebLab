@@ -3,7 +3,7 @@ var notifications = require('./lib/notifications.js')
 var utils = require('./lib/utils.js')
 
 var pages = [ "matrix" ],//, "search" ],
-	comparisonMode = false,
+	comparisonMode =  typeof comparisonModeOn !== 'undefined',
 	experimentsToCompare = [],
 	linesToCompare = {row: [], col: []},
 	baseUrls = {row: "", col: ""}; // These are filled in if we are viewing a sub-matrix
@@ -15,12 +15,13 @@ var pages = [ "matrix" ],//, "search" ],
  * @param $td  the table cell to contain this experiment
  * @param entry  the entry for this experiment in the data matrix
  */
-function submitNewExperiment(jsonObject, $td, entry)
+function submitNewExperiment(jsonObject, $td, entry, tablePrefix)
 {
 
+  div = $("#" + tablePrefix + "matrixdiv");
   $td.append("<img src='"+staticPath+"img/loading2-new.gif' alt='loading' />");
 
-  $.post($("#matrixdiv").data('new-href'), jsonObject, function(data) {
+  $.post(div.data('new-href'), jsonObject, function(data) {
       var msg = data.newExperiment.responseText;
       $td.removeClass("experiment-QUEUED experiment-RUNNING experiment-INAPPLICABLE experiment-FAILED experiment-PARTIAL experiment-SUCCESS");
       $td.unbind("click");
@@ -40,7 +41,7 @@ function submitNewExperiment(jsonObject, $td, entry)
         url: data.newExperiment.url,
       };
       $td.addClass("experiment-" + data.newExperiment.status);
-      setExpListeners($td, entry);
+      setExpListeners($td, entry, tablePrefix);
   }).fail(function() {
       notifications.add("Server-side error occurred submitting experiment.", "error");
       $td.addClass("experiment-FAILED");
@@ -51,15 +52,16 @@ function submitNewExperiment(jsonObject, $td, entry)
 }
 
 
-function drawMatrix (matrix)
+function drawMatrix(matrix, tablePrefix)
 {
+        div = $("#" + tablePrefix + "matrixdiv");
 	//console.log (matrix);
 	var rows = [],
 		columns = [],
 		rowMapper = {},
 		columnMapper = {},
 		mat = [];
-	
+
 	for (var key in matrix.rows)
 		if (matrix.rows.hasOwnProperty (key))
 		{
@@ -80,12 +82,12 @@ function drawMatrix (matrix)
     // Sort rows & columns alphabetically (case insensitive)
     rows.sort(function(a,b) {return (rowMapper[a].name.toLocaleLowerCase() > rowMapper[b].name.toLocaleLowerCase()) ? 1 : ((rowMapper[b].name.toLocaleLowerCase() > rowMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
     columns.sort(function(a,b) {return (columnMapper[a].name.toLocaleLowerCase() > columnMapper[b].name.toLocaleLowerCase()) ? 1 : ((columnMapper[b].name.toLocaleLowerCase() > columnMapper[a].name.toLocaleLowerCase()) ? -1 : 0);});
-	
+
 	/*console.log ("rows");
 	console.log (rowMapper);
 	console.log ("columns");
 	console.log (columnMapper);*/
-	
+
 	for (var i = 0; i < rows.length; i++)
 	{
 		mat[i] = [];
@@ -99,7 +101,7 @@ function drawMatrix (matrix)
 			columnMapper[columns[j]].col = j;
 		}
 	}
-	
+
 	for (var key in matrix.experiments)
 	{
 		if (matrix.experiments.hasOwnProperty (key))
@@ -112,12 +114,11 @@ function drawMatrix (matrix)
 			mat[row][col].experiment = exp;
 		}
 	}
-	
-	var div = document.getElementById("matrixdiv"),
-		table = document.createElement("table");
-	$(div).empty();
+
+	table = document.createElement("table");
+        div.empty();
 	table.setAttribute("class", "matrixTable");
-	div.appendChild(table);
+        div.append(table);
 
 	if (mat.length == 0)
 	{
@@ -135,12 +136,12 @@ function drawMatrix (matrix)
 				$td = $(td);
 			tr.appendChild(td);
 			td.setAttribute("id", "matrix-entry-" + row + "-" + col);
-			
+
 			//console.log ("row " + row + " col " + col);
-			
+
 			if (row == -1 && col == -1)
 				continue;
-			
+
 			// Top row: column names
 			if (row == -1)
 			{
@@ -148,7 +149,7 @@ function drawMatrix (matrix)
 					d2 = document.createElement("div"),
 					a = document.createElement("a"),
 					column = mat[0][col].columnData;
-        a.href = column.url;
+                                 a.href = column.url;
 				d2.setAttribute("class", "vertical-text");
 				d1.setAttribute("class", "vertical-text__inner");
 				d2.appendChild(d1);
@@ -160,18 +161,18 @@ function drawMatrix (matrix)
 					.click(function (ev) {
 						if (comparisonMode) {
 							ev.preventDefault();
-							addToComparison($(this), 'col');
+							addToComparison($(this), 'col', tablePrefix);
 						}
 					});
 				continue;
 			}
-			
+
 			// Left column: model names
 			if (col == -1)
 			{
 				var a = document.createElement("a"),
-					model = mat[row][0].rowData;
-        a.href = model.url;
+				model = mat[row][0].rowData;
+                                a.href = model.url;
 				a.appendChild(document.createTextNode(model.name));
 				td.appendChild(a);
 				$td.addClass("matrixTableRow")
@@ -179,12 +180,12 @@ function drawMatrix (matrix)
 					.click(function (ev) {
 						if (comparisonMode) {
 							ev.preventDefault();
-							addToComparison($(this), 'row');
+							addToComparison($(this), 'row', tablePrefix);
 						}
 					});
 				continue;
 			}
-			
+
 			// Normal case
 			var entry = mat[row][col];
 			entry.row = row;
@@ -194,11 +195,11 @@ function drawMatrix (matrix)
 				$td.addClass("experiment experiment-"+entry.experiment.latestResult);
 			else
 				$td.addClass("experiment experiment-NONE");
-			
-			setExpListeners($td, entry);
+
+			setExpListeners($td, entry, tablePrefix);
 		}
 	}
-	
+
 	// Fix the matrix layout, so it doesn't jump on hovers
 	var rowWidth = 0, rowHeight = 0, colWidth = 0, colHeight = 0;
 	$(table).find("td.matrixTableRow").addClass("matrixHover").each(function () {
@@ -223,71 +224,71 @@ function drawMatrix (matrix)
  * @param $td  the table cell
  * @param entry  mat[row][col] for this table cell
  */
-function setExpListeners($td, entry)
+function setExpListeners($td, entry, tablePrefix)
 {
+        $div = $("#" + tablePrefix + "matrixdiv");
 	// Click listener
 	if (entry.experiment)
 	{
-		addMatrixClickListener($td, entry.experiment.url, entry.experiment.id, entry.experiment.latestResult);
+		addMatrixClickListener($td, entry.experiment.url, entry.experiment.id, entry.experiment.latestResult, tablePrefix);
 	}
 	else
 	{
-	  var $div = $("#matrixdiv");
-    var experimentType = $div.data('experiment-type');
-    if (experimentType == 'fitting') {
-      // Link through to fitting submission form
-      $td.click(function() {
-        var link = $div.data('new-fitting-href') + '?';
-        var params = {
-          'model': entry.rowData.entityId,
-          'model_version': entry.rowData.id,
-          'dataset': entry.columnData.id,
-          'protocol': entry.columnData.protocolId,
-          'protocol_version': entry.columnData.protocolLatestVersion,
-          'fittingspec': $div.data('fittingspec-id'),
-          'fittingspec_version': $div.data('fittingspec-version'),
+        var experimentType = $div.data('experiment-type');
+        if (experimentType == 'fitting') {
+          // Link through to fitting submission form
+          $td.click(function() {
+              var link = $div.data('new-fitting-href') + '?';
+              var params = {
+                  'model': entry.rowData.entityId,
+                  'model_version': entry.rowData.id,
+                  'dataset': entry.columnData.id,
+                  'protocol': entry.columnData.protocolId,
+                  'protocol_version': entry.columnData.protocolLatestVersion,
+                  'fittingspec': $div.data('fittingspec-id'),
+                  'fittingspec_version': $div.data('fittingspec-version'),
+              }
+              location.href = link + $.param(params);
+          });
+        } else {
+            // Submit new experiment directly
+             $td.click(function () {
+                submitNewExperiment ({
+                    task: "newExperiment",
+                    model: entry.rowData.entityId,
+                    model_version: entry.rowData.id,
+                    protocol: entry.columnData.entityId,
+                    protocol_version: entry.columnData.id,
+                }, $td, entry, tablePrefix);
+            });
         }
-        location.href = link + $.param(params);
-      });
-    } else {
-      // Submit new experiment directly
-      $td.click(function () {
-        submitNewExperiment ({
-          task: "newExperiment",
-          model: entry.rowData.entityId,
-          model_version: entry.rowData.id,
-          protocol: entry.columnData.entityId,
-          protocol_version: entry.columnData.id,
-        }, $td, entry);
-      });
     }
-	}
 
-	// Highlight the relevant row & column labels when the mouse is over this cell
-	$td.mouseenter(function (ev) {
-		$("#matrix-entry--1-" + entry.col).addClass("matrixHover");
-		$("#matrix-entry-" + entry.row + "--1").addClass("matrixHover");
-	}).mouseleave(function (ev) {
-		$("#matrix-entry--1-" + entry.col).removeClass("matrixHover");
-		$("#matrix-entry-" + entry.row + "--1").removeClass("matrixHover");
-	});
+    // Highlight the relevant row & column labels when the mouse is over this cell
+    $td.mouseenter(function (ev) {
+        $("#" + tablePrefix + "matrix-entry--1-" + entry.col).addClass("matrixHover");
+        $("#" + tablePrefix + "matrix-entry-" + entry.row + "--1").addClass("matrixHover");
+    }).mouseleave(function (ev) {
+        $("#" + tablePrefix + "matrix-entry--1-" + entry.col).removeClass("matrixHover");
+        $("#" + tablePrefix + "matrix-entry-" + entry.row + "--1").removeClass("matrixHover");
+    });
 }
 
 /**
  * Handle a click on a row or column header when in comparison mode.
- * 
+ *
  * Toggles the selected state of this row/column.  If only one ends up selected, then all cells in that row/column are
  * included in the comparison.  If at least one row and column are selected, then we only compare experiments that
  * feature both a selected row and column.
- * 
+ *
  * Note that users MAY select extra experiments not in a selected row/column.  Such choices should not be affected by
  * this method.  Clicking on individual experiments selected via this mechanism will also toggle their state, but may
  * be overridden by a subsequent selection via this method.
- * 
+ *
  * @param $td  the header clicked on
  * @param rowOrCol  either 'row' or 'col'
  */
-function addToComparison($td, rowOrCol)
+function addToComparison($td, rowOrCol, tablePrefix)
 {
 	var index = $td.data(rowOrCol),
 		lineIndex = linesToCompare[rowOrCol].indexOf(index),
@@ -330,7 +331,7 @@ function addToComparison($td, rowOrCol)
 		// Select this row/col
 		linesToCompare[rowOrCol].push(index);
 		$td.addClass("patternized");
-		$("#comparisonMatrix").show();
+		$("#" + tablePrefix + "comparisonMatrix").show();
 		// If this is the first line of this type, clear lines of the other type
 		if (linesToCompare[rowOrCol].length == 1)
 		{
@@ -356,7 +357,7 @@ function addToComparison($td, rowOrCol)
 			}
 		});
 	}
-	computeComparisonLink();
+	computeComparisonLink(tablePrefix);
 }
 
 /**
@@ -387,20 +388,20 @@ function toggleSelected($td, expId)
  * Compute the 'compare experiments' link in comparison mode,
  * and show the button iff there are experiments to compare.
  */
-function computeComparisonLink()
+function computeComparisonLink(tablePrefix)
 {
-  var $comparisonLink = $("#comparisonLink");
+  var $comparisonLink = $("#" + tablePrefix + "comparisonLink");
 	if (experimentsToCompare.length > 0)
 	{
     var newHref = $comparisonLink.data('comparison-href');
 		for (var i = 0; i < experimentsToCompare.length; i++)
 			newHref += '/' + experimentsToCompare[i];
-		$("#comparisonLink").show().data("href", newHref);
+		$("#" + tablePrefix + "comparisonLink").show().data("href", newHref);
 	}
 	else
 	{
-		$("#comparisonMatrix").hide();
-		$("#comparisonLink").hide();
+		$("#" + tablePrefix + "comparisonMatrix").hide();
+		$("#" + tablePrefix + "comparisonLink").hide();
 	}
 }
 
@@ -412,7 +413,7 @@ function isSelectableResult(result)
 	return (result == "SUCCESS" || result == "PARTIAL");
 }
 
-function addMatrixClickListener($td, link, expId, result)
+function addMatrixClickListener($td, link, expId, result, tablePrefix)
 {
 	$td.click(function (ev) {
 		if (comparisonMode)
@@ -420,7 +421,7 @@ function addMatrixClickListener($td, link, expId, result)
 			if (!isSelectableResult(result))
 				return;
 			toggleSelected($td, expId);
-			computeComparisonLink();
+			computeComparisonLink(tablePrefix);
 		}
 		else
 		{
@@ -430,11 +431,12 @@ function addMatrixClickListener($td, link, expId, result)
 }
 
 
-function getMatrix(params, div) {
+function getMatrix(params, tablePrefix) {
+  div = $("#" + tablePrefix + "matrixdiv");
   var baseUrl = $(div).data('base-json-href');
   $.getJSON(baseUrl, params, function(data) {
     if (data.getMatrix) {
-      drawMatrix(data.getMatrix);
+      drawMatrix(data.getMatrix, tablePrefix);
     }
   }).always(function(data) {
     notifications.display(data);
@@ -450,12 +452,11 @@ function getMatrix(params, div) {
  * The URL can also be {contextPath}/db/public to show only what anonymous users can view.
  * Returns a JSON object to be passed to getMatrix();
  */
-function parseLocation ()
+function parseLocation(div)
 {
-  var $div = $("#matrixdiv"),
-  base = $div.data('base-href'),
-  rowType = $div.data('row-type'),
-  columnType = $div.data('column-type'),
+  base = div.data('base-href'),
+  rowType = div.data('row-type'),
+  columnType = div.data('column-type'),
   rest = "",
   ret = {},
   queryParams = (new URL(document.location)).searchParams;
@@ -578,51 +579,48 @@ function parseLocation ()
   return ret;
 }
 
-function prepareMatrix ()
+function prepareMatrix(tablePrefix)
 {
-	var div = document.getElementById("matrixdiv");
-	
-	var loadingImg = document.createElement("img");
-	loadingImg.src = staticPath + "/img/loading2-new.gif";
-	div.appendChild(loadingImg);
-	div.appendChild(document.createTextNode("Preparing experiment matrix; please be patient."));
+    div = $("#" + tablePrefix + "matrixdiv");
+    div.append($("<img src='" + staticPath +  "/img/loading2-new.gif' alt='loading'>"));
+    div.append(document.createTextNode("Preparing experiment matrix; please be patient."));
 
-  var components = parseLocation();
-	getMatrix(components, div);
-	
-	$("#comparisonModeButton").text(comparisonMode ? "Disable" : "Enable")
-	                          .click(function () {
-		comparisonMode = !comparisonMode;
-		$("#comparisonModeButton").text(comparisonMode ? "Disable" : "Enable");
-		if (!comparisonMode)
-		{
-			// Clear all selections
-			experimentsToCompare.splice(0, experimentsToCompare.length);
-			linesToCompare.row.splice(0, linesToCompare.row.length);
-			linesToCompare.col.splice(0, linesToCompare.col.length);
-			$(".patternized").removeClass("patternized");
-			$("#comparisonLink").hide();
-			$("#comparisonMatrix").hide();
-		}
-	});
-	$("#comparisonLink").click(function () {
-	    document.location = $(this).data("href");
-	});
-  $("#comparisonMatrix").click(function () {
-    var url = $(div).data('base-href');
-    if (url.substr(-1) === '/') {
-      url = url.slice(0, -1);
-    }
+    var components = parseLocation(div);
+    getMatrix(components, tablePrefix);
 
-    if (linesToCompare.row.length > 0) {
-      var rows = linesToCompare.row.map(i => $("#matrix-entry-" + i + "--1"));
-      var rowIds = rows.map($row => $row.data('modelId'));
-      var rowVersions = rows.map($row => $row.data('modelVersion'));
-      if (components.rowVersions) {
-        url += '/models/' + rowIds[0] + '/versions/' + rowVersions.join('/');
-      } else {
-        url += '/models/' + rowIds.join('/');
-      }
+    $("#" + tablePrefix + "comparisonModeButton").text(comparisonMode ? "Disable" : "Enable")
+                              .click(function () {
+        comparisonMode = !comparisonMode;
+        $("#" + tablePrefix + "comparisonModeButton").text(comparisonMode ? "Disable" : "Enable");
+        if (!comparisonMode)
+        {
+            // Clear all selections
+            experimentsToCompare.splice(0, experimentsToCompare.length);
+            linesToCompare.row.splice(0, linesToCompare.row.length);
+            linesToCompare.col.splice(0, linesToCompare.col.length);
+            $(".patternized").removeClass("patternized");
+            $("#" + tablePrefix + "comparisonLink").hide();
+            $("#" + tablePrefix + "comparisonMatrix").hide();
+        }
+    });
+    $("#" + tablePrefix + "comparisonLink").click(function () {
+        document.location = $(this).data("href");
+    });
+    $("#" + tablePrefix + "comparisonMatrix").click(function () {
+        var url = $(div).data('base-href');
+        if (url.substr(-1) === '/') {
+          url = url.slice(0, -1);
+        }
+
+        if (linesToCompare.row.length > 0) {
+          var rows = linesToCompare.row.map(i => $("#" + tablePrefix + "matrix-entry-" + i + "--1"));
+          var rowIds = rows.map($row => $row.data('modelId'));
+          var rowVersions = rows.map($row => $row.data('modelVersion'));
+          if (components.rowVersions) {
+            url += '/models/' + rowIds[0] + '/versions/' + rowVersions.join('/');
+          } else {
+            url += '/models/' + rowIds.join('/');
+          }
     }
     else
     {
@@ -635,7 +633,7 @@ function prepareMatrix ()
     if (linesToCompare.col.length > 0)
     {
       var colType = $(div).data('column-type');
-      var cols = linesToCompare.col.map(i => $("#matrix-entry--1-" + i));
+      var cols = linesToCompare.col.map(i => $("#" + tablePrefix + "matrix-entry--1-" + i));
 
       var colIds = cols.map($col => $col.data('columnId'));
       var colVersions = cols.map($col => $col.data('columnVersion'));
@@ -655,8 +653,8 @@ function prepareMatrix ()
     }
     document.location.href = url; // TODO: use history API instead?
   });
-	$("#comparisonLink").hide();
-	$("#comparisonMatrix").hide();
+	$("#" + tablePrefix + "comparisonLink").hide();
+	$("#" + tablePrefix + "comparisonMatrix").hide();
 
   function getBaseUrl() {
     var url = $(div).data('base-href'),
@@ -679,7 +677,7 @@ function prepareMatrix ()
   }
 
 	// The my/public/moderated view buttons
-	$("#showModeratedExpts").click(function () {
+	$("#" + tablePrefix + "showModeratedExpts").click(function () {
 		if (!$(this).hasClass("selected"))
         {
             $('.showButton').removeClass("selected");
@@ -687,7 +685,7 @@ function prepareMatrix ()
 			document.location.href = getBaseUrl();
         }
 	});
-	$("#showPublicExpts").click(function () {
+	$("#" + tablePrefix + "showPublicExpts").click(function () {
 		if (!$(this).hasClass("selected"))
         {
             $('.showButton').removeClass("selected");
@@ -695,7 +693,7 @@ function prepareMatrix ()
 			document.location.href = getBaseUrl();
         }
 	});
-	$("#showAllExpts").click(function () {
+	$("#" + tablePrefix + "showAllExpts").click(function () {
 		if (!$(this).hasClass("selected"))
         {
             $('.showButton').removeClass("selected");
@@ -703,7 +701,7 @@ function prepareMatrix ()
 			document.location.href = getBaseUrl();
         }
 	});
-	$("#showMyExpts").click(function () {
+	$("#" + tablePrefix + "showMyExpts").click(function () {
 		if (!$(this).hasClass("selected"))
         {
             $('.showButton').removeClass("selected");
@@ -711,22 +709,22 @@ function prepareMatrix ()
 			document.location.href = getBaseUrl();
         }
 	});
-	$("#showMyExptsModels").click(function () {
+	$("#" + tablePrefix + "showMyExptsModels").click(function () {
 		var hideModels = hiddenToggle($(this)),
-			hideProtocols = $("#showMyExptsProtocols").text().substr(0,4) == 'Show';
-			hideDatasets = $("#showMyExptsDatasets").text().substr(0,4) == 'Show';
+			hideProtocols = $("#" + tablePrefix + "showMyExptsProtocols").text().substr(0,4) == 'Show';
+			hideDatasets = $("#" + tablePrefix + "showMyExptsDatasets").text().substr(0,4) == 'Show';
 			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
 	});
-	$("#showMyExptsProtocols").click(function () {
+	$("#" + tablePrefix + "showMyExptsProtocols").click(function () {
 		var hideProtocols = hiddenToggle($(this)),
-			hideModels = $("#showMyExptsModels").text().substr(0,4) == 'Show';
-			hideDatasets = $("#showMyExptsDatasets").text().substr(0,4) == 'Show';
+			hideModels = $("#" + tablePrefix + "showMyExptsModels").text().substr(0,4) == 'Show';
+			hideDatasets = $("#" + tablePrefix + "showMyExptsDatasets").text().substr(0,4) == 'Show';
 			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
 	});
-	$("#showMyExptsDatasets").click(function () {
+	$("#" + tablePrefix + "showMyExptsDatasets").click(function () {
 		var hideDatasets = hiddenToggle($(this)),
-			hideModels = $("#showMyExptsModels").text().substr(0,4) == 'Show';
-			hideProtocols = $("#showMyExptsProtocols").text().substr(0,4) == 'Show';
+			hideModels = $("#" + tablePrefix + "showMyExptsModels").text().substr(0,4) == 'Show';
+			hideProtocols = $("#" + tablePrefix + "showMyExptsProtocols").text().substr(0,4) == 'Show';
 			document.location.href = getBaseUrl() + $.param(hideModeratedParams(hideModels, hideProtocols, hideDatasets));
 	});
 }
@@ -753,7 +751,7 @@ function hiddenToggle($button)
 	return hide;
 }
 
-function switchPage (page)
+function switchPage (page, tablePrefix)
 {
 	//console.log ("switching to " + page);
 	for (var i = 0; i < pages.length; i++)
@@ -761,12 +759,12 @@ function switchPage (page)
 		if (pages[i] == page)
 		{
 			document.getElementById(pages[i] + "Tab").style.display = "block";
-			$("#" + pages[i] + "chooser").addClass("selected");
+			$("#" + tablePrefix + pages[i] + "chooser").addClass("selected");
 		}
 		else
 		{
 			document.getElementById(pages[i] + "Tab").style.display = "none";
-			$("#" + pages[i] + "chooser").removeClass("selected");
+			$("#" + tablePrefix + pages[i] + "chooser").removeClass("selected");
 		}
 	}
 }
@@ -778,11 +776,15 @@ function registerSwitchPagesListener (btn, page)
 	}, true);
 }
 
-function initDb ()
+function initDb(tablePrefix)
 {
-  if ($("#matrixdiv").length > 0) {
+  if ($("#" + tablePrefix + "matrixdiv").length > 0) {
     switchPage (pages[0]);
-    prepareMatrix ();
+    prepareMatrix(tablePrefix);
   }
 }
-document.addEventListener("DOMContentLoaded", initDb, false);
+
+document.addEventListener("DOMContentLoaded", function(){
+    initDb("");
+}, false);
+
