@@ -292,7 +292,7 @@ function addToComparison($td, rowOrCol, tablePrefix)
 {
 	var index = $td.data(rowOrCol),
 		lineIndex = linesToCompare[rowOrCol].indexOf(index),
-		cells = $(".matrix-" + rowOrCol + "-" + index),
+		cells = $("." + tablePrefix + "matrix-" + rowOrCol + "-" + index),
 		colOrRow = (rowOrCol == 'row' ? 'col' : 'row'),
 		otherTypeSelected = (linesToCompare[colOrRow].length > 0);
 	if (lineIndex != -1)
@@ -314,7 +314,7 @@ function addToComparison($td, rowOrCol, tablePrefix)
 		if (linesToCompare[rowOrCol].length == 0)
 		{
 			$.each(linesToCompare[colOrRow], function (i, otherLineIndex) {
-				$(".matrix-" + colOrRow + "-" + otherLineIndex).not(".patternized").each(function (i, elt) {
+				$("." + tablePrefix + "matrix-" + colOrRow + "-" + otherLineIndex).not(".patternized").each(function (i, elt) {
 					var $cell = $(elt),
 						exp = $cell.data("entry").experiment;
 					if (exp && isSelectableResult(exp.latestResult))
@@ -336,7 +336,7 @@ function addToComparison($td, rowOrCol, tablePrefix)
 		if (linesToCompare[rowOrCol].length == 1)
 		{
 			$.each(linesToCompare[colOrRow], function (i, otherLineIndex) {
-				$(".matrix-" + colOrRow + "-" + otherLineIndex).filter(".patternized").each(function (i, elt) {
+				$("." + tablePrefix + "matrix-" + colOrRow + "-" + otherLineIndex).filter(".patternized").each(function (i, elt) {
 					var $cell = $(elt),
 						cellIndex = experimentsToCompare.indexOf($cell.data("entry").experiment.id);
 					experimentsToCompare.splice(cellIndex, 1);
@@ -452,8 +452,9 @@ function getMatrix(params, tablePrefix) {
  * The URL can also be {contextPath}/db/public to show only what anonymous users can view.
  * Returns a JSON object to be passed to getMatrix();
  */
-function parseLocation(div)
+function parseLocation(tablePrefix)
 {
+  div = $("#" + tablePrefix + "matrixdiv");
   base = div.data('base-href'),
   rowType = div.data('row-type'),
   columnType = div.data('column-type'),
@@ -466,8 +467,8 @@ function parseLocation(div)
     rest = document.location.pathname.substr(base.length);
   }
 
-  $('.showButton').removeClass("selected");
-  $('.showMyButton').hide();
+  $("." + tablePrefix + "showButton").removeClass("selected");
+  $("." + tablePrefix + "showMyButton").hide();
   if (rest.length > 0)
   {
     var rowUrlFragment = rowType + 's',
@@ -527,18 +528,18 @@ function parseLocation(div)
     {
       if (items[0] == "public")
       {
-        $('#showPublicExpts').addClass("selected");
+        $("#" + tablePrefix + "showPublicExpts").addClass("selected");
         ret.subset = "public";
       }
       else if (items[0] == "mine")
       {
-        $('#showMyExpts').addClass("selected");
-        $('.showMyButton').show();
+        $("#" + tablePrefix + "showMyExpts").addClass("selected");
+        $("." + tablePrefix + "showMyButton").show();
         ret.subset = "mine";
 
-        $('#showMyExptsModels').text("Hide moderated models");
-        $('#showMyExptsProtocols').text("Hide moderated protocols");
-        $('#showMyExptsDatasets').text("Hide moderated datasets");
+        $("#" + tablePrefix + "showMyExptsModels").text("Hide moderated models");
+        $("#" + tablePrefix + "showMyExptsProtocols").text("Hide moderated protocols");
+        $("#" + tablePrefix + "showMyExptsDatasets").text("Hide moderated datasets");
 
         var query = location.search.substr(1);
         var result = {};
@@ -546,34 +547,34 @@ function parseLocation(div)
           var item = part.split("=");
           if (item[0] == 'moderated-models' && item[1] == 'false') {
             ret["moderated-models"] = "false";
-          $('#showMyExptsModels').text("Show moderated models");
+          $("#" + tablePrefix + "showMyExptsModels").text("Show moderated models");
           }
           if (item[0] == 'moderated-protocols' && item[1] == 'false') {
             ret["moderated-protocols"] = "false";
-            $('#showMyExptsProtocols').text("Show moderated protocols");
+            $("#" + tablePrefix + "showMyExptsProtocols").text("Show moderated protocols");
           }
           if (item[0] == 'moderated-datasets' && item[1] == 'false') {
             ret["moderated-datasets"] = "false";
-            $('#showMyExptsDatasets').text("Show moderated datasets");
+            $("#" + tablePrefix + "showMyExptsDatasets").text("Show moderated datasets");
           }
           result[item[0]] = decodeURIComponent(item[1]);
         });
       }
       else if (items[0] == "all")
       {
-        $('#showAllExpts').addClass("selected");
+        $("#" + tablePrefix + "showAllExpts").addClass("selected");
         ret.subset = "all";
       }
       else
       {
-        $('#showModeratedExpts').addClass("selected");
+        $("#" + tablePrefix + "showModeratedExpts").addClass("selected");
         ret.subset = "moderated";
       }
     }
   }
   else
   {
-    $('#showModeratedExpts').addClass("selected");
+    $("#" + tablePrefix + "showModeratedExpts").addClass("selected");
     ret.subset = "moderated";
   }
   return ret;
@@ -585,7 +586,7 @@ function prepareMatrix(tablePrefix)
     div.append($("<img src='" + staticPath +  "/img/loading2-new.gif' alt='loading'>"));
     div.append(document.createTextNode("Preparing experiment matrix; please be patient."));
 
-    var components = parseLocation(div);
+    var components = parseLocation(tablePrefix);
     getMatrix(components, tablePrefix);
 
     $("#" + tablePrefix + "comparisonModeButton").text(comparisonMode ? "Disable" : "Enable")
@@ -598,7 +599,7 @@ function prepareMatrix(tablePrefix)
             experimentsToCompare.splice(0, experimentsToCompare.length);
             linesToCompare.row.splice(0, linesToCompare.row.length);
             linesToCompare.col.splice(0, linesToCompare.col.length);
-            $(".patternized").removeClass("patternized");
+            $("." + tablePrefix + "patternized").removeClass("patternized");
             $("#" + tablePrefix + "comparisonLink").hide();
             $("#" + tablePrefix + "comparisonMatrix").hide();
         }
@@ -658,7 +659,7 @@ function prepareMatrix(tablePrefix)
 
   function getBaseUrl() {
     var url = $(div).data('base-href'),
-        suffix = $('.showButton.selected').data('suffix');
+        suffix = $("." + tablePrefix + "showButton.selected").data('suffix');
     if (url.substr(-1) === '/') {
       url = url.slice(0, -1);
     }
@@ -680,7 +681,7 @@ function prepareMatrix(tablePrefix)
 	$("#" + tablePrefix + "showModeratedExpts").click(function () {
 		if (!$(this).hasClass("selected"))
         {
-            $('.showButton').removeClass("selected");
+            $("." + tablePrefix + "showButton").removeClass("selected");
             $(this).addClass("selected");
 			document.location.href = getBaseUrl();
         }
@@ -688,7 +689,7 @@ function prepareMatrix(tablePrefix)
 	$("#" + tablePrefix + "showPublicExpts").click(function () {
 		if (!$(this).hasClass("selected"))
         {
-            $('.showButton').removeClass("selected");
+            $("." + tablePrefix + "showButton").removeClass("selected");
             $(this).addClass("selected");
 			document.location.href = getBaseUrl();
         }
@@ -696,7 +697,7 @@ function prepareMatrix(tablePrefix)
 	$("#" + tablePrefix + "showAllExpts").click(function () {
 		if (!$(this).hasClass("selected"))
         {
-            $('.showButton').removeClass("selected");
+            $("." + tablePrefix + "showButton").removeClass("selected");
             $(this).addClass("selected");
 			document.location.href = getBaseUrl();
         }
@@ -704,7 +705,7 @@ function prepareMatrix(tablePrefix)
 	$("#" + tablePrefix + "showMyExpts").click(function () {
 		if (!$(this).hasClass("selected"))
         {
-            $('.showButton').removeClass("selected");
+            $("." + tablePrefix + "showButton").removeClass("selected");
             $(this).addClass("selected");
 			document.location.href = getBaseUrl();
         }
