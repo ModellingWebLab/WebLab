@@ -135,7 +135,7 @@ function drawMatrix(matrix, tablePrefix)
 			var td = document.createElement("td"),
 				$td = $(td);
 			tr.appendChild(td);
-			td.setAttribute("id", "matrix-entry-" + row + "-" + col);
+			td.setAttribute("id", tablePrefix + "matrix-entry-" + row + "-" + col);
 
 			//console.log ("row " + row + " col " + col);
 
@@ -190,7 +190,7 @@ function drawMatrix(matrix, tablePrefix)
 			var entry = mat[row][col];
 			entry.row = row;
 			entry.col = col;
-			$td.data("entry", entry).addClass("matrix-row-" + row).addClass("matrix-col-" + col);
+			$td.data("entry", entry).addClass(tablePrefix + "matrix-row-" + row).addClass(tablePrefix + "matrix-col-" + col);
 			if (entry.experiment)
 				$td.addClass("experiment experiment-"+entry.experiment.latestResult);
 			else
@@ -759,33 +759,36 @@ function switchPage (page, tablePrefix)
 	{
 		if (pages[i] == page)
 		{
-			document.getElementById(pages[i] + "Tab").style.display = "block";
+			document.getElementById(tablePrefix + pages[i] + "Tab").style.display = "block";
 			$("#" + tablePrefix + pages[i] + "chooser").addClass("selected");
 		}
 		else
 		{
-			document.getElementById(pages[i] + "Tab").style.display = "none";
+			document.getElementById(tablePrefix + pages[i] + "Tab").style.display = "none";
 			$("#" + tablePrefix + pages[i] + "chooser").removeClass("selected");
 		}
 	}
 }
-function registerSwitchPagesListener (btn, page)
+function registerSwitchPagesListener (btn, page, tablePrefix = '')
 {
 	//console.log ("register switch listener: " + page);
 	btn.addEventListener("click", function () {
-		switchPage (page);
+		switchPage (page, tablePrefix);
 	}, true);
 }
 
 function initDb(tablePrefix)
 {
   if ($("#" + tablePrefix + "matrixdiv").length > 0) {
-    switchPage (pages[0]);
+    switchPage (pages[0], tablePrefix);
     prepareMatrix(tablePrefix);
   }
 }
 
-document.addEventListener("DOMContentLoaded", function(){
-    initDb("");
-}, false);
+$( document ).ready(function() {
+    $("div[id$='matrixdiv']").each(function (i, el) {
+        prefix = $(el).attr('id').replace('matrixdiv', '');
+        initDb(prefix);
+     });
+})
 

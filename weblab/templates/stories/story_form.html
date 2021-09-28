@@ -134,16 +134,13 @@ $( document ).ready(function() {
 
 
 {% load experiments %}
-  <section id="matrixTab">
+<section id="story1matrixTab">
  <h2>Graph</h2>
     <p>
     Select experiments for the desired graph
-    <span id="comparisonModeActions">
-        <!-- <button id="comparisonLink" data-comparison-href="{% url_experiment_comparison_base %}">Select graph</button> -->
-<button id="comparisonLink" data-comparison-href="alert('yes');">Select graph</button>
-    </span>
+    <button id="story1comparisonLink" data-comparison-href="http://www.google.com">Select specific graph</button>
     </p>
-    <div id="matrixdiv"
+    <div id="story1matrixdiv"
       data-base-json-href="{% url 'experiments:matrix' %}"
       data-base-href="{% url 'experiments:list' %}"
       data-new-href="{% url 'experiments:new' %}"
@@ -152,8 +149,6 @@ $( document ).ready(function() {
       data-experiment-type="experiment"
       ></div>
     <br/>
-  </section>
+</section>
 
 {% endblock %}
-
-
