@@ -275,6 +275,12 @@ form {
   .add-row::before {
     content:url('../img/add.png')
   }
+  #add-description::before {
+    content:url('../img/add.png')
+  }
+  #add-graph::before {
+    content:url('../img/add.png')
+  }
 }
 
 /* Useful for checkbox-style inputs */

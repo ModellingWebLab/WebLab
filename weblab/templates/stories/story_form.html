@@ -1,7 +1,3 @@
-<script type='text/javascript'>
-    var comparisonModeOn = true;
-</script>
-
 {% extends "base.html" %}
 {% load staticfiles %}
 {% load entities %}
@@ -9,51 +5,6 @@
 {% block title %}{% if object.id %}Story {{ object.title }}{% else %}New Story{% endif %} - {% endblock title %}
 {% block content %}
   {% if object.id %}{% include "./includes/story_header.html" %}{% endif %}
-
-<script type='text/javascript'>
-var storyPartCount = 0;
-var existingParts = {};
-
-function moveUp(id){
-    me = $(id.closest('tr'));
-    moveDown(me.prev());
-}
-
-function moveDown(id){
-    me = $(id.closest('tr'));
-    next = me.next();
-    if (me.length && next.length){  // check we're not going off the start / end
-        me.insertAfter(next);  // move
-        // swap value of order for processing on server side
-        order = me.find('.order');
-        next_order = next.find('.order');
-        current_order_val = order.val();
-        order.val(next_order.val());
-        next_order.val(current_order_val);
-    }
-}
-
-function remove(clicked){
-    id = $(clicked.closest('tr')).find('.order').attr('id');
-    name =  $(clicked.closest('tr')).find('.order').attr('name');
-    order = $(clicked.closest('tr')).find('.order').val();
-    $("#storyform").append(`<input class="order" type="hidden" name="${name}" id="${id}" value="${order}">`);
-
-    id = id.replace("ORDER", "DELETE");
-    name = name.replace("ORDER", "DELETE");
-    $("#storyform").append(`<input type="hidden" name="${name}" id="${id}" value="true">`);
-    $(clicked.closest('tr')).remove();
-}
-
-function renderMde(){
-    element = document.getElementById('id_form-' + storyPartCount + '-description'); //grab new text area
-    // initialise editor
-    var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo'], element:element});
-    simplemde.render();
-    storyPartCount++;  //keep track of number of forms
-    $("#id_form-TOTAL_FORMS").val(storyPartCount);  // update number of forms
-}
-</script>
 
 <div id='newstoryform'>
   {% if not form.title.value %}<h1>Create story</h1>{% endif %}
@@ -72,20 +23,45 @@ function renderMde(){
     <table class="formset manual-add" id="storyparts">
       <tbody>
         {% for form in formset %}
-            <script type='text/javascript'>
-            errors = {% if form.description.errors  %}`<ul class="errorlist"><li>{{ form.description.errors }}</li></ul>`{% else %}''{% endif %};
-            value = {% if form.description.value %}`{{form.description.value}}`{%else%}''{% endif %};
-            order = {%if form.ORDER.value %}{{form.ORDER.value}}{% else %}storyPartCount{% endif %};
-            del = {%if form.DELETE.value %}true{% else %}false{% endif %};
-            existingParts[order] = [value, errors, order, del];
-            </script>
+            <tr class="storypart description" style="visibility: hidden"><td>
+                <input class="partval" type="hidden" value={% if form.description.value %}`{{form.description.value}}`{%else%}''{% endif %}>
+                <input class="partorder" type="hidden" value={%if form.ORDER.value %}{{form.ORDER.value}}{% else %}''{% endif %}>
+                <input class="partdel" type="hidden" {%if form.DELETE.value %}true{% else %}false{% endif %}>
+                <input class="parterr"  type="text" value="{% if form.description.errors %}form.description.errors{% endif %}">
+            </td><td></td></tr>
         {% endfor %}
+            <tr>
+                <td style="vertical-align: top;">
+                    <section id="story1matrixTab">
+                     <h2>Graph</h2>
+                        Select experiments for the desired graph
+                        <button id="story1comparisonLink" data-comparison-href="http://www.google.com">Select specific graph</button>
+                        <div id="story1matrixdiv"
+                          data-base-json-href="{% url 'experiments:matrix' %}"
+                          data-base-href="{% url 'experiments:list' %}"
+                          data-new-href="{% url 'experiments:new' %}"
+                          data-row-type="model"
+                          data-column-type="protocol"
+                          data-experiment-type="experiment"
+                          ></div>
+                    </section>
+
+                </td>
+                <td style="vertical-align:top;">
+                    <section style=" position: relative;top: 95px;">
+                        <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                        <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
+                        <img class="deletepart" src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part"/><br/>
+                        <input class="order" type="hidden" name="form-${storyPartCount}-ORDER" id="id_form-${storyPartCount}-ORDER" value="${order}">
+                    </section>
+                </td>
+            </tr>
       </tbody>
         <tfoot>
         <tr class="dynamic-form-add">
             <td class="django-formset-add td" colspan="2">
-                <a class="add-row" href="javascript:insertStoryPartForm('', '', storyPartCount, false)">add text field</a>
-                <a class="add-row" href="javascript:insertStoryPartForm('', '', storyPartCount, false)">add graph</a>
+                <a id="add-description">add decription text</a>
+                <a id="add-graph">add graph</a>
             </td>
         </tr>
         </tfoot>
@@ -95,60 +71,5 @@ function renderMde(){
     </p>
   </form>
 </div>
-
-<link rel="stylesheet" href="{% static 'simplemde/simplemde.min.css' %}">
-<script src="{% static 'simplemde/simplemde.min.js' %}"></script>
-<script  type='text/javascript'>
-function insertStoryPartForm(descriptionValue, descriptionErrors, order, del){
-    if (del){
-        html=`<input type="hidden" name="form-${storyPartCount}-DELETE" id="id_form-${storyPartCount}-DELETE" value="true">`;
-        $('#storyform').append(html);  // add new hidden delete form
-    }else{
-        html=`
-              <tr>
-                  <td style="vertical-align: top;">
-                    <h2>Text field</h2>
-                    ${descriptionErrors}
-                    <textarea name="form-${storyPartCount}-description" cols="40" rows="10" id="id_form-${storyPartCount}-description">${descriptionValue}</textarea>
-                  </td>
-                  <td style="vertical-align: top;">
-                    <input type="button" value="▲" onclick="moveUp(this);" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
-                    <input type="button" value="▼" onclick="moveDown(this);" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
-                    <img src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part" onclick="remove(this)"/><br/>
-                    <input class="order" type="hidden" name="form-${storyPartCount}-ORDER" id="id_form-${storyPartCount}-ORDER" value="${order}">
-                  </td>
-              </tr>`;
-        $('#storyparts  > tbody').append(html);  // add new form
-        renderMde();
-    }
-}
-
-// render the pre-set story parts in the correct order
-$( document ).ready(function() {
-    Object.keys(existingParts).sort().forEach(function(key) {
-        insertStoryPartForm.apply(this, existingParts[key]);
-    });
-});
-
-</script>
-
-
-{% load experiments %}
-<section id="story1matrixTab">
- <h2>Graph</h2>
-    <p>
-    Select experiments for the desired graph
-    <button id="story1comparisonLink" data-comparison-href="http://www.google.com">Select specific graph</button>
-    </p>
-    <div id="story1matrixdiv"
-      data-base-json-href="{% url 'experiments:matrix' %}"
-      data-base-href="{% url 'experiments:list' %}"
-      data-new-href="{% url 'experiments:new' %}"
-      data-row-type="model"
-      data-column-type="protocol"
-      data-experiment-type="experiment"
-      ></div>
-    <br/>
-</section>
 
 {% endblock %}
