@@ -10,7 +10,7 @@ from core import visibility
 from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
 from entities.models import ModelEntity, ModelGroup
 from experiments.models import Experiment
-from .models import Story, StoryText
+from .models import Story, StoryText, StoryGraph
 
 
 # Helper dictionary for determining whether visibility of model groups / stories and their models works together
