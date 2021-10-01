@@ -5,6 +5,7 @@ from core.models import UserCreatedModelMixin, VisibilityModelMixin
 
 from entities.models import ModelEntity, ModelGroup
 from experiments.models import Experiment
+from repocache.models import CachedModelVersion, CachedProtocolVersion
 #from markdownx.models import MarkdownxField
 
 
@@ -38,14 +39,25 @@ class Story(UserCreatedModelMixin, VisibilityModelMixin):
         return self.title
 
 
-class StoryPart(UserCreatedModelMixin):
-    """
-    A part of a story.
-    """
-
-    description = TextField(blank=True, default='')
+class StoryItem(UserCreatedModelMixin):
     story = models.ForeignKey(Story, null=False, blank=False, on_delete=models.CASCADE, related_name="storyparts")
     order = models.IntegerField()
 
+class StoryText(StoryItem):
+    """
+    A textual (markdown) part of a story.
+    """
+    description = TextField(blank=True, default='')
+
     def __str__(self):
         return self.description
+
+class StoryGraph(StoryItem):
+    """
+    A graph for a story
+    """
+    graphfilename = TextField(blank=False)
+    cachedprotocolversion = models.ForeignKey(CachedProtocolVersion, null=False, blank=False, on_delete=models.CASCADE, related_name="protocolforgraph")
+    cachedmodelversion = models.ManyToManyField(CachedModelVersion)
+
+

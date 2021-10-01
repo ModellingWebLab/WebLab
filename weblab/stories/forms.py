@@ -10,7 +10,7 @@ from core import visibility
 from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
 from entities.models import ModelEntity, ModelGroup
 from experiments.models import Experiment
-from .models import Story, StoryPart
+from .models import Story, StoryText
 
 
 # Helper dictionary for determining whether visibility of model groups / stories and their models works together
@@ -45,26 +45,26 @@ StoryCollaboratorFormSet = formset_factory(
 )
 
 
-class StoryPartForm(UserKwargModelFormMixin, forms.ModelForm):
+class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
 
     class Meta:
-        model = StoryPart
+        model = StoryText
         fields = ['description']
 
     def save(self, story=None, order=0, **kwargs):
-        storypart = super().save(commit=False)
-        storypart.order = order
-        if not hasattr(storypart, 'author') or storypart.author is None:
-            storypart.author = self.user
-        storypart.story=story
-        storypart.save()
-        return storypart
+        storytext = super().save(commit=False)
+        storytext.order = order
+        if not hasattr(storytext, 'author') or storytext.author is None:
+            storytext.author = self.user
+        storytext.story=story
+        storytext.save()
+        return storytext
 
     @property
     def order(self):
         return float('inf') if self.cleaned_data['DELETE'] else self.cleaned_data['ORDER']
 
-class BaseStoryPartFormSet(forms.BaseFormSet):
+class BaseStoryTextFormSet(forms.BaseFormSet):
     def save(self, story=None, **kwargs):
         # delete deleted parts if there are any
 
@@ -72,11 +72,11 @@ class BaseStoryPartFormSet(forms.BaseFormSet):
                 for order, form in enumerate(sorted(self.ordered_forms, key=lambda f: f.order))]
 
 
-StoryPartFormSet = inlineformset_factory(
+StoryTextFormSet = inlineformset_factory(
     parent_model=Story,
-    model=StoryPart,
-    form=StoryPartForm,
-    formset=BaseStoryPartFormSet,
+    model=StoryText,
+    form=StoryTextForm,
+    formset=BaseStoryTextFormSet,
     fields=['description'],
     can_delete=True,
     can_order=True,

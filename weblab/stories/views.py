@@ -15,12 +15,12 @@ from accounts.forms import OwnershipTransferForm
 from .forms import (
     StoryCollaboratorFormSet,
     StoryForm,
-    StoryPartFormSet,
+    StoryTextFormSet,
 )
 from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
 from experiments.models import Experiment
-from .models import Story, StoryPart
+from .models import Story, StoryText
 
 
 class StoryListView(LoginRequiredMixin, ListView):
@@ -151,7 +151,7 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
     """
     model = Story
     form_class = StoryForm
-    formset_class = StoryPartFormSet
+    formset_class = StoryTextFormSet
     initial = []
 
     def get_success_url(self):
@@ -184,7 +184,7 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         formset = self.get_formset()
         if form.is_valid() and formset.is_valid():
             story = form.save()
-            storyparts = formset.save(story=story)
+            storytexts = formset.save(story=story)
             return self.form_valid(form)
         else:
             self.object = None
