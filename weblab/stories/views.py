@@ -51,14 +51,6 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         return reverse(ns + ':stories')
 
 
-#class StoryCreateView(StoryView, CreateView):
-#    """
-#    Create new model story
-#    """
-#    def test_func(self):
-#        return self.request.user.has_perm('entities.create_model')
-
-
 class StoryEditView(StoryView, UpdateView):
     """
     View for editing stories
@@ -197,3 +189,4 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         else:
             self.object = None
             return self.form_invalid(form)
+

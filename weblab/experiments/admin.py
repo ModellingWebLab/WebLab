@@ -1,7 +1,11 @@
 from django.contrib import admin
 
-from .models import Experiment, ExperimentVersion
+from .models import Experiment, ExperimentVersion, RunningExperiment, PlannedExperiment
 
+
+admin.site.register(ExperimentVersion)
+admin.site.register(RunningExperiment)
+admin.site.register(PlannedExperiment)
 
 class ExperimentVersionInline(admin.StackedInline):
     model = ExperimentVersion

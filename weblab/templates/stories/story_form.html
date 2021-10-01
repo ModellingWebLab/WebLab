@@ -35,15 +35,6 @@
                     <section id="story1matrixTab">
                      <h2>Graph</h2>
                         Select experiments for the desired graph
-                        <button id="story1comparisonLink" data-comparison-href="http://www.google.com">Select specific graph</button>
-                        <div id="story1matrixdiv"
-                          data-base-json-href="{% url 'experiments:matrix' %}"
-                          data-base-href="{% url 'experiments:list' %}"
-                          data-new-href="{% url 'experiments:new' %}"
-                          data-row-type="model"
-                          data-column-type="protocol"
-                          data-experiment-type="experiment"
-                          ></div>
                     </section>
 
                 </td>
@@ -57,7 +48,7 @@
                 </td>
             </tr>
       </tbody>
-        <tfoot>
+        <tfoot style="border-top: 1px solid black;">
         <tr class="dynamic-form-add">
             <td class="django-formset-add td" colspan="2">
                 <a id="add-description">add decription text</a>

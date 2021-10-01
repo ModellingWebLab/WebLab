@@ -827,8 +827,6 @@ function remove(clicked)
 function renderMde() // render text editor
 {
     element = document.getElementById('id_form-' + storyPartCount + '-description'); //grab new text area
-    alert(storyPartCount);
-    alert(element);
     // initialise editor
     var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo'], element:element});
     simplemde.render();
