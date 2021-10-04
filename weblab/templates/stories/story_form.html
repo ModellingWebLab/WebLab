@@ -24,7 +24,7 @@
       <tbody>
         {% for form in formset %}
             <tr class="storypart description" style="visibility: hidden"><td>
-                <input class="partval" type="hidden" value={% if form.description.value %}`{{form.description.value}}`{%else%}''{% endif %}>
+                <textarea class="partval" cols="0" rows="0">{% if form.description.value %}{{form.description.value}}{% endif %}</textarea>
                 <input class="partorder" type="hidden" value={%if form.ORDER.value %}{{form.ORDER.value}}{% else %}''{% endif %}>
                 <input class="partdel" type="hidden" {%if form.DELETE.value %}true{% else %}false{% endif %}>
                 <input class="parterr"  type="text" value="{% if form.description.errors %}form.description.errors{% endif %}">
