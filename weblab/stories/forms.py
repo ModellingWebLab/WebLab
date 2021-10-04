@@ -11,6 +11,9 @@ from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
 from entities.models import ModelEntity, ModelGroup
 from experiments.models import Experiment
 from .models import Story, StoryText, StoryGraph
+from experiments.models import ExperimentVersion
+from entities.models import ModelEntity, ModelGroup, ProtocolEntity
+import csv, io
 
 
 # Helper dictionary for determining whether visibility of model groups / stories and their models works together
@@ -46,7 +49,6 @@ StoryCollaboratorFormSet = formset_factory(
 
 
 class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
-
     class Meta:
         model = StoryText
         fields = ['description']
@@ -82,17 +84,44 @@ StoryTextFormSet = inlineformset_factory(
 )
 
 
-#StoryGraphFormSet = formset_factory(
-#    parent_model=Story,
-#    model=StoryGraph,
-#    form=StoryGraphForm,
-#    formset=BaseStoryTextFormSet,
-##    fields=['description'],
-#    can_delete=True,
-#    can_order=True,
-#    extra=0,
-#    min_num=1,
-#)
+class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = StoryGraph
+        fields = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['models_or_group']  = forms.ModelChoiceField(label='Select model or model group', required = True,
+                                                                 queryset=ModelEntity.objects.visible_to_user(self.user))
+        self.fields['protocol']  = forms.ModelChoiceField(label='Select protocol', required = True,
+                                                                 queryset=ProtocolEntity.objects.visible_to_user(self.user))
+        # get all possible graphs
+        experimentversions = ExperimentVersion.objects.all()
+        files = set()
+        for experimentver in experimentversions:
+            # find outputs-contents.csv
+            try:
+                plots_data_file = experimentver.open_file('outputs-default-plots.csv').read().decode("utf-8")
+                plots_data_stream = io.StringIO(plots_data_file)
+                for row in csv.DictReader(plots_data_stream):
+                    files.add((row['Data file name'], row['Data file name']))
+            except FileNotFoundError:
+                pass  # This experiment version has no graphs
+        self.fields['graphfiles']  = forms.ChoiceField(label='Select graph', required = True,
+                                                       choices=files)
+
+
+StoryGraphFormSet = inlineformset_factory(
+    parent_model=Story,
+    model=StoryGraph,
+    form=StoryGraphForm,
+    formset=BaseStoryTextFormSet,
+    fields=[],
+    can_delete=True,
+    can_order=True,
+    extra=0,
+    min_num=1,
+)
 
 
 class StoryForm(UserKwargModelFormMixin, forms.ModelForm):

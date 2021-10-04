@@ -16,6 +16,7 @@ from .forms import (
     StoryCollaboratorFormSet,
     StoryForm,
     StoryTextFormSet,
+    StoryGraphFormSet,
 )
 from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
@@ -152,6 +153,7 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
     model = Story
     form_class = StoryForm
     formset_class = StoryTextFormSet
+    formset_graph_class = StoryGraphFormSet
     initial = []
 
     def get_success_url(self):
@@ -171,12 +173,28 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
                     initial=initial,
                     form_kwargs=form_kwargs)
             else:
-                self.formset = self.formset_class(initial=initial,form_kwargs=form_kwargs)
+                self.formset = self.formset_class(initial=initial, form_kwargs=form_kwargs)
         return self.formset
+
+    def get_formset_graph(self):
+        pass
+        if not hasattr(self, 'formsetgraph') or self.formsetgraph is None:
+            initial = []
+            form_kwargs = {'user': self.request.user}
+            if self.request.method == 'POST':
+                self.formsetgraph = self.formset_ghraph_class(
+                    self.request.POST,
+                    initial=initial,
+                    form_kwargs=form_kwargs)
+            else:
+                self.formsetgraph = self.formset_graph_class(initial=initial, form_kwargs=form_kwargs)
+        return self.formsetgraph
 
     def get_context_data(self, **kwargs):
         if 'formset' not in kwargs:
             kwargs['formset'] = self.get_formset()
+        if 'formsetgraph' not in kwargs:
+            kwargs['formsetgraph'] = self.get_formset_graph()
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
