@@ -66,10 +66,7 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
 
 class BaseStoryTextFormSet(forms.BaseFormSet):
     def save(self, story=None, **kwargs):
-        # delete deleted parts if there are any
-
-        return [form.save(story=story, order=order, **kwargs) 
-                for order, form in enumerate(sorted(self.ordered_forms, key=lambda f: f.order))]
+         return [form.save(story=story, order=form.cleaned_data['order'], **kwargs) for form in self.ordered_forms]
 
 
 StoryTextFormSet = inlineformset_factory(
@@ -83,6 +80,19 @@ StoryTextFormSet = inlineformset_factory(
     extra=0,
     min_num=1,
 )
+
+
+#StoryGraphFormSet = formset_factory(
+#    parent_model=Story,
+#    model=StoryGraph,
+#    form=StoryGraphForm,
+#    formset=BaseStoryTextFormSet,
+##    fields=['description'],
+#    can_delete=True,
+#    can_order=True,
+#    extra=0,
+#    min_num=1,
+#)
 
 
 class StoryForm(UserKwargModelFormMixin, forms.ModelForm):

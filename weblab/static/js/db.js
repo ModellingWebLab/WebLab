@@ -876,7 +876,6 @@ $( document ).ready(function()
   $(".storypart").each(function()
   {
       partval = $(this).find(".partval").val();
-      alert(partval);
       partorder = $(this).find(".partorder").val();
       if (partorder ==''){
           partorder = storyPartCount;

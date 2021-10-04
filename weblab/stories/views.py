@@ -183,6 +183,10 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         form = self.get_form()
         formset = self.get_formset()
         if form.is_valid() and formset.is_valid():
+            #make sure formsets are ordered correctly starting at 0
+            for order, frm in enumerate(sorted(formset.ordered_forms, key=lambda f: f.order)):
+                frm.cleaned_data['order'] = order
+
             story = form.save()
             storytexts = formset.save(story=story)
             return self.form_valid(form)
