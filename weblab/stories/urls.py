@@ -40,6 +40,19 @@ urlpatterns = [
         views.StoryTransferView.as_view(),
         name='story_transfer',
     ),
+
+    url(
+        r'^modelorgroup$',
+        views.StoryFilterModelOrGroupView.as_view(),
+        name='filter_modelorgroup',
+    ),
+
+    url(
+        r'^(?P<mk>\w+)/protocols$',
+        views.StoryFilterProtocolView.as_view(),
+        name='filter_protocol',
+    ),
+
 ]
 
 app_name = 'stories'

@@ -1,0 +1,4 @@
+<option value="">--------- protocol</option>
+{% for entity in object_list %}
+<option value="{{ entity.pk }}">{{ entity.name }}</option>
+{% endfor %}

@@ -57,11 +57,33 @@
         </tr>
         </tfoot>
     </table>
+<br/><br/><br/><br/><br/><br/>
+{{formsetgraph}}
 
     <button id="savebutton">Save Story</button>
     </p>
   </form>
 </div>
 
-{{formsetgraph}}
+<script>
+$.ajax({
+  url: "{% url 'stories:filter_modelorgroup' %}",
+  success: function (data) {
+    $("#id_form-0-models_or_group").html(data);
+  }
+})
+
+
+$('body').on('change', '#id_form-0-models_or_group', function() {
+    var model = $(this).val();
+    var url = "{% url 'stories:filter_protocol' 'model'%}".replace("model", model) ;
+    $.ajax({                       // initialize an AJAX request
+      url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
+      success: function (data) {   // `data` is the return of the `load_cities` view function
+        $("#id_form-0-protocol").html(data);  // replace the contents of the city input with the data that came from the server
+      }
+    })
+});
+
+</script>
 {% endblock %}

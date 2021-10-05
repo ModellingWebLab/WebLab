@@ -7,6 +7,7 @@ from django.forms import formset_factory
 
 from accounts.models import User
 from core import visibility
+from core.visibility import ORDER_MAP
 
 from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup#, Story
 
@@ -244,9 +245,10 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
     def clean_models(self):
         models = self.cleaned_data['models']
         visibility = self.cleaned_data['visibility']
-        if any([vis_ord[m.visibility] < vis_ord[visibility] for m in models]):
+        if any([ORDER_MAP[m.visibility] < ORDER_MAP[visibility] for m in models]):
             raise ValidationError(
                 'The visibility of your selected models is too restrictive for the selected visibility of this model group')
+
         return models
 
     def save(self, **kwargs):

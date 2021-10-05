@@ -20,8 +20,9 @@ from .forms import (
 )
 from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
-from experiments.models import Experiment
+from experiments.models import Experiment, ExperimentVersion, ProtocolEntity, Runnable
 from .models import Story, StoryText
+import csv, io
 
 
 class StoryListView(LoginRequiredMixin, ListView):
@@ -177,12 +178,11 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         return self.formset
 
     def get_formset_graph(self):
-        pass
         if not hasattr(self, 'formsetgraph') or self.formsetgraph is None:
             initial = []
             form_kwargs = {'user': self.request.user}
             if self.request.method == 'POST':
-                self.formsetgraph = self.formset_ghraph_class(
+                self.formsetgraph = self.formset_graph_class(
                     self.request.POST,
                     initial=initial,
                     form_kwargs=form_kwargs)
@@ -211,4 +211,71 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         else:
             self.object = None
             return self.form_invalid(form)
+
+
+class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
+    model = ModelGroup
+    template_name = 'stories/modelorgroup_selection.html'
+
+    def get_queryset(self):
+        qs=[{'pk': None, 'title': '--------- model group'}] +\
+           [{'pk': 'modelgroup' + str(modelgroup.pk), 'title': modelgroup.title} for modelgroup in ModelGroup.objects.all() if modelgroup.visible_to_user(self.request.user)] +\
+           [{'pk': None, 'title': '--------- model'}] +\
+           [{'pk': 'model' + str(model.pk), 'title': model.name} for model in ModelEntity.objects.visible_to_user(self.request.user)]
+        return qs
+
+
+class StoryFilterProtocolView(LoginRequiredMixin, ListView):
+    model = ProtocolEntity
+    template_name = 'stories/protocolentity_selection.html'
+
+    def get_queryset(self):
+        mk = self.kwargs['mk']
+        if mk.startswith('modelgroup'):
+            mk = int(mk.replace('modelgroup',''))
+            models = ModelGroup.objects.get(pk=mk).models.all()
+        else:
+            mk = int(mk.replace('model',''))
+            models = ModelEntity.objects.filter(pk=mk)
+
+        # Get protocols for whcih the latest result run succesful
+        # that users can see for the model(s) we're looking at
+        return set(e.protocol for e in Experiment.objects.all()
+                   if e.latest_result == Runnable.STATUS_SUCCESS and
+                   e.is_visible_to_user(self.request.user)
+                   and e.model in models)
+
+
+class StoryFilterGraphView(LoginRequiredMixin, ListView):
+    model = ExperimentVersion
+    template_name = 'stories/graph_selection.html'
+
+    def get_queryset(self):
+        mk = self.kwargs['mk']
+        pk = self.kwargs['pk']
+        protocol = ProtocolEntity,objects.get(pk=pk)
+        if mk.startswith('modelgroup'):
+            mk = int(mk.replace('modelgroup',''))
+            models = ModelGroup.objects.get(pk=mk).models.all()
+        else:
+            mk = int(mk.replace('model',''))
+            models = ModelEntity.objects.filter(pk=mk)
+
+
+        experimentversions = [e.latest_versionl for e in Experiment.objects.filter(protocol=protocol, model__in=models)
+                              if e.latest_result == Runnable.STATUS_SUCCESS and
+                              e.is_visible_to_user(self.request.user)
+                              and e.model in models]
+
+        files = set()
+        for experimentver in experimentversions:
+            # find outputs-contents.csv
+            try:
+                plots_data_file = experimentver.open_file('outputs-default-plots.csv').read().decode("utf-8")
+                plots_data_stream = io.StringIO(plots_data_file)
+                for row in csv.DictReader(plots_data_stream):
+                    files.add(row['Data file name'])
+            except FileNotFoundError:
+                pass  #  This experiemnt version has no graphs
+        return files
 
