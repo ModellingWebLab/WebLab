@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load entities %}
+
+{% block title %}{% if object.id %}Story {{ object.title }}{% else %}New Story{% endif %} - {% endblock title %}
+{% block content %}
+  {% if object.id %}{% include "./includes/story_header.html" %}{% endif %}
+
+<div id='newstoryform'>
+  {% if not form.title.value %}<h1>Create story</h1>{% endif %}
+
+  <form method="POST" action="" novalidate id="storyform">
+    {% csrf_token %}
+
+    <p>{{ form.title.label_tag }} {{ form.title }}</p>
+    {% if  form.title.errors  %}
+        <ul class="errorlist"><li>{{ form.title.errors }}</li></ul>
+    {% endif %}
+    <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
+
+
+{{ formset.management_form }}
+    <table class="formset manual-add" id="storyparts">
+      <tbody>
+        {% for form in formset %}
+            <tr class="storypart description" style="visibility: hidden"><td>
+                <textarea class="partval" cols="0" rows="0">{% if form.description.value %}{{form.description.value}}{% endif %}</textarea>
+                <input class="partorder" type="hidden" value={%if form.ORDER.value %}{{form.ORDER.value}}{% else %}''{% endif %}>
+                <input class="partdel" type="hidden" {%if form.DELETE.value %}true{% else %}false{% endif %}>
+                <input class="parterr"  type="text" value="{% if form.description.errors %}form.description.errors{% endif %}">
+            </td><td></td></tr>
+        {% endfor %}
+            <tr>
+                <td style="vertical-align: top;">
+                    <section id="story1matrixTab">
+                     <h2>Graph</h2>
+                        Select experiments for the desired graph
+                    </section>
+
+                </td>
+                <td style="vertical-align:top;">
+                    <section style=" position: relative;top: 95px;">
+                        <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                        <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
+                        <img class="deletepart" src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part"/><br/>
+                        <input class="order" type="hidden" name="form-${storyPartCount}-ORDER" id="id_form-${storyPartCount}-ORDER" value="${order}">
+                    </section>
+                </td>
+            </tr>
+      </tbody>
+        <tfoot style="border-top: 1px solid black;">
+        <tr class="dynamic-form-add">
+            <td class="django-formset-add td" colspan="2">
+                <a id="add-description">add decription text</a>
+                <a id="add-graph">add graph</a>
+            </td>
+        </tr>
+        </tfoot>
+    </table>
+{{formsetgraph}}
+
+    <button id="savebutton">Save Story</button>
+    </p>
+  </form>
+</div>
+
+<script>
+$("#form-0-models_or_group").change(function () {
+    var modelorgroupid = $(this).val();
+    var url = url 'entities:list'"{% stories:filter_protocol %}";
+//    $.ajax({                       // initialize an AJAX request
+//      url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
+//      data: {
+//        'country': countryId       // add the country id to the GET parameters
+//      },
+//      success: function (data) {   // `data` is the return of the `load_cities` view function
+//        $("#id_city").html(data);  // replace the contents of the city input with the data that came from the server
+//      }
+//    })
+});
+</script>
+{% endblock %}

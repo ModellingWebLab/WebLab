@@ -171,10 +171,11 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
             if self.request.method == 'POST':
                 self.formset = self.formset_class(
                     self.request.POST,
+                    prefix='text',
                     initial=initial,
                     form_kwargs=form_kwargs)
             else:
-                self.formset = self.formset_class(initial=initial, form_kwargs=form_kwargs)
+                self.formset = self.formset_class(prefix='text', initial=initial, form_kwargs=form_kwargs)
         return self.formset
 
     def get_formset_graph(self):
@@ -184,10 +185,11 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
             if self.request.method == 'POST':
                 self.formsetgraph = self.formset_graph_class(
                     self.request.POST,
+                    prefix='graph',
                     initial=initial,
                     form_kwargs=form_kwargs)
             else:
-                self.formsetgraph = self.formset_graph_class(initial=initial, form_kwargs=form_kwargs)
+                self.formsetgraph = self.formset_graph_class(prefix='graph', initial=initial, form_kwargs=form_kwargs)
         return self.formsetgraph
 
     def get_context_data(self, **kwargs):
@@ -230,13 +232,16 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
     template_name = 'stories/protocolentity_selection.html'
 
     def get_queryset(self):
-        mk = self.kwargs['mk']
+        mk = self.kwargs.get('mk', '')
+        models=[]
         if mk.startswith('modelgroup'):
             mk = int(mk.replace('modelgroup',''))
             models = ModelGroup.objects.get(pk=mk).models.all()
-        else:
+        elif mk.startswith('model'):
             mk = int(mk.replace('model',''))
             models = ModelEntity.objects.filter(pk=mk)
+        else:
+            return []
 
         # Get protocols for whcih the latest result run succesful
         # that users can see for the model(s) we're looking at
@@ -251,18 +256,22 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
     template_name = 'stories/graph_selection.html'
 
     def get_queryset(self):
-        mk = self.kwargs['mk']
-        pk = self.kwargs['pk']
-        protocol = ProtocolEntity,objects.get(pk=pk)
+        mk = self.kwargs.get('mk', '')
+        pk = self.kwargs.get('pk', '')
+        models=[]
+        if pk == '':
+            return []
         if mk.startswith('modelgroup'):
             mk = int(mk.replace('modelgroup',''))
             models = ModelGroup.objects.get(pk=mk).models.all()
-        else:
+        elif mk.startswith('model'):
             mk = int(mk.replace('model',''))
             models = ModelEntity.objects.filter(pk=mk)
+        else:
+            return []
 
-
-        experimentversions = [e.latest_versionl for e in Experiment.objects.filter(protocol=protocol, model__in=models)
+        protocol = ProtocolEntity.objects.get(pk=pk)
+        experimentversions = [e.latest_version for e in Experiment.objects.filter(protocol=protocol, model__in=models)
                               if e.latest_result == Runnable.STATUS_SUCCESS and
                               e.is_visible_to_user(self.request.user)
                               and e.model in models]

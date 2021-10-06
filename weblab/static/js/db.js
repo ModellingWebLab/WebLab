@@ -2,8 +2,6 @@ var $ = require('jquery');
 var notifications = require('./lib/notifications.js')
 var utils = require('./lib/utils.js')
 
-
-
 var pages = ["matrix"],
     comparisonMode = false,
     experimentsToCompare = {},
@@ -821,7 +819,7 @@ function remove(clicked)
 
     id = id.replace("ORDER", "DELETE");
     name = name.replace("ORDER", "DELETE");
-    $("#storyform").append(`<input class=".partdel" type="hidden" name="${name}" id="${id}" value="true">`);
+    $("#storyform").append(`<input type="hidden" name="${name}" id="${id}" value="true">`);
     $(clicked.closest('tr')).remove();
 }
 
@@ -831,16 +829,16 @@ function renderMde() // render text editor
     // initialise editor
     var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo'], element:element});
     simplemde.render();
-    storyTextCount++;  //keep track of number of forms
-    $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
 }
 
 function insertDescriptionForm(descriptionValue, descriptionErrors, order, del, element, replace=false)
 {
     if (del){
-        html=`<input class=".partdel" type="hidden" name="text-${storyTextCount}-DELETE" id="id_text-${storyTextCount}-DELETE" value="true">`;
+        html=`<input type="hidden" name="text-${storyTextCount}-DELETE" id="id_text-${storyTextCount}-DELETE" value="true">`;
         $('#storyform').append(html);  // add new hidden delete form
-        element.remove();
+        if (replace){
+            element.remove()
+        }
     }else{
         html=`
               <tr class="storypart description">
@@ -866,6 +864,112 @@ function insertDescriptionForm(descriptionValue, descriptionErrors, order, del, 
             element.append(html);
         }
         renderMde();
+        storyTextCount++;  //keep track of number of forms
+        $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
+    }
+}
+
+function insertGraphForm(modelOrGroupValue, protocolValue, graphValue, graphErrors, order, del, element, replace=false)
+{
+    if (del){
+        html=`<input type="hidden" name="graph-${storyGraphCount}-DELETE" id="id_graph-${storyGraphCount}-DELETE" value="true">`;
+        $('#storyform').append(html);  // add new hidden delete form
+        if (replace){
+            element.remove()
+        }
+    }else{
+        html=`
+              <tr class="storypart graph">
+                  <td style="vertical-align: top;">
+                    <h2>Graph</h2>
+                    ${graphErrors}
+                    <label for="id_graph-${storyGraphCount}-models_or_group">Select protocol:</label><select name="graph-${storyGraphCount}-models_or_group" id="id_graph-${storyGraphCount}-models_or_group"></select><br/>
+                    <label for="id_graph-${storyGraphCount}-protocol">Select protocol:</label><select name="graph-${storyGraphCount}-protocol" id="id_graph-${storyGraphCount}-protocol"></select><br/>
+                    <label for="id_graph-${storyGraphCount}-graphfiles">Select graph:</label><select name="graph-${storyGraphCount}-graphfiles" id="id_graph-${storyGraphCount}-graphfiles"></select><br/>
+                    <input type="hidden" name="graph-${storyGraphCount}-ORDER" id="id_graph-${storyGraphCount}-ORDER"><br/>
+                  </td>
+                  <td style="vertical-align:top;">
+                    <section style=" position: relative;top: 73px;">
+                      <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                      <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
+                      <img class="deletepart" src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part"/><br/>
+                      <input class="order" type="hidden" name="text-${storyGraphCount}-ORDER" id="id_text-${storyGraphCount}-ORDER" value="${order}">
+                    </section>
+                  </td>
+              </tr>`;
+
+        // add new form
+        if(replace){
+            element.replaceWith(html);
+        }else{
+            element.append(html);
+        }
+
+        currentCount = storyGraphCount;
+        storyGraphCount++;  //keep track of number of forms
+        $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
+
+        // update graphs when protocol changes
+        $('body').on('change', "#id_graph-" + currentCount + "-protocol", function() {
+            var model = $("#id_graph-" + currentCount + "-models_or_group").val();
+            var protocol = $(this).val();
+            var url = "/weblab/stories/model/0/graph".replace("0", protocol).replace("model", model);
+            $.ajax({
+              url: url,
+              success: function (data) {
+                $("#id_graph-" + currentCount + "-graphfiles").html(data);
+              }
+            })
+        });
+
+        // update protocols when models change
+        $('body').on('change', "#id_graph-" + currentCount + "-models_or_group", function() {
+            var model = $(this).val();
+            var url = "/weblab/stories/model/protocols".replace("model", model) ;
+            $.ajax({
+              url: url,
+              success: function (data) {
+                $("#id_graph-" + currentCount + "-protocol").html(data);
+                $("#id_graph-" + currentCount + "-protocol").change();
+              }
+            })
+        });
+
+
+        // Fill dropdowns
+        // fill models or groups
+        $.ajax({
+          url: "/weblab/stories/modelorgroup",
+          success: function (data) {
+              $("#id_graph-" + currentCount + "-models_or_group").html(data);
+              if(modelOrGroupValue !== ""){
+                  $("#id_graph-" + currentCount + "-models_or_group").val(modelOrGroupValue);
+              }
+              // fill protocols
+              url = "/weblab/stories/model/protocols".replace("model", modelOrGroupValue);
+              $.ajax({
+                url: url,
+                success: function (data) {
+                  $("#id_graph-" + currentCount + "-protocol").html(data);
+                  if(protocolValue !== ""){
+                      $("#id_graph-" + currentCount + "-protocol").val(protocolValue);
+                  }
+
+                  url2 = "/weblab/stories/model/0/graph".replace("0", protocolValue).replace("model", modelOrGroupValue);
+                  $.ajax({
+                    url: url2,
+                    success: function (data) {
+                      $("#id_graph-" + currentCount + "-graphfiles").html(data);
+                      if(graphValue !== ""){
+                          $("#id_graph-" + currentCount + "-graphfiles").val(graphValue);
+                      }
+                    }
+                  })
+                }
+              })
+          }
+        })
+
     }
 }
 
@@ -874,14 +978,28 @@ $( document ).ready(function()
   // render the pre-set story parts in the correct order
   $(".storypart").each(function()
   {
-      partval = $(this).find(".partval").val();
-      partorder = $(this).find(".partorder").val();
-      if (partorder ==''){
-          partorder = storyTextCount + storyGraphCount;
+
+    if($(this).hasClass('description')){
+          partval = $(this).find(".partval").val();
+          partorder = $(this).find(".partorder").val();
+          if (partorder ==''){
+              partorder = storyTextCount + storyGraphCount;
+          }
+          partdel = $(this).find(".partdel").val() === 'true';
+          parterr = $(this).find(".parterr").val();
+          insertDescriptionForm(partval, parterr, partorder, partdel, $(this), true);
+      }else if ($(this).hasClass('graph')){
+          modelOrGroupValue = $(this).find(".models_or_groupval").val();
+          protocolValue = $(this).find(".protocolval").val();
+          graphValue = $(this).find(".graphfiles").val();
+          order = $(this).find(".partorder").val();
+          if (order ==''){
+              order = storyTextCount + storyGraphCount;
+          }
+          del = $(this).find(".partdel").val() === 'true';
+          graphErrors = $(this).find(".parterr").val();
+          insertGraphForm(modelOrGroupValue, protocolValue, graphValue, graphErrors, order, del, $(this), true);
       }
-      partdel = $(this).find(".partdel").val() === 'true';
-      parterr = $(this).find(".parterr").val();
-      insertDescriptionForm(partval, parterr, partorder, partdel, $(this), true);
   });
 
 
@@ -891,11 +1009,10 @@ $( document ).ready(function()
         insertDescriptionForm('', '', storyTextCount, false, $('#storyparts  > tbody'));
     });
 
-//    $("#add-graph").click(function()
-//    {
-//        insertStoryPartForm('', '', storyTextCount, false);
-//    });
-//    $(".deletepart").click(function() {
+    $("#add-graph").click(function()
+    {
+        insertGraphForm('', '', '', '', storyTextCount, false, $('#storyparts  > tbody'));
+    });
 
     $("#storyparts").on("click", ".deletepart", function()
     {

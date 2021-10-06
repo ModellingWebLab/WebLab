@@ -47,10 +47,35 @@ urlpatterns = [
         name='filter_modelorgroup',
     ),
 
+
     url(
         r'^(?P<mk>\w+)/protocols$',
         views.StoryFilterProtocolView.as_view(),
         name='filter_protocol',
+    ),
+
+    url(
+        r'^protocols$',
+        views.StoryFilterProtocolView.as_view(),
+        name='filter_protocol_no_mk',
+    ),
+
+    url(
+        r'^(?P<mk>\w+)/(?P<pk>\d+)/graph$',
+        views.StoryFilterGraphView.as_view(),
+        name='filter_graph',
+    ),
+
+    url(
+        r'^(?P<mk>\w+)/graph$',
+        views.StoryFilterGraphView.as_view(),
+        name='filter_graph_no_pk',
+    ),
+
+    url(
+        r'^graph$',
+        views.StoryFilterGraphView.as_view(),
+        name='filter_graph_no_keys',
     ),
 
 ]

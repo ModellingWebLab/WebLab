@@ -90,9 +90,9 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['models_or_group'] = forms.ChoiceField(label='Select protocol', required = True, choices=[(None, '--------- model group')])
-        self.fields['protocol'] = forms.ChoiceField(label='Select protocol', required = True, choices=[(None, '--------- protocol')])
-        self.fields['graphfiles'] = forms.ChoiceField(label='Select graph', required = True, choices=[(None, '--------- graph')])
+        self.fields['models_or_group'] = forms.ChoiceField(label='Select protocol', required = True)
+        self.fields['protocol'] = forms.ChoiceField(label='Select protocol', required = True)
+        self.fields['graphfiles'] = forms.ChoiceField(label='Select graph', required = True)
 
 
 StoryGraphFormSet = inlineformset_factory(

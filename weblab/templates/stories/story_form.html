@@ -20,33 +20,28 @@
 
 
 {{ formset.management_form }}
+{{ formsetgraph.management_form }}
+
     <table class="formset manual-add" id="storyparts">
       <tbody>
         {% for form in formset %}
             <tr class="storypart description" style="visibility: hidden"><td>
                 <textarea class="partval" cols="0" rows="0">{% if form.description.value %}{{form.description.value}}{% endif %}</textarea>
                 <input class="partorder" type="hidden" value={%if form.ORDER.value %}{{form.ORDER.value}}{% else %}''{% endif %}>
-                <input class="partdel" type="hidden" {%if form.DELETE.value %}true{% else %}false{% endif %}>
+                <input class="partdel" type="hidden" value="{%if form.DELETE.value %}true{% else %}false{% endif %}">
                 <input class="parterr"  type="text" value="{% if form.description.errors %}form.description.errors{% endif %}">
             </td><td></td></tr>
         {% endfor %}
-            <tr>
-                <td style="vertical-align: top;">
-                    <section id="story1matrixTab">
-                     <h2>Graph</h2>
-                        Select experiments for the desired graph
-                    </section>
-
-                </td>
-                <td style="vertical-align:top;">
-                    <section style=" position: relative;top: 95px;">
-                        <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
-                        <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
-                        <img class="deletepart" src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part"/><br/>
-                        <input class="order" type="hidden" name="form-${storyPartCount}-ORDER" id="id_form-${storyPartCount}-ORDER" value="${order}">
-                    </section>
-                </td>
-            </tr>
+        {% for form in formsetgraph %}
+            <tr class="storypart graph" style="visibility: hidden"><td>
+                <input class="models_or_groupval" type="hidden" value="{% if form.models_or_group.value %}{{form.models_or_group.value}}{% endif %}">
+                <input class="protocolval" type="hidden" value="{% if form.protocol.value %}{{form.protocol.value}}{% endif %}">
+                <input class="graphfiles" type="hidden" value="{% if form.graphfiles.value %}{{form.graphfiles.value}}{% endif %}">
+                <input class="partorder" type="hidden" value={%if form.ORDER.value %}{{form.ORDER.value}}{% else %}''{% endif %}>
+                <input class="partdel" type="hidden" value="{%if form.DELETE.value %}true{% else %}false{% endif %}">
+                <input class="parterr"  type="text" value="{% if form.description.errors %}form.description.errors{% endif %}">
+            </td><td></td></tr>
+        {% endfor %}
       </tbody>
         <tfoot style="border-top: 1px solid black;">
         <tr class="dynamic-form-add">
@@ -57,8 +52,6 @@
         </tr>
         </tfoot>
     </table>
-<br/><br/><br/><br/><br/><br/>
-{{formsetgraph}}
 
     <button id="savebutton">Save Story</button>
     </p>
@@ -66,24 +59,40 @@
 </div>
 
 <script>
-$.ajax({
-  url: "{% url 'stories:filter_modelorgroup' %}",
-  success: function (data) {
-    $("#id_form-0-models_or_group").html(data);
-  }
-})
-
-
-$('body').on('change', '#id_form-0-models_or_group', function() {
-    var model = $(this).val();
-    var url = "{% url 'stories:filter_protocol' 'model'%}".replace("model", model) ;
-    $.ajax({                       // initialize an AJAX request
-      url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
-      success: function (data) {   // `data` is the return of the `load_cities` view function
-        $("#id_form-0-protocol").html(data);  // replace the contents of the city input with the data that came from the server
-      }
-    })
-});
+//// Fill dropdowns
+//$.ajax({
+//  url: "{% url 'stories:filter_modelorgroup' %}",
+//  success: function (data) {
+//    $("#id_graph-0-models_or_group").html(data);
+//    $("#id_graph-0-models_or_group").change();
+//  }
+//})
+//
+//
+//$('body').on('change', '#id_graph-0-models_or_group', function() {
+//    var model = $(this).val();
+//    var url = "{% url 'stories:filter_protocol' 'model'%}".replace("model", model) ;
+//    $.ajax({                       // initialize an AJAX request
+//      url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
+//      success: function (data) {   // `data` is the return of the `load_cities` view function
+//        $("#id_graph-0-protocol").html(data);  // replace the contents of the city input with the data that came from the server
+//        $("#id_graph-0-protocol").change();
+//      }
+//    })
+//});
+//
+//$('body').on('change', '#id_graph-0-protocol', function() {
+//    var model = $('#id_graph-0-models_or_group').val();
+//    var protocol = $(this).val();
+//    var url = "{% url 'stories:filter_graph' 'model' '0'%}".replace("0", protocol).replace("model", model) ;
+//    $.ajax({                       // initialize an AJAX request
+//      url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
+//      success: function (data) {   // `data` is the return of the `load_cities` view function
+//        $("#id_graph-0-graphfiles").html(data);  // replace the contents of the city input with the data that came from the server
+//      }
+//    })
+//
+//});
 
 </script>
 {% endblock %}
