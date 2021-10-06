@@ -788,7 +788,8 @@ $(document).ready(function()
 
 // Code to facilitate stories with text and graph parts
 var SimpleMDE = require('./lib/simplemde.min.js')
-var storyPartCount = 0;
+var storyTextCount = 0;
+var storyGraphCount = 0;
 
 function moveUp(id)
 {
@@ -820,42 +821,40 @@ function remove(clicked)
 
     id = id.replace("ORDER", "DELETE");
     name = name.replace("ORDER", "DELETE");
-    $("#storyform").append(`<input type="hidden" name="${name}" id="${id}" value="true">`);
+    $("#storyform").append(`<input class=".partdel" type="hidden" name="${name}" id="${id}" value="true">`);
     $(clicked.closest('tr')).remove();
 }
 
 function renderMde() // render text editor
 {
-    element = document.getElementById('id_form-' + storyPartCount + '-description'); //grab new text area
+    element = document.getElementById('id_text-' + storyTextCount + '-description'); //grab new text area
     // initialise editor
     var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo'], element:element});
     simplemde.render();
-    storyPartCount++;  //keep track of number of forms
-    $("#id_form-TOTAL_FORMS").val(storyPartCount);  // update number of forms
+    storyTextCount++;  //keep track of number of forms
+    $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
 }
 
 function insertDescriptionForm(descriptionValue, descriptionErrors, order, del, element, replace=false)
 {
     if (del){
-        html=`<input type="hidden" name="form-${storyPartCount}-DELETE" id="id_form-${storyPartCount}-DELETE" value="true">`;
+        html=`<input class=".partdel" type="hidden" name="text-${storyTextCount}-DELETE" id="id_text-${storyTextCount}-DELETE" value="true">`;
         $('#storyform').append(html);  // add new hidden delete form
-        if (replace){
-            element.remove()
-        }
+        element.remove();
     }else{
         html=`
               <tr class="storypart description">
                   <td style="vertical-align: top;">
                     <h2>Text field</h2>
                     ${descriptionErrors}
-                    <textarea name="form-${storyPartCount}-description" cols="40" rows="10" id="id_form-${storyPartCount}-description">${descriptionValue}</textarea>
+                    <textarea name="text-${storyTextCount}-description" cols="40" rows="10" id="id_text-${storyTextCount}-description">${descriptionValue}</textarea>
                   </td>
                   <td style="vertical-align:top;">
                     <section style=" position: relative;top: 73px;">
                       <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
                       <img class="deletepart" src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part"/><br/>
-                      <input class="order" type="hidden" name="form-${storyPartCount}-ORDER" id="id_form-${storyPartCount}-ORDER" value="${order}">
+                      <input class="order" type="hidden" name="text-${storyTextCount}-ORDER" id="id_text-${storyTextCount}-ORDER" value="${order}">
                     </section>
                   </td>
               </tr>`;
@@ -878,9 +877,9 @@ $( document ).ready(function()
       partval = $(this).find(".partval").val();
       partorder = $(this).find(".partorder").val();
       if (partorder ==''){
-          partorder = storyPartCount;
+          partorder = storyTextCount + storyGraphCount;
       }
-      partdel = $(this).find(".partdel").val();
+      partdel = $(this).find(".partdel").val() === 'true';
       parterr = $(this).find(".parterr").val();
       insertDescriptionForm(partval, parterr, partorder, partdel, $(this), true);
   });
@@ -889,12 +888,12 @@ $( document ).ready(function()
     //link add, delete and up/down button clicks
     $("#add-description").click(function()
     {
-        insertDescriptionForm('', '', storyPartCount, false, $('#storyparts  > tbody'));
+        insertDescriptionForm('', '', storyTextCount, false, $('#storyparts  > tbody'));
     });
 
 //    $("#add-graph").click(function()
 //    {
-//        insertStoryPartForm('', '', storyPartCount, false);
+//        insertStoryPartForm('', '', storyTextCount, false);
 //    });
 //    $(".deletepart").click(function() {
 
@@ -913,3 +912,4 @@ $( document ).ready(function()
         moveDown($(this));
     });
 });
+
