@@ -58,6 +58,6 @@ class StoryGraph(StoryItem):
     """
     graphfilename = TextField(blank=False)
     cachedprotocolversion = models.ForeignKey(CachedProtocolVersion, null=False, blank=False, on_delete=models.CASCADE, related_name="protocolforgraph")
-    cachedmodelversion = models.ManyToManyField(CachedModelVersion)
+    cachedmodelversions = models.ManyToManyField(CachedModelVersion)
 
 

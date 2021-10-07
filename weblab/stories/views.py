@@ -22,8 +22,6 @@ from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
 from experiments.models import Experiment, ExperimentVersion, ProtocolEntity, Runnable
 from .models import Story, StoryText
-import csv, io
-
 
 class StoryListView(LoginRequiredMixin, ListView):
     """
@@ -202,13 +200,15 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         formset = self.get_formset()
-        if form.is_valid() and formset.is_valid():
+        formsetgraph = self.get_formset_graph()
+        if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
             #make sure formsets are ordered correctly starting at 0
-            for order, frm in enumerate(sorted(formset.ordered_forms, key=lambda f: f.order)):
-                frm.cleaned_data['order'] = order
+            for order, frm in enumerate(sorted(formset.forms + formsetgraph.forms, key=lambda f: f.cleaned_data['ORDER'])):
+                frm.cleaned_data['ORDER'] = order
 
             story = form.save()
-            storytexts = formset.save(story=story)
+            formset.save(story=story)
+            formsetgraph.save(story=story)
             return self.form_valid(form)
         else:
             self.object = None
@@ -220,11 +220,7 @@ class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
     template_name = 'stories/modelorgroup_selection.html'
 
     def get_queryset(self):
-        qs=[{'pk': None, 'title': '--------- model group'}] +\
-           [{'pk': 'modelgroup' + str(modelgroup.pk), 'title': modelgroup.title} for modelgroup in ModelGroup.objects.all() if modelgroup.visible_to_user(self.request.user)] +\
-           [{'pk': None, 'title': '--------- model'}] +\
-           [{'pk': 'model' + str(model.pk), 'title': model.name} for model in ModelEntity.objects.visible_to_user(self.request.user)]
-        return qs
+        return StoryGraphFormSet.get_modelgroup_choices(self.request.user)
 
 
 class StoryFilterProtocolView(LoginRequiredMixin, ListView):
@@ -243,12 +239,9 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
         else:
             return []
 
-        # Get protocols for whcih the latest result run succesful
+        # Get protocols for which the latest result run succesful
         # that users can see for the model(s) we're looking at
-        return set(e.protocol for e in Experiment.objects.all()
-                   if e.latest_result == Runnable.STATUS_SUCCESS and
-                   e.is_visible_to_user(self.request.user)
-                   and e.model in models)
+        return StoryGraphFormSet.get_protocol_choices(self.request.user, models=models)
 
 
 class StoryFilterGraphView(LoginRequiredMixin, ListView):
@@ -271,20 +264,4 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
             return []
 
         protocol = ProtocolEntity.objects.get(pk=pk)
-        experimentversions = [e.latest_version for e in Experiment.objects.filter(protocol=protocol, model__in=models)
-                              if e.latest_result == Runnable.STATUS_SUCCESS and
-                              e.is_visible_to_user(self.request.user)
-                              and e.model in models]
-
-        files = set()
-        for experimentver in experimentversions:
-            # find outputs-contents.csv
-            try:
-                plots_data_file = experimentver.open_file('outputs-default-plots.csv').read().decode("utf-8")
-                plots_data_stream = io.StringIO(plots_data_file)
-                for row in csv.DictReader(plots_data_stream):
-                    files.add(row['Data file name'])
-            except FileNotFoundError:
-                pass  #  This experiemnt version has no graphs
-        return files
-
+        return StoryGraphFormSet.get_graph_choices(self.request.user, protocol=protocol, models=models)

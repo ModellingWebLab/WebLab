@@ -29,7 +29,7 @@
                 <textarea class="partval" cols="0" rows="0">{% if form.description.value %}{{form.description.value}}{% endif %}</textarea>
                 <input class="partorder" type="hidden" value={%if form.ORDER.value %}{{form.ORDER.value}}{% else %}''{% endif %}>
                 <input class="partdel" type="hidden" value="{%if form.DELETE.value %}true{% else %}false{% endif %}">
-                <input class="parterr"  type="text" value="{% if form.description.errors %}form.description.errors{% endif %}">
+                <input class="parterr"  type="text" value='{% if form.description.errors %}{{form.description.errors}}{% endif %}'>
             </td><td></td></tr>
         {% endfor %}
         {% for form in formsetgraph %}
@@ -39,7 +39,9 @@
                 <input class="graphfiles" type="hidden" value="{% if form.graphfiles.value %}{{form.graphfiles.value}}{% endif %}">
                 <input class="partorder" type="hidden" value={%if form.ORDER.value %}{{form.ORDER.value}}{% else %}''{% endif %}>
                 <input class="partdel" type="hidden" value="{%if form.DELETE.value %}true{% else %}false{% endif %}">
-                <input class="parterr"  type="text" value="{% if form.description.errors %}form.description.errors{% endif %}">
+                <input class="models_or_grouperr"  type="text" value='{% if form.models_or_group.errors %}{{form.models_or_group.errors}}{% endif %}'>
+                <input class="protocolerr"  type="text" value='{% if form.protocol.errors %}{{form.protocol.errors}}{% endif %}'>
+                <input class="graphfileserr"  type="text" value='{% if form.graphfiles.errors %}{{form.graphfiles.errors}}{% endif %}'>
             </td><td></td></tr>
         {% endfor %}
       </tbody>
@@ -57,42 +59,4 @@
     </p>
   </form>
 </div>
-
-<script>
-//// Fill dropdowns
-//$.ajax({
-//  url: "{% url 'stories:filter_modelorgroup' %}",
-//  success: function (data) {
-//    $("#id_graph-0-models_or_group").html(data);
-//    $("#id_graph-0-models_or_group").change();
-//  }
-//})
-//
-//
-//$('body').on('change', '#id_graph-0-models_or_group', function() {
-//    var model = $(this).val();
-//    var url = "{% url 'stories:filter_protocol' 'model'%}".replace("model", model) ;
-//    $.ajax({                       // initialize an AJAX request
-//      url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
-//      success: function (data) {   // `data` is the return of the `load_cities` view function
-//        $("#id_graph-0-protocol").html(data);  // replace the contents of the city input with the data that came from the server
-//        $("#id_graph-0-protocol").change();
-//      }
-//    })
-//});
-//
-//$('body').on('change', '#id_graph-0-protocol', function() {
-//    var model = $('#id_graph-0-models_or_group').val();
-//    var protocol = $(this).val();
-//    var url = "{% url 'stories:filter_graph' 'model' '0'%}".replace("0", protocol).replace("model", model) ;
-//    $.ajax({                       // initialize an AJAX request
-//      url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
-//      success: function (data) {   // `data` is the return of the `load_cities` view function
-//        $("#id_graph-0-graphfiles").html(data);  // replace the contents of the city input with the data that came from the server
-//      }
-//    })
-//
-//});
-
-</script>
 {% endblock %}

@@ -11,8 +11,9 @@ from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
 from entities.models import ModelEntity, ModelGroup
 from experiments.models import Experiment
 from .models import Story, StoryText, StoryGraph
-from experiments.models import ExperimentVersion
+from experiments.models import ExperimentVersion, Runnable
 from entities.models import ModelEntity, ModelGroup, ProtocolEntity
+import csv, io
 
 
 # Helper dictionary for determining whether visibility of model groups / stories and their models works together
@@ -52,29 +53,67 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
         model = StoryText
         fields = ['description']
 
-    def save(self, story=None, order=0, **kwargs):
+    def save(self, story=None, **kwargs):
         storytext = super().save(commit=False)
-        storytext.order = order
+        storytext.order = self.cleaned_data['ORDER']
         if not hasattr(storytext, 'author') or storytext.author is None:
             storytext.author = self.user
         storytext.story=story
         storytext.save()
         return storytext
 
-    @property
-    def order(self):
-        return float('inf') if self.cleaned_data['DELETE'] else self.cleaned_data['ORDER']
+    def clean_description(self):
+        description = self.cleaned_data['description']
+        if description == "":
+            raise ValidationError('This field is required.')
+        return description
 
-class BaseStoryTextFormSet(forms.BaseFormSet):
+class BaseStoryFormSet(forms.BaseFormSet):
     def save(self, story=None, **kwargs):
-         return [form.save(story=story, order=form.cleaned_data['order'], **kwargs) for form in self.ordered_forms]
+         return [form.save(story=story, **kwargs) for form in self.ordered_forms]
+
+    @staticmethod
+    def get_modelgroup_choices(user):
+        return [('', '--------- model group')] +\
+               [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all() if modelgroup.visible_to_user(user)] +\
+               [('', '--------- model')] +\
+               [('model' + str(model.pk), model.name) for model in ModelEntity.objects.visible_to_user(user)]
+
+    @staticmethod
+    def get_protocol_choices(user, models=None):
+        # Get protocols for which the latest result run succesful
+        # that users can see for the model(s) we're looking at
+        return set((e.protocol.pk, e.protocol.name) for e in Experiment.objects.all()
+                   if e.latest_result == Runnable.STATUS_SUCCESS and
+                   e.is_visible_to_user(user)
+                   and (models is None or e.model in models))
+
+    @staticmethod
+    def get_graph_choices(user, protocol=None, models=None):
+        experimentversions = [e.latest_version for e in Experiment.objects.all()
+                              if e.latest_result == Runnable.STATUS_SUCCESS and
+                              e.is_visible_to_user(user)
+                              and (protocol is None or e.protocol == protocol)
+                              and (models is None or e.model in models)]
+
+        files = set()
+        for experimentver in experimentversions:
+            # find outputs-contents.csv
+            try:
+                plots_data_file = experimentver.open_file('outputs-default-plots.csv').read().decode("utf-8")
+                plots_data_stream = io.StringIO(plots_data_file)
+                for row in csv.DictReader(plots_data_stream):
+                    files.add(row['Data file name'])
+            except FileNotFoundError:
+                pass  #  This experiemnt version has no graphs
+        return [(f, f) for f in files]
 
 
 StoryTextFormSet = inlineformset_factory(
     parent_model=Story,
     model=StoryText,
     form=StoryTextForm,
-    formset=BaseStoryTextFormSet,
+    formset=BaseStoryFormSet,
     fields=['description'],
     can_delete=True,
     can_order=True,
@@ -90,16 +129,44 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['models_or_group'] = forms.ChoiceField(label='Select protocol', required = True)
-        self.fields['protocol'] = forms.ChoiceField(label='Select protocol', required = True)
-        self.fields['graphfiles'] = forms.ChoiceField(label='Select graph', required = True)
+        protocol_choices = set((e.protocol.pk, e.protocol.name) for e in Experiment.objects.all()
+                               if e.latest_result == Runnable.STATUS_SUCCESS and
+                               e.is_visible_to_user(self.user))
 
+        self.fields['models_or_group'] = forms.ChoiceField(label='Select protocol', required = True, choices=StoryGraphFormSet.get_modelgroup_choices(self.user))
+        self.fields['protocol'] = forms.ChoiceField(label='Select protocol', required = True, choices=StoryGraphFormSet.get_protocol_choices(self.user))
+        self.fields['graphfiles'] = forms.ChoiceField(label='Select graph', required = True, choices=StoryGraphFormSet.get_graph_choices(self.user))
+
+    def save(self, story=None, **kwargs):
+        storygraph = super().save(commit=False)
+        storygraph.story=story
+        storygraph.order = self.cleaned_data['ORDER']
+        storygraph.graphfilename = self.cleaned_data['graphfiles']
+
+        mk = self.cleaned_data['models_or_group']
+        pk = self.cleaned_data['protocol']
+        DELETE = self.cleaned_data['DELETE']
+
+        if mk.startswith('modelgroup'):
+            mk = int(mk.replace('modelgroup',''))
+            models = ModelGroup.objects.get(pk=mk).models.all()
+        elif mk.startswith('model'):
+            mk = int(mk.replace('model',''))
+            models = ModelEntity.objects.filter(pk=mk)
+
+        storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
+        if not hasattr(storygraph, 'author') or storygraph.author is None:
+            storygraph.author = self.user
+        storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
+        storygraph.save()
+        storygraph.cachedmodelversions.set([m.repocache.latest_version for m in models])
+        return storygraph
 
 StoryGraphFormSet = inlineformset_factory(
     parent_model=Story,
     model=StoryGraph,
     form=StoryGraphForm,
-    formset=BaseStoryTextFormSet,
+    formset=BaseStoryFormSet,
     fields=[],
     can_delete=True,
     can_order=True,
