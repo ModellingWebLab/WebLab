@@ -203,7 +203,7 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         formsetgraph = self.get_formset_graph()
         if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
             #make sure formsets are ordered correctly starting at 0
-            for order, frm in enumerate(sorted(formset.forms + formsetgraph.forms, key=lambda f: f.cleaned_data['ORDER'])):
+            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms, key=lambda f: f.cleaned_data['ORDER'])):
                 frm.cleaned_data['ORDER'] = order
 
             story = form.save()
