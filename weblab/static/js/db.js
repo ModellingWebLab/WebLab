@@ -871,11 +871,11 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                   <td style="vertical-align: top;">
                     <h2>Graph</h2>
                     ${models_or_grouperr}
-                    <label for="id_graph-${currentGraphCount}-models_or_group">Select model (group):</label><select name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
+                    <label for="id_graph-${currentGraphCount}-models_or_group">Select model (group): </label><select name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
                     ${protocolerr}
-                    <label for="id_graph-${currentGraphCount}-protocol">Select protocol:</label><select name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
+                    <label for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
                     ${graphfileserr}
-                    <label for="id_graph-${currentGraphCount}-graphfiles">Select graph:</label><select name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/>
+                    <label for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/>
                     <input type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER"><br/>
                   </td>
                   <td style="vertical-align:top;">

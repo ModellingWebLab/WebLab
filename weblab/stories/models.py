@@ -4,6 +4,7 @@ from core.visibility import Visibility
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
 
 from repocache.models import CachedModelVersion, CachedProtocolVersion
+from entities.models import ModelGroup
 #from markdownx.models import MarkdownxField
 
 
@@ -60,5 +61,4 @@ class StoryGraph(StoryItem):
     cachedprotocolversion = models.ForeignKey(CachedProtocolVersion, null=False, blank=False, on_delete=models.CASCADE,
                                               related_name="protocolforgraph")
     cachedmodelversions = models.ManyToManyField(CachedModelVersion)
-
-
+    modelgroup =  models.ForeignKey(ModelGroup, blank=True, null=True, default=None, on_delete=models.SET_DEFAULT)

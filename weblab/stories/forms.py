@@ -126,7 +126,7 @@ StoryTextFormSet = inlineformset_factory(
 class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
     class Meta:
         model = StoryGraph
-        fields = []
+        fields = ['graphfilename']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -145,10 +145,12 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
         mk = self.cleaned_data['models_or_group']
         pk = self.cleaned_data['protocol']
-
+        modelgroup = None
         if mk.startswith('modelgroup'):
             mk = int(mk.replace('modelgroup', ''))
-            models = ModelGroup.objects.get(pk=mk).models.all()
+            modelgroup = ModelGroup.objects.get(pk=mk)
+            models = modelgroup.models.all()
+            storygraph.modelgroup = modelgroup
         elif mk.startswith('model'):
             mk = int(mk.replace('model', ''))
             models = ModelEntity.objects.filter(pk=mk)
@@ -159,6 +161,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
         storygraph.save()
         storygraph.cachedmodelversions.set([m.repocache.latest_version for m in models])
+        storygraph.modelgroup = modelgroup
         return storygraph
 
 
@@ -177,16 +180,11 @@ StoryGraphFormSet = inlineformset_factory(
 
 class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating a new story."""
-
     template_name = 'stories/story_form.html'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = kwargs.pop('user', None)
-        # Only show models and modelgroups I can can see
-#        self.fields['othermodels'].queryset = ModelEntity.objects.visible_to_user(self.user)
-#        visible_modelgroups = [m.pk for m in ModelGroup.objects.all() if m.visible_to_user(self.user)]
-#        self.fields['modelgroups'].queryset = ModelGroup.objects.filter(pk__in=visible_modelgroups)
 
         # Save current details if we have them
         instance = kwargs.get('instance', None)

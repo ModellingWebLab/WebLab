@@ -20,7 +20,7 @@ from .forms import (
 from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
 from experiments.models import Experiment, ExperimentVersion, ProtocolEntity
-from .models import Story
+from .models import Story, StoryText, StoryGraph
 
 
 class StoryListView(LoginRequiredMixin, ListView):
@@ -33,32 +33,6 @@ class StoryListView(LoginRequiredMixin, ListView):
         return Story.objects.filter(
             id__in=[story.id for story in Story.objects.all() if story.is_editable_by(self.request.user)]
         )
-
-
-class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
-    """
-    Base view for creating or editing stories
-    """
-    model = Story
-    template_name = 'stories/story_form.html'
-
-    @property
-    def form_class(self):
-        return StoryForm
-
-    def get_success_url(self):
-        ns = self.request.resolver_match.namespace
-        return reverse(ns + ':stories')
-
-
-class StoryEditView(StoryView, UpdateView):
-    """
-    View for editing stories
-    """
-
-    def test_func(self):
-        self.user = self.request.user
-        return self.get_object().is_editable_by(self.request.user)
 
 
 class StoryDeleteView(UserPassesTestMixin, DeleteView):
@@ -145,7 +119,7 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
         return reverse(ns + ':stories')
 
 
-class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin, CreateView):
+class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
     """
     Create new model story
     """
@@ -153,7 +127,6 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
     form_class = StoryForm
     formset_class = StoryTextFormSet
     formset_graph_class = StoryGraphFormSet
-    initial = []
 
     def get_success_url(self):
         ns = self.request.resolver_match.namespace
@@ -162,9 +135,8 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
     def test_func(self):
         return self.request.user.has_perm('entities.create_model')
 
-    def get_formset(self):
+    def get_formset(self, initial=[{}]):
         if not hasattr(self, 'formset') or self.formset is None:
-            initial = []
             form_kwargs = {'user': self.request.user}
             if self.request.method == 'POST':
                 self.formset = self.formset_class(
@@ -176,9 +148,8 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
                 self.formset = self.formset_class(prefix='text', initial=initial, form_kwargs=form_kwargs)
         return self.formset
 
-    def get_formset_graph(self):
+    def get_formset_graph(self, initial=[{}]):
         if not hasattr(self, 'formsetgraph') or self.formsetgraph is None:
-            initial = []
             form_kwargs = {'user': self.request.user}
             if self.request.method == 'POST':
                 self.formsetgraph = self.formset_graph_class(
@@ -214,6 +185,38 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         else:
             self.object = None
             return self.form_invalid(form)
+
+class StoryCreateView(StoryView, CreateView):
+    pass
+
+class StoryEditView(StoryView, UpdateView):
+    """
+    View for editing stories
+    """
+    def test_func(self):
+        self.user = self.request.user
+        return self.get_object().is_editable_by(self.request.user)
+
+    @property
+    def story(self):
+        if not hasattr(self, 'object'):
+            self.object = Story.objects.get(pk=self.kwargs.get('story_id'))
+        return self.object
+
+    def get_formset(self, initial=[{}]):
+        initial = [{'description': s.description,
+                    'ORDER': s.order,
+                    'pk': s.pk} for s in StoryText.objects.filter(story=self.story)]
+        return super().get_formset(initial=initial)
+
+    def get_formset_graph(self, initial=[{}]):
+        initial = [{'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
+                     if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
+                    'protocol': s.cachedprotocolversion.protocol.pk,
+                    'graphfiles': s.graphfilename,
+                    'ORDER': s.order,
+                    'pk': s.pk} for s in StoryGraph.objects.filter(story=self.story)]
+        return super().get_formset_graph(initial=initial)
 
 
 class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
