@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Permission
@@ -6,7 +7,6 @@ from django.views.generic.edit import DeleteView, FormView, UpdateView
 
 from .forms import MyAccountForm, RegistrationForm
 from .models import User
-from django.conf import settings
 
 
 class RegistrationView(FormView):
