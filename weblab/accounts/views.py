@@ -12,7 +12,7 @@ from django.conf import settings
 class RegistrationView(FormView):
     form_class = RegistrationForm
     template_name = 'registration/register.html'
-    success_url = settings.FORCE_SCRIPT_NAME if hasattr(settings, 'FORCE_SCRIPT_NAME') else '/'
+    success_url = getattr(settings, 'FORCE_SCRIPT_NAME', '/')
 
     class Meta:
         fields = ('email', 'full_name', 'institution')
