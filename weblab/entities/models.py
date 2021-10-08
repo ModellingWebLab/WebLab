@@ -14,7 +14,6 @@ from core.models import UserCreatedModelMixin
 from core.visibility import Visibility, visibility_check
 from core.models import VisibilityModelMixin
 from repocache.exceptions import RepoCacheMiss
-from markdownx.models import MarkdownxField
 
 from .repository import Repository
 

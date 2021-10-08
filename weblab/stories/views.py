@@ -1,5 +1,4 @@
 from braces.views import UserFormKwargsMixin
-from django.contrib import messages
 from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     UserPassesTestMixin,
@@ -20,8 +19,9 @@ from .forms import (
 )
 from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
-from experiments.models import Experiment, ExperimentVersion, ProtocolEntity, Runnable
-from .models import Story, StoryText
+from experiments.models import Experiment, ExperimentVersion, ProtocolEntity
+from .models import Story
+
 
 class StoryListView(LoginRequiredMixin, ListView):
     """
@@ -122,15 +122,15 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
             visible_model_groups = [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
             visible_experiments = [e for e in Experiment.objects.all() if e.is_visible_to_user(user)]
             if Story.objects.filter(title=story.title, author=user).exists():
-                form.add_error(None, "User already has a story called %s" % (modelgroup.title))
+                form.add_error(None, "User already has a story called %s" % (story.title))
                 return self.form_invalid(form)
-            if any (m not in visible_entities for m in othermodels):
+            if any(m not in visible_entities for m in othermodels):
                 form.add_error(None, "User %s does not have access to all models in the model group" % (user.full_name))
                 return self.form_invalid(form)
-            if any (m not in visible_model_groups for m in modelgroups):
+            if any(m not in visible_model_groups for m in modelgroups):
                 form.add_error(None, "User %s does not have access to all model groups in the story" % (user.full_name))
                 return self.form_invalid(form)
-            if any (e not in visible_experiments for e in experiments):
+            if any(e not in visible_experiments for e in experiments):
                 form.add_error(None, "User %s does not have access to all experiments in the story" % (user.full_name))
                 return self.form_invalid(form)
 
@@ -202,8 +202,9 @@ class StoryCreateView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMix
         formset = self.get_formset()
         formsetgraph = self.get_formset_graph()
         if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
-            #make sure formsets are ordered correctly starting at 0
-            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms, key=lambda f: f.cleaned_data['ORDER'])):
+            # make sure formsets are ordered correctly starting at 0
+            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
+                                               key=lambda f: f.cleaned_data['ORDER'])):
                 frm.cleaned_data['ORDER'] = order
 
             story = form.save()
@@ -229,12 +230,12 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         mk = self.kwargs.get('mk', '')
-        models=[]
+        models = []
         if mk.startswith('modelgroup'):
-            mk = int(mk.replace('modelgroup',''))
+            mk = int(mk.replace('modelgroup', ''))
             models = ModelGroup.objects.get(pk=mk).models.all()
         elif mk.startswith('model'):
-            mk = int(mk.replace('model',''))
+            mk = int(mk.replace('model', ''))
             models = ModelEntity.objects.filter(pk=mk)
         else:
             return []
@@ -251,14 +252,14 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         mk = self.kwargs.get('mk', '')
         pk = self.kwargs.get('pk', '')
-        models=[]
+        models = []
         if pk == '':
             return []
         if mk.startswith('modelgroup'):
-            mk = int(mk.replace('modelgroup',''))
+            mk = int(mk.replace('modelgroup', ''))
             models = ModelGroup.objects.get(pk=mk).models.all()
         elif mk.startswith('model'):
-            mk = int(mk.replace('model',''))
+            mk = int(mk.replace('model', ''))
             models = ModelEntity.objects.filter(pk=mk)
         else:
             return []

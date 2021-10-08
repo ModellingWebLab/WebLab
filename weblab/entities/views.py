@@ -56,10 +56,8 @@ from .forms import (
     ProtocolEntityRenameForm,
     ModelGroupCollaboratorFormSet,
     ModelGroupForm,
-#    StoryCollaboratorFormSet,
-#    StoryForm,
 )
-from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup#, Story
+from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup
 from .processing import process_check_protocol_callback, record_experiments_to_run
 
 
@@ -1249,7 +1247,8 @@ class ModelGroupListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return ModelGroup.objects.filter(
-            id__in=[modelgroup.id for modelgroup in ModelGroup.objects.all() if modelgroup.is_editable_by(self.request.user)]
+            id__in=[modelgroup.id for modelgroup in ModelGroup.objects.all()
+                    if modelgroup.is_editable_by(self.request.user)]
         )
 
 
@@ -1346,7 +1345,7 @@ class ModelGroupTransferView(LoginRequiredMixin, UserPassesTestMixin,
             if ModelGroup.objects.filter(title=modelgroup.title, author=user).exists():
                 form.add_error(None, "User already has a model group called %s" % (modelgroup.title))
                 return self.form_invalid(form)
-            if any (m not in visible_entities for m in models):
+            if any(m not in visible_entities for m in models):
                 form.add_error(None, "User %s does not have access to all models in the model group" % (user.full_name))
                 return self.form_invalid(form)
 

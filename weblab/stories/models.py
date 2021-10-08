@@ -3,8 +3,6 @@ from django.db.models import TextField
 from core.visibility import Visibility
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
 
-from entities.models import ModelEntity, ModelGroup
-from experiments.models import Experiment
 from repocache.models import CachedModelVersion, CachedProtocolVersion
 #from markdownx.models import MarkdownxField
 
@@ -43,6 +41,7 @@ class StoryItem(UserCreatedModelMixin):
     story = models.ForeignKey(Story, null=False, blank=False, on_delete=models.CASCADE, related_name="storyparts")
     order = models.IntegerField()
 
+
 class StoryText(StoryItem):
     """
     A textual (markdown) part of a story.
@@ -52,12 +51,14 @@ class StoryText(StoryItem):
     def __str__(self):
         return self.description
 
+
 class StoryGraph(StoryItem):
     """
     A graph for a story
     """
     graphfilename = TextField(blank=False)
-    cachedprotocolversion = models.ForeignKey(CachedProtocolVersion, null=False, blank=False, on_delete=models.CASCADE, related_name="protocolforgraph")
+    cachedprotocolversion = models.ForeignKey(CachedProtocolVersion, null=False, blank=False, on_delete=models.CASCADE,
+                                              related_name="protocolforgraph")
     cachedmodelversions = models.ManyToManyField(CachedModelVersion)
 
 

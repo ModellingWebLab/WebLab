@@ -7,6 +7,7 @@ admin.site.register(ExperimentVersion)
 admin.site.register(RunningExperiment)
 admin.site.register(PlannedExperiment)
 
+
 class ExperimentVersionInline(admin.StackedInline):
     model = ExperimentVersion
     extra = 0

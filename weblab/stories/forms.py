@@ -2,18 +2,17 @@ import re
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import formset_factory, inlineformset_factory, modelformset_factory
+from django.forms import formset_factory, inlineformset_factory
 
-from accounts.models import User
 from core import visibility
 
 from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
-from entities.models import ModelEntity, ModelGroup
+from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 from experiments.models import Experiment
 from .models import Story, StoryText, StoryGraph
-from experiments.models import ExperimentVersion, Runnable
-from entities.models import ModelEntity, ModelGroup, ProtocolEntity
-import csv, io
+from experiments.models import Runnable
+import csv
+import io
 
 
 # Helper dictionary for determining whether visibility of model groups / stories and their models works together
@@ -32,11 +31,11 @@ class StoryCollaboratorForm(EntityCollaboratorForm):
         visible_entities = ModelEntity.objects.visible_to_user(user)
         visible_model_groups = [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
         visible_experiments = [e for e in Experiment.objects.all() if e.is_visible_to_user(user)]
-        if any (m not in visible_entities for m in othermodels):
+        if any(m not in visible_entities for m in othermodels):
             raise ValidationError("User %s does not have access to all models in the story" % (user.full_name))
-        if any (m not in visible_model_groups for m in modelgroups):
+        if any(m not in visible_model_groups for m in modelgroups):
             raise ValidationError("User %s does not have access to all model groups in the story" % (user.full_name))
-        if any (e not in visible_experiments for e in experiments):
+        if any(e not in visible_experiments for e in experiments):
             raise ValidationError("User %s does not have access to all experiments in the story" % (user.full_name))
         return email
 
@@ -58,7 +57,7 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
         storytext.order = self.cleaned_data['ORDER']
         if not hasattr(storytext, 'author') or storytext.author is None:
             storytext.author = self.user
-        storytext.story=story
+        storytext.story = story
         storytext.save()
         return storytext
 
@@ -68,14 +67,16 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
             raise ValidationError('This field is required.')
         return description
 
+
 class BaseStoryFormSet(forms.BaseFormSet):
     def save(self, story=None, **kwargs):
-         return [form.save(story=story, **kwargs) for form in self.ordered_forms]
+        return [form.save(story=story, **kwargs) for form in self.ordered_forms]
 
     @staticmethod
     def get_modelgroup_choices(user):
         return [('', '--------- model group')] +\
-               [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all() if modelgroup.visible_to_user(user)] +\
+               [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
+                if modelgroup.visible_to_user(user)] +\
                [('', '--------- model')] +\
                [('model' + str(model.pk), model.name) for model in ModelEntity.objects.visible_to_user(user)]
 
@@ -105,7 +106,7 @@ class BaseStoryFormSet(forms.BaseFormSet):
                 for row in csv.DictReader(plots_data_stream):
                     files.add(row['Data file name'])
             except FileNotFoundError:
-                pass  #  This experiemnt version has no graphs
+                pass  # This experiemnt version has no graphs
         return [(f, f) for f in files]
 
 
@@ -129,29 +130,27 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        protocol_choices = set((e.protocol.pk, e.protocol.name) for e in Experiment.objects.all()
-                               if e.latest_result == Runnable.STATUS_SUCCESS and
-                               e.is_visible_to_user(self.user))
-
-        self.fields['models_or_group'] = forms.ChoiceField(label='Select protocol', required = True, choices=StoryGraphFormSet.get_modelgroup_choices(self.user))
-        self.fields['protocol'] = forms.ChoiceField(label='Select protocol', required = True, choices=StoryGraphFormSet.get_protocol_choices(self.user))
-        self.fields['graphfiles'] = forms.ChoiceField(label='Select graph', required = True, choices=StoryGraphFormSet.get_graph_choices(self.user))
+        self.fields['models_or_group'] = forms.ChoiceField(label='Select protocol', required=True,
+                                                           choices=StoryGraphFormSet.get_modelgroup_choices(self.user))
+        self.fields['protocol'] = forms.ChoiceField(label='Select protocol', required=True,
+                                                    choices=StoryGraphFormSet.get_protocol_choices(self.user))
+        self.fields['graphfiles'] = forms.ChoiceField(label='Select graph', required=True,
+                                                      choices=StoryGraphFormSet.get_graph_choices(self.user))
 
     def save(self, story=None, **kwargs):
         storygraph = super().save(commit=False)
-        storygraph.story=story
+        storygraph.story = story
         storygraph.order = self.cleaned_data['ORDER']
         storygraph.graphfilename = self.cleaned_data['graphfiles']
 
         mk = self.cleaned_data['models_or_group']
         pk = self.cleaned_data['protocol']
-        DELETE = self.cleaned_data['DELETE']
 
         if mk.startswith('modelgroup'):
-            mk = int(mk.replace('modelgroup',''))
+            mk = int(mk.replace('modelgroup', ''))
             models = ModelGroup.objects.get(pk=mk).models.all()
         elif mk.startswith('model'):
-            mk = int(mk.replace('model',''))
+            mk = int(mk.replace('model', ''))
             models = ModelEntity.objects.filter(pk=mk)
 
         storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
@@ -161,6 +160,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         storygraph.save()
         storygraph.cachedmodelversions.set([m.repocache.latest_version for m in models])
         return storygraph
+
 
 StoryGraphFormSet = inlineformset_factory(
     parent_model=Story,
@@ -188,16 +188,20 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
 #        visible_modelgroups = [m.pk for m in ModelGroup.objects.all() if m.visible_to_user(self.user)]
 #        self.fields['modelgroups'].queryset = ModelGroup.objects.filter(pk__in=visible_modelgroups)
 
+        # Save current details if we have them
+        instance = kwargs.get('instance', None)
+
         choices = list(visibility.CHOICES)
         help_text = visibility.HELP_TEXT
-        if not self.user.has_perm('entities.moderator') and not (instance and instance.visibility == visibility.Visibility.MODERATED):
+        if not self.user.has_perm('entities.moderator') and not (instance and instance.visibility ==
+                                                                 visibility.Visibility.MODERATED):
             choices.remove((visibility.Visibility.MODERATED, 'Moderated'))
             help_text = re.sub('Moderated.*\n', '', help_text)
 
         self.fields['visibility'] = forms.ChoiceField(
             choices=choices,
             help_text=help_text.replace('\n', '<br />'),
-            disabled = self.fields['visibility'].disabled
+            disabled=self.fields['visibility'].disabled
         )
 
     class Meta:

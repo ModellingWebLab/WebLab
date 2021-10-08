@@ -9,7 +9,7 @@ from accounts.models import User
 from core import visibility
 from core.visibility import ORDER_MAP
 
-from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup#, Story
+from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -190,7 +190,7 @@ class ModelGroupCollaboratorForm(EntityCollaboratorForm):
         user = self._get_user(email)
         models = self.entity.models.all()
         visible_entities = ModelEntity.objects.visible_to_user(user)
-        if any (m not in visible_entities for m in models):
+        if any(m not in visible_entities for m in models):
             raise ValidationError("User %s does not have access to all models in the model group" % (user.full_name))
         return email
 
@@ -218,17 +218,18 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
             self.fields['title'].disabled = not instance.is_editable_by(self.user)
             self.fields['models'].disabled = self.fields['title'].disabled
 
-
         choices = list(visibility.CHOICES)
         help_text = visibility.HELP_TEXT
-        if not self.user.has_perm('entities.moderator') and not (instance and instance.visibility == visibility.Visibility.MODERATED):
+        if not self.user.has_perm('entities.moderator') and not (instance and
+                                                                 instance.visibility ==
+                                                                 visibility.Visibility.MODERATED):
             choices.remove((visibility.Visibility.MODERATED, 'Moderated'))
             help_text = re.sub('Moderated.*\n', '', help_text)
 
         self.fields['visibility'] = forms.ChoiceField(
             choices=choices,
             help_text=help_text.replace('\n', '<br />'),
-            disabled = self.fields['title'].disabled
+            disabled=self.fields['title'].disabled
         )
 
     class Meta:
@@ -247,7 +248,8 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
         visibility = self.cleaned_data['visibility']
         if any([ORDER_MAP[m.visibility] < ORDER_MAP[visibility] for m in models]):
             raise ValidationError(
-                'The visibility of your selected models is too restrictive for the selected visibility of this model group')
+                'The visibility of your selected models is too restrictive '
+                'for the selected visibility of this model group')
 
         return models
 
