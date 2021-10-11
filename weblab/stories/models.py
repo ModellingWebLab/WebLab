@@ -61,4 +61,4 @@ class StoryGraph(StoryItem):
     cachedprotocolversion = models.ForeignKey(CachedProtocolVersion, null=False, blank=False, on_delete=models.CASCADE,
                                               related_name="protocolforgraph")
     cachedmodelversions = models.ManyToManyField(CachedModelVersion)
-    modelgroup =  models.ForeignKey(ModelGroup, blank=True, null=True, default=None, on_delete=models.SET_DEFAULT)
+    modelgroup = models.ForeignKey(ModelGroup, blank=True, null=True, default=None, on_delete=models.SET_DEFAULT)

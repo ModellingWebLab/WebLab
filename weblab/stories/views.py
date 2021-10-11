@@ -177,7 +177,7 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
             for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
                                                key=lambda f: f.cleaned_data['ORDER'])):
                 frm.cleaned_data['ORDER'] = order
-            if len(formset.ordered_forms + formsetgraph.ordered_forms) == 0 :
+            if len(formset.ordered_forms + formsetgraph.ordered_forms) == 0:
                 form.add_error(None, "Story is empty add at least one text element or graph. ")
                 return self.form_invalid(form)
 
@@ -188,42 +188,34 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         else:
             return self.form_invalid(form)
 
+
 class StoryCreateView(StoryView, CreateView):
     pass
+
 
 class StoryEditView(StoryView, UpdateView):
     """
     View for editing stories
     """
     def test_func(self):
-        self.user = self.request.user
+        self.object = self.get_object()
         return self.get_object().is_editable_by(self.request.user)
 
-    @property
-    def story(self):
-        if not hasattr(self, 'object'):
-            self.object = self.get_object()
-        return self.object
-
-    def get_formset(self, initial=[{}]):
+    def get_formset(self):
         initial = [{'description': s.description,
                     'ORDER': s.order,
-                    'pk': s.pk} for s in StoryText.objects.filter(story=self.story)]
+                    'pk': s.pk} for s in StoryText.objects.filter(story=self.object)]
         return super().get_formset(initial=initial)
 
-    def get_formset_graph(self, initial=[{}]):
+    def get_formset_graph(self):
         initial = [{'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
-                     if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
+                    if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
                     'protocol': s.cachedprotocolversion.protocol.pk,
                     'graphfiles': s.graphfilename,
                     'ORDER': s.order,
-                    'pk': s.pk} for s in StoryGraph.objects.filter(story=self.story)]
+                    'pk': s.pk} for s in StoryGraph.objects.filter(story=self.object)]
         return super().get_formset_graph(initial=initial)
 
-    def get_form(self):
-        form = super().get_form()
-        form.story = self.story
-        return form
 
 class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
     model = ModelGroup
@@ -275,3 +267,4 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
 
         protocol = ProtocolEntity.objects.get(pk=pk)
         return StoryGraphFormSet.get_graph_choices(self.request.user, protocol=protocol, models=models)
+

@@ -998,7 +998,6 @@ $( document ).ready(function()
     //link add, delete and up/down button clicks
     $("#add-description").click(function()
     {
-//insertDescriptionForm(storyTextCount, '', '', storyTextCount, false, $('#storyparts  > tbody'));
         insertDescriptionForm(storyTextCount, '', '', storyTextCount + storyGraphCount, false)
         storyTextCount++;
         $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
@@ -1006,7 +1005,6 @@ $( document ).ready(function()
 
     $("#add-graph").click(function()
     {
-//insertGraphForm(storyGraphCount, '', '', '', '', storyTextCount, false, $('#storyparts  > tbody'));
         insertGraphForm(storyGraphCount, '', '', '', '', '', '', storyTextCount + storyGraphCount, false)
         storyGraphCount++;
         $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
