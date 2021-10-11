@@ -7,10 +7,12 @@
   {% if object.id %}{% include "./includes/story_header.html" %}{% endif %}
 
 <div id='newstoryform'>
-  {% if not form.title.value %}<h1>Create story</h1>{% endif %}
+  {% if not form.story %}<h1>Create story</h1>{% endif %}
 
   <form method="POST" action="" novalidate id="storyform">
     {% csrf_token %}
+
+<ul class="errorlist"><li>{{ form.non_field_errors }}</li></ul>
 
     <p>{{ form.title.label_tag }} {{ form.title }}</p>
     {% if  form.title.errors  %}

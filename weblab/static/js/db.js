@@ -875,8 +875,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     ${protocolerr}
                     <label for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
                     ${graphfileserr}
-                    <label for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/>
-                    <input type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER"><br/>
+                    <label for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/><br/>
                   </td>
                   <td style="vertical-align:top;">
                     <section style=" position: relative;top: 73px;">
@@ -987,7 +986,7 @@ $( document ).ready(function()
     });
 
     $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
-    $("#id_graph-TOTAL_FORMS").val(storyTextCount);  // update number of forms
+    $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
 
     storyparts.sort((a, b) => {
         return a[0] - b[0];
@@ -999,16 +998,18 @@ $( document ).ready(function()
     //link add, delete and up/down button clicks
     $("#add-description").click(function()
     {
-        insertDescriptionForm(storyTextCount, '', '', storyTextCount, false, $('#storyparts  > tbody'));
+//insertDescriptionForm(storyTextCount, '', '', storyTextCount, false, $('#storyparts  > tbody'));
+        insertDescriptionForm(storyTextCount, '', '', storyTextCount + storyGraphCount, false)
         storyTextCount++;
         $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
     });
 
     $("#add-graph").click(function()
     {
-        insertGraphForm(storyGraphCount, '', '', '', '', storyTextCount, false, $('#storyparts  > tbody'));
+//insertGraphForm(storyGraphCount, '', '', '', '', storyTextCount, false, $('#storyparts  > tbody'));
+        insertGraphForm(storyGraphCount, '', '', '', '', '', '', storyTextCount + storyGraphCount, false)
         storyGraphCount++;
-        $("#id_graph-TOTAL_FORMS").val(storyTextCount);  // update number of forms
+        $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
     });
 
     $("#storyparts").on("click", ".deletepart", function()

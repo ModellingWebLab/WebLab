@@ -177,13 +177,15 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
             for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
                                                key=lambda f: f.cleaned_data['ORDER'])):
                 frm.cleaned_data['ORDER'] = order
+            if len(formset.ordered_forms + formsetgraph.ordered_forms) == 0 :
+                form.add_error(None, "Story is empty add at least one text element or graph. ")
+                return self.form_invalid(form)
 
             story = form.save()
             formset.save(story=story)
             formsetgraph.save(story=story)
             return self.form_valid(form)
         else:
-            self.object = None
             return self.form_invalid(form)
 
 class StoryCreateView(StoryView, CreateView):
@@ -200,7 +202,7 @@ class StoryEditView(StoryView, UpdateView):
     @property
     def story(self):
         if not hasattr(self, 'object'):
-            self.object = Story.objects.get(pk=self.kwargs.get('story_id'))
+            self.object = self.get_object()
         return self.object
 
     def get_formset(self, initial=[{}]):
@@ -218,6 +220,10 @@ class StoryEditView(StoryView, UpdateView):
                     'pk': s.pk} for s in StoryGraph.objects.filter(story=self.story)]
         return super().get_formset_graph(initial=initial)
 
+    def get_form(self):
+        form = super().get_form()
+        form.story = self.story
+        return form
 
 class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
     model = ModelGroup

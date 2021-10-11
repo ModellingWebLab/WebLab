@@ -54,12 +54,23 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def save(self, story=None, **kwargs):
         storytext = super().save(commit=False)
+        if 'pk' in self.initial:
+            storytext = StoryText.objects.get(pk=self.initial['pk'])
+        else:
+           storytext = super().save(commit=False)
+
         storytext.order = self.cleaned_data['ORDER']
+        storytext.description = self.cleaned_data['description']
         if not hasattr(storytext, 'author') or storytext.author is None:
             storytext.author = self.user
         storytext.story = story
         storytext.save()
         return storytext
+
+    def delete(self, **kwargs):
+        if 'pk' in self.initial:
+            storytext = StoryText.objects.get(pk=self.initial['pk'])
+            storytext.delete()
 
     def clean_description(self):
         description = self.cleaned_data['description']
@@ -70,15 +81,17 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
 
 class BaseStoryFormSet(forms.BaseFormSet):
     def save(self, story=None, **kwargs):
+        for form in self.deleted_forms:
+            form.delete(**kwargs)
         return [form.save(story=story, **kwargs) for form in self.ordered_forms]
 
     @staticmethod
     def get_modelgroup_choices(user):
         return [('', '--------- model group')] +\
                [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
-                if modelgroup.visible_to_user(user)] +\
+                if modelgroup.visible_to_user(user) and any(model.repocache.versions.count() for model in modelgroup.models.all())] +\
                [('', '--------- model')] +\
-               [('model' + str(model.pk), model.name) for model in ModelEntity.objects.visible_to_user(user)]
+               [('model' + str(model.pk), model.name) for model in ModelEntity.objects.visible_to_user(user) if model.repocache.versions.count()]
 
     @staticmethod
     def get_protocol_choices(user, models=None):
@@ -119,7 +132,7 @@ StoryTextFormSet = inlineformset_factory(
     can_delete=True,
     can_order=True,
     extra=0,
-    min_num=1,
+    min_num=0,
 )
 
 
@@ -138,7 +151,10 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
                                                       choices=StoryGraphFormSet.get_graph_choices(self.user))
 
     def save(self, story=None, **kwargs):
-        storygraph = super().save(commit=False)
+        if 'pk' in self.initial:
+            storygraph = StoryGraph.objects.get(pk=self.initial['pk'])
+        else:
+            storygraph = super().save(commit=False)
         storygraph.story = story
         storygraph.order = self.cleaned_data['ORDER']
         storygraph.graphfilename = self.cleaned_data['graphfiles']
@@ -150,19 +166,23 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             mk = int(mk.replace('modelgroup', ''))
             modelgroup = ModelGroup.objects.get(pk=mk)
             models = modelgroup.models.all()
-            storygraph.modelgroup = modelgroup
         elif mk.startswith('model'):
             mk = int(mk.replace('model', ''))
             models = ModelEntity.objects.filter(pk=mk)
-
         storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
         if not hasattr(storygraph, 'author') or storygraph.author is None:
             storygraph.author = self.user
-        storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
-        storygraph.save()
-        storygraph.cachedmodelversions.set([m.repocache.latest_version for m in models])
         storygraph.modelgroup = modelgroup
+        storygraph.save()
+        storygraph.cachedmodelversions.clear()
+        storygraph.cachedmodelversions.set([m.repocache.latest_version for m in models if m.repocache.versions.count()])
         return storygraph
+
+
+    def delete(self, **kwargs):
+        if 'pk' in self.initial:
+            storygraph = StoryGraph.objects.get(pk=self.initial['pk'])
+            storygraph.delete()
 
 
 StoryGraphFormSet = inlineformset_factory(
@@ -174,7 +194,7 @@ StoryGraphFormSet = inlineformset_factory(
     can_delete=True,
     can_order=True,
     extra=0,
-    min_num=1,
+    min_num=0,
 )
 
 
@@ -208,13 +228,14 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def clean_title(self):
         title = self.cleaned_data['title']
-        if Story.objects.filter(title=title, author=self.user).exists():
+        if not hasattr(self, 'story') and Story.objects.filter(title=title, author=self.user).exists():
             raise ValidationError(
                 'You already have a story named "%s"' % title)
         return title
 
     def save(self, **kwargs):
-        story = super().save(commit=False)
+        story = getattr(self, 'story', super().save(commit=False))
+        story.title = self.cleaned_data['title']
         if not hasattr(story, 'author') or story.author is None:
             story.author = self.user
         story.save()
