@@ -89,11 +89,10 @@ class BaseStoryFormSet(forms.BaseFormSet):
     def get_modelgroup_choices(user):
         return [('', '--------- model group')] +\
                [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
-                if modelgroup.visible_to_user(user) and any(model.repocache.versions.count()
+                if modelgroup.visible_to_user(user)
                 for model in modelgroup.models.all())] +\
                [('', '--------- model')] +\
-               [('model' + str(model.pk), model.name) for model in ModelEntity.objects.visible_to_user(user)
-                if model.repocache.versions.count()]
+               [('model' + str(model.pk), model.name) for model in ModelEntity.objects.visible_to_user(user)]
 
     @staticmethod
     def get_protocol_choices(user, models=None):
