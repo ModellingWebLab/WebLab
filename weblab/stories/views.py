@@ -186,6 +186,7 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
             formsetgraph.save(story=story)
             return self.form_valid(form)
         else:
+            self.object = getattr(self, 'object', None)
             return self.form_invalid(form)
 
 
