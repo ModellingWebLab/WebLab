@@ -89,8 +89,7 @@ class BaseStoryFormSet(forms.BaseFormSet):
     def get_modelgroup_choices(user):
         return [('', '--------- model group')] +\
                [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
-                if modelgroup.visible_to_user(user)
-                for model in modelgroup.models.all())] +\
+                if modelgroup.visible_to_user(user)] +\
                [('', '--------- model')] +\
                [('model' + str(model.pk), model.name) for model in ModelEntity.objects.visible_to_user(user)]
 
