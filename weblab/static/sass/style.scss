@@ -809,3 +809,9 @@ li.entityviz-PRIVATE
   margin:auto;
   vertical-align: middle;
 }
+
+/* checkbox for updating graph in stories */
+.StoryGraphCheckbox input,.StoryGraphCheckbox label{
+  display:inline-block;
+  vertical-align:middle;
+}

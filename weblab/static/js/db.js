@@ -860,35 +860,63 @@ function insertDescriptionForm(currentTextCount, descriptionValue, descriptionEr
     }
 }
 
-function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del)
+function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, newGraph, update, currentGraph)
 {
     if (del){
         html=`<input type="hidden" name="graph-${currentGraphCount}-DELETE" id="id_graph-${currentGraphCount}-DELETE" value="true">`;
         $('#storyparts  > tfoot').append(html);  // add new hidden delete form
     }else{
+        current_graph_name = "";
+        display_update = "style=\"Display: none\"";
+        drowpdwon_disabled = "disabled";
+        update_checked = "";
+        new_checked = "checked";
+        if(!newGraph){
+            current_graph_name = "<span class=\"helptext\">" + currentGraph + "</span><br/>";
+            display_update = "";
+            new_checked = "";
+        }
+        if(update){
+            update_checked = "checked";
+            drowpdwon_disabled = "";
+        }
         html=`
               <tr class="storypart graph">
                   <td style="vertical-align: top;">
                     <h2>Graph</h2>
+                    ${current_graph_name}
+                    <div class="StoryGraphCheckbox" ${display_update}>
+                      <input type="checkbox" id="id_graph-${currentGraphCount}-update" name="graph-${currentGraphCount}-update" ${update_checked}>
+                      <label for="id_graph-${currentGraphCount}-update">Update graph</label>
+                    </div>
                     ${models_or_grouperr}
-                    <label for="id_graph-${currentGraphCount}-models_or_group">Select model (group): </label><select name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
+                    <label for="id_graph-${currentGraphCount}-models_or_group">Select model (group): </label><select ${drowpdwon_disabled} name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
                     ${protocolerr}
-                    <label for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
+                    <label for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select ${drowpdwon_disabled} name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
                     ${graphfileserr}
-                    <label for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/><br/>
+                    <label for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select ${drowpdwon_disabled} name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/><br/>
                   </td>
                   <td style="vertical-align:top;">
                     <section style=" position: relative;top: 73px;">
                       <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
                       <img class="deletepart" src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part"/><br/>
-                      <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_text-${currentGraphCount}-ORDER" value="${order}">
+                      <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
+                      <input type="checkbox" name="graph-${currentGraphCount}-new" id="id_graph-${currentGraphCount}-new" ${new_checked} style="Display: none">
+                      <input type="hidden" name="graph-${currentGraphCount}-currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="${currentGraph}">
                     </section>
                   </td>
               </tr>`;
 
         // add new form
         $('#storyparts  > tbody').append(html);
+
+        //checkbox toggels dropdown enabled
+        $("#id_graph-" + currentGraphCount + "-update").click(function() {
+            $("#id_graph-" + currentGraphCount + "-models_or_group").prop("disabled", !this.checked);
+            $("#id_graph-" + currentGraphCount + "-protocol").prop("disabled", !this.checked);
+            $("#id_graph-" + currentGraphCount + "-graphfiles").prop("disabled", !this.checked);
+        });
 
         // update graphs when protocol changes
         $('body').on('change', "#id_graph-" + currentGraphCount + "-protocol", function() {
@@ -903,6 +931,15 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
             })
         });
 
+        // make sure dropdown menu for graphs is enabled when submitting
+        // in order to retain value if disabled and the form throws an error
+        $('#newstoryform').on('submit', function() {
+            $('select').each(function(){  
+                    $(this).prop('disabled', false);
+                }
+            );
+        })
+
         // update protocols when models change
         $('body').on('change', "#id_graph-" + currentGraphCount + "-models_or_group", function() {
             var model = $(this).val();
@@ -915,7 +952,6 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
               }
             })
         });
-
 
         // Fill dropdowns
         // fill models or groups
@@ -950,7 +986,6 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
               })
           }
         })
-
     }
 }
 
@@ -979,7 +1014,10 @@ $( document ).ready(function()
               models_or_grouperr = $(this).find(".models_or_grouperr").val();
               protocolerr = $(this).find(".protocolerr").val();
               graphfileserr = $(this).find(".graphfileserr").val();
-              storyparts.push([order, insertGraphForm, [storyGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del]]);
+              newGraph = $(this).find(".new").val().toLowerCase() === 'true';
+              update = $(this).find(".update").val().toLowerCase() === 'true';
+              currentGraph = $(this).find(".currentGraph").val();
+              storyparts.push([order, insertGraphForm, [storyGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, newGraph, update, currentGraph]]);
               storyGraphCount++;
           }
           $(this).remove();
@@ -1005,7 +1043,7 @@ $( document ).ready(function()
 
     $("#add-graph").click(function()
     {
-        insertGraphForm(storyGraphCount, '', '', '', '', '', '', storyTextCount + storyGraphCount, false)
+        insertGraphForm(storyGraphCount, '', '', '', '', '', '', storyTextCount + storyGraphCount, false, true, true, '')
         storyGraphCount++;
         $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
     });

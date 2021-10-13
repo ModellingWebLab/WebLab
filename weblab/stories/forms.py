@@ -126,43 +126,60 @@ class BaseStoryFormSet(forms.BaseFormSet):
 class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
     class Meta:
         model = StoryGraph
-        fields = ['graphfilename']
+        fields = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['models_or_group'] = forms.ChoiceField(label='Select protocol', required=True,
-                                                           choices=StoryGraphFormSet.get_modelgroup_choices(self.user))
-        self.fields['protocol'] = forms.ChoiceField(label='Select protocol', required=True,
-                                                    choices=StoryGraphFormSet.get_protocol_choices(self.user))
-        self.fields['graphfiles'] = forms.ChoiceField(label='Select graph', required=True,
-                                                      choices=StoryGraphFormSet.get_graph_choices(self.user))
+        self.fields['new'] = forms.BooleanField(required=False, initial='pk' not in self.initial)
+        self.fields['currentGraph'] = forms.CharField(required=False)
+        self.fields['update'] = forms.BooleanField(required=False, initial='pk' not in self.initial)
+        self.fields['models_or_group'] = forms.ChoiceField(required=False, choices=StoryGraphFormSet.get_modelgroup_choices(self.user))
+        self.fields['protocol'] = forms.ChoiceField(required=False, choices=StoryGraphFormSet.get_protocol_choices(self.user))
+        self.fields['graphfiles'] = forms.ChoiceField(required=False, choices=StoryGraphFormSet.get_graph_choices(self.user))
+
+    def clean_models_or_group(self):
+        if self.cleaned_data.get('update', False) and self.cleaned_data['models_or_group'] == "":
+           raise ValidationError("This field is required.")
+        return self.cleaned_data['models_or_group']
+
+    def clean_protocol(self):
+        if self.cleaned_data.get('update', False) and self.cleaned_data['protocol'] == "":
+            raise ValidationError("This field is required.")
+        return self.cleaned_data['protocol']
+
+    def clean_graphfiles(self):
+        if self.cleaned_data.get('update', False) and self.cleaned_data['graphfiles'] == "":
+            raise ValidationError("This field is required.")
+        return self.cleaned_data['graphfiles']
 
     def save(self, story=None, **kwargs):
         if 'pk' in self.initial:
             storygraph = StoryGraph.objects.get(pk=self.initial['pk'])
         else:
             storygraph = super().save(commit=False)
-        storygraph.story = story
-        storygraph.order = self.cleaned_data['ORDER']
-        storygraph.graphfilename = self.cleaned_data['graphfiles']
 
-        mk = self.cleaned_data['models_or_group']
-        pk = self.cleaned_data['protocol']
-        modelgroup = None
-        if mk.startswith('modelgroup'):
-            mk = int(mk.replace('modelgroup', ''))
-            modelgroup = ModelGroup.objects.get(pk=mk)
-            models = modelgroup.models.all()
-        elif mk.startswith('model'):
-            mk = int(mk.replace('model', ''))
-            models = ModelEntity.objects.filter(pk=mk)
-        storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
-        if not hasattr(storygraph, 'author') or storygraph.author is None:
-            storygraph.author = self.user
-        storygraph.modelgroup = modelgroup
-        storygraph.save()
-        storygraph.cachedmodelversions.clear()
-        storygraph.cachedmodelversions.set([m.repocache.latest_version for m in models if m.repocache.versions.count()])
+        if self.cleaned_data.get('update', False):
+          storygraph.story = story
+          storygraph.order = self.cleaned_data['ORDER']
+          storygraph.graphfilename = self.cleaned_data['graphfiles']
+
+          mk = self.cleaned_data['models_or_group']
+          pk = self.cleaned_data['protocol']
+          modelgroup = None
+          if mk.startswith('modelgroup'):
+              mk = int(mk.replace('modelgroup', ''))
+              modelgroup = ModelGroup.objects.get(pk=mk)
+              models = modelgroup.models.all()
+          elif mk.startswith('model'):
+              mk = int(mk.replace('model', ''))
+              models = ModelEntity.objects.filter(pk=mk)
+          storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
+          if not hasattr(storygraph, 'author') or storygraph.author is None:
+              storygraph.author = self.user
+          storygraph.modelgroup = modelgroup
+          storygraph.save()
+          storygraph.cachedmodelversions.clear()
+          storygraph.cachedmodelversions.set([m.repocache.latest_version for m in models if m.repocache.versions.count()])
         return storygraph
 
     def delete(self, **kwargs):
