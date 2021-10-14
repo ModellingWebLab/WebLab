@@ -178,7 +178,10 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
                                                key=lambda f: f.cleaned_data['ORDER'])):
                 frm.cleaned_data['ORDER'] = order
             if len(formset.ordered_forms + formsetgraph.ordered_forms) == 0:
-                form.add_error(None, "Story is empty add at least one text element or graph. ")
+                form.add_error(
+                    None,
+                    "Story is empty add at least one text box or graph. "
+                )
                 return self.form_invalid(form)
 
             story = form.save()
@@ -213,7 +216,9 @@ class StoryEditView(StoryView, UpdateView):
                     if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
                     'protocol': s.cachedprotocolversion.protocol.pk,
                     'graphfiles': s.graphfilename,
-                    'currentGraph': (s.modelgroup.title if s.modelgroup is not None else s.cachedmodelversions.first().model.name) + " / " + s.cachedprotocolversion.protocol.name + " / " + s.graphfilename,
+                    'currentGraph': (s.modelgroup.title if s.modelgroup is not None
+                                     else s.cachedmodelversions.first().model.name) +
+                    " / " + s.cachedprotocolversion.protocol.name + " / " + s.graphfilename,
                     'ORDER': s.order,
                     'pk': s.pk} for s in StoryGraph.objects.filter(story=self.object)]
         return super().get_formset_graph(initial=initial)

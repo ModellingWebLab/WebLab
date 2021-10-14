@@ -131,14 +131,18 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['currentGraph'] = forms.CharField(required=False)
-        self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial, choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
-        self.fields['models_or_group'] = forms.ChoiceField(required=False, choices=StoryGraphFormSet.get_modelgroup_choices(self.user))
-        self.fields['protocol'] = forms.ChoiceField(required=False, choices=StoryGraphFormSet.get_protocol_choices(self.user))
-        self.fields['graphfiles'] = forms.ChoiceField(required=False, choices=StoryGraphFormSet.get_graph_choices(self.user))
+        self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
+                                                  choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
+        self.fields['models_or_group'] = forms.ChoiceField(required=False,
+                                                           choices=StoryGraphFormSet.get_modelgroup_choices(self.user))
+        self.fields['protocol'] = forms.ChoiceField(required=False,
+                                                    choices=StoryGraphFormSet.get_protocol_choices(self.user))
+        self.fields['graphfiles'] = forms.ChoiceField(required=False,
+                                                      choices=StoryGraphFormSet.get_graph_choices(self.user))
 
     def clean_models_or_group(self):
         if self.cleaned_data.get('update', False) and self.cleaned_data['models_or_group'] == "":
-           raise ValidationError("This field is required.")
+            raise ValidationError("This field is required.")
         return self.cleaned_data['models_or_group']
 
     def clean_protocol(self):
@@ -159,26 +163,27 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         storygraph.order = self.cleaned_data['ORDER']
 
         if self.cleaned_data.get('update', False):
-          storygraph.story = story
-          storygraph.graphfilename = self.cleaned_data['graphfiles']
+            storygraph.story = story
+            storygraph.graphfilename = self.cleaned_data['graphfiles']
 
-          mk = self.cleaned_data['models_or_group']
-          pk = self.cleaned_data['protocol']
-          modelgroup = None
-          if mk.startswith('modelgroup'):
-              mk = int(mk.replace('modelgroup', ''))
-              modelgroup = ModelGroup.objects.get(pk=mk)
-              models = modelgroup.models.all()
-          elif mk.startswith('model'):
-              mk = int(mk.replace('model', ''))
-              models = ModelEntity.objects.filter(pk=mk)
-          storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
-          if not hasattr(storygraph, 'author') or storygraph.author is None:
-              storygraph.author = self.user
-          storygraph.modelgroup = modelgroup
-          storygraph.save()
-          storygraph.cachedmodelversions.clear()
-          storygraph.cachedmodelversions.set([m.repocache.latest_version for m in models if m.repocache.versions.count()])
+            mk = self.cleaned_data['models_or_group']
+            pk = self.cleaned_data['protocol']
+            modelgroup = None
+            if mk.startswith('modelgroup'):
+                mk = int(mk.replace('modelgroup', ''))
+                modelgroup = ModelGroup.objects.get(pk=mk)
+                models = modelgroup.models.all()
+            elif mk.startswith('model'):
+                mk = int(mk.replace('model', ''))
+                models = ModelEntity.objects.filter(pk=mk)
+            storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
+            if not hasattr(storygraph, 'author') or storygraph.author is None:
+                storygraph.author = self.user
+            storygraph.modelgroup = modelgroup
+            storygraph.save()
+            storygraph.cachedmodelversions.clear()
+            storygraph.cachedmodelversions.set([m.repocache.latest_version
+                                               for m in models if m.repocache.versions.count()])
         storygraph.save()
         return storygraph
 

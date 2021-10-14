@@ -478,8 +478,11 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
             for entity in cached:
                 kwargs['in_use'] |= set([(graph.story.id, graph.story.title) for graph in entity.storygraph_set.all()])
         elif self.kwargs['entity_type'] == 'protocol':
-            cached = CachedProtocolVersion.objects.filter(entity__in=CachedProtocol.objects.filter(entity=self.get_object()))
-            kwargs['in_use'] = [(graph.story.id, graph.story.title) for graph in StoryGraph.objects.filter(cachedprotocolversion__in=cached)]
+            cached = CachedProtocolVersion.objects.filter(
+                entity__in=CachedProtocol.objects.filter(entity=self.get_object())
+            )
+            kwargs['in_use'] = [(graph.story.id, graph.story.title)
+                                for graph in StoryGraph.objects.filter(cachedprotocolversion__in=cached)]
         return super().get_context_data(**kwargs)
 
 
@@ -1313,7 +1316,8 @@ class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):
         return reverse(ns + ':modelgroup')
 
     def get_context_data(self, **kwargs):
-        kwargs['in_use'] = set([(graph.story.id, graph.story.title) for graph in StoryGraph.objects.filter(modelgroup=self.get_object())])
+        kwargs['in_use'] = set([(graph.story.id, graph.story.title)
+                                for graph in StoryGraph.objects.filter(modelgroup=self.get_object())])
         return super().get_context_data(**kwargs)
 
 
