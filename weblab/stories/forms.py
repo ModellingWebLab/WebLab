@@ -130,9 +130,8 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['new'] = forms.BooleanField(required=False, initial='pk' not in self.initial)
         self.fields['currentGraph'] = forms.CharField(required=False)
-        self.fields['update'] = forms.BooleanField(required=False, initial='pk' not in self.initial)
+        self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial, choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
         self.fields['models_or_group'] = forms.ChoiceField(required=False, choices=StoryGraphFormSet.get_modelgroup_choices(self.user))
         self.fields['protocol'] = forms.ChoiceField(required=False, choices=StoryGraphFormSet.get_protocol_choices(self.user))
         self.fields['graphfiles'] = forms.ChoiceField(required=False, choices=StoryGraphFormSet.get_graph_choices(self.user))
@@ -157,10 +156,10 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             storygraph = StoryGraph.objects.get(pk=self.initial['pk'])
         else:
             storygraph = super().save(commit=False)
+        storygraph.order = self.cleaned_data['ORDER']
 
         if self.cleaned_data.get('update', False):
           storygraph.story = story
-          storygraph.order = self.cleaned_data['ORDER']
           storygraph.graphfilename = self.cleaned_data['graphfiles']
 
           mk = self.cleaned_data['models_or_group']
@@ -180,6 +179,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
           storygraph.save()
           storygraph.cachedmodelversions.clear()
           storygraph.cachedmodelversions.set([m.repocache.latest_version for m in models if m.repocache.versions.count()])
+        storygraph.save()
         return storygraph
 
     def delete(self, **kwargs):

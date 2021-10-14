@@ -135,7 +135,7 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
     def test_func(self):
         return self.request.user.has_perm('entities.create_model')
 
-    def get_formset(self, initial=[{'ORDER': None}]):
+    def get_formset(self, initial=[{'ORDER': '', 'currentGraph': ''}]):
         if not hasattr(self, 'formset') or self.formset is None:
             form_kwargs = {'user': self.request.user}
             if self.request.method == 'POST':
@@ -148,7 +148,7 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
                 self.formset = self.formset_class(prefix='text', initial=initial, form_kwargs=form_kwargs)
         return self.formset
 
-    def get_formset_graph(self, initial=[{'ORDER': None}]):
+    def get_formset_graph(self, initial=[{'ORDER': '', 'currentGraph': ''}]):
         if not hasattr(self, 'formsetgraph') or self.formsetgraph is None:
             form_kwargs = {'user': self.request.user}
             if self.request.method == 'POST':
@@ -213,7 +213,7 @@ class StoryEditView(StoryView, UpdateView):
                     if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
                     'protocol': s.cachedprotocolversion.protocol.pk,
                     'graphfiles': s.graphfilename,
-                    'currentGraph': (s.modelgroup.title if s.modelgroup is not None else s.cachedmodelversions.first().model.name) + " / " + s.cachedprotocolversion.protocol.name +" / " + s.graphfilename,
+                    'currentGraph': (s.modelgroup.title if s.modelgroup is not None else s.cachedmodelversions.first().model.name) + " / " + s.cachedprotocolversion.protocol.name + " / " + s.graphfilename,
                     'ORDER': s.order,
                     'pk': s.pk} for s in StoryGraph.objects.filter(story=self.object)]
         return super().get_formset_graph(initial=initial)

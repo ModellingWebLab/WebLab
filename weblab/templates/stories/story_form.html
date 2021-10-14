@@ -36,7 +36,6 @@
         {% endfor %}
         {% for form in formsetgraph %}
             <tr class="storypart graph" style="visibility: hidden"><td>
-                <input class="new" type="hidden" value="{{form.new.value}}">
                 <input class="currentGraph" type="hidden" value="{{form.currentGraph.value}}">
                 <input class="update" type="hidden" value="{{form.update.value}}">
                 <input class="models_or_groupval" type="hidden" value="{% if form.models_or_group.value %}{{form.models_or_group.value}}{% endif %}">
