@@ -870,7 +870,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         current_graph_html = "";
         if(currentGraph != ""){
           current_graph_html = `
-            <div class="StoryGraphCheckbox">
+            <div class="StoryGraphRadio">
               <input type="radio" name="graph-${currentGraphCount}-update" value="" id="id_graph-${currentGraphCount}-update_1" name="graph-${currentGraphCount}-update" ${update ? '' : 'checked'}>
                <label for="id_graph-${currentGraphCount}-update_1"><em>${currentGraph}</em></label>
             </div><br/>`
@@ -881,7 +881,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                   <td style="vertical-align: top;">
                     <h2>Graph</h2>
                     ${current_graph_html}
-                    <div class="StoryGraphCheckbox" ${currentGraph=="" ? 'style="Display: none"' : ''}>
+                    <div class="StoryGraphRadio" ${currentGraph=="" ? 'style="Display: none"' : ''}>
                       <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" name=\"graph-${currentGraphCount}-update\" ${update ? 'checked' : ''}>
                       <label for="id_graph-${currentGraphCount}-update">Update graph</label>
                     </div>
