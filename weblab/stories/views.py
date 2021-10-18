@@ -276,3 +276,18 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
         protocol = ProtocolEntity.objects.get(pk=pk)
         return StoryGraphFormSet.get_graph_choices(self.request.user, protocol=protocol, models=models)
 
+class StoryRenderView(UserPassesTestMixin, DetailView):
+    model = Story
+    template_name = 'stories/story_render.html'
+    context_object_name = 'story'
+
+    def test_func(self):
+        return self.get_object().visible_to_user(self.request.user)
+
+    def get_context_data(self, **kwargs):
+
+        kwargs['storyparts'] = sorted([text for text in StoryText.objects.filter(story=self.get_object())] + [graph for graph in StoryGraph.objects.filter(story=self.get_object())],
+                                      key=lambda f: f.order)
+#https://github.com/sparksuite/simplemde-markdown-editor/issues/594
+#https://marked.js.org/using_advanced#highlight
+        return super().get_context_data(**kwargs)

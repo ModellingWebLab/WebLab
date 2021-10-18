@@ -5,7 +5,6 @@ from core.models import UserCreatedModelMixin, VisibilityModelMixin
 
 from repocache.models import CachedModelVersion, CachedProtocolVersion
 from entities.models import ModelGroup
-#from markdownx.models import MarkdownxField
 
 
 class Story(UserCreatedModelMixin, VisibilityModelMixin):

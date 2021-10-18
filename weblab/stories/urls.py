@@ -18,7 +18,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^(?P<pk>\d+)$',
+        r'^(?P<pk>\d+)/edit$',
         views.StoryEditView.as_view(),
         name='story_edit',
     ),
@@ -78,6 +78,12 @@ urlpatterns = [
         name='filter_graph_no_keys',
     ),
 
+
+    url(
+        r'^(?P<pk>\d+)$',
+        views.StoryRenderView.as_view(),
+        name='story_render',
+    ),
 ]
 
 app_name = 'stories'

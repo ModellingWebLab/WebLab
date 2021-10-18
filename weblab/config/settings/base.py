@@ -52,7 +52,6 @@ FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 THIRD_PARTY_APPS = [
     'social_django',
     'guardian',
-    'markdownx',
 ]
 
 LOCAL_APPS = [

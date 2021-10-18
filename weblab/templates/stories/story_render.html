@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+{% load stories %}
+
+{% block title %}Story {{ object.title }} - {% endblock title %}
+{% block content %}
+
+<a href="{% url 'stories:story_edit' object.id %}"><h1>Story: {{ object.title }}</h1></a>
+<small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.
+
+{% can_manage_story object as can_manage %}
+{% if can_manage %}
+  <a title="Edit story" href="{% url 'stories:story_edit' object.id %}">
+    Edit story
+  </a>
+{% endif %}
+
+<div id='storyrender'>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% for part in storyparts %}
+    {% if part.description %}
+      <textarea id="source{{ forloop.counter0 }}">{{part.description | safe}}</textarea>
+        <div id="content{{ forloop.counter0 }}"></div>
+       <script>
+       $('#content{{ forloop.counter0 }}').html(marked($('#source{{ forloop.counter0 }}').val()));
+       $('#source{{ forloop.counter0 }}').remove();
+  </script>
+
+    {% else %}
+    {% endif %}
+{%endfor%}
+
+</div>
+{% endblock %}
+
+https://marked.js.org/using_advanced#highlight
