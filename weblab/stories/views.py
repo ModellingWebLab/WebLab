@@ -191,9 +191,9 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
 
 
 class StoryCreateView(StoryView, CreateView):
-    """"
+    """
     View for creating new stories
-    """"
+    """
     def test_func(self):
         return self.request.user.has_perm('entities.create_model')
 
