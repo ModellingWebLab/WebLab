@@ -132,9 +132,6 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':stories')
 
-    def test_func(self):
-        return self.request.user.has_perm('entities.create_model')
-
     def get_formset(self, initial=[{'ORDER': '', 'currentGraph': ''}]):
         if not hasattr(self, 'formset') or self.formset is None:
             form_kwargs = {'user': self.request.user}
@@ -194,7 +191,11 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
 
 
 class StoryCreateView(StoryView, CreateView):
-    pass
+    """"
+    View for creating new stories
+    """"
+    def test_func(self):
+        return self.request.user.has_perm('entities.create_model')
 
 
 class StoryEditView(StoryView, UpdateView):
