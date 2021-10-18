@@ -47,38 +47,6 @@ StoryCollaboratorFormSet = formset_factory(
 )
 
 
-class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
-    class Meta:
-        model = StoryText
-        fields = ['description']
-
-    def save(self, story=None, **kwargs):
-        storytext = super().save(commit=False)
-        if 'pk' in self.initial:
-            storytext = StoryText.objects.get(pk=self.initial['pk'])
-        else:
-            storytext = super().save(commit=False)
-
-        storytext.order = self.cleaned_data['ORDER']
-        storytext.description = self.cleaned_data['description']
-        if not hasattr(storytext, 'author') or storytext.author is None:
-            storytext.author = self.user
-        storytext.story = story
-        storytext.save()
-        return storytext
-
-    def delete(self, **kwargs):
-        if 'pk' in self.initial:
-            storytext = StoryText.objects.get(pk=self.initial['pk'])
-            storytext.delete()
-
-    def clean_description(self):
-        description = self.cleaned_data['description']
-        if description == "":
-            raise ValidationError('This field is required.')
-        return description
-
-
 class BaseStoryFormSet(forms.BaseFormSet):
     def save(self, story=None, **kwargs):
         for form in self.deleted_forms:
@@ -121,6 +89,38 @@ class BaseStoryFormSet(forms.BaseFormSet):
             except FileNotFoundError:
                 pass  # This experiemnt version has no graphs
         return [(f, f) for f in files]
+
+
+class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = StoryText
+        fields = ['description']
+
+    def save(self, story=None, **kwargs):
+        storytext = super().save(commit=False)
+        if 'pk' in self.initial:
+            storytext = StoryText.objects.get(pk=self.initial['pk'])
+        else:
+            storytext = super().save(commit=False)
+
+        storytext.order = self.cleaned_data['ORDER']
+        storytext.description = self.cleaned_data['description']
+        if not hasattr(storytext, 'author') or storytext.author is None:
+            storytext.author = self.user
+        storytext.story = story
+        storytext.save()
+        return storytext
+
+    def delete(self, **kwargs):
+        if 'pk' in self.initial:
+            storytext = StoryText.objects.get(pk=self.initial['pk'])
+            storytext.delete()
+
+    def clean_description(self):
+        description = self.cleaned_data['description']
+        if description == "":
+            raise ValidationError('This field is required.')
+        return description
 
 
 class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
