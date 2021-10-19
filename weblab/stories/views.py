@@ -23,7 +23,7 @@ from experiments.models import Experiment, ExperimentVersion, ProtocolEntity
 from .models import Story, StoryText, StoryGraph
 
 
-class StoryListView(LoginRequiredMixin, ListView):
+class StoryListView(ListView):
     """
     List all user's stories
     """
@@ -31,7 +31,7 @@ class StoryListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return Story.objects.filter(
-            id__in=[story.id for story in Story.objects.all() if story.is_editable_by(self.request.user)]
+            id__in=[story.id for story in Story.objects.all() if story.visible_to_user(self.request.user)]
         )
 
 
@@ -89,23 +89,26 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
         if form.is_valid():
             user = form.cleaned_data['user']
             story = self.get_object()
-            othermodels = story.othermodels.all()
-            modelgroups = story.modelgroups.all()
-            experiments = story.experiments.all()
+            graphs = StoryGraph.objects.filter(story=story)
+            model_versions = [mv for sublist in [graph.cachedmodelversions.all() for graph in graphs] for mv in sublist]
+
             visible_entities = ModelEntity.objects.visible_to_user(user)
             visible_model_groups = [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
-            visible_experiments = [e for e in Experiment.objects.all() if e.is_visible_to_user(user)]
+
             if Story.objects.filter(title=story.title, author=user).exists():
-                form.add_error(None, "User already has a story called %s" % (story.title))
+                form.add_error(None, "User %s already has a story called %s" % (user.full_name, story.title))
                 return self.form_invalid(form)
-            if any(m not in visible_entities for m in othermodels):
-                form.add_error(None, "User %s does not have access to all models in the model group" % (user.full_name))
+
+            if any(graph.modelgroup is not None and graph.modelgroup not in visible_model_groups for graph in graphs):
+                form.add_error(None, "User %s does not have access to all model groups" % (user.full_name))
                 return self.form_invalid(form)
-            if any(m not in visible_model_groups for m in modelgroups):
-                form.add_error(None, "User %s does not have access to all model groups in the story" % (user.full_name))
+
+            if not all(graph.cachedprotocolversion.protocol.is_version_visible_to_user(graph.cachedprotocolversion.sha, user) for graph in graphs):
+                form.add_error(None, "User %s does not have access to (current version of) protocol" % (user.full_name))
                 return self.form_invalid(form)
-            if any(e not in visible_experiments for e in experiments):
-                form.add_error(None, "User %s does not have access to all experiments in the story" % (user.full_name))
+
+            if not all(mv.model.is_version_visible_to_user(mv.sha, user) for mv in model_versions):
+                form.add_error(None, "User %s does not have access to all model versions in the story" % (user.full_name))
                 return self.form_invalid(form)
 
             story.author = user
