@@ -16,17 +16,11 @@
 {% endif %}
 
 <div id='storyrender'>
-
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 {% for part in storyparts %}
     {% if part.description %}
-      <textarea id="source{{ forloop.counter0 }}">{{part.description | safe}}</textarea>
-        <div id="content{{ forloop.counter0 }}"></div>
-       <script>
-       $('#content{{ forloop.counter0 }}').html(marked($('#source{{ forloop.counter0 }}').val()));
-       $('#source{{ forloop.counter0 }}').remove();
-  </script>
-
+       <div class="markdowrenderview">
+         <textarea class="markdownsource">{{part.description | safe}}</textarea>
+       </div>
     {% else %}
     {% endif %}
 {%endfor%}

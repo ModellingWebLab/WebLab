@@ -785,7 +785,7 @@ $(document).ready(function()
 
 
 // Code to facilitate stories with text and graph parts
-var SimpleMDE = require('./lib/simplemde.min.js');
+const SimpleMDE = require('./lib/simplemde.min.js');
 var storyTextCount = 0;
 var storyGraphCount = 0;
 
@@ -993,6 +993,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
 
 $( document ).ready(function()
 {
+
   var storyparts = [];
   // render the pre-set story parts in the correct order
   $(".storypart").each(function()
@@ -1066,3 +1067,21 @@ $( document ).ready(function()
 
 });
 
+
+
+// render markdown in story view
+const marked = require("./lib/marked.min.js");
+marked.setOptions({
+    breaks: true,
+});
+
+$( document ).ready(function()
+{
+
+    $(".markdownsource").each(function(){
+          md = $(this).val();
+          viewdiv = $(".markdowrenderview");
+          viewdiv.html(marked(md));
+      });
+
+});

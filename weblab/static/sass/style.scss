@@ -815,3 +815,8 @@ li.entityviz-PRIVATE
   display:inline-block;
   vertical-align:middle;
 }
+
+/* markdown rendering code blocks  */
+.markdowrenderview pre{
+  background: #eee;
+}

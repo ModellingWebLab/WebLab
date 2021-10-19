@@ -285,9 +285,8 @@ class StoryRenderView(UserPassesTestMixin, DetailView):
         return self.get_object().visible_to_user(self.request.user)
 
     def get_context_data(self, **kwargs):
+        #rendering markdown client side vie marked: https://marked.js.org/)
 
         kwargs['storyparts'] = sorted([text for text in StoryText.objects.filter(story=self.get_object())] + [graph for graph in StoryGraph.objects.filter(story=self.get_object())],
                                       key=lambda f: f.order)
-#https://github.com/sparksuite/simplemde-markdown-editor/issues/594
-#https://marked.js.org/using_advanced#highlight
         return super().get_context_data(**kwargs)
