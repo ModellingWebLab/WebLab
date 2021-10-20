@@ -43,13 +43,13 @@ var entities = {}, // Contains information about each experiment being compared
   };
 
 
-function nextPage (url, replace)
+function nextPage(url, replace)
 {
     if (replace)
         window.history.replaceState(document.location.href, "", url);
     else
         window.history.pushState(document.location.href, "", url);
-    parseUrl ();
+    parseUrl();
 }
 
 function registerFileDisplayer (elem)
@@ -58,7 +58,7 @@ function registerFileDisplayer (elem)
 		if (ev.which == 1)
 		{
 			ev.preventDefault();
-			nextPage (elem.href);
+			nextPage(elem.href);
 		}
     	}, true);
 }
@@ -69,7 +69,7 @@ function registerFileDisplayer (elem)
  * it is called).
  * @param f  the file
  */
-function setupDownloadFileContents (f)
+function setupDownloadFileContents(f)
 {
 	f.getContents = function (callBack)
 	{
@@ -668,28 +668,34 @@ function getInfos(url)
 function parseUrl (event)
 {
 	var entityIds = null;
-  var parts = document.location.pathname.split("/")
+        if($('#entityIdsToCompare').length){
+            var parts = $('#entityIdsToCompare').val().split("/");
+        }else{
+            var parts = document.location.pathname.split("/");
+        }
 
 	for (var i = 0; i < parts.length; i++)
-	{
-    if (parts[i] == 'experiments') {
-      basicurl = parts.slice(0, i+2).join('/') + '/';
-      entityType = 'experiment';
-      entityIds = parts.slice(i+2);
-      break;
-    } else if (parts[i] == 'results') {
-      basicurl = parts.slice(0, i+2).join('/') + '/';
-      entityType = 'result';
-      entityIds = parts.slice(i+2);
-    }
-    else if (parts[i+1] == 'compare') {
-      basicurl = parts.slice(0, i+2).join('/') + '/';
-      entityType = parts[i].slice(0, parts[i].length-1);
-      entityIds = parts.slice(i+2);
-      break;
-    }
-	}
-	
+        {
+            if (parts[i] == 'experiments')
+            {
+                basicurl = parts.slice(0, i+2).join('/') + '/';
+                entityType = 'experiment';
+                entityIds = parts.slice(i+2);
+                break;
+            }else if (parts[i] == 'results')
+            {
+                basicurl = parts.slice(0, i+2).join('/') + '/';
+                entityType = 'result';
+                entityIds = parts.slice(i+2);
+            }else if (parts[i+1] == 'compare')
+            {
+                basicurl = parts.slice(0, i+2).join('/') + '/';
+                entityType = parts[i].slice(0, parts[i].length-1);
+                entityIds = parts.slice(i+2);
+                break;
+            }
+        }
+
 	if (!entityIds)
 	{
 		var entitiesToCompare = document.getElementById("entitiesToCompare");
@@ -735,7 +741,7 @@ function parseUrl (event)
 		
 }
 
-function initCompare ()
+function initCompare(prefix)
 {
 	doc = {
 	    heading: document.getElementById("heading"),
@@ -746,7 +752,7 @@ function initCompare ()
 		outputFileHeadline: document.getElementById("outputFileHeadline")
 	};
 	doc.fileDetails.style.display = "none";
-	
+
 	// Prevent redirection to the default plot when we close it
 	doc.displayClose.addEventListener("click", function (ev) {
 		if (ev.which == 1)
@@ -754,12 +760,12 @@ function initCompare ()
 			ev.preventDefault();
 			doc.fileDetails.style.display = "none";
 			shownDefault = true;
-			nextPage (doc.displayClose.href);
+			nextPage(doc.displayClose.href);
 		}
     }, true);
-	
+
 	window.onpopstate = parseUrl;
-	parseUrl ();
+	parseUrl();
 
   $(plugins).each(function(i, plugin) {
     visualizers[plugin.name] = plugin.get_visualizer()
@@ -769,8 +775,12 @@ function initCompare ()
 
 $(document).ready(function() {
     if ($("#entitiesToCompare").length > 0) {
-      initCompare();
+      initCompare('');
     }
-});
 
-//document.addEventListener("DOMContentLoaded", initCompare, false);
+    $(".entitiesToCompare").each(function() {
+       prefix = $(this).attr('id').replace("entitiesToCompare", "");
+       alert(prefix);
+       initCompare(prefix);
+    });
+});

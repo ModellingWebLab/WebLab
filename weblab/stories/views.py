@@ -19,7 +19,7 @@ from .forms import (
 )
 from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
-from experiments.models import Experiment, ExperimentVersion, ProtocolEntity
+from experiments.models import Experiment, ExperimentVersion, ProtocolEntity, Runnable
 from .models import Story, StoryText, StoryGraph
 
 
@@ -292,4 +292,14 @@ class StoryRenderView(UserPassesTestMixin, DetailView):
 
         kwargs['storyparts'] = sorted([text for text in StoryText.objects.filter(story=self.get_object())] + [graph for graph in StoryGraph.objects.filter(story=self.get_object())],
                                       key=lambda f: f.order)
+        for part in kwargs['storyparts']:
+            if isinstance(part, StoryGraph):
+                experiment_versions = [e.latest_version.id for e in Experiment.objects.all()
+                                       if e.latest_result == Runnable.STATUS_SUCCESS and
+                                       e.is_visible_to_user(self.request.user) and
+                                       e.protocol_version == part.cachedprotocolversion
+                                       and e.model_version in part.cachedmodelversions.all()]
+                part.experiment_versions = '/' + '/'.join(str(ver) for ver in experiment_versions)
+
+#                assert False, str(part.experimentversions) + " - " + str(part.graphfilename)
         return super().get_context_data(**kwargs)
