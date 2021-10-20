@@ -43,22 +43,23 @@ var entities = {}, // Contains information about each experiment being compared
   };
 
 
-function nextPage(url, replace)
+function nextPage(url, replace, prefix)
 {
+alert("nextpage:"+prefix);
     if (replace)
         window.history.replaceState(document.location.href, "", url);
     else
         window.history.pushState(document.location.href, "", url);
-    parseUrl();
+    parseUrl(null, prefix);
 }
 
-function registerFileDisplayer (elem)
+function registerFileDisplayer(elem, prefix)
 {
 	elem.addEventListener("click", function (ev) {
 		if (ev.which == 1)
 		{
 			ev.preventDefault();
-			nextPage(elem.href);
+			nextPage(elem.href, prefix);
 		}
     	}, true);
 }
@@ -92,7 +93,7 @@ function setupDownloadFileContents(f)
  * @param entity  the experiment object
  * @param showDefault  whether to show a default visualisation (if available)
  */
-function highlightPlots (entity, showDefault)
+function highlightPlots(entity, showDefault, prefix)
 {
 //    console.log(entity);
 	// Plot description has fields: Plot title,File name,Data file name,Line style,First variable id,Optional second variable id,Optional key variable id
@@ -175,7 +176,7 @@ function highlightPlots (entity, showDefault)
 	// Show the default visualisation if this is the last experiment to be analysed
 	if (defaultViz && metadataParsed == metadataToParse)
 	{
-		nextPage(defaultViz.href, true); // 'Invisible' redirect
+		nextPage(defaultViz.href, true, prefix); // 'Invisible' redirect
 	}
 }
 
@@ -192,7 +193,7 @@ function findEntityFileLink(f, entity)
 			return f.entities[ent_idx].entityFileLink;
 }
 
-function parseOutputContents (entity, file, showDefault)
+function parseOutputContents (entity, file, showDefault, prefix)
 {
     metadataToParse += 1;
     entity.outputContents = null; // Note that there is one to parse
@@ -206,7 +207,7 @@ function parseOutputContents (entity, file, showDefault)
 				entity.outputContents = file.csv;
 				metadataParsed += 1;
 				if (entity.plotDescription)
-                    highlightPlots (entity, showDefault);
+                    highlightPlots (entity, showDefault, prefix);
 			}
 		}
 	};
@@ -215,7 +216,7 @@ function parseOutputContents (entity, file, showDefault)
 	return null;
 }
 
-function parsePlotDescription (entity, file, showDefault)
+function parsePlotDescription (entity, file, showDefault, prefix)
 {
     metadataToParse += 1;
     entity.plotDescription = null; // Note that there is one to parse
@@ -229,7 +230,7 @@ function parsePlotDescription (entity, file, showDefault)
 			    entity.plotDescription = file.csv;
 			    metadataParsed += 1;
 				if (entity.outputContents)
-				    highlightPlots (entity, showDefault);
+				    highlightPlots (entity, showDefault, prefix);
 			}
 		}
 	};
@@ -238,8 +239,9 @@ function parsePlotDescription (entity, file, showDefault)
 	return null;
 }
 
-function parseEntities (entityObj)
+function parseEntities(entityObj, prefix)
 {
+alert("parseEntities:" + prefix);
   if (entityObj.length == 0) return;
 	//console.log (entityObj);
 
@@ -325,9 +327,9 @@ function parseEntities (entityObj)
 					setupDownloadFileContents (files[sig]);
 				}
 				if (file.name.toLowerCase () == "outputs-default-plots.csv")
-					parsePlotDescription (entity, file, !(fileName && pluginName));
+					parsePlotDescription (entity, file, !(fileName && pluginName), prefix);
 				if (file.name.toLowerCase () == "outputs-contents.csv")
-					parseOutputContents (entity, file, !(fileName && pluginName));
+					parseOutputContents (entity, file, !(fileName && pluginName), prefix);
 				
 				files[sig].entities.push ({entityLink: entity, entityFileLink: file});
 			}
@@ -484,9 +486,9 @@ function parseEntities (entityObj)
   }
 
 	doc.outputFileHeadline.innerHTML = "Output files from all compared " + entityType + "s";
-	
+
 	// Create a drop-down box that allows display of/navigate to experiments being compared
-	var entitiesToCompare = document.getElementById("entitiesToCompare");
+	var entitiesToCompare = document.getElementById(prefix + "entitiesToCompare");
 	$(entitiesToCompare).empty();
 	var form = document.createElement("form");
 	entitiesToCompare.appendChild(form);
@@ -509,11 +511,11 @@ function parseEntities (entityObj)
 	form.innerHTML = entityType.charAt(0).toUpperCase() + entityType.slice(1) + "s selected for comparison: ";
 	form.appendChild(select_box);
 	
-	buildSite ();
+	buildSite (prefix);
 }
 
 
-function buildSite ()
+function buildSite(prefix)
 {
 	var filestable = document.getElementById("filestable");
 	filesTable = {};
@@ -585,7 +587,7 @@ function buildSite ()
 			img.title = img.alt;
 			a.appendChild(img);
 			//a.appendChild(document.createTextNode ("view"));
-			registerFileDisplayer (a);//, basicurl + convertForURL (v.name) + "/" + v.id + "/");
+			registerFileDisplayer(a, prefix);//, basicurl + convertForURL (v.name) + "/" + v.id + "/");
 			td.appendChild(a);
 			td.appendChild(document.createTextNode (" "));
 		}
@@ -653,20 +655,22 @@ function handleReq ()
 	}
 }
 
-function getInfos(url)
+function getInfos(url, prefix)
 {
+alert("getInfos: " + prefix);
   $.getJSON(url, function(data) {
     notifications.display(data);
     gotInfos = true;
 
     if (data.getEntityInfos) {
-      parseEntities(data.getEntityInfos.entities);
+      parseEntities(data.getEntityInfos.entities, prefix);
     }
   })
 }
 
-function parseUrl (event)
+function parseUrl(event, prefix)
 {
+alert("parseUrl:"+prefix);
 	var entityIds = null;
         if($('#entityIdsToCompare').length){
             var parts = $('#entityIdsToCompare').val().split("/");
@@ -698,7 +702,7 @@ function parseUrl (event)
 
 	if (!entityIds)
 	{
-		var entitiesToCompare = document.getElementById("entitiesToCompare");
+		var entitiesToCompare = document.getElementById(prefix + "entitiesToCompare");
 		$(entitiesToCompare).empty();
 		entitiesToCompare.appendChild(document.createTextNode("ERROR building site"));
 		return;
@@ -734,7 +738,7 @@ function parseUrl (event)
 	if (!tableParsed)
 	{
 		tableParsed = true;
-		getInfos ($("#entitiesToCompare").data('comparison-href'));
+		getInfos ($("#" + prefix + "entitiesToCompare").data('comparison-href'), prefix);
 	}
 	else
 		handleReq ();
@@ -760,12 +764,17 @@ function initCompare(prefix)
 			ev.preventDefault();
 			doc.fileDetails.style.display = "none";
 			shownDefault = true;
-			nextPage(doc.displayClose.href);
+			nextPage(doc.displayClose.href, prefix);
 		}
     }, true);
 
-	window.onpopstate = parseUrl;
-	parseUrl();
+alert("initCompare:"+prefix);
+alert(prefix == '')
+        if(prefix == '')
+        {
+	    window.onpopstate = parseUrl;
+        }
+	parseUrl(null, prefix);
 
   $(plugins).each(function(i, plugin) {
     visualizers[plugin.name] = plugin.get_visualizer()
@@ -780,7 +789,6 @@ $(document).ready(function() {
 
     $(".entitiesToCompare").each(function() {
        prefix = $(this).attr('id').replace("entitiesToCompare", "");
-       alert(prefix);
        initCompare(prefix);
     });
 });
