@@ -24,22 +24,18 @@
     {% else %}
 
 {% load experiments %}
-<h1 id="heading">Comparison</h1>
-<input type="hidden" id="entityIdsToCompare" value="{%url 'experiments:compare' part.experiment_versions%}/show/{{ part.graphfilename }}/displayPlotFlot">
+<h1 id="{{ forloop.counter0 }}heading">Comparison</h1>
+<input type="hidden" id="{{ forloop.counter0 }}entityIdsToCompare" value="{%url 'experiments:compare' part.experiment_versions%}/show/{{ part.graphfilename }}/displayPlotFlot">
  <div class="entitiesToCompare" id="{{ forloop.counter0 }}entitiesToCompare" data-comparison-href="{% url 'experiments:compare_json' part.experiment_versions %}">
     loading...
     </div>
-    <div id="filedetails">
-      <div class="closebtn"><small>
-          <a id="exportPlot" style="display: none;">Export plot data</a> |
-          <a id="fileclose">&otimes; close</a>
-      </small></div>
-        <h3 id="filename"></h3>
-        <div id="filedisplay"></div>
+    <div id="{{ forloop.counter0 }}filedetails">
+        <h3 id="{{ forloop.counter0 }}filename"></h3>
+        <div id="{{ forloop.counter0 }}filedisplay"></div>
     </div>
 
-    <div id="files">
-      <h3 id="outputFileHeadline"></h3>
+    <div id="files" stye="visibility: hidden">
+      <h3 id="{{ forloop.counter0 }}outputFileHeadline"></h3>
       <table id="filestable">
     </table>
   </div>
@@ -49,5 +45,3 @@
 
 </div>
 {% endblock %}
-
-https://marked.js.org/using_advanced#highlight

@@ -45,7 +45,6 @@ var entities = {}, // Contains information about each experiment being compared
 
 function nextPage(url, replace, prefix)
 {
-alert("nextpage:"+prefix);
     if (replace)
         window.history.replaceState(document.location.href, "", url);
     else
@@ -241,7 +240,6 @@ function parsePlotDescription (entity, file, showDefault, prefix)
 
 function parseEntities(entityObj, prefix)
 {
-alert("parseEntities:" + prefix);
   if (entityObj.length == 0) return;
 	//console.log (entityObj);
 
@@ -647,7 +645,10 @@ function handleReq ()
 	if (fileName && pluginName && gotInfos)
 	{
 		displayFile (fileName.hashCode(), pluginName);
-		doc.displayClose.href = basicurl;
+                if(doc.displayClose)
+                {
+		    doc.displayClose.href = basicurl;
+                }
 	}
 	else
 	{
@@ -657,7 +658,6 @@ function handleReq ()
 
 function getInfos(url, prefix)
 {
-alert("getInfos: " + prefix);
   $.getJSON(url, function(data) {
     notifications.display(data);
     gotInfos = true;
@@ -670,10 +670,9 @@ alert("getInfos: " + prefix);
 
 function parseUrl(event, prefix)
 {
-alert("parseUrl:"+prefix);
 	var entityIds = null;
-        if($('#entityIdsToCompare').length){
-            var parts = $('#entityIdsToCompare').val().split("/");
+        if($('#' + prefix + 'entityIdsToCompare').length){
+            var parts = $('#' + prefix + 'entityIdsToCompare').val().split("/");
         }else{
             var parts = document.location.pathname.split("/");
         }
@@ -748,17 +747,18 @@ alert("parseUrl:"+prefix);
 function initCompare(prefix)
 {
 	doc = {
-	    heading: document.getElementById("heading"),
-		displayClose: document.getElementById("fileclose"),
-		fileName: document.getElementById("filename"),
-		fileDisplay: document.getElementById("filedisplay"),
-		fileDetails: document.getElementById("filedetails"),
-		outputFileHeadline: document.getElementById("outputFileHeadline")
+	    heading: document.getElementById(prefix + "heading"),
+		displayClose: document.getElementById(prefix + "fileclose"),
+		fileName: document.getElementById(prefix + "filename"),
+		fileDisplay: document.getElementById(prefix + "filedisplay"),
+		fileDetails: document.getElementById(prefix + "filedetails"),
+		outputFileHeadline: document.getElementById(prefix + "outputFileHeadline")
 	};
 	doc.fileDetails.style.display = "none";
 
 	// Prevent redirection to the default plot when we close it
-	doc.displayClose.addEventListener("click", function (ev) {
+        if(doc.displayClose){
+            doc.displayClose.addEventListener("click", function (ev) {
 		if (ev.which == 1)
 		{
 			ev.preventDefault();
@@ -766,10 +766,9 @@ function initCompare(prefix)
 			shownDefault = true;
 			nextPage(doc.displayClose.href, prefix);
 		}
-    }, true);
+            }, true);
+        }
 
-alert("initCompare:"+prefix);
-alert(prefix == '')
         if(prefix == '')
         {
 	    window.onpopstate = parseUrl;
