@@ -1,3 +1,4 @@
+ 16         entityType,
 var notifications = require('./lib/notifications.js');
 var utils = require('./lib/utils.js');
 var expt_common = require('./expt_common.js');
@@ -43,22 +44,22 @@ var entities = {}, // Contains information about each experiment being compared
   };
 
 
-function nextPage(url, replace, prefix)
+function nextPage (url, replace)
 {
     if (replace)
         window.history.replaceState(document.location.href, "", url);
     else
         window.history.pushState(document.location.href, "", url);
-    parseUrl(null, prefix);
+    parseUrl ();
 }
 
-function registerFileDisplayer(elem, prefix)
+function registerFileDisplayer (elem)
 {
 	elem.addEventListener("click", function (ev) {
 		if (ev.which == 1)
 		{
 			ev.preventDefault();
-			nextPage(elem.href, prefix);
+			nextPage (elem.href);
 		}
     	}, true);
 }
@@ -69,7 +70,7 @@ function registerFileDisplayer(elem, prefix)
  * it is called).
  * @param f  the file
  */
-function setupDownloadFileContents(f)
+function setupDownloadFileContents (f)
 {
 	f.getContents = function (callBack)
 	{
@@ -92,7 +93,7 @@ function setupDownloadFileContents(f)
  * @param entity  the experiment object
  * @param showDefault  whether to show a default visualisation (if available)
  */
-function highlightPlots(entity, showDefault, prefix)
+function highlightPlots (entity, showDefault)
 {
 //    console.log(entity);
 	// Plot description has fields: Plot title,File name,Data file name,Line style,First variable id,Optional second variable id,Optional key variable id
@@ -175,7 +176,7 @@ function highlightPlots(entity, showDefault, prefix)
 	// Show the default visualisation if this is the last experiment to be analysed
 	if (defaultViz && metadataParsed == metadataToParse)
 	{
-		nextPage(defaultViz.href, true, prefix); // 'Invisible' redirect
+		nextPage(defaultViz.href, true); // 'Invisible' redirect
 	}
 }
 
@@ -192,7 +193,7 @@ function findEntityFileLink(f, entity)
 			return f.entities[ent_idx].entityFileLink;
 }
 
-function parseOutputContents (entity, file, showDefault, prefix)
+function parseOutputContents (entity, file, showDefault)
 {
     metadataToParse += 1;
     entity.outputContents = null; // Note that there is one to parse
@@ -206,7 +207,7 @@ function parseOutputContents (entity, file, showDefault, prefix)
 				entity.outputContents = file.csv;
 				metadataParsed += 1;
 				if (entity.plotDescription)
-                    highlightPlots (entity, showDefault, prefix);
+                    highlightPlots (entity, showDefault);
 			}
 		}
 	};
@@ -215,7 +216,7 @@ function parseOutputContents (entity, file, showDefault, prefix)
 	return null;
 }
 
-function parsePlotDescription (entity, file, showDefault, prefix)
+function parsePlotDescription (entity, file, showDefault)
 {
     metadataToParse += 1;
     entity.plotDescription = null; // Note that there is one to parse
@@ -229,7 +230,7 @@ function parsePlotDescription (entity, file, showDefault, prefix)
 			    entity.plotDescription = file.csv;
 			    metadataParsed += 1;
 				if (entity.outputContents)
-				    highlightPlots (entity, showDefault, prefix);
+				    highlightPlots (entity, showDefault);
 			}
 		}
 	};
@@ -238,7 +239,7 @@ function parsePlotDescription (entity, file, showDefault, prefix)
 	return null;
 }
 
-function parseEntities(entityObj, prefix)
+function parseEntities (entityObj)
 {
   if (entityObj.length == 0) return;
 	//console.log (entityObj);
@@ -325,9 +326,9 @@ function parseEntities(entityObj, prefix)
 					setupDownloadFileContents (files[sig]);
 				}
 				if (file.name.toLowerCase () == "outputs-default-plots.csv")
-					parsePlotDescription (entity, file, !(fileName && pluginName), prefix);
+					parsePlotDescription (entity, file, !(fileName && pluginName));
 				if (file.name.toLowerCase () == "outputs-contents.csv")
-					parseOutputContents (entity, file, !(fileName && pluginName), prefix);
+					parseOutputContents (entity, file, !(fileName && pluginName));
 				
 				files[sig].entities.push ({entityLink: entity, entityFileLink: file});
 			}
@@ -426,6 +427,7 @@ function parseEntities(entityObj, prefix)
     if (entityTypesToCompare.length == 0) {
       // All same entities, just possibly different versions of them
       pageTitle = firstModelName + " & " + firstProtoName;
+
       if (entityVersionsToCompare.length == 1) {
         // Just one type of version comparison
         pageTitle += " experiments: comparison of " + entityTypeDisplayStrings[entityVersionsToCompare[0]] + " versions";
@@ -454,6 +456,7 @@ function parseEntities(entityObj, prefix)
         // label: '<model name>@<model version> & @<protocol version>'
       }
       // } else { label: '<model name>' }
+
     } else if (entityTypesToCompare.length == 2){
       // Two types of entity comparisons
       // just list those and take the title from one of the other entity types
@@ -469,129 +472,128 @@ function parseEntities(entityObj, prefix)
         pageTitle = entityName + " experiments: comparison of " + entityTypeDisplayStrings[entityTypesToCompare[0]] + "s and " + entityTypeDisplayStrings[entityTypesToCompare[1]] + "s";
       }
       // label: "<model name> & <protocol name>"
+
     // } else {
     // More than two entity comparisons (possibly multiple versions of each) - page title is default
     }
-    if(doc.heading){
-        doc.heading.innerHTML = pageTitle;
-    }
+
+
+    doc.heading.innerHTML = pageTitle;
 
     // This was used in an earlier version and is still expected to exist by plugins
     $.data(document.body, 'plotLabelStripText', '');
   }
 
+	doc.outputFileHeadline.innerHTML = "Output files from all compared " + entityType + "s";
+	
 	// Create a drop-down box that allows display of/navigate to experiments being compared
-	var entitiesToCompare = document.getElementById(prefix + "entitiesToCompare");
-        $(entitiesToCompare).empty();
-        if(doc.outputFileHeadline){
-            doc.outputFileHeadline.innerHTML = "Output files from all compared " + entityType + "s";
-	    var form = document.createElement("form");
-	    entitiesToCompare.appendChild(form);
-	    var select_box = document.createElement("select");
-	    select_box.name = "experiment_box";
-	    select_box.id = "exptSelect";
-	    var default_option = document.createElement("option");
-	    default_option.selected = true;
-	    default_option.value = document.location.href;
-	    default_option.innerHTML = "Click to view, select to show a single " + entityType;
-	    select_box.onchange = function(){sel=document.getElementById("exptSelect"); console.log(sel); document.location.href = sel.options[sel.selectedIndex].value;};
-            select_box.appendChild(default_option);
-	    for (var entity in entities)
-	    {
-		    var option = document.createElement("option");
-                    option.value = entities[entity].url;
-                    option.innerHTML = entities[entity].name + ((entityType == "experiment" || entityType == "result") ? "" : " &mdash; " + entities[entity].version);
-		    select_box.appendChild(option);
-            }
-            form.innerHTML = entityType.charAt(0).toUpperCase() + entityType.slice(1) + "s selected for comparison: ";
-	    form.appendChild(select_box);
-        }
-
-	buildSite(prefix);
+	var entitiesToCompare = document.getElementById("entitiesToCompare");
+	$(entitiesToCompare).empty();
+	var form = document.createElement("form");
+	entitiesToCompare.appendChild(form);
+	var select_box = document.createElement("select");
+	select_box.name = "experiment_box";
+	select_box.id = "exptSelect";
+	var default_option = document.createElement("option");
+	default_option.selected = true;
+	default_option.value = document.location.href;
+	default_option.innerHTML = "Click to view, select to show a single " + entityType;
+	select_box.onchange = function(){sel=document.getElementById("exptSelect"); console.log(sel); document.location.href = sel.options[sel.selectedIndex].value;};
+	select_box.appendChild(default_option);
+	for (var entity in entities)
+	{
+		var option = document.createElement("option");
+    option.value = entities[entity].url;
+		option.innerHTML = entities[entity].name + ((entityType == "experiment" || entityType == "result") ? "" : " &mdash; " + entities[entity].version);
+		select_box.appendChild(option);
+	}
+	form.innerHTML = entityType.charAt(0).toUpperCase() + entityType.slice(1) + "s selected for comparison: ";
+	form.appendChild(select_box);
+	
+	buildSite ();
 }
 
-function buildSite(prefix)
+
+function buildSite ()
 {
-    var filestable = document.getElementById("filestable");
-    if(filestable)
-    {
-        filesTable = {};
-        filesTable.table = filestable;
-        filesTable.plots = {};
-        filesTable.pngeps = {};
-        filesTable.otherCSV = {};
-        filesTable.defaults = {};
-        filesTable.text = {};
-        filesTable.other = {};
-        filesTable.all = new Array ();
-
-        var tr = document.createElement("tr");
-
-        var td = document.createElement("th");
-        td.appendChild(document.createTextNode("Name"));
-        tr.appendChild(td);
-
-        td = document.createElement("th");
-        td.appendChild(document.createTextNode("Avg size"));
-        tr.appendChild(td);
-
-        td = document.createElement("th");
-        td.appendChild(document.createTextNode("Action"));
-        tr.appendChild(td);
-
-        filestable.appendChild(tr);
-
-        for (var file in files)
-        {
-            var ents = files[file];
-            var curFileName = ents.name;
-            tr = document.createElement("tr");
-            tr.id = "filerow-" + ents.sig;
-            filestable.appendChild(tr);
-            td = document.createElement("td");
-            td.appendChild(document.createTextNode(curFileName + " ("+ents.entities.length+")"));
-            tr.appendChild(td);
-
-            filesTable.all.push ({
-                name: curFileName,
-                row: tr
-            });
-
-            td = document.createElement("td");
-            var size = 0;
-            for (var i = 0; i < ents.entities.length; i++)
-            {
-                size += ents.entities[i].entityFileLink.size;
-            }
-            td.appendChild(document.createTextNode(utils.humanReadableBytes (size / ents.entities.length)));
-            tr.appendChild(td);
-
-            /*td = document.createElement("td");
-            td.appendChild(document.createTextNode("action"));*/
-
-            td = document.createElement("td");
-            for (var vi in visualizers)
-            {
-                var viz = visualizers[vi];
-                if (!viz.canRead (ents.entities[0].entityFileLink))
-                    continue;
-                var a = document.createElement("a");
-                a.setAttribute("id", "filerow-" + file + "-viz-" + viz.getName ());
-                a.href = basicurl + 'show/' + encodeURIComponent(files[file].name) + "/" + vi;
-                var img = document.createElement("img");
-                img.src = staticPath + "js/visualizers/" + vi + "/" + viz.getIcon ();
-                img.alt = viz.getDescription ();
-                img.title = img.alt;
-                a.appendChild(img);
-                //a.appendChild(document.createTextNode ("view"));
-                registerFileDisplayer(a, prefix);//, basicurl + convertForURL (v.name) + "/" + v.id + "/");
-                td.appendChild(a);
-                td.appendChild(document.createTextNode (" "));
-            }
-            tr.appendChild(td);
-        }
-    }
-    handleReq ();
+	var filestable = document.getElementById("filestable");
+	filesTable = {};
+	filesTable.table = filestable;
+	filesTable.plots = {};
+	filesTable.pngeps = {};
+	filesTable.otherCSV = {};
+	filesTable.defaults = {};
+	filesTable.text = {};
+	filesTable.other = {};
+	filesTable.all = new Array ();
+	
+	var tr = document.createElement("tr");
+	
+	var td = document.createElement("th");
+	td.appendChild(document.createTextNode("Name"));
+	tr.appendChild(td);
+	
+	td = document.createElement("th");
+	td.appendChild(document.createTextNode("Avg size"));
+	tr.appendChild(td);
+	
+	td = document.createElement("th");
+	td.appendChild(document.createTextNode("Action"));
+	tr.appendChild(td);
+	
+	filestable.appendChild(tr);
+	
+	for (var file in files)
+	{
+		var ents = files[file];
+		var curFileName = ents.name;
+		tr = document.createElement("tr");
+		tr.id = "filerow-" + ents.sig;
+		filestable.appendChild(tr);
+		td = document.createElement("td");
+		td.appendChild(document.createTextNode(curFileName + " ("+ents.entities.length+")"));
+		tr.appendChild(td);
+		
+		filesTable.all.push ({
+			name: curFileName,
+			row: tr
+		});
+		
+		td = document.createElement("td");
+		var size = 0;
+		for (var i = 0; i < ents.entities.length; i++)
+		{
+			size += ents.entities[i].entityFileLink.size;
+		}
+		td.appendChild(document.createTextNode(utils.humanReadableBytes (size / ents.entities.length)));
+		tr.appendChild(td);
+		
+		/*td = document.createElement("td");
+		td.appendChild(document.createTextNode("action"));*/
+		
+		td = document.createElement("td");
+		for (var vi in visualizers)
+		{
+			var viz = visualizers[vi];
+			if (!viz.canRead (ents.entities[0].entityFileLink))
+				continue;
+			var a = document.createElement("a");
+			a.setAttribute("id", "filerow-" + file + "-viz-" + viz.getName ());
+			a.href = basicurl + 'show/' + encodeURIComponent(files[file].name) + "/" + vi;
+			var img = document.createElement("img");
+			img.src = staticPath + "js/visualizers/" + vi + "/" + viz.getIcon ();
+			img.alt = viz.getDescription ();
+			img.title = img.alt;
+			a.appendChild(img);
+			//a.appendChild(document.createTextNode ("view"));
+			registerFileDisplayer (a);//, basicurl + convertForURL (v.name) + "/" + v.id + "/");
+			td.appendChild(a);
+			td.appendChild(document.createTextNode (" "));
+		}
+		tr.appendChild(td);
+		
+	}
+	handleReq ();
 }
 
 function displayFile (id, pluginName)
@@ -615,9 +617,7 @@ function displayFile (id, pluginName)
 	        return;
 	    }
 	}
-        if(doc.fileName){
-	    doc.fileName.innerHTML = f.name;
-        }
+	doc.fileName.innerHTML = f.name;
 	
 	if (!f.div[pluginName])
 	{
@@ -637,8 +637,8 @@ function displayFile (id, pluginName)
 
     // Show parent div of the file display, and scroll there
 	doc.fileDetails.style.display = "block";
-        var pos = utils.getPos (doc.heading);
-        window.scrollTo(pos.xPos, pos.yPos);
+	var pos = utils.getPos (doc.heading);
+	window.scrollTo(pos.xPos, pos.yPos);
 }
 
 function handleReq ()
@@ -646,10 +646,7 @@ function handleReq ()
 	if (fileName && pluginName && gotInfos)
 	{
 		displayFile (fileName.hashCode(), pluginName);
-                if(doc.displayClose)
-                {
-		    doc.displayClose.href = basicurl;
-                }
+		doc.displayClose.href = basicurl;
 	}
 	else
 	{
@@ -657,52 +654,45 @@ function handleReq ()
 	}
 }
 
-function getInfos(url, prefix)
+function getInfos(url)
 {
   $.getJSON(url, function(data) {
     notifications.display(data);
     gotInfos = true;
 
     if (data.getEntityInfos) {
-      parseEntities(data.getEntityInfos.entities, prefix);
+      parseEntities(data.getEntityInfos.entities);
     }
   })
 }
 
-function parseUrl(event, prefix)
+function parseUrl (event)
 {
 	var entityIds = null;
-        if($('#' + prefix + 'entityIdsToCompare').length){
-            var parts = $('#' + prefix + 'entityIdsToCompare').val().split("/");
-        }else{
             var parts = document.location.pathname.split("/");
-        }
 
 	for (var i = 0; i < parts.length; i++)
-        {
-            if (parts[i] == 'experiments')
-            {
-                basicurl = parts.slice(0, i+2).join('/') + '/';
-                entityType = 'experiment';
-                entityIds = parts.slice(i+2);
-                break;
-            }else if (parts[i] == 'results')
-            {
-                basicurl = parts.slice(0, i+2).join('/') + '/';
-                entityType = 'result';
-                entityIds = parts.slice(i+2);
-            }else if (parts[i+1] == 'compare')
-            {
-                basicurl = parts.slice(0, i+2).join('/') + '/';
-                entityType = parts[i].slice(0, parts[i].length-1);
-                entityIds = parts.slice(i+2);
-                break;
+	{
+            if (parts[i] == 'experiments') {
+              basicurl = parts.slice(0, i+2).join('/') + '/';
+              entityType = 'experiment';
+              entityIds = parts.slice(i+2);
+              break;
+            } else if (parts[i] == 'results') {
+              basicurl = parts.slice(0, i+2).join('/') + '/';
+              entityType = 'result';
+              entityIds = parts.slice(i+2);
+            } else if (parts[i+1] == 'compare') {
+              basicurl = parts.slice(0, i+2).join('/') + '/';
+              entityType = parts[i].slice(0, parts[i].length-1);
+              entityIds = parts.slice(i+2);
+              break;
             }
-        }
+	}
 
 	if (!entityIds)
 	{
-		var entitiesToCompare = document.getElementById(prefix + "entitiesToCompare");
+		var entitiesToCompare = document.getElementById("entitiesToCompare");
 		$(entitiesToCompare).empty();
 		entitiesToCompare.appendChild(document.createTextNode("ERROR building site"));
 		return;
@@ -738,43 +728,38 @@ function parseUrl(event, prefix)
 	if (!tableParsed)
 	{
 		tableParsed = true;
-		getInfos ($("#" + prefix + "entitiesToCompare").data('comparison-href'), prefix);
+		getInfos ($("#entitiesToCompare").data('comparison-href'));
 	}
 	else
 		handleReq ();
 		
 }
 
-function initCompare(prefix)
+function initCompare ()
 {
 	doc = {
-	    heading: document.getElementById(prefix + "heading"),
-		displayClose: document.getElementById(prefix + "fileclose"),
-		fileName: document.getElementById(prefix + "filename"),
-		fileDisplay: document.getElementById(prefix + "filedisplay"),
-		fileDetails: document.getElementById(prefix + "filedetails"),
-		outputFileHeadline: document.getElementById(prefix + "outputFileHeadline")
+	    heading: document.getElementById("heading"),
+		displayClose: document.getElementById("fileclose"),
+		fileName: document.getElementById("filename"),
+		fileDisplay: document.getElementById("filedisplay"),
+		fileDetails: document.getElementById("filedetails"),
+		outputFileHeadline: document.getElementById("outputFileHeadline")
 	};
 	doc.fileDetails.style.display = "none";
-
+	
 	// Prevent redirection to the default plot when we close it
-        if(doc.displayClose){
-            doc.displayClose.addEventListener("click", function (ev) {
+	doc.displayClose.addEventListener("click", function (ev) {
 		if (ev.which == 1)
 		{
 			ev.preventDefault();
 			doc.fileDetails.style.display = "none";
 			shownDefault = true;
-			nextPage(doc.displayClose.href, prefix);
+			nextPage (doc.displayClose.href);
 		}
-            }, true);
-        }
-
-        if(prefix == '')
-        {
-	    window.onpopstate = parseUrl;
-        }
-	parseUrl(null, prefix);
+    }, true);
+	
+	window.onpopstate = parseUrl;
+	parseUrl ();
 
   $(plugins).each(function(i, plugin) {
     visualizers[plugin.name] = plugin.get_visualizer()
@@ -784,11 +769,8 @@ function initCompare(prefix)
 
 $(document).ready(function() {
     if ($("#entitiesToCompare").length > 0) {
-      initCompare('');
+      initCompare();
     }
-
-    $(".entitiesToCompare").each(function() {
-       prefix = $(this).attr('id').replace("entitiesToCompare", "");
-       initCompare(prefix);
-    });
 });
+
+//document.addEventListener("DOMContentLoaded", initCompare, false);
