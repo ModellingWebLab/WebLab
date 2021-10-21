@@ -1070,18 +1070,17 @@ $( document ).ready(function()
 
 
 // render markdown in story view
-const marked = require("./lib/marked.min.js");
-marked.setOptions({
-    breaks: true,
-});
-
 $( document ).ready(function()
 {
 
-    $(".markdownsource").each(function(){
-          md = $(this).val();
-          viewdiv = $(".markdowrenderview");
-          viewdiv.html(marked(md));
+    const marked = require("./lib/marked.min.js");
+    marked.setOptions({
+        breaks: true,
+    });
+
+    $(".markdowrenderview").each(function(){
+          source = $(this).find(".markdownsource").val();
+          $(this).html(marked(source));
       });
 
 });
