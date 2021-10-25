@@ -820,3 +820,14 @@ li.entityviz-PRIVATE
 .markdowrenderview pre{
   background: #eee;
 }
+
+/* image dialog */
+.image-dialog, .image-dialog .ui-dialog-buttonpane {
+  background-color: #ced5e5;
+  border: 0px;
+  padding: 0px 10px;
+}
+
+.image-dialog .ui-dialog-title{
+  font-size: 150%;
+}

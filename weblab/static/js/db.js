@@ -785,7 +785,7 @@ $(document).ready(function()
 
 
 // Code to facilitate stories with text and graph parts
-const SimpleMDE = require('./lib/simplemde.min.js');
+const SimpleMDE = require('./lib/simplemde.js');
 var storyTextCount = 0;
 var storyGraphCount = 0;
 
