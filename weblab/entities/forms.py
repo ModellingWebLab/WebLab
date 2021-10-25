@@ -11,6 +11,7 @@ from core.visibility import ORDER_MAP
 
 from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup
 
+
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
     """Used for creating an entirely new entity."""
     def clean_name(self):

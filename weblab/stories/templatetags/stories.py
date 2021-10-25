@@ -16,6 +16,7 @@ def can_manage_story(context, story):
     user = context['user']
     return story.is_managed_by(user)
 
+
 @register.simple_tag(takes_context=True)
 def url_experiment_comparison_json(context, experiment_versions):
     """

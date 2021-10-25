@@ -92,7 +92,6 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
             graphs = StoryGraph.objects.filter(story=story)
             model_versions = [mv for sublist in [graph.cachedmodelversions.all() for graph in graphs] for mv in sublist]
 
-            visible_entities = ModelEntity.objects.visible_to_user(user)
             visible_model_groups = [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
 
             if Story.objects.filter(title=story.title, author=user).exists():
@@ -103,12 +102,14 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
                 form.add_error(None, "User %s does not have access to all model groups" % (user.full_name))
                 return self.form_invalid(form)
 
-            if not all(graph.cachedprotocolversion.protocol.is_version_visible_to_user(graph.cachedprotocolversion.sha, user) for graph in graphs):
+            if not all(graph.cachedprotocolversion.protocol.is_version_visible_to_user(graph.cachedprotocolversion.sha,
+                                                                                       user) for graph in graphs):
                 form.add_error(None, "User %s does not have access to (current version of) protocol" % (user.full_name))
                 return self.form_invalid(form)
 
             if not all(mv.model.is_version_visible_to_user(mv.sha, user) for mv in model_versions):
-                form.add_error(None, "User %s does not have access to all model versions in the story" % (user.full_name))
+                form.add_error(None, "User %s does not have access to all model versions in the story" %
+                               (user.full_name))
                 return self.form_invalid(form)
 
             story.author = user
@@ -279,6 +280,7 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
         protocol = ProtocolEntity.objects.get(pk=pk)
         return StoryGraphFormSet.get_graph_choices(self.request.user, protocol=protocol, models=models)
 
+
 class StoryRenderView(UserPassesTestMixin, DetailView):
     model = Story
     template_name = 'stories/story_render.html'
@@ -288,9 +290,10 @@ class StoryRenderView(UserPassesTestMixin, DetailView):
         return self.get_object().visible_to_user(self.request.user)
 
     def get_context_data(self, **kwargs):
-        #rendering markdown client side vie marked: https://marked.js.org/)
+        # rendering markdown client side vie marked: https://marked.js.org/)
 
-        kwargs['storyparts'] = sorted([text for text in StoryText.objects.filter(story=self.get_object())] + [graph for graph in StoryGraph.objects.filter(story=self.get_object())],
+        kwargs['storyparts'] = sorted([text for text in StoryText.objects.filter(story=self.get_object())] +
+                                      [graph for graph in StoryGraph.objects.filter(story=self.get_object())],
                                       key=lambda f: f.order)
         for part in kwargs['storyparts']:
             if isinstance(part, StoryGraph):
@@ -300,6 +303,4 @@ class StoryRenderView(UserPassesTestMixin, DetailView):
                                        e.protocol_version == part.cachedprotocolversion
                                        and e.model_version in part.cachedmodelversions.all()]
                 part.experiment_versions = '/' + '/'.join(str(ver) for ver in experiment_versions)
-
-#                assert False, str(part.experimentversions) + " - " + str(part.graphfilename)
         return super().get_context_data(**kwargs)
