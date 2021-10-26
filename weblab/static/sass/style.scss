@@ -831,3 +831,16 @@ li.entityviz-PRIVATE
 .image-dialog .ui-dialog-title{
   font-size: 150%;
 }
+
+/* model group selector */
+/*.selectList {
+    height: 50vh;
+    width: 40vh;
+    overflow:auto;
+    multiSelect: false;
+}*/
+
+#modelGroupSelectTable{
+    width: 100vh;
+    height: 50vh;
+}

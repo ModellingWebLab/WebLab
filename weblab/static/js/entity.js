@@ -926,3 +926,32 @@ function init() {
 module.exports = {
   init: init,
 }
+
+/* Functions for model group selector */
+$(document).ready(function(){
+    $('#searchAvailableModel').on('input', function() {
+        $('#availableModels').find('option').each(function(){
+            if(!$(this).text().toLowerCase().includes($('#searchAvailableModel').val().toLowerCase())){
+                $(this).prop("selected", false);
+                $(this).hide();
+            }else{
+                $(this).show();
+            }
+        });
+    });
+
+    $('#deselectModelFromGroup').click(function(){
+        $('#availableModels').append($('#id_models').find(":selected"));
+    });
+    $('#slectModelForGroup').click(function(){
+        $('#id_models').append($('#availableModels').find(":selected"));
+    });
+
+    $('.modelGroupSavebutton').click(function(){
+        $('#id_models').prop('multiple', true);
+        $('#id_models option').each(function(){
+            $(this).prop('selected', true);
+        });
+    });
+
+});
