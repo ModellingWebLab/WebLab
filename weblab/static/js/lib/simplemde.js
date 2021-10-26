@@ -1,3 +1,5 @@
+//changed for weblab: require statements below, drawImage function, var insertTexts and require paths inside dependancies
+
 /*global require,module*/
 "use strict";
 var CodeMirror = require("./codemirror"); // var CodeMirror = require("codemirror");
@@ -654,18 +656,17 @@ var imgDialog = $('<form class="image-dialog"><table border="0"><tr><td colspan=
                var url = $(this).find('.url').val();
                var file = $(this).find('.file-input').val();
                if(file != ""){
+                   var reader = new FileReader();
                    file = $(this).find('.file-input').prop('files')[0];
-                  var reader = new FileReader();
-//                  reader.readAsBinaryString(file);
-reader.readAsDataURL(file);
-                  reader.onload = function() {
+                   reader.readAsDataURL(file);
+                   reader.onload = function() {
                       url = reader.result;
-//                      url = btoa(unescape(encodeURIComponent(url)));
                       _replaceSelection(cm, stat.image, options.insertTexts.image, url);
                       imgDialog.dialog('close');
                   };
                   reader.onerror = function (error) {
                       alert('Error: ', error);
+                      _replaceSelection(cm, stat.image, options.insertTexts.image, "");
                       imgDialog.dialog('close');
                   };
                }else{
