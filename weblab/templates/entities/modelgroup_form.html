@@ -18,51 +18,30 @@
     {% endif %}
     <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
 
-<style>
-.modelgroup-model-selector {
-  display: table;
-  width: 100vh;         
-}
-.div-table-row {
-  display: table-row;
-  width: 100vh;
-  clear: both;
-}
-.div-table-col {
-  float: left; /* fix for  buggy browsers */
-  display: table-column;
-}
-.div-table-buttons {
-  float: left; /* fix for  buggy browsers */
-  display: table-column;
-  width: 5vh;
-}
-</style>
-
       <div class="modelgroup-model-selector">
-             <div class="div-table-row" style="width:100vh">
-                <div class="div-table-col" style="width:55vh"><h4>Available models</h4></div>
-                <div  class="div-table-col" style="width:45vh;"><h4>Selected models</h4></div>
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col left"><h4>Available models</h4></div>
+                <div class="modelgroup-model-selector-col"><h4>Selected models</h4></div>
              </div>
-             <div class="div-table-row" style="width:100vh">
-                <div class="div-table-col" style="width:55vh"><label for="searchAvailableModel">Filter search: </label><input id="searchAvailableModel" class="searchModel" autocomplete="off"><br/></div>
-                <div  class="div-table-col" style="width:45vh;"><ul class="errorlist"><li>{% if  form.models.errors  %}{{ form.models.errors }}{% endif %}</li></ul></div>
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col left"><label for="searchAvailableModel">Filter search: </label><input id="searchAvailableModel" class="searchModel" autocomplete="off"><br/></div>
+                <div class="modelgroup-model-selector-colt"><ul class="errorlist"><li>{% if  form.models.errors  %}{{ form.models.errors }}{% endif %}</li></ul></div>
              </div>
 
-            <div class="div-table-row" style="width:100vh">
-                <div class="div-table-col">
-                    <select style="width:45vh;height:45vh;" class="selectList" id="availableModels" size="{{form.models.field.queryset|length }}" {%if form.models.field.disabled%} disabled {% endif %}>
+            <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col">
+                    <select class="selectList" id="availableModels" size="{{form.models.field.queryset|length }}" {%if form.models.field.disabled%} disabled {% endif %}>
                        {% for model in form.models.field.queryset %}
                            {% if not model in object.models.all %}<option value="{{model.pk}}">{{model.name}} ({{ model.visibility }}, by {{ model.author.full_name }})</option>{%endif%}
                        {% endfor %}
                     </select>
                 </div>
-                <div class="div-table-buttons" style="width:10vh" align="center">
+                <div class="modelgroup-model-selector-col div-table-buttons">
                    <input id="deselectModelFromGroup" type="button" value="&#x25C0;" style="display: inline-block;" title="move left" alt="move left">
                    <input id="slectModelForGroup" type="button" value="&#x25B6;" style="display: inline-block;" title="move right" alt="move right">
                 </div>
-                <div class="div-table-col">
-                    <select required name="models" class="selectList" id="id_models" size="{{form.models.field.queryset|length }}" style="width:45vh;height:45vh;" {%if form.models.field.disabled%} disabled {% endif %}>
+                <div class="modelgroup-model-selector-col">
+                    <select required name="models" class="selectList" id="id_models" size="{{form.models.field.queryset|length }}" {%if form.models.field.disabled%} disabled {% endif %}>
                         {% for model in form.models.field.queryset %}
                             {% if model in object.models.all %}<option value="{{model.pk}}" >{{model.name}} ({{ model.visibility }}, by {{ model.author.full_name }})</option>{% endif %}
                         {% endfor %}

@@ -833,14 +833,37 @@ li.entityviz-PRIVATE
 }
 
 /* model group selector */
-/*.selectList {
-    height: 50vh;
-    width: 40vh;
-    overflow:auto;
-    multiSelect: false;
-}*/
+.modelgroup-model-selector {
+  display: table;
+  width: 100vh;
+}
 
-#modelGroupSelectTable{
-    width: 100vh;
-    height: 50vh;
+.selectList{
+  width:45vh;
+  height:45vh;
+}
+
+.modelgroup-model-selector-row{
+  display: table-row;
+  clear: both;
+  width: 100vh;
+}
+
+.modelgroup-model-selector-col{
+  float: left; /* fix for  buggy browsers */
+  display: table-column;
+}
+
+.div-table-buttons {
+  float: left; /* fix for  buggy browsers */
+  display: table-column;
+}
+
+.div-table-buttons {
+  width: 10vh;
+  text-align:center;
+}
+
+.modelgroup-model-selector-col.left{
+    width:55vh;
 }
