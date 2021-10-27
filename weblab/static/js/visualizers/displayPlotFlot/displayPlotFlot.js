@@ -441,9 +441,10 @@ contentFlotPlot.prototype.drawPlot = function ()
         var onlyOneDataset = (datasetNumber == 1);
 
         /* insert checkboxes - note that colours will be applied to spans after plotting */
+        self = this;
         $.each(datasets, function(key, val) {
             var thisDatasetNumber = val.color;
-            var colouredSpan = $('<span />').attr('id', this.graphIds['colouredSpanIdPrefix'] + thisDatasetNumber)
+            var colouredSpan = $('<span />').attr('id', self.graphIds['colouredSpanIdPrefix'] + thisDatasetNumber)
                                             .addClass('flotColour')
                                             .html('&nbsp;&nbsp;');
             var inputId = 'id' + key;
@@ -694,7 +695,7 @@ contentFlotPlotComparer.prototype.redraw = function ()
 };
 
 
-function flotContent (prefix)
+function flotContent (prefix='')
 {
     this.graphIds = { choicesDivId: prefix + 'choices',
                       resetButtonDivId: prefix + 'flot-buttons-div',
