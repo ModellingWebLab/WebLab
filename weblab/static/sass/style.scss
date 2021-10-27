@@ -810,6 +810,7 @@ li.entityviz-PRIVATE
   vertical-align: middle;
 }
 
+/* stories */
 /* checkbox for updating graph in stories */
 .StoryGraphRadio input,.StoryGraphRadio label{
   display:inline-block;
@@ -831,6 +832,15 @@ li.entityviz-PRIVATE
 .image-dialog .ui-dialog-title{
   font-size: 150%;
 }
+
+/* style for graphs using prefix ids */
+.flot-buttons-div input {
+  margin-left: 5px; }
+
+.flot-buttons-div {
+  float: right;
+  text-align: right; }
+
 
 /* model group selector */
 .modelgroup-model-selector {

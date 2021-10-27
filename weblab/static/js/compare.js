@@ -785,7 +785,7 @@ function initCompare(prefix)
     parseUrl(null, prefix);
 
   $(plugins).each(function(i, plugin) {
-    graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer()
+    graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
   });
 }
 
