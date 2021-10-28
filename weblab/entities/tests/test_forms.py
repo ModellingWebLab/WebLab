@@ -135,36 +135,49 @@ class TestModelGroupForm:
         assert not form.is_valid()
 
     def test_edit_show_models(self, user, other_user, models, other_models):
-        modelgroup = recipes.modelgroup.make(author=user, models=[models[0]])
+        public_model = recipes.model.make()
+        recipes.cached_model_version.make(
+            entity__entity=public_model,
+            sha='test-sha',
+            visibility='public'
+        )
+        modelgroup = recipes.modelgroup.make(author=user, models=[public_model])
         form = ModelGroupForm(user=user, instance=modelgroup)
-        assert [(m.id, m.name) for m in models] == list(form.fields['models'].choices)
+        assert [(m.id, m.name) for m in models + [public_model]] == list(form.fields['models'].choices)
         assert not form.fields['visibility'].disabled
-
         form = ModelGroupForm(user=other_user, instance=modelgroup)
-        assert [(m.id, m.name) for m in [models[0]] + other_models] == list(form.fields['models'].choices)
+        assert [(m.id, m.name) for m in [public_model] + other_models]
         assert form.fields['visibility'].disabled
 
     def test_moderated_only_for_admin_user(self, user, admin_user, models):
         form_data = {'title': 'new model group', 'visibility': 'public', 'models': [models[0]], }
         form = ModelGroupForm(user=user, data=form_data)
         assert form.fields['visibility'].choices == [('private', 'Private'), ('public', 'Public')]
+        assert not form.is_valid()
+        public_model = recipes.model.make()
+        recipes.cached_model_version.make(
+            entity__entity=public_model,
+            sha='test-sha',
+            visibility='public'
+        )
+        form_data['models'] = [public_model]
+        form = ModelGroupForm(user=user, data=form_data)
         assert form.is_valid()
 
-        form_data['visibility'] = 'moderated'
-        form = ModelGroupForm(user=user, data=form_data)
-        assert not form.is_valid()
-
         models = recipes.model.make(_quantity=2, author=admin_user)
-        form_data = {'title': 'new model group', 'visibility': 'moderated', 'models': [models[0]], }
+        form_data = {'title': 'new model group', 'visibility': 'moderated', 'models': [public_model], }
         form = ModelGroupForm(user=admin_user, data=form_data)
         assert form.fields['visibility'].choices == [('private', 'Private'),
                                                      ('public', 'Public'), ('moderated', 'Moderated')]
         assert form.is_valid()
 
     def test_fil_edit_form(self, user, models):
-        modelgroup = recipes.modelgroup.make(title='new model group', author=user,
-                                             models=[models[0]], visibility='private')
+        modelgroup = recipes.modelgroup.make(title='new model group', author=user, visibility='private')
+        modelgroup.models.set([models[0]])
         form_data = {'title': 'edited model group', 'visibility': 'public', 'models': [models[1]], }
+        form = ModelGroupForm(user=user, data=form_data, instance=modelgroup)
+        assert not form.is_valid()  # visibility too broad for chosen models
+        form_data['visibility'] = 'private'
         form = ModelGroupForm(user=user, data=form_data, instance=modelgroup)
         assert form.is_valid()
         # test save
@@ -177,7 +190,7 @@ class TestModelGroupForm:
         assert len(ModelGroup.objects.all()) == 1
         assert ModelGroup.objects.first().title == 'edited model group'
         assert ModelGroup.objects.first().author == user
-        assert ModelGroup.objects.first().visibility == 'public'
+        assert ModelGroup.objects.first().visibility == 'private'
         assert list(ModelGroup.objects.first().models.all()) == [models[1]]
 
         # own title is fine

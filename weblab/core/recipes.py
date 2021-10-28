@@ -11,7 +11,8 @@ model = Recipe(
 )
 modelgroup = Recipe(
     'ModelGroup',
-    title=seq('my model group')
+    title=seq('my model group'),
+    models=[],
 )
 protocol = Recipe(
     'ProtocolEntity',
