@@ -1133,20 +1133,11 @@ class TestExperimentDeletion:
         # Make a new experiment with same protocol but different model
         new_model = recipes.model.make(author=logged_in_user)
         helpers.add_version(new_model, visibility='public')
-        exp_version = recipes.experiment_version.make(
-            status='SUCCESS',
-            experiment__model=new_model,
-            experiment__model_version=new_model.repocache.latest_version,
-            experiment__protocol=protocol_with_version,
-            experiment__protocol_version=protocol_with_version.repocache.latest_version,
-            author=logged_in_user
-        )
-        exp_version.mkdir()
-        with (exp_version.abs_path / 'result.txt').open('w') as f:
-            f.write('experiment results')
+        experiment.model_version = new_model.repocache.latest_version
+        experiment.save()
 
         # protocol in use, but model not
-        response = client.get('/experiments/%d/delete' % exp_version.experiment.pk)
+        response = client.get('/experiments/%d/delete' % experiment.pk)
         assert 'in_use' in response.context[-1]
         assert len(response.context[-1]['in_use']) == 0
 
