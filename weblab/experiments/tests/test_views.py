@@ -1115,6 +1115,32 @@ class TestExperimentDeletion:
         assert Experiment.objects.filter(pk=experiment.pk).exists()
         assert exp_ver_path.exists()
 
+    def test_owner_cannot_delete_experiment_if_in_use_by_story(
+        self, logged_in_user, client, experiment_with_result, story
+    ):
+        # the presence of in_use (with len>0) will disable the confirm button and add a message in the template
+        experiment = experiment_with_result.experiment
+        experiment.author = logged_in_user
+        experiment.save()
+
+        assert Experiment.objects.filter(pk=experiment.pk).exists()
+
+        response = client.get('/experiments/%d/delete' % experiment.pk)
+        assert 'in_use' in response.context[-1]
+        assert str(response.context[-1]['in_use']) == str({(story.id, story.title)})
+
+    def test_owner_cannot_delete_experiment_version_if_in_use_by_story(
+        self, logged_in_user, client, experiment_with_result, story
+    ):
+        # the presence of in_use (with len>0) will disable the confirm button and add a message in the template
+        experiment = experiment_with_result.experiment
+        experiment_with_result.author = logged_in_user
+        experiment_with_result.save()
+
+        response = client.get('/experiments/%d/versions/%d/delete' % (experiment.pk, experiment_with_result.pk))
+        assert 'in_use' in response.context[-1]
+        assert str(response.context[-1]['in_use']) == str({(story.id, story.title)})
+
 
 @pytest.mark.django_db
 class TestExperimentComparisonView:
