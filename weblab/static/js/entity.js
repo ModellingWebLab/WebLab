@@ -929,6 +929,8 @@ module.exports = {
 
 /* Functions for model group selector */
 $(document).ready(function(){
+    $('#id_models').removeAttr('multiple');  // disable multiple select so user can only select 1 model at a time
+
     $('#searchAvailableModel').on('input', function() {
         $('#availableModels').find('option').each(function(){
             if(!$(this).text().toLowerCase().includes($('#searchAvailableModel').val().toLowerCase())){
@@ -948,10 +950,10 @@ $(document).ready(function(){
     });
 
     $('.modelGroupSavebutton').click(function(){
-        $('#id_models').prop('multiple', true);
+        $('#id_models').prop('multiple', true);  //reanable multiple select and select all for submission
         $('#id_models option').each(function(){
             $(this).prop('selected', true);
         });
     });
-
 });
+
