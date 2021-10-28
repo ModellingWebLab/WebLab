@@ -481,8 +481,8 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
             cached = CachedProtocolVersion.objects.filter(
                 entity__in=CachedProtocol.objects.filter(entity=self.get_object())
             )
-            kwargs['in_use'] = [(graph.story.id, graph.story.title)
-                                for graph in StoryGraph.objects.filter(cachedprotocolversion__in=cached)]
+            kwargs['in_use'] = set([(graph.story.id, graph.story.title)
+                                    for graph in StoryGraph.objects.filter(cachedprotocolversion__in=cached)])
         return super().get_context_data(**kwargs)
 
 
