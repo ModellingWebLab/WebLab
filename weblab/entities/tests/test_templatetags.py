@@ -261,4 +261,3 @@ def test_can_view_entity(user, model_creator, helpers):
     helpers.add_version(protocol, visibility='public')
     assert entity_tags.can_view_entity(context, model)
     assert entity_tags.can_view_entity(context, protocol)
-

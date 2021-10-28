@@ -5,7 +5,7 @@
 
 {% block content %}
 
-{% if object.id%}{% include "./includes/modelgroup_header.html" %}{% can_edit object as editable %}{% endif %}
+{% if object.id%}{% include "./includes/modelgroup_header.html" %}{% can_create_version object as editable %}{% endif %}
 <div id='newmodelgroupform'>
   {% if not object.id %}<h1>Create model group</h1>{% endif %}
 
