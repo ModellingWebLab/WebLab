@@ -245,7 +245,8 @@ class TestEntityDeletion:
 @pytest.mark.django_db
 class TestEntityDeletionInUseInStory:
     def test_owner_cannot_delete_entity_if_in_use_in_story(
-        self, logged_in_user, client, model_with_version, protocol_with_version, story, fittingspec_with_version
+        self, logged_in_user, helpers, client,
+        model_with_version, protocol_with_version, story, fittingspec_with_version
     ):
         # the presence of in_use (with len>0) will disable the confirm button and add a message in the template
         model_with_version.author = logged_in_user
@@ -265,6 +266,13 @@ class TestEntityDeletionInUseInStory:
 
         # fitting specs are not involved stories
         response = client.get('/entities/fittingspecs/%d/delete' % fittingspec_with_version.pk)
+        assert 'in_use' in response.context[-1]
+        assert len(response.context[-1]['in_use']) == 0
+
+        # fitting specs are not involved stories
+        helpers.add_permission(logged_in_user, 'create_fittingspec')
+        fittingspec = recipes.fittingspec.make(author=logged_in_user)
+        response = client.get('/fitting/specs/%d/delete' % fittingspec.pk)
         assert 'in_use' in response.context[-1]
         assert len(response.context[-1]['in_use']) == 0
 
