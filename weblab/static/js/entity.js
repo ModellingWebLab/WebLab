@@ -929,8 +929,6 @@ module.exports = {
 
 /* Functions for model group selector */
 $(document).ready(function(){
-    $('#id_models').removeAttr('multiple');  // disable multiple select so user can only select 1 model at a time
-
     $('#searchAvailableModel').on('input', function() {
         $('#availableModels').find('option').each(function(){
             if(!$(this).text().toLowerCase().includes($('#searchAvailableModel').val().toLowerCase())){
