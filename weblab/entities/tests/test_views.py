@@ -253,7 +253,7 @@ class TestEntityDeletionInUseInStory:
         protocol_with_version.author = logged_in_user
         protocol_with_version.save()
         fittingspec_with_version.author = logged_in_user
-        protocol_with_version.save()       
+        protocol_with_version.save()
 
         response = client.get('/entities/models/%d/delete' % model_with_version.pk)
         assert 'in_use' in response.context[-1]
@@ -268,7 +268,7 @@ class TestEntityDeletionInUseInStory:
         assert 'in_use' in response.context[-1]
         assert len(response.context[-1]['in_use']) == 0
 
-        
+
 @pytest.mark.django_db
 class TestEntityDetail:
     def test_redirects_to_new_version(self, client, logged_in_user):
