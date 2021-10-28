@@ -19,7 +19,7 @@
         <ul class="errorlist"><li>{{ form.title.errors }}</li></ul>
     {% endif %}
     <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
-
+    <p>{{ form.graphvisualizer.label_tag }} {{ form.graphvisualizer }}<span class="helptext">{{form.graphvisualizer.help_text | safe }}</span></p>
 
 {{ formset.management_form }}
 {{ formsetgraph.management_form }}

@@ -12,9 +12,15 @@ class Story(UserCreatedModelMixin, VisibilityModelMixin):
     A story explaining how models and groups of model relate to each other.
     """
     DEFAULT_VISIBILITY = Visibility.PRIVATE
-
     permission_str = 'edit_story'
     title = models.CharField(max_length=255)
+    graphvisualizer = models.CharField(
+        max_length=16,
+        choices=(('displayPlotFlot', 'displayPlotFlot'),
+                 ('displayPlotHC', 'displayPlotHC')),
+        help_text='The different visualisers determine how graphs are shown in this story.',
+        default='displayPlotFlot',
+    )
 
     class Meta:
         ordering = ['title']

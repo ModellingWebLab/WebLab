@@ -245,7 +245,7 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
 
     class Meta:
         model = Story
-        fields = ['title', 'visibility']
+        fields = ['title', 'visibility', 'graphvisualizer']
 
     def clean_title(self):
         title = self.cleaned_data['title']
