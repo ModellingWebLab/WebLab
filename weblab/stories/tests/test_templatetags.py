@@ -4,8 +4,6 @@ import stories.templatetags.stories as story_tags
 from core import recipes
 
 
-#can_delete_story
-#can_manage_story
 @pytest.mark.django_db
 def test_can_delete_story(story, other_user, admin_user):
     context = {'user': story.author}

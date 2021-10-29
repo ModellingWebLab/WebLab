@@ -44,7 +44,7 @@ class Story(UserCreatedModelMixin, VisibilityModelMixin):
 
 
 class StoryItem(UserCreatedModelMixin):
-    story = models.ForeignKey(Story, null=False, blank=False, on_delete=models.CASCADE, related_name="storyparts")
+    story = models.ForeignKey(Story, null=False, blank=False, on_delete=models.CASCADE, related_name="+")
     order = models.IntegerField()
 
 
@@ -67,3 +67,6 @@ class StoryGraph(StoryItem):
                                               related_name="protocolforgraph")
     cachedmodelversions = models.ManyToManyField(CachedModelVersion)
     modelgroup = models.ForeignKey(ModelGroup, blank=True, null=True, default=None, on_delete=models.SET_DEFAULT)
+
+    def __str__(self):
+        return (self.modelgroup.title if self.modelgroup is not None else self.cachedmodelversions.first().model.name) + " / " + self.cachedprotocolversion.protocol.name + " / " + self.graphfilename

@@ -221,9 +221,7 @@ class StoryEditView(StoryView, UpdateView):
                     if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
                     'protocol': s.cachedprotocolversion.protocol.pk,
                     'graphfiles': s.graphfilename,
-                    'currentGraph': (s.modelgroup.title if s.modelgroup is not None
-                                     else s.cachedmodelversions.first().model.name) +
-                    " / " + s.cachedprotocolversion.protocol.name + " / " + s.graphfilename,
+                    'currentGraph': str(s),
                     'ORDER': s.order,
                     'pk': s.pk} for s in StoryGraph.objects.filter(story=self.object)]
         return super().get_formset_graph(initial=initial)
