@@ -69,4 +69,6 @@ class StoryGraph(StoryItem):
     modelgroup = models.ForeignKey(ModelGroup, blank=True, null=True, default=None, on_delete=models.SET_DEFAULT)
 
     def __str__(self):
-        return (self.modelgroup.title if self.modelgroup is not None else self.cachedmodelversions.first().model.name) + " / " + self.cachedprotocolversion.protocol.name + " / " + self.graphfilename
+        return (self.modelgroup.title if self.modelgroup is not None
+                else self.cachedmodelversions.first().model.name) +\
+            " / " + self.cachedprotocolversion.protocol.name + " / " + self.graphfilename
