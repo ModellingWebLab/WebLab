@@ -1,5 +1,8 @@
 from django.db import models
 from django.db.models import TextField
+from django.db.utils import IntegrityError
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 from core.visibility import Visibility
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
 
@@ -72,3 +75,14 @@ class StoryGraph(StoryItem):
         return (self.modelgroup.title if self.modelgroup is not None
                 else self.cachedmodelversions.first().model.name) +\
             " / " + self.cachedprotocolversion.protocol.name + " / " + self.graphfilename
+
+
+@receiver(m2m_changed, sender=StoryGraph.cachedmodelversions.through)
+def cachedmodelversions__changed(sender, **kwargs):
+    action = kwargs.pop('action', '')
+    instance = kwargs.pop('instance', None)
+    if action.startswith('post'):
+        if instance and instance.modelgroup is None and instance.cachedmodelversions.all().count() == 0:
+            raise IntegrityError("StoryGraph must have model")
+        if instance and instance.modelgroup is None and instance.cachedmodelversions.all().count() != 1:
+            raise IntegrityError("StoryGraph without modelgroup must have 1 model")
