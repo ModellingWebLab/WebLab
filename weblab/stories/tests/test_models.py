@@ -8,18 +8,27 @@ from stories.models import Story, StoryText, StoryGraph
 @pytest.mark.django_db
 def test_story(user, other_user):
     # make
-    story = recipes.story.make(author=user, title='test title')
+    story = recipes.story.make(author=user, title='test title', visibility='private')
     assert story.author == user
     assert story.title == 'test title'
     assert len(Story.objects.all()) == 1
+    assert story.visible_to_user(user)
+    assert not story.visible_to_user(other_user)
+    assert story.is_editable_by(user)
+    assert not story.is_editable_by(other_user)
 
     # change
     story.author = other_user
     story.title = 'new title'
+    story.visibility = 'public'
     story.save()
     assert story.author == other_user
-    assert story.title == 'new title'
+    assert story.title == str(story) == 'new title'
     assert len(Story.objects.all()) == 1
+    assert story.visible_to_user(user)
+    assert story.visible_to_user(other_user)
+    assert not story.is_editable_by(user)
+    assert story.is_editable_by(other_user)
 
     # delete
     story.delete()
