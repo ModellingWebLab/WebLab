@@ -82,7 +82,12 @@ def cachedmodelversions__changed(sender, **kwargs):
     action = kwargs.pop('action', '')
     instance = kwargs.pop('instance', None)
     if action.startswith('post'):
-        if instance and instance.modelgroup is None and instance.cachedmodelversions.all().count() == 0:
+        if instance.cachedmodelversions.count() == 0:
             raise IntegrityError("StoryGraph must have model")
-        if instance and instance.modelgroup is None and instance.cachedmodelversions.all().count() != 1:
+        if instance.modelgroup is None and instance.cachedmodelversions.count() != 1:
             raise IntegrityError("StoryGraph without modelgroup must have 1 model")
+        if instance.modelgroup is not None:
+            models_in_group = sorted(instance.modelgroup.models.all(), key=str)
+            models_in_graph = sorted([m.model for m in instance.cachedmodelversions.all()], key=str)
+            if models_in_group != models_in_graph:
+                raise IntegrityError("Models in modelgroup and the cachedmodelversions don't match")

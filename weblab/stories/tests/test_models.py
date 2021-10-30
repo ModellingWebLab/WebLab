@@ -139,10 +139,25 @@ def test_model_constraints2(user, experiment_with_result, model_with_version, pu
     # Try to make storyGraph with no cachedmodelversions
     story = recipes.story.make(author=user, title='test title', visibility='private')
     experiment = experiment_with_result.experiment
-    story_graph = recipes.story_graph.make(author=user, story=story,
-                                           cachedprotocolversion=experiment.protocol_version,
-                                           order=0, cachedmodelversions=[],
-                                           graphfilename='outputs_Transmembrane_voltage_gnuplot_data.csv')
-    story_graph.cachedmodelversions.set([])
-    story_graph.save()
+    with pytest.raises(IntegrityError):
+        story_graph = recipes.story_graph.make(author=user, story=story, modelgroup=None,
+                                               cachedprotocolversion=experiment.protocol_version,
+                                               order=0,
+                                               graphfilename='outputs_Transmembrane_voltage_gnuplot_data.csv')
+        story_graph.cachedmodelversions.clear()
+        story_graph.save()
 
+
+@pytest.mark.django_db
+def test_model_constraints3(user, experiment_with_result, model_with_version, public_model):
+    # Try to make storyGraph with cachedmodelversions unrelated to modelgroup
+    story = recipes.story.make(author=user, title='test title', visibility='private')
+    experiment = experiment_with_result.experiment
+
+    modelgroup = recipes.modelgroup.make(author=user, models=[public_model],
+                                         title="test model group")
+    with pytest.raises(IntegrityError):
+        recipes.story_graph.make(author=user, story=story, modelgroup=modelgroup,
+                                 cachedprotocolversion=experiment.protocol_version,
+                                 order=0, cachedmodelversions=[model_with_version.repocache.latest_version],
+                                 graphfilename='outputs_Transmembrane_voltage_gnuplot_data.csv')
