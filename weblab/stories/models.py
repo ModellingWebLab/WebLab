@@ -78,14 +78,20 @@ class StoryGraph(StoryItem):
 
 
 @receiver(m2m_changed, sender=StoryGraph.cachedmodelversions.through)
-def cachedmodelversions__changed(sender, **kwargs):
+def storygraph_constraints(sender, **kwargs):
+    """
+    enforce constriants for StoryGraph
+    """
     action = kwargs.pop('action', '')
     instance = kwargs.pop('instance', None)
     if action.startswith('post'):
+        # must have at least 1 cachedmodelversion
         if instance.cachedmodelversions.count() == 0:
             raise IntegrityError("StoryGraph must have model")
+        # if using mdel group must have exactly 1 cachedmodelversion
         if instance.modelgroup is None and instance.cachedmodelversions.count() != 1:
             raise IntegrityError("StoryGraph without modelgroup must have 1 model")
+        # models in modelgroup must be the same as the ones referenced in cachedmodelversions
         if instance.modelgroup is not None:
             models_in_group = sorted(instance.modelgroup.models.all(), key=str)
             models_in_graph = sorted([m.model for m in instance.cachedmodelversions.all()], key=str)
