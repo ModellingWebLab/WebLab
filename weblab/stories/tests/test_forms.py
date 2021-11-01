@@ -106,6 +106,9 @@ class TestStoryTextFormSet:
         form = StoryTextForm(user=story.author, data={})
         assert not form.is_valid()
         form = StoryTextForm(user=story.author, data={'description': 'simple text example', 'ORDER': '0'})
+        form.delete()  # should do nothing, as no existing story loaded
+        assert StoryText.objects.count() == story_text_count
+
         story_text = form.save(story)
         assert StoryText.objects.count() == story_text_count + 1
         assert story_text.story == story
