@@ -39,13 +39,13 @@ class TestStoryCollaboratorForm:
 
         experiment.protocol_version.visibility = 'public'
         experiment.protocol_version.save()
+        assert experiment.protocol_version.protocol.is_version_visible_to_user(experiment.protocol_version.sha,
+                                                                               other_user)
         form = self._form({'email': other_user.email, 'DELETE': False}, story)
         assert not form.is_valid()
 
-        experiment.protocol_version.save()
+        experiment.model_version.visibility = 'public'
         experiment.model_version.save()
-        assert experiment.protocol_version.protocol.is_version_visible_to_user(experiment.protocol_version.sha,
-                                                                               other_user)
         assert experiment.model_version.model.is_version_visible_to_user(experiment.model_version.sha, other_user)
 
         form = self._form({'email': other_user.email, 'DELETE': False}, story)
