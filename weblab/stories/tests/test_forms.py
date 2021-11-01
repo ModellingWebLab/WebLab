@@ -4,7 +4,7 @@ from guardian.shortcuts import assign_perm
 
 from core import recipes
 from stories.models import Story, StoryText, StoryGraph
-from stories.form import StoryCollaboratorForm, StoryTextForm
+from stories.forms import StoryCollaboratorForm, StoryTextForm
 from entities.models import ModelGroup
 
 
