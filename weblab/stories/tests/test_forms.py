@@ -41,7 +41,7 @@ class TestStoryCollaboratorForm:
         experiment.protocol_version.save()
         form = self._form({'email': other_user.email, 'DELETE': False}, story)
         assert not form.is_valid()
-        
+
         experiment.protocol_version.save()
         experiment.model_version.save()
         assert experiment.protocol_version.protocol.is_version_visible_to_user(experiment.protocol_version.sha,
