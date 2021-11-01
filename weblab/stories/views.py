@@ -136,7 +136,7 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':stories')
 
-    def get_formset(self, initial=[{'ORDER': '', 'currentGraph': ''}]):
+    def get_formset(self, initial=[{'ORDER': ''}]):
         if not hasattr(self, 'formset') or self.formset is None:
             form_kwargs = {'user': self.request.user}
             if self.request.method == 'POST':

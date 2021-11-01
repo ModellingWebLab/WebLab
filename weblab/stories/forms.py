@@ -24,19 +24,16 @@ vis_ord = {'private': 0,
 class StoryCollaboratorForm(EntityCollaboratorForm):
     def clean_email(self):
         email = super().clean_email()
-        user = self._get_user(email)
-        othermodels = self.entity.othermodels.all()
-        modelgroups = self.entity.modelgroups.all()
-        experiments = self.entity.experiments.all()
-        visible_entities = ModelEntity.objects.visible_to_user(user)
-        visible_model_groups = [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
-        visible_experiments = [e for e in Experiment.objects.all() if e.is_visible_to_user(user)]
-        if any(m not in visible_entities for m in othermodels):
-            raise ValidationError("User %s does not have access to all models in the story" % (user.full_name))
-        if any(m not in visible_model_groups for m in modelgroups):
-            raise ValidationError("User %s does not have access to all model groups in the story" % (user.full_name))
-        if any(e not in visible_experiments for e in experiments):
-            raise ValidationError("User %s does not have access to all experiments in the story" % (user.full_name))
+        user = self.cleaned_data['user']
+        for graph in StoryGraph.objects.filter(story=self.entity):
+            if not graph.cachedprotocolversion.protocol.is_version_visible_to_user(graph.cachedprotocolversion.sha,
+                                                                                   user):
+                raise ValidationError("User %s does not have access to version of %s protocol" %
+                                      (user.full_name, graph.cachedprotocolversion.protocol.name))
+            for model_version in graph.cachedmodelversions.all():
+                if not model_version.model.is_version_visible_to_user(model_version.sha, user):
+                    raise ValidationError("User %s does not have access to version of %s model" %
+                                          (user.full_name, model_version.model.name))
         return email
 
 
@@ -96,8 +93,11 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
         model = StoryText
         fields = ['description']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['ORDER'] = forms.IntegerField(required=False)
+
     def save(self, story=None, **kwargs):
-        storytext = super().save(commit=False)
         if 'pk' in self.initial:
             storytext = StoryText.objects.get(pk=self.initial['pk'])
         else:
@@ -130,6 +130,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['ORDER'] = forms.IntegerField(required=False)
         self.fields['currentGraph'] = forms.CharField(required=False)
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
