@@ -181,9 +181,8 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
                 storygraph.author = self.user
             storygraph.modelgroup = modelgroup
             storygraph.save()
-            storygraph.cachedmodelversions.clear()
             storygraph.cachedmodelversions.set([m.repocache.latest_version
-                                               for m in models if m.repocache.versions.count()])
+                                                for m in models if m.repocache.versions.count()])
         storygraph.save()
         return storygraph
 
