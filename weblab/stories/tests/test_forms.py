@@ -145,8 +145,7 @@ class TestStoryTextFormSet:
         form_kwargs = {'user': story.author}
         post_data = {'text-TOTAL_FORMS': 1, 'text-INITIAL_FORMS': 1, 'text-MIN_NUM_FORMS': 0,
                      'text-MAX_NUM_FORMS': 1000, 'text-0-ORDER': 0, 'text-0-description': 'new story text item'}
-        formset = StoryTextFormSet(post_data, prefix='text', form_kwargs=form_kwargs,
-                                   initial=[{'ORDER': 0, 'description': 'new story text item'}])
+        formset = StoryTextFormSet(post_data, prefix='text', initial=[{'ORDER': 0}], form_kwargs=form_kwargs)
         assert formset.is_valid()
         new_texts = formset.save(story)
         assert StoryText.objects.count() == story_text_count + 1
@@ -156,6 +155,23 @@ class TestStoryTextFormSet:
         assert new_texts[0].description == 'new story text item'
         assert new_texts[0].order == 0
 
+    def test_edit_storyText_via_formset(self, story):
+        story_text = recipes.story_text.make(author=story.author, story=story, description='test loading', order=12)
+        story_text_count = StoryText.objects.count()
+        form_kwargs = {'user': story.author}
+        post_data = {'text-TOTAL_FORMS': 1, 'text-INITIAL_FORMS': 1, 'text-MIN_NUM_FORMS': 0,
+                     'text-MAX_NUM_FORMS': 1000, 'text-0-ORDER': 0, 'text-0-description': 'edited descr'}
+        formset = StoryTextFormSet(post_data, prefix='text', initial=[{'ORDER': 0,
+                                   'pk': story_text.pk, 'description': 'edited descr'}], form_kwargs=form_kwargs)
+        assert formset.is_valid()
+        new_texts = formset.save(story)
+        assert StoryText.objects.count() == story_text_count
+        assert len(new_texts) == 1
+        assert new_texts[0].story == story
+        assert new_texts[0].author == story.author
+        assert new_texts[0].description == 'edited descr'
+        assert new_texts[0].order == 0
+
     def test_delete_storyText_via_formset(self, story):
         story_text_count = StoryText.objects.count()
         form_kwargs = {'user': story.author}
@@ -163,8 +179,8 @@ class TestStoryTextFormSet:
         assert StoryText.objects.count() == story_text_count + 1
         post_data = {'text-TOTAL_FORMS': 1, 'text-INITIAL_FORMS': 1, 'text-MIN_NUM_FORMS': 0,
                      'text-MAX_NUM_FORMS': 1000, 'text-0-ORDER': story_text.order, 'text-0-DELETE': 'true'}
-        formset = StoryTextFormSet(post_data, prefix='text', initial=[{'ORDER': story_text.order, 'DELETE': 'true',
-                                   'pk': story_text.pk}], form_kwargs=form_kwargs)
+        formset = StoryTextFormSet(post_data, prefix='text', initial=[{'ORDER': story_text.order, 'DELETE': True,
+                                   'pk': story_text.pk, 'description': 'test loading'}], form_kwargs=form_kwargs)
         assert StoryText.objects.count() == story_text_count + 1
         assert formset.is_valid()
         formset.save(story)
