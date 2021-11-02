@@ -7,7 +7,8 @@ from guardian.shortcuts import assign_perm
 
 from core import recipes
 from stories.models import Story, StoryText, StoryGraph
-from stories.forms import StoryCollaboratorForm, StoryTextForm, StoryTextFormSet, StoryGraphForm, StoryGraphFormSet
+from stories.forms import (StoryCollaboratorForm, StoryForm, StoryTextForm, StoryTextFormSet, StoryGraphForm,
+                           StoryGraphFormSet)
 
 
 @pytest.fixture
@@ -446,5 +447,29 @@ class TestStoryGraphFormSet:
 
 @pytest.mark.django_db
 class TestStoryForm:
-    Story.objects.all()
-    pass   # public / private visibility checks?
+    def test_create_story(self, logged_in_user):
+        story_count = Story.objects.count()
+        form = StoryForm(user=logged_in_user, data={})
+        assert not form.is_valid()
+
+        form = StoryForm(user=logged_in_user, data={'title': 'new test story', 'visibility': 'public',
+                                                    'graphvisualizer': 'displayPlotFlot'})
+        assert form.is_valid()
+        story = form.save()
+        assert Story.objects.count() == story_count + 1
+        assert story.author == logged_in_user
+        assert story.title == 'new test story'
+
+    def test_load_story(self, story):
+        form = StoryForm(user=story.author, instance=story, data={'title': story.title, 'visibility': story.visibility,
+                                                                  'graphvisualizer': story.graphvisualizer})
+        assert form.is_valid()
+        assert form.cleaned_data['title'] == story.title
+        assert form.cleaned_data['visibility'] == story.visibility
+        assert form.cleaned_data['graphvisualizer'] == story.graphvisualizer
+
+    def test_edit_story(self, story):
+        form = StoryForm(user=story.author, instance=story, data={'title': 'new title', 'visibility': 'private',
+                                                                  'graphvisualizer': 'displayPlotHC'})
+        assert form.is_valid()
+        assert form.save()
