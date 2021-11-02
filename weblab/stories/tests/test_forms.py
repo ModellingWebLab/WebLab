@@ -187,9 +187,9 @@ from entities.models import ModelGroup
 #        assert StoryText.objects.count() == story_text_count
 
 
+
 import shutil
 from pathlib import Path
-
 @pytest.fixture
 def archive_file_path():
     return str(Path(__file__).absolute().parent.joinpath('./test.omex'))
