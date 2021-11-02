@@ -236,6 +236,10 @@ class TestStoryGraphFormSet:
         form = StoryGraphForm(data=data, user=story.author)
         assert not form.is_valid()
 
+        data['models_or_group'] = str(experiment.model_version.model.pk)
+        form = StoryGraphForm(data=data, user=story.author)
+        assert not form.is_valid()
+
         data['models_or_group'] = 'model' + str(experiment.model_version.model.pk)
         form = StoryGraphForm(data=data, user=story.author)
         assert not form.is_valid()

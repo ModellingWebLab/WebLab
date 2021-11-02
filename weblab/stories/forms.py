@@ -144,6 +144,8 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
     def clean_models_or_group(self):
         if self.cleaned_data.get('update', False) and self.cleaned_data['models_or_group'] == "":
             raise ValidationError("This field is required.")
+        if not self.cleaned_data['models_or_group'].startswith('model'):
+            raise ValidationError("The model of group field value should start with model or modelgroup.")
         return self.cleaned_data['models_or_group']
 
     def clean_protocol(self):
@@ -174,7 +176,8 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
                 mk = int(mk.replace('modelgroup', ''))
                 modelgroup = ModelGroup.objects.get(pk=mk)
                 models = modelgroup.models.all()
-            elif mk.startswith('model'):
+            else:
+                assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
                 mk = int(mk.replace('model', ''))
                 models = ModelEntity.objects.filter(pk=mk)
             storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
