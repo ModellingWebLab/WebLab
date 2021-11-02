@@ -252,7 +252,8 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def clean_title(self):
         title = self.cleaned_data['title']
-        if not self.instance and Story.objects.filter(title=title, author=self.user).exists():
+        if (not self.instance or self.instance.title != self.cleaned_data['title']) and \
+                Story.objects.filter(title=title, author=self.user).exists():
             raise ValidationError(
                 'You already have a story named "%s"' % title)
         return title

@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 
 from django import forms
-from guardian.shortcuts import assign_perm
+from guardian.shortcuts import assign_perm, remove_perm
 
 from core import recipes
 from stories.models import Story, StoryText, StoryGraph
@@ -447,13 +447,32 @@ class TestStoryGraphFormSet:
 
 @pytest.mark.django_db
 class TestStoryForm:
+    def test_invalid_fields_story(self, logged_in_user, story):
+        assign_perm('entities.moderator', logged_in_user)
+        form = StoryForm(user=logged_in_user, data={})
+        assert str(form.fields['visibility'].choices) == \
+            "[('private', 'Private'), ('public', 'Public'), ('moderated', 'Moderated')]"
+        assert not form.is_valid()  # missing form fields
+
+        form = StoryForm(user=story.author, instance=story,
+                         data={'title': story.title, 'visibility': 'public', 'graphvisualizer': 'displayPlotFlot'})
+        assert form.is_valid()  # can save existing item
+
+        form = StoryForm(user=story.author,
+                         data={'title': story.title, 'visibility': 'public', 'graphvisualizer': 'displayPlotFlot'})
+        assert not form.is_valid()  # duplicate title
+
+        recipes.story.make(author=story.author, title='additional story')
+        form = StoryForm(data={'title': 'additional story', 'visibility': 'public',
+                         'graphvisualizer': 'displayPlotFlot'}, user=story.author, instance=story)
+        assert not form.is_valid()  # duplicate title
+
     def test_create_story(self, logged_in_user):
         story_count = Story.objects.count()
-        form = StoryForm(user=logged_in_user, data={})
-        assert not form.is_valid()
-
+        remove_perm('entities.moderator', logged_in_user)
         form = StoryForm(user=logged_in_user, data={'title': 'new test story', 'visibility': 'public',
                                                     'graphvisualizer': 'displayPlotFlot'})
+        assert str(form.fields['visibility'].choices) == "[('private', 'Private'), ('public', 'Public')]"
         assert form.is_valid()
         story = form.save()
         assert Story.objects.count() == story_count + 1
