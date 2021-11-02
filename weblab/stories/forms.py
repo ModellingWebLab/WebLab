@@ -259,8 +259,7 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
         return title
 
     def save(self, **kwargs):
-        if not self.instance:
-            self.instance = super().save(commit=False)
+        self.instance = super().save(commit=False)
         self.instance.title = self.cleaned_data['title']
         if not hasattr(self.instance, 'author') or self.instance.author is None:
             self.instance.author = self.user
