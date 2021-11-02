@@ -10,6 +10,17 @@ from stories.models import Story, StoryText, StoryGraph
 from stories.forms import StoryCollaboratorForm, StoryTextForm, StoryTextFormSet, StoryGraphForm, StoryGraphFormSet
 
 
+@pytest.fixture
+def experiment_with_result_public(experiment_with_result):
+    experiment = experiment_with_result.experiment
+    # make sure protocol / models are visible
+    experiment.model_version.visibility = 'public'
+    experiment.protocol_version.visibility = 'public'
+    experiment.model_version.save()
+    experiment.protocol_version.save()
+    return experiment_with_result
+
+
 @pytest.mark.django_db
 class TestStoryCollaboratorForm:
     def _form(self, data, entity, **kwargs):
@@ -108,6 +119,7 @@ class TestStoryTextFormSet:
         form = StoryTextForm(user=story.author, data={})
         assert not form.is_valid()
         form = StoryTextForm(user=story.author, data={'description': 'simple text example', 'ORDER': '0'})
+        form.delete()  # should do nothing, as no existing text loaded
         story_text = form.save(story)
         assert StoryText.objects.count() == story_text_count + 1
         assert story_text.story == story
@@ -188,21 +200,55 @@ class TestStoryTextFormSet:
 
 
 @pytest.mark.django_db
+def test_graph_choices(experiment_with_result_public):
+    assert str(StoryGraphFormSet.get_graph_choices(experiment_with_result_public.author)) == "[]"
+    assert str(StoryGraphFormSet.get_graph_choices(experiment_with_result_public.author)) == "[]"
+    assert str({c[1] for c in StoryGraphFormSet.get_protocol_choices(experiment_with_result_public.author)}) == \
+        "{'my protocol1'}"
+    assert str([c[1] for c in StoryGraphFormSet.get_modelgroup_choices(experiment_with_result_public.author)]) ==  \
+        "['--------- model group', '--------- model', 'my model1']"
+
+
+@pytest.mark.django_db
 class TestStoryGraphFormSet:
     @pytest.fixture
-    def experiment(self, experiment_with_result):
-        experiment = experiment_with_result.experiment
-        # make sure protocol / models are visible
-        experiment.model_version.visibility = 'public'
-        experiment.protocol_version.visibility = 'public'
-        experiment.model_version.save()
-        experiment.protocol_version.save()
+    def experiment(self, experiment_with_result_public):
+        experiment_with_result_public.mkdir()
+        shutil.copy(Path(__file__).absolute().parent.joinpath('./test.omex'),
+                    experiment_with_result_public.archive_path)
+        return experiment_with_result_public.experiment
 
-        experiment_with_result.mkdir()
-        shutil.copy(Path(__file__).absolute().parent.joinpath('./test.omex'), experiment_with_result.archive_path)
-        return experiment_with_result.experiment
+    def test_graph_choices(self, experiment):
+        assert str(sorted(StoryGraphFormSet.get_graph_choices(experiment.author), key=str)) == \
+            ("[('outputs_APD90_gnuplot_data.csv', 'outputs_APD90_gnuplot_data.csv'), "
+             "('outputs_Final_pace_voltage_gnuplot_data.csv', 'outputs_Final_pace_voltage_gnuplot_data.csv'), "
+             "('outputs_Relative_APD90_gnuplot_data.csv', 'outputs_Relative_APD90_gnuplot_data.csv'), "
+             "('outputs_Relative_resting_potential_gnuplot_data.csv', "
+             "'outputs_Relative_resting_potential_gnuplot_data.csv'), "
+             "('outputs_Resting_potential_gnuplot_data.csv', 'outputs_Resting_potential_gnuplot_data.csv')]")
+        assert str({c[1] for c in StoryGraphFormSet.get_protocol_choices(experiment.author)}) == "{'my protocol1'}"
+        assert str([c[1] for c in StoryGraphFormSet.get_modelgroup_choices(experiment.author)]) == \
+            "['--------- model group', '--------- model', 'my model1']"
 
-    def test_create_storyGraph(self, experiment, story):
+    def test_missing_fields_storyGraph(self, experiment, story, model_with_version, protocol_with_version):
+        data = {'ORDER': '0', 'currentGraph': '', 'update': 'True'}
+
+        form = StoryGraphForm(data=data, user=story.author)
+        assert not form.is_valid()
+
+        data['models_or_group'] = 'model' + str(experiment.model_version.model.pk)
+        form = StoryGraphForm(data=data, user=story.author)
+        assert not form.is_valid()
+
+        data['protocol'] = str(experiment.protocol_version.protocol.pk)
+        form = StoryGraphForm(data=data, user=story.author)
+        assert not form.is_valid()
+
+        data['graphfiles'] = 'outputs_APD90_gnuplot_data.csv'
+        form = StoryGraphForm(data=data, user=story.author)
+        assert form.is_valid()
+
+    def test_create_storyGraph(self, experiment, story, model_with_version, protocol_with_version):
         story_graph_count = StoryGraph.objects.count()
 
         data = {'ORDER': '0', 'currentGraph': '', 'update': 'True', 'models_or_group':
@@ -212,7 +258,7 @@ class TestStoryGraphFormSet:
 
         form = StoryGraphForm(data=data, user=story.author)
         assert story_graph_count == StoryGraph.objects.count()
-        form.delete()  # should do nothing, as no existing story loaded
+        form.delete()  # should do nothing, as no existing graph loaded
         assert StoryGraph.objects.count() == story_graph_count
 
         story_graph = form.save(story)
