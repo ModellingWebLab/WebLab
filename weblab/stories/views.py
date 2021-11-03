@@ -99,7 +99,7 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
                 return self.form_invalid(form)
 
             if any(graph.modelgroup is not None and graph.modelgroup not in visible_model_groups for graph in graphs):
-                form.add_error(None, "User %s does not have access to the model group for all graphs" % (user.full_name))
+                form.add_error(None, "User %s does not have access to all graph's model groups" % (user.full_name))
                 return self.form_invalid(form)
 
             if not all(graph.cachedprotocolversion.protocol.is_version_visible_to_user(graph.cachedprotocolversion.sha,
