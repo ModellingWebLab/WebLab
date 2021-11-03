@@ -174,17 +174,18 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         formset = self.get_formset()
         formsetgraph = self.get_formset_graph()
         if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
-            # make sure formsets are ordered correctly starting at 0
-            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
-                                               key=lambda f: f.cleaned_data['ORDER'])):
-                frm.cleaned_data['ORDER'] = order
             if len(formset.ordered_forms + formsetgraph.ordered_forms) == 0:
                 form.add_error(
                     None,
                     "Story is empty add at least one text box or graph. "
                 )
+                self.object = None
                 return self.form_invalid(form)
 
+            # make sure formsets are ordered correctly starting at 0
+            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
+                                               key=lambda f: f.cleaned_data['ORDER'])):
+                frm.cleaned_data['ORDER'] = order
             story = form.save()
             formset.save(story=story)
             formsetgraph.save(story=story)
