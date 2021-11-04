@@ -40,9 +40,7 @@ def test_StoryListView(logged_in_user, other_user, client):
 
 @pytest.mark.django_db
 class TestStoryDeleteView:
-    def test_owner_can_delete(self, logged_in_user, client):
-        story = recipes.story.make(author=logged_in_user)
-
+    def test_owner_can_delete(self, logged_in_user, client, story):
         story_count = Story.objects.count()
         response = client.post('/stories/%d/delete' % story.pk)
         assert response.status_code == 302
@@ -50,7 +48,6 @@ class TestStoryDeleteView:
 
     def test_non_owner_cannot_delete(self, logged_in_user, other_user, client):
         story = recipes.story.make(author=other_user)
-
         story_count = Story.objects.count()
         response = client.post('/stories/%d/delete' % story.pk)
         assert response.status_code == 403
@@ -70,8 +67,7 @@ class TestStoryCollaboratorsView:
         response = client.get('/stories/%d/collaborators' % story.pk)
         assert response.status_code == 403
 
-    def test_owner_can_view_page(self, logged_in_user, client):
-        story = recipes.story.make(author=logged_in_user)
+    def test_owner_can_view_page(self, logged_in_user, client, story):
         response = client.get('/stories/%d/collaborators' % story.pk)
         assert response.status_code == 200
         assert 'formset' in response.context
@@ -82,8 +78,7 @@ class TestStoryCollaboratorsView:
         assert response.status_code == 200
         assert 'formset' in response.context
 
-    def test_loads_existing_collaborators(self, logged_in_user, other_user, client):
-        story = recipes.story.make(author=logged_in_user)
+    def test_loads_existing_collaborators(self, logged_in_user, other_user, client, story):
         assign_perm('edit_story', other_user, story)
         response = client.get('/stories/%d/collaborators' % story.pk)
         assert response.status_code == 200
@@ -103,8 +98,7 @@ class TestStoryCollaboratorsView:
         assert response.status_code == 302
         assert other_user.has_perm('edit_story', story)
 
-    def test_add_non_existent_user_as_editor(self, logged_in_user, client):
-        story = recipes.story.make(author=logged_in_user)
+    def test_add_non_existent_user_as_editor(self, logged_in_user, client, story):
         response = client.post('/stories/%d/collaborators' % story.pk,
                                {
                                    'form-0-email': 'non-existent@example.com',
@@ -116,8 +110,7 @@ class TestStoryCollaboratorsView:
         assert response.status_code == 200
         assert 'email' in response.context['formset'][0].errors
 
-    def test_remove_editor(self, logged_in_user, other_user, helpers, client):
-        story = recipes.story.make(author=logged_in_user)
+    def test_remove_editor(self, logged_in_user, other_user, helpers, client, story):
         helpers.add_permission(other_user, 'create_model')
         assign_perm('edit_story', other_user, story)
         response = client.post('/stories/%d/collaborators' % story.pk,
@@ -176,10 +169,8 @@ class TestStoryTransferView:
         assert story.author == other_user
         assert Story.objects.count() == story_count
 
-    def test_transfer_invalid_user(self, client, logged_in_user, other_user, helpers):
+    def test_transfer_invalid_user(self, client, logged_in_user, other_user, helpers, story):
         helpers.add_permission(logged_in_user, 'create_model')
-
-        story = recipes.story.make(author=logged_in_user)
 
         story_count = Story.objects.count()
         assert story.author.email == 'test@example.com'
@@ -194,11 +185,73 @@ class TestStoryTransferView:
         assert story.author == logged_in_user
         assert Story.objects.count() == story_count
 
-    def test_transfer_other_user_has_same_named_entity(self, client, logged_in_user, other_user, helpers):
+    def test_transfer_other_user_has_same_named_entity(self, client, logged_in_user, other_user, helpers, story):
         helpers.add_permission(logged_in_user, 'create_model')
-        story = recipes.story.make(author=logged_in_user)
-
         recipes.story.make(author=other_user, title=story.title)
+
+        story_count = Story.objects.count()
+        assert story.author.email == 'test@example.com'
+        response = client.post(
+            '/stories/%d/transfer' % story.pk,
+            data={
+                'email': 'other@example.com',
+            },
+        )
+        assert response.status_code == 200
+        story.refresh_from_db()
+        assert story.author == logged_in_user
+        assert Story.objects.count() == story_count
+
+    def test_transfer_other_user_has_no_access_to_group(self, client, logged_in_user, other_user, helpers, story):
+        helpers.add_permission(logged_in_user, 'create_model')
+        graph = StoryGraph.objects.filter(story=story).first()
+        modelgroup = recipes.modelgroup.make(author=logged_in_user, visibility='private',
+                                             models=[graph.cachedmodelversions.first().model])
+        graph.modelgroup = modelgroup
+        graph.save()
+
+        story_count = Story.objects.count()
+        assert story.author.email == 'test@example.com'
+        response = client.post(
+            '/stories/%d/transfer' % story.pk,
+            data={
+                'email': 'other@example.com',
+            },
+        )
+        assert response.status_code == 200
+        story.refresh_from_db()
+        assert story.author == logged_in_user
+        assert Story.objects.count() == story_count
+
+    def test_transfer_other_user_has_no_access_to_protocol_version(self, client, logged_in_user, other_user, helpers,
+                                                                   story):
+        helpers.add_permission(logged_in_user, 'create_model')
+        graph = StoryGraph.objects.filter(story=story).first()
+        graph.cachedprotocolversion.visibility = 'private'
+        graph.cachedprotocolversion.save()
+
+        story_count = Story.objects.count()
+        assert story.author.email == 'test@example.com'
+        response = client.post(
+            '/stories/%d/transfer' % story.pk,
+            data={
+                'email': 'other@example.com',
+            },
+        )
+        assert response.status_code == 200
+        story.refresh_from_db()
+        assert story.author == logged_in_user
+        assert Story.objects.count() == story_count
+
+    def test_transfer_other_user_has_no_access_to_model_version(self, client, logged_in_user, other_user, helpers,
+                                                                story):
+        helpers.add_permission(logged_in_user, 'create_model')
+        graph = StoryGraph.objects.filter(story=story).first()
+        graph.cachedprotocolversion.visibility = 'public'
+        graph.cachedprotocolversion.save()
+        version = graph.cachedmodelversions.first()
+        version.visibility = 'private'
+        version.save()
 
         story_count = Story.objects.count()
         assert story.author.email == 'test@example.com'
@@ -216,34 +269,44 @@ class TestStoryTransferView:
 
 @pytest.mark.django_db
 class TestStoryCreateView:
+    def test_create_story_page_loads(self, logged_in_user, client, helpers):
+        helpers.add_permission(logged_in_user, 'create_model')
+        response = client.get('/stories/new')
+        assert response.status_code == 200
+
+    def test_create_story_no_permission(self, logged_in_user, client):
+        remove_perm('entities.create_model', logged_in_user)
+        response = client.get('/stories/new')
+        assert response.status_code == 403
+
     def test_create_story_without_text_or_graph(self, logged_in_user, client, helpers):
         story_count = Story.objects.count()
         story_text_count = StoryText.objects.count()
         story_graph_count = StoryGraph.objects.count()
 
         helpers.add_permission(logged_in_user, 'create_model')
-        data = {'title': 'mymodel',
+        data = {'title': 'new test story',
                 'visibility': 'private',
-                'Graphvisualizer': 'displayPlotFlot',
-                'text-TOTAL_FORMS': 0,
-                'text-INITIAL_FORMS': 0,
-                'text-MIN_NUM_FORMS': 0,
-                'text-MAX_NUM_FORMS': 1000,
-                'graph-TOTAL_FORMS': 0,
-                'graph-INITIAL_FORMS': 0,
-                'graph-MIN_NUM_FORMS': 0,
-                'graph-MAX_NUM_FORMS': 1000}
+                'graphvisualizer': 'displayPlotFlot',
+                'text-TOTAL_FORMS': '1',
+                'text-INITIAL_FORMS': '1',
+                'text-MIN_NUM_FORMS': '0',
+                'text-MAX_NUM_FORMS': '1000',
+                'graph-TOTAL_FORMS': '  1',
+                'graph-INITIAL_FORMS': '1',
+                'graph-MIN_NUM_FORMS': '0',
+                'graph-MAX_NUM_FORMS': '1000',
+                'text-0-ORDER': '0',
+                'text-0-DELETE': 'true',
+                'graph-0-ORDER': '1',
+                'graph-0-DELETE': 'true'}
+
         response = client.post('/stories/new', data=data)
         # Does not add story as no graph & no text
         assert response.status_code == 200
         assert Story.objects.count() == story_count
         assert StoryText.objects.count() == story_text_count
         assert StoryGraph.objects.count() == story_graph_count
-
-    def test_create_story_no_permission(self, logged_in_user, client, helpers):
-        remove_perm('entities.create_model', logged_in_user)
-        response = client.get('/stories/new')
-        assert response.status_code == 403
 
     def test_create_story(self, logged_in_user, client, helpers):
         story_count = Story.objects.count()
@@ -273,8 +336,7 @@ class TestStoryCreateView:
         assert StoryText.objects.count() == story_text_count + 1
         assert StoryGraph.objects.count() == story_graph_count
 
-    def test_create_story_with_same_name(self, logged_in_user, client, helpers):
-        story = recipes.story.make(author=logged_in_user)
+    def test_create_story_with_same_name(self, logged_in_user, client, helpers, story):
         story_count = Story.objects.count()
         story_text_count = StoryText.objects.count()
         story_graph_count = StoryGraph.objects.count()
@@ -471,6 +533,11 @@ class TestStoryFilterProtocolView:
         assert response.status_code == 200
         assert experiment.protocol.name in str(response.content)
 
+    def test_get_protocol_no_modelid(self, client, logged_in_user, experiment_with_result_public):
+        response = client.get('/stories/protocols')
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").replace('\n', '') == '<option value="">--------- protocol</option>'
+
 
 @pytest.mark.django_db
 class TestStoryFilterGraphView:
@@ -493,13 +560,18 @@ class TestStoryFilterGraphView:
         assert 'outputs_Resting_potential_gnuplot_data.csv' in str(response.content)
         assert 'outputs_Relative_resting_potential_gnuplot_data.csv' in str(response.content)
 
-    def test_get_protocol_via_modelgroup(self, client, logged_in_user, experiment_with_result_public):
+    def test_get_graph_via_modelgroup(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
         modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model])
         response = client.get('/stories/modelgroup%d/%d/graph' % (modelgroup.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert 'outputs_Resting_potential_gnuplot_data.csv' in str(response.content)
         assert 'outputs_Relative_resting_potential_gnuplot_data.csv' in str(response.content)
+
+    def test_get_graph_no_ids(self, client, logged_in_user, experiment_with_result_public):
+        response = client.get('/stories/graph')
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").replace('\n', '') == '<option value="">--------- graph</option>'
 
 
 @pytest.mark.django_db
