@@ -573,7 +573,84 @@ class TestStoryFilterGraphView:
         assert response.status_code == 200
         assert response.content.decode("utf-8").replace('\n', '') == '<option value="">--------- graph</option>'
 
+    def test_get_graph_no_protocol_id(self, client, logged_in_user, experiment_with_result_public):
+        model = experiment_with_result_public.experiment.model
+        response = client.get('/stories/model%d/graph' % model.pk)
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").replace('\n', '') == '<option value="">--------- graph</option>'
+
 
 @pytest.mark.django_db
 class TestStoryRenderView:
-    pass
+    @pytest.fixture
+    def story_for_render_no_parts(self, experiment_with_result_public):
+        story = recipes.story.make(author=experiment_with_result_public.author, visibility='public',
+                                   title='story for render')
+        return story
+
+    def test_render_not_logged_in(self, client, story_for_render_no_parts, other_user):
+        story_for_render_no_parts.author = other_user
+        story_for_render_no_parts.visibility = 'private'
+        story_for_render_no_parts.save()
+        response = client.get('/stories/%d' % story_for_render_no_parts.pk)
+        assert response.status_code == 302
+        assert '/login/' in response.url
+
+    def test_render_no_access(self, client, story_for_render_no_parts, other_user, logged_in_user):
+        story_for_render_no_parts.author = other_user
+        story_for_render_no_parts.visibility = 'private'
+        story_for_render_no_parts.save()
+        response = client.get('/stories/%d' % story_for_render_no_parts.pk)
+        assert response.status_code == 403, str(response)
+
+    def test_render_story_no_poarts(self, client, story_for_render_no_parts):
+        response = client.get('/stories/%d' % story_for_render_no_parts.pk)
+        assert response.status_code == 200, str(response)
+        assert '<h1>Story: story for render</h1>' in str(response.content)
+        assert '<div class="markdowrenderview">' not in str(response.content)
+        assert '<div class="entitiesToCompare"' not in str(response.content)
+
+    def test_render_story_with_text(self, client, story_for_render_no_parts):
+        recipes.story_text.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
+                                description='new text')
+        response = client.get('/stories/%d' % story_for_render_no_parts.pk)
+        assert response.status_code == 200, str(response)
+        assert '<h1>Story: story for render</h1>' in str(response.content)
+        assert '<div class="markdowrenderview">' in str(response.content)
+        assert 'new text' in str(response.content)
+        assert '<div class="entitiesToCompare"' not in str(response.content)
+
+    def test_render_story_graph(self, client, story_for_render_no_parts, experiment_with_result_public):
+        experiment = experiment_with_result_public.experiment
+        recipes.story_graph.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
+                                 cachedprotocolversion=experiment.protocol_version,
+                                 cachedmodelversions=[experiment.model_version],
+                                 graphfilename='outputs_RestingPotential.csv')
+        response = client.get('/stories/%d' % story_for_render_no_parts.pk)
+        assert response.status_code == 200, str(response)
+        assert '<h1>Story: story for render</h1>' in str(response.content)
+        assert '<div class="markdowrenderview">' not in str(response.content)
+        assert '<div class="entitiesToCompare"' in str(response.content)
+        assert 'outputs_RestingPotential.csv' in str(response.content)
+
+    def test_render_story_multiple_parts(self, client, story_for_render_no_parts, experiment_with_result_public):
+        experiment = experiment_with_result_public.experiment
+        recipes.story_text.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
+                                description='new text 1')
+        recipes.story_text.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
+                                description='new text 2')
+        recipes.story_graph.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
+                                 cachedprotocolversion=experiment.protocol_version,
+                                 cachedmodelversions=[experiment.model_version],
+                                 graphfilename='outputs_RestingPotential.csv')
+        recipes.story_graph.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
+                                 cachedprotocolversion=experiment.protocol_version,
+                                 cachedmodelversions=[experiment.model_version], graphfilename='outputs_APD90.csv')
+        response = client.get('/stories/%d' % story_for_render_no_parts.pk)
+        assert response.status_code == 200, str(response)
+        assert '<h1>Story: story for render</h1>' in str(response.content)
+        assert '<div class="markdowrenderview">' in str(response.content)
+        assert 'new text 1' in str(response.content)
+        assert 'new text 2' in str(response.content)
+        assert '<div class="entitiesToCompare"' in str(response.content)
+        assert 'outputs_APD90.csv' in str(response.content)

@@ -163,10 +163,8 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         return self.formsetgraph
 
     def get_context_data(self, **kwargs):
-        if 'formset' not in kwargs:
-            kwargs['formset'] = self.get_formset()
-        if 'formsetgraph' not in kwargs:
-            kwargs['formsetgraph'] = self.get_formset_graph()
+        kwargs['formset'] = self.get_formset()
+        kwargs['formsetgraph'] = self.get_formset_graph()
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
