@@ -13,7 +13,6 @@ dj-database-url==0.4.2    # via -r base.in
 django-braces==1.14.0     # via -r base.in
 django-guardian==2.3.0    # via -r base.in
 django==2.2.24            # via -r base.in, django-braces, django-guardian
-django-markdownx==3.0.1   # via -r base.in
 gitdb==4.0.7              # via gitpython
 gitpython==3.1.11         # via -r base.in
 idna==2.10                # via requests
