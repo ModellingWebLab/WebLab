@@ -23,4 +23,3 @@ django-guardian==2.3.0
 
 # Unit parsing
 pint==0.9
-
