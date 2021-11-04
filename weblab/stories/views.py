@@ -268,12 +268,10 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
         if mk.startswith('modelgroup'):
             mk = int(mk.replace('modelgroup', ''))
             models = ModelGroup.objects.get(pk=mk).models.all()
-        elif mk.startswith('model'):
+        else:
+            assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
             mk = int(mk.replace('model', ''))
             models = ModelEntity.objects.filter(pk=mk)
-        else:
-            return []
-
         protocol = ProtocolEntity.objects.get(pk=pk)
         return StoryGraphFormSet.get_graph_choices(self.request.user, protocol=protocol, models=models)
 
