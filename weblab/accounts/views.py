@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Permission
@@ -11,7 +12,7 @@ from .models import User
 class RegistrationView(FormView):
     form_class = RegistrationForm
     template_name = 'registration/register.html'
-    success_url = '/'
+    success_url = getattr(settings, 'FORCE_SCRIPT_NAME', '/')
 
     class Meta:
         fields = ('email', 'full_name', 'institution')
