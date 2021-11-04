@@ -15,9 +15,6 @@ GitPython==3.1.11
 # django helpers
 django-braces==1.14.0
 
-# Django Markdownx
-django-markdownx==0.3.1
-
 # Server monitoring
 rollbar==0.15.1
 
