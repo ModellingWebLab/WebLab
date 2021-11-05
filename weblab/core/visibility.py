@@ -20,11 +20,6 @@ CHOICES = (
     (Visibility.MODERATED, 'Moderated'),
 )
 
-# Ordering mapping for visibility checking
-ORDER_MAP = {'private': 0,
-             'moderated': 1,
-             'public': 2}
-
 # Ordered by most conservative first
 LEVELS = [
     Visibility.PRIVATE,
