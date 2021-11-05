@@ -188,10 +188,3 @@ def can_delete_entity(context, entity):
 def can_manage_entity(context, entity):
     user = context['user']
     return entity.is_managed_by(user)
-
-
-@register.simple_tag(takes_context=True)
-def can_view_entity(context, entity):
-    user = context['user']
-    return entity in ModelEntity.objects.visible_to_user(user) or \
-        entity in ProtocolEntity.objects.visible_to_user(user)
