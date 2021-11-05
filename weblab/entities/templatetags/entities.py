@@ -5,8 +5,6 @@ from django.urls import reverse
 
 from core.filetypes import get_file_type
 
-from entities.models import ModelEntity, ProtocolEntity
-
 
 register = template.Library()
 
