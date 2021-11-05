@@ -7,7 +7,6 @@ from django.forms import formset_factory
 
 from accounts.models import User
 from core import visibility
-from core.visibility import ORDER_MAP
 
 from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup
 
@@ -244,6 +243,10 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
         return title
 
     def clean_models(self):
+        # Ordering mapping for visibility checking
+        ORDER_MAP = {'private': 0,
+                     'moderated': 1,
+                     'public': 2}
         models = self.cleaned_data['models']
         visibility = self.cleaned_data['visibility']
         if any([ORDER_MAP[m.visibility] < ORDER_MAP[visibility] for m in models]):
