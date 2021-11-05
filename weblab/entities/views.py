@@ -32,7 +32,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import CreateView, DeleteView, FormMixin
+from django.views.generic.edit import CreateView, DeleteView, FormMixin, UpdateView
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
@@ -42,7 +42,8 @@ from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingResult, FittingSpec
 from repocache.exceptions import RepoCacheMiss
-from repocache.models import CachedProtocolVersion
+from repocache.models import CachedProtocol, CachedProtocolVersion, CachedModel, CachedModelVersion
+from stories.models import StoryGraph
 
 from .forms import (
     EntityChangeVisibilityForm,
@@ -54,8 +55,10 @@ from .forms import (
     ModelEntityRenameForm,
     ProtocolEntityForm,
     ProtocolEntityRenameForm,
+    ModelGroupCollaboratorFormSet,
+    ModelGroupForm,
 )
-from .models import Entity, ModelEntity, ProtocolEntity
+from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup
 from .processing import process_check_protocol_callback, record_experiments_to_run
 
 
@@ -466,6 +469,21 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':list', args=[self.kwargs['entity_type']])
+
+    def get_context_data(self, **kwargs):
+        kwargs['in_use'] = set()
+        # disable deleting models/protocols in use in a story
+        if self.kwargs['entity_type'] == 'model':
+            cached = CachedModelVersion.objects.filter(entity__in=CachedModel.objects.filter(entity=self.get_object()))
+            for entity in cached:
+                kwargs['in_use'] |= set([(graph.story.id, graph.story.title) for graph in entity.storygraph_set.all()])
+        elif self.kwargs['entity_type'] == 'protocol':
+            cached = CachedProtocolVersion.objects.filter(
+                entity__in=CachedProtocol.objects.filter(entity=self.get_object())
+            )
+            kwargs['in_use'] = set([(graph.story.id, graph.story.title)
+                                    for graph in StoryGraph.objects.filter(cachedprotocolversion__in=cached)])
+        return super().get_context_data(**kwargs)
 
 
 class EntityAlterFileView(
@@ -1235,3 +1253,126 @@ class EntityRunExperimentView(PermissionRequiredMixin, LoginRequiredMixin,
             version_to_use = kwargs['sha']
         return HttpResponseRedirect(
             reverse('entities:version', args=[kwargs['entity_type'], kwargs['pk'], version_to_use]))
+
+
+class ModelGroupListView(LoginRequiredMixin, ListView):
+    """
+    List all user's model groups
+    """
+    template_name = 'entities/modelgroup_list.html'
+
+    def get_queryset(self):
+        return ModelGroup.objects.filter(
+            id__in=[modelgroup.id for modelgroup in ModelGroup.objects.all()
+                    if modelgroup.is_editable_by(self.request.user)]
+        )
+
+
+class ModelGroupView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
+    """
+    Base view for creating or editing model groups
+    """
+    model = ModelGroup
+    template_name = 'entities/modelgroup_form.html'
+    form_class = ModelGroupForm
+
+    def get_success_url(self):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':modelgroup')
+
+
+class ModelGroupCreateView(ModelGroupView, CreateView):
+    """
+    Create new model group
+    """
+
+    def test_func(self):
+        return self.request.user.has_perm('entities.create_model')
+
+
+class ModelGroupEditView(ModelGroupView, UpdateView):
+    """
+    View for editing modelgroups
+    """
+
+    def test_func(self):
+        return self.get_object().visible_to_user(self.request.user)
+
+
+class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):
+    """
+    Delete a model group
+    """
+    model = ModelGroup
+    # Raise a 403 error rather than redirecting to login,
+    # if the user doesn't have delete permissions.
+    raise_exception = True
+
+    def test_func(self):
+        return self.get_object().is_deletable_by(self.request.user)
+
+    def get_success_url(self, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':modelgroup')
+
+    def get_context_data(self, **kwargs):
+        kwargs['in_use'] = set([(graph.story.id, graph.story.title)
+                                for graph in StoryGraph.objects.filter(modelgroup=self.get_object())])
+        return super().get_context_data(**kwargs)
+
+
+class ModelGroupCollaboratorsView(EditCollaboratorsAbstractView):
+    """
+    Edit collaborators for model groups
+    """
+    model = ModelGroup
+    context_object_name = 'modelgroup'
+    template_name = 'entities/modelgroup_collaborators_form.html'
+    formset_class = ModelGroupCollaboratorFormSet
+
+    def get_success_url(self):
+        """What page to show when the form was processed OK."""
+        entity = self.object
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':modelgroup_collaborators', args=[entity.id])
+
+
+class ModelGroupTransferView(LoginRequiredMixin, UserPassesTestMixin,
+                             FormMixin, DetailView):
+    model = ModelGroup
+    template_name = 'entities/modelgroup_transfer_ownership.html'
+    context_object_name = 'modelgroup'
+    form_class = OwnershipTransferForm
+
+    def test_func(self):
+        self.object = self.get_object()
+        return self.object.is_managed_by(self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        """Check the form and transfer ownership of the entity.
+
+        Called by Django when a form is submitted.
+        """
+        form = self.get_form()
+
+        if form.is_valid():
+            user = form.cleaned_data['user']
+            modelgroup = self.get_object()
+            models = modelgroup.models.all()
+            visible_entities = ModelEntity.objects.visible_to_user(user)
+            if ModelGroup.objects.filter(title=modelgroup.title, author=user).exists():
+                form.add_error(None, "User already has a model group called %s" % (modelgroup.title))
+                return self.form_invalid(form)
+            if any(m not in visible_entities for m in models):
+                form.add_error(None, "User %s does not have access to all models in the model group" % (user.full_name))
+                return self.form_invalid(form)
+
+            modelgroup.author = user
+            modelgroup.save()
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def get_success_url(self, *args, **kwargs):
+        ns = self.request.resolver_match.namespace
+        return reverse(ns + ':modelgroup')

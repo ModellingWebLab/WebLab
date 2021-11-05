@@ -1,3 +1,4 @@
+
 from django.conf.urls import url
 
 from . import views
@@ -158,6 +159,43 @@ urlpatterns = [
         r'^%s/diff(?P<versions>(/\d+:%s){2})/%s$' % (_ENTITY_TYPE, _COMMIT, _FILENAME),
         views.EntityDiffView.as_view(),
         name='diff',
+    ),
+
+    url(
+        r'^modelgroups/$',
+        views.ModelGroupListView.as_view(),
+        name='modelgroup',
+    ),
+
+
+    url(
+        r'^modelgroups/new$',
+        views.ModelGroupCreateView.as_view(),
+        name='modelgroup_create',
+    ),
+
+    url(
+        r'^modelgroups/(?P<pk>\d+)$',
+        views.ModelGroupEditView.as_view(),
+        name='modelgroup_edit',
+    ),
+
+    url(
+        r'^modelgroups/(?P<pk>\d+)/delete$',
+        views.ModelGroupDeleteView.as_view(),
+        name='modelgroup_delete',
+    ),
+
+    url(
+        r'^modelgroups/(?P<pk>\d+)/collaborators$',
+        views.ModelGroupCollaboratorsView.as_view(),
+        name='modelgroup_collaborators',
+    ),
+
+    url(
+        r'^modelgroups/(?P<pk>\d+)/transfer$',
+        views.ModelGroupTransferView.as_view(),
+        name='modelgroup_transfer',
     ),
 ]
 

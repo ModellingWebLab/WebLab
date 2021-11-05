@@ -4,7 +4,7 @@ import pytest
 from django.db.utils import IntegrityError
 
 from core import recipes
-from entities.models import Entity, ModelEntity, ProtocolEntity
+from entities.models import Entity, ModelEntity, ProtocolEntity, ModelGroup
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedModel
 from repocache.populate import populate_entity_cache
@@ -208,3 +208,76 @@ class TestEntity:
         model_with_version.delete()
 
         assert not repo_path.exists()
+
+
+@pytest.mark.django_db
+class TestModelGroup:
+    def test_user_cannot_have_same_named_model_group(self, user):
+        recipes.modelgroup.make(author=user, title='mymodelgroup')
+
+        with pytest.raises(IntegrityError):
+            ModelGroup.objects.create(author=user, title='mymodelgroup')
+
+    def test_user_can_have_same_named_model_protocol_and_model_group(self, user):
+        ModelEntity.objects.create(author=user, name='myentity')
+        ProtocolEntity.objects.create(author=user, name='myentity')
+        ModelGroup.objects.create(author=user, title='mymodelgroup')
+
+    def test_different_users_can_have_same_named_model_group(self, user, other_user):
+        ModelEntity.objects.create(author=user, name='mymodel')
+        assert ModelEntity.objects.create(author=other_user, name='mymodel')
+
+    def test_str(self, user):
+        model = recipes.model.make(name='test model')
+        modelgroup = recipes.modelgroup.make(author=user, models=[model], title="test model group")
+        assert str(modelgroup) == 'test model group'
+        assert [str(m) for m in modelgroup.models.all()] == ["test model"]
+
+    def test_visibility_and_sharing(self, user, other_user, admin_user):
+        """Checks the is_editable_by method."""
+        def check_own_user(model_groups, user):
+            assert all([modelgroup.visible_to_user(user) for modelgroup in model_groups])
+            assert all([modelgroup.is_editable_by(user) for modelgroup in model_groups])
+            assert all([modelgroup.is_visibility_editable_by(user) for modelgroup in model_groups])
+            assert all([modelgroup.is_deletable_by(user) for modelgroup in model_groups])
+            assert all([modelgroup.is_managed_by(user) for modelgroup in model_groups])
+
+        # Check user permissions
+        model_groups = recipes.modelgroup.make(author=user, _quantity=2, visibility='private')
+        check_own_user(model_groups, user)
+        assert all([modelgroup.viewers == {user} for modelgroup in model_groups])
+        assert all([modelgroup.collaborators == [] for modelgroup in model_groups])
+
+        # Check other user permissions
+        assert not any([modelgroup.visible_to_user(other_user) for modelgroup in model_groups])
+        assert not any([modelgroup.is_editable_by(other_user) for modelgroup in model_groups])
+        assert not any([modelgroup.is_visibility_editable_by(other_user) for modelgroup in model_groups])
+        assert not any([modelgroup.is_deletable_by(other_user) for modelgroup in model_groups])
+        assert not any([modelgroup.is_managed_by(other_user) for modelgroup in model_groups])
+
+        # Check permissions after adding as collaborator
+        for modelgroup in model_groups:
+            modelgroup.add_collaborator(other_user)
+        check_own_user(model_groups, user)
+        assert all([modelgroup.collaborators == [other_user] for modelgroup in model_groups])
+        assert all([modelgroup.viewers == {user, other_user} for modelgroup in model_groups])
+        assert all([modelgroup.visible_to_user(other_user) for modelgroup in model_groups])
+        assert all([modelgroup.is_editable_by(other_user) for modelgroup in model_groups])
+        assert not any([modelgroup.is_visibility_editable_by(other_user) for modelgroup in model_groups])
+        assert not any([modelgroup.is_managed_by(other_user) for modelgroup in model_groups])
+
+        # Check permissions after removing as collaborator
+        for modelgroup in model_groups:
+            modelgroup.remove_collaborator(other_user)
+        check_own_user(model_groups, user)
+        assert all([modelgroup.viewers == {user} for modelgroup in model_groups])
+        assert all([modelgroup.collaborators == [] for modelgroup in model_groups])
+        assert not any([modelgroup.visible_to_user(other_user) for modelgroup in model_groups])
+
+        # Check permissions after changing visibility
+        model_groups[0].visibility = 'public'
+        model_groups[1].visibility = 'moderted'
+        check_own_user(model_groups, user)
+        assert all([modelgroup.viewers == {user} for modelgroup in model_groups])
+        assert all([modelgroup.collaborators == [] for modelgroup in model_groups])
+        assert all([modelgroup.visible_to_user(other_user) for modelgroup in model_groups])

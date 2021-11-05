@@ -1,3 +1,4 @@
+import re
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
@@ -7,7 +8,7 @@ from django.forms import formset_factory
 from accounts.models import User
 from core import visibility
 
-from .models import EntityFile, ModelEntity, ProtocolEntity
+from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -180,3 +181,85 @@ class FileUploadForm(forms.ModelForm):
     class Meta:
         model = EntityFile
         fields = ['upload']
+
+
+class ModelGroupCollaboratorForm(EntityCollaboratorForm):
+    def clean_email(self):
+        email = super().clean_email()
+        user = self._get_user(email)
+        models = self.entity.models.all()
+        visible_entities = ModelEntity.objects.visible_to_user(user)
+        if any(m not in visible_entities for m in models):
+            raise ValidationError("User %s does not have access to all models in the model group" % (user.full_name))
+        return email
+
+
+ModelGroupCollaboratorFormSet = formset_factory(
+    ModelGroupCollaboratorForm,
+    BaseEntityCollaboratorFormSet,
+    can_delete=True,
+)
+
+
+class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
+    """Used for creating a new model group."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.current_title = None  # current title
+        # Only show models I can can see
+        self.fields['models'].queryset = ModelEntity.objects.visible_to_user(self.user)
+
+        # Save current details if we have them
+        instance = kwargs.get('instance', None)
+        if instance:
+            self.current_title = instance.title
+            self.fields['title'].disabled = not instance.is_editable_by(self.user)
+            self.fields['models'].disabled = self.fields['title'].disabled
+
+        choices = list(visibility.CHOICES)
+        help_text = visibility.HELP_TEXT
+        if not self.user.has_perm('entities.moderator') and not (instance and
+                                                                 instance.visibility ==
+                                                                 visibility.Visibility.MODERATED):
+            choices.remove((visibility.Visibility.MODERATED, 'Moderated'))
+            help_text = re.sub('Moderated.*\n', '', help_text)
+
+        self.fields['visibility'] = forms.ChoiceField(
+            choices=choices,
+            help_text=help_text.replace('\n', '<br />'),
+            disabled=self.fields['title'].disabled
+        )
+
+    class Meta:
+        model = ModelGroup
+        fields = ['title', 'visibility', 'models']
+
+    def clean_title(self):
+        title = self.cleaned_data['title']
+        if title != self.current_title and self._meta.model.objects.filter(title=title, author=self.user).exists():
+            raise ValidationError(
+                'You already have a model group named "%s"' % title)
+        return title
+
+    def clean_models(self):
+        # Ordering mapping for visibility checking
+        ORDER_MAP = {'private': 0,
+                     'moderated': 1,
+                     'public': 2}
+        models = self.cleaned_data['models']
+        visibility = self.cleaned_data['visibility']
+        if any([ORDER_MAP[m.visibility] < ORDER_MAP[visibility] for m in models]):
+            raise ValidationError(
+                'The visibility of your selected models is too restrictive '
+                'for the selected visibility of this model group')
+
+        return models
+
+    def save(self, **kwargs):
+        modelgroup = super().save(commit=False)
+        if not hasattr(modelgroup, 'author') or modelgroup.author is None:
+            modelgroup.author = self.user
+        modelgroup.save()
+        self.save_m2m()
+        return modelgroup
