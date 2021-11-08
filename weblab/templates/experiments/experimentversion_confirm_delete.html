@@ -1,19 +1,10 @@
 {% extends "base.html" %}
-{% load stories %}
 
 {% block title %}Delete experiment version - {% endblock title %}
 
 {% block content %}
 
 <form action="" method="post">{% csrf_token %}
-    {% if in_use|length > 0 %}
-        <ul class="errorlist"><li>Deleting the latest version of <em>"{{ object }}"</em>, in use in {% if in_use|length == 1 %}story{% else %}stories{% endif %}:
-        {% for story in in_use %}
-            {% if forloop.counter0 != 0%},{% endif %} {% load stories %}<a href="{% url 'stories:story_edit' story.0 %}">"{{ story.1 }}"</a>
-        {% endfor %}
-        might affect the story.</li></ul>
-    {% endif %}
-
     <p>Are you sure you want to delete version {{ object.name }} of experiment "{{ object.experiment }}"?</p>
     <p><strong>This operation cannot be undone.</strong></p>
     <button>Confirm</button>
