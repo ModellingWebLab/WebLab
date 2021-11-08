@@ -33,7 +33,7 @@ Upload.prototype = {
       dropZone: $("#dropbox"),
       add: function(e, data) {
         var name = data.files[0].name;
-        if (self.validName(name, $("#fileupload").attr('required-file-type'))) {
+        if (self.validName(name, $("#fileupload").data('required-file-type'))) {
           self.addRow(data);
           data.submit();
         }
