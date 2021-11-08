@@ -2,7 +2,6 @@ import json
 import shutil
 import uuid
 import zipfile
-from datetime import date
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import Mock, patch
