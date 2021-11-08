@@ -33,7 +33,7 @@ Upload.prototype = {
       dropZone: $("#dropbox"),
       add: function(e, data) {
         var name = data.files[0].name;
-        if (self.validName(name)) {
+        if (self.validName(name, $("#fileupload").data('required-file-type'))) {
           self.addRow(data);
           data.submit();
         }
@@ -82,7 +82,7 @@ Upload.prototype = {
     }
   },
 
-  validName: function(name) {
+  validName: function(name, requiredFileType) {
     var error;
     if (this.alreadyExists(name)) {
       error = "there is already a file with the name '" + name + "' - please remove that first.", "error";
@@ -90,6 +90,8 @@ Upload.prototype = {
       error = "the name '" + name + "' is reserved for system use; please choose another file name.", "error";
     } else if (!/^[\w._: \-]+$/.test(name)) {
       error = "the name '" + name + "' contains reserved characters; only alpha-numeric characters and a few typical punctuation characters are allowed.", "error";
+    } else if (requiredFileType && !name.toLowerCase().endsWith(requiredFileType.toLowerCase())){
+      error = "Unexpected file type, expecting: " +requiredFileType
     }
 
     if (error) {
