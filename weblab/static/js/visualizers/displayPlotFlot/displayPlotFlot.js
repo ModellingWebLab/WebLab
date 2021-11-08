@@ -1,15 +1,25 @@
 var utils = require('../../lib/utils.js');
 var common = require('../../expt_common.js');
 
+var choicesDivId = 'choices',
+	resetButtonDivId = 'flot-buttons-div',
+	colouredSpanIdPrefix = 'legend-colour-span-',
+	legendDivId = 'legend',
+	tooltipId = 'flotTooltip',
+	plottedGraph = {}, // TODO: probably safer if this is an instance property!
+	resetButtonId = 'resetButton',
+	legendHideButtonId = 'hideButton',
+	selectTogglerId = 'selectToggler';
+
 /* create and append the div for showing the plot choices */
-function createAppendChoicesDiv (self, parentDiv) {
+function createAppendChoicesDiv(parentDiv) {
     var choicesDiv = document.createElement("div");
-    choicesDiv.id = self.graphIds['choicesDivId'];
+    choicesDiv.id = choicesDivId;
     parentDiv.appendChild (choicesDiv);
 }
 
 /* create and append the flot plotting div element with specified id attr */
-function createAppendFlotPlotDiv(self, parentDiv, flotPlotDivId) {
+function createAppendFlotPlotDiv(parentDiv, flotPlotDivId) {
     var flotPlotDiv = document.createElement("div");
     flotPlotDiv.id = flotPlotDivId;
     //flotPlotDiv.title = "Zoom available by selecting an area of the plot";
@@ -19,28 +29,27 @@ function createAppendFlotPlotDiv(self, parentDiv, flotPlotDivId) {
 }
 
 /* create and append the div for showing the legend */
-function createAppendLegendDiv(self, parentDiv) {
+function createAppendLegendDiv(parentDiv) {
     var legendContainer =  document.createElement("div");
-    legendContainer.id = self.graphIds['legendDivId'];
+    legendContainer.id = legendDivId;
     parentDiv.appendChild (legendContainer);
 }
 
 /* create and append a reset button to the div element */
-function createAppendResetButton(self, parentDiv) {
+function createAppendResetButton(parentDiv) {
     var resetButtonDiv = document.createElement("div");
-    resetButtonDiv.id = self.graphIds['resetButtonDivId'];
-    resetButtonDiv.classList.add(self.graphIds['resetButtonDivClass']);
+    resetButtonDiv.id = resetButtonDivId;
     parentDiv.appendChild(resetButtonDiv);
 
     var resetButton = document.createElement('input');
-    resetButton.id = self.graphIds['resetButtonId'];
+    resetButton.id = resetButtonId;
     resetButton.title = 'Reset graph zoom based on currently selected datasets';
     resetButton.type = 'button';
     resetButton.value = 'Reset zoom';
     resetButtonDiv.appendChild (resetButton);
 
     var legendHideButton = document.createElement('input');
-    legendHideButton.id = self.graphIds['legendHideButtonId'];
+    legendHideButton.id = legendHideButtonId;
     legendHideButton.title = 'Toggle the visibility of the legend.';
     legendHideButton.type = 'button';
     legendHideButton.value = 'Toggle legend';
@@ -48,18 +57,18 @@ function createAppendResetButton(self, parentDiv) {
 }
 
 /* create and append a select toggler to the div element */
-function createAppendSelectToggler(self, parentDiv) {
+function createAppendSelectToggler(parentDiv) {
     var selectTogglerEl = document.createElement('input');
-    selectTogglerEl.id = self.graphIds['selectTogglerId'];
+    selectTogglerEl.id = selectTogglerId;
     selectTogglerEl.type = 'checkbox';
     parentDiv.appendChild (selectTogglerEl);
 
     var label = document.createElement('label');
-    label.setAttribute('for', self.graphIds['selectTogglerId']);
+    label.setAttribute('for', selectTogglerId);
     label.innerHTML = 'Select all';
     parentDiv.appendChild(label);
 
-    var selectToggler = $('#' + self.graphIds['selectTogglerId']);
+    var selectToggler = $('#' + selectTogglerId);
     selectToggler.attr({ 'checked': 'checked' });
     setTogglerTitle(selectToggler);
 }
@@ -70,12 +79,12 @@ function isStyleLinespointsOrPoints(lineStyle) {
 }
 
 /* Plot the graph */
-function plotAccordingToChoices(self, plotProperties, selectedCoords) {
+function plotAccordingToChoices(plotProperties, selectedCoords) {
     if ($.plot === undefined)
     {
         /// Wait 0.1s for flot to load and try again
         console.log("Waiting for flot to load.");
-        window.setTimeout(function(){plotAccordingToChoices(self, plotProperties, selectedCoords);}, 100);
+        window.setTimeout(function(){plotAccordingToChoices(plotProperties, selectedCoords);}, 100);
         return;
     }
 
@@ -95,7 +104,7 @@ function plotAccordingToChoices(self, plotProperties, selectedCoords) {
         }
     });
 
-    var genericSettings = retrieveGenericSettings($('#' + self.graphIds['legendDivId']));
+    var genericSettings = retrieveGenericSettings($('#' + legendDivId));
     var settings;
     if (selectedCoords != undefined)
     {
@@ -128,13 +137,13 @@ function plotAccordingToChoices(self, plotProperties, selectedCoords) {
         }
     }
 
-    self.graphIds['plottedGraph'] = $.plot("#" + flotPlotDivId, data, settings);
+    plottedGraph = $.plot("#" + flotPlotDivId, data, settings);
 };
 
 /* retrieve min and max x and y axes values of current plot */
-function retrieveCurrentPlotCoords(self) {
-  var xAxis = self.graphIds['plottedGraph'].getAxes().xaxis;
-  var yAxis = self.graphIds['plottedGraph'].getAxes().yaxis;
+function retrieveCurrentPlotCoords(plottedGraph) {
+  var xAxis = plottedGraph.getAxes().xaxis;
+  var yAxis = plottedGraph.getAxes().yaxis;
   var coords = { 'x': [xAxis.min, xAxis.max],
                  'y': [yAxis.min, yAxis.max] };
   return coords;
@@ -165,7 +174,7 @@ function retrieveGenericSettings(legendContainer) {
  * @param plotProperties Assembly of various plot properties.
  * @param moreThanOneDataset True if more than one dataset being plotted.
  */
-function setListeners(self, plotProperties, moreThanOneDataset) {
+function setListeners(plotProperties, moreThanOneDataset) {
     var choicesContainer = plotProperties.choicesContainer;
     var flotPlotDivId = plotProperties.flotPlotDivId;
 
@@ -179,15 +188,15 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
         {
           if (checkedCount == 1) {
             /* disable the input checkbox on whichever checked dataset remains */
-            $('#' + self.graphIds['choicesDivId'] + ' input:checkbox:checked').prop('disabled', true);
+            $('#' + choicesDivId + ' input:checkbox:checked').prop('disabled', true);
           }
           else
           {
             /* more than one dataset selected, remove any disabled */
-            $('#' + self.graphIds['choicesDivId'] + ' input:checkbox:disabled').prop('disabled', false);
+            $('#' + choicesDivId + ' input:checkbox:disabled').prop('disabled', false);
           }
           /* re-plot using existing coordinates */
-          plotAccordingToChoices(self, plotProperties, retrieveCurrentPlotCoords(self));
+          plotAccordingToChoices(plotProperties, retrieveCurrentPlotCoords(plottedGraph));
         }
     });
 
@@ -202,8 +211,8 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
         var coords = { 'x': [ranges.xaxis.from, ranges.xaxis.to],
                        'y': [ranges.yaxis.from, ranges.yaxis.to] };
 
-        self.graphIds['plottedGraph'].setSelection(ranges, true);
-        plotAccordingToChoices(self, plotProperties, coords);
+        plottedGraph.setSelection(ranges, true);
+        plotAccordingToChoices(plotProperties, coords);
     });
 
     /* listen to user hovering over plot */
@@ -214,17 +223,17 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
           if (previousPoint != item.datapoint) {
             previousPoint = item.datapoint;
 
-            $('#' + self.graphIds['tooltipId']).remove();
+            $('#' + tooltipId).remove();
             var x = item.datapoint[0];
             var y = item.datapoint[1];
 
             var content = '[' + item.series.label + '] : ' +
                           plotProperties.x_label + ' \'' + x + '\' : ' +
                           plotProperties.y_label + ' \'' + y + '\'';
-            show_tooltip(self, item.pageX, item.pageY, content);
+            show_tooltip(item.pageX, item.pageY, content);
           }
         } else {
-          $('#' + self.graphIds['tooltipId']).remove();
+          $('#' + tooltipId).remove();
           previousPoint = null;
         }
       }
@@ -232,18 +241,18 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
 
 
     /* reset graphical display according to ranges defined by current dataset selection */
-    $('#' + self.graphIds['resetButtonId']).click(function() {
-        plotAccordingToChoices(self, plotProperties);
+    $('#' + resetButtonId).click(function() {
+        plotAccordingToChoices(plotProperties);
     });
 
     if (moreThanOneDataset)
     {
         /* action when all datasets toggler is clicked */
-        $('#' + self.graphIds['selectTogglerId']).click(function() {
+        $('#' + selectTogglerId).click(function() {
           var toggler = $(this);
           setTogglerTitle(toggler);
           /* remove any disabled inputs */
-          $('#' + self.graphIds['choicesDivId'] + ' input:checkbox:disabled').prop('disabled', false);
+          $('#' + choicesDivId + ' input:checkbox:disabled').prop('disabled', false);
           if (toggler.is(':checked'))
           {
             /* check all currently unchecked datasets */
@@ -258,14 +267,14 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
               $(this).prop('checked', false);
             });
             /* switch on the first (just in case it was already de-selected) and disable it */
-            $('#' + self.graphIds['choicesDivId'] + ' input:checkbox:eq(0)').prop({ 'disabled': true, 'checked': true });
+            $('#' + choicesDivId + ' input:checkbox:eq(0)').prop({ 'disabled': true, 'checked': true });
           }
-          plotAccordingToChoices(self, plotProperties, retrieveCurrentPlotCoords(self));
+          plotAccordingToChoices(plotProperties, retrieveCurrentPlotCoords(plottedGraph));
       });
     }
 
     // mouse over for legend
-    var legend = $("#" + self.graphIds['choicesDivId']);
+    var legend = $("#" + choicesDivId);
     legend.append ($("<div></div>").addClass ("clearer"));
     if (legend.height () > 100)
     {
@@ -280,9 +289,9 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
     		legend.addClass ("legend-fade");
     	});
         // Toggle button implements persistent expand/collapse
-        $('#' + self.graphIds['legendHideButtonId']).click (function ()
+        $('#' + legendHideButtonId).click (function ()
             {
-                var legend = $('#' + self.graphIds['choicesDivId']);
+                var legend = $('#' + choicesDivId);
                 if (legend.hasClass("legend-fade"))
                 {
                     // Show, and disable mouseout behaviour
@@ -298,7 +307,7 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
     else
     {
     	legend.removeClass ("legend-fade");
-    	$('#' + self.graphIds['legendHideButtonId']).hide();
+    	$('#' + legendHideButtonId).hide();
     }
 }
 
@@ -314,8 +323,8 @@ function setTogglerTitle(toggler) {
  * @param y Y-axis coordinate.
  * @param content Content of tooltip.
  */
-function show_tooltip(self, x, y, content) {
-  jQuery('<div />').attr({ 'id' : self.graphIds['tooltipId'] })
+function show_tooltip(x, y, content) {
+  jQuery('<div />').attr({ 'id' : tooltipId })
                    .css({ 'top': y + 5, 'left': x + 5 })
                    .addClass('flotTooltip')
                    .html(content)
@@ -325,19 +334,19 @@ function show_tooltip(self, x, y, content) {
 
 /* Transfer the colours placed into the legend div by flot's plotting, to the spans corresponding
 to the dataset plot label. Once transfered the legend div serves no purpose. */
-function transferLegendColours(self, datasets) {
+function transferLegendColours(datasets) {
  /* we don't want to see the legend data so hide immediately, only use it to pinch the colour! */
-  $('#' + self.graphIds['legendDivId']).hide();
+ $('#' + legendDivId).hide();
  $.each(datasets, function(key, val) {
      /* class legendColorBox defined in jquery.flot.js in function insertLegend() */
      var thisDatasetNumber = val.color;
      var legendColorBox = $('td.legendColorBox:eq(' + thisDatasetNumber + ') div div');
      /* moz wasn't happy using border-color, which IE didn't mind */
      var colour = legendColorBox.css('border-left-color');
-     $('#' + self.graphIds['colouredSpanIdPrefix'] + thisDatasetNumber).css('background-color', colour);
+     $('#' + colouredSpanIdPrefix + thisDatasetNumber).css('background-color', colour);
  });
  /* legend element is no longer required */
- $('#' + self.graphIds['legendDivId']).remove();
+ $('#' + legendDivId).remove();
 }
 
 /**
@@ -352,10 +361,8 @@ function transformForExport(datasets)
 	});
 }
 
-function contentFlotPlot (graphIds, file, div)
+function contentFlotPlot (file, div)
 {
-    this.graphIds = graphIds;
-
     this.file = file;
     this.div = div;
     this.setUp = false;
@@ -431,20 +438,19 @@ contentFlotPlot.prototype.drawPlot = function ()
         var lastDatasetNumber = datasetNumber - 1;
 
         var flotPlotDivId = 'flotplot-' + thisFileId.replace(/\W/g, '');
-        createAppendFlotPlotDiv(this, thisDiv, flotPlotDivId);
-        (datasetNumber > 1) && createAppendSelectToggler(this, thisDiv);
-        createAppendResetButton(this, thisDiv);
-        createAppendChoicesDiv(this, thisDiv);
-        createAppendLegendDiv(this, thisDiv);
+        createAppendFlotPlotDiv(thisDiv, flotPlotDivId);
+        (datasetNumber > 1) && createAppendSelectToggler(thisDiv);
+        createAppendResetButton(thisDiv);
+        createAppendChoicesDiv(thisDiv);
+        createAppendLegendDiv(thisDiv);
 
-        var choicesContainer = $('#' + this.graphIds['choicesDivId']);
+        var choicesContainer = $('#' + choicesDivId);
         var onlyOneDataset = (datasetNumber == 1);
 
         /* insert checkboxes - note that colours will be applied to spans after plotting */
-        self = this;
         $.each(datasets, function(key, val) {
             var thisDatasetNumber = val.color;
-            var colouredSpan = $('<span />').attr('id', self.graphIds['colouredSpanIdPrefix'] + thisDatasetNumber)
+            var colouredSpan = $('<span />').attr('id', colouredSpanIdPrefix + thisDatasetNumber)
                                             .addClass('flotColour')
                                             .html('&nbsp;&nbsp;');
             var inputId = 'id' + key;
@@ -475,10 +481,10 @@ contentFlotPlot.prototype.drawPlot = function ()
           'y_label': y_label
         };
 
-        plotAccordingToChoices(this, plotProperties, undefined);
+        plotAccordingToChoices(plotProperties, undefined);
         /* legend generated when graph plotted, so this must follow the plot creation! */
-        transferLegendColours(this, datasets);
-        setListeners(this, plotProperties, (datasetNumber > 1));
+        transferLegendColours(datasets);
+        setListeners(plotProperties, (datasetNumber > 1));
 
         // Save data for export if user requests it
         common.allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
@@ -498,10 +504,8 @@ contentFlotPlot.prototype.redraw = function ()
         this.drawPlot();
 };
 
-function contentFlotPlotComparer (graphIds, file, div)
+function contentFlotPlotComparer (file, div)
 {
-    this.graphIds = graphIds;
-    
     this.file = file;
     this.div = div;
     this.setUp = false;
@@ -596,14 +600,14 @@ contentFlotPlotComparer.prototype.showContents = function ()
         var y_label = thisFile.yAxes || "";
 
         var flotPlotDivId = 'flotplot-' + thisFileSig;
-        createAppendFlotPlotDiv(this, thisDiv, flotPlotDivId);
-        createAppendSelectToggler(this, thisDiv);
-        createAppendResetButton(this, thisDiv);
-        createAppendChoicesDiv(this, thisDiv);
-        createAppendLegendDiv(this, thisDiv);
+        createAppendFlotPlotDiv(thisDiv, flotPlotDivId);
+        createAppendSelectToggler(thisDiv);
+        createAppendResetButton(thisDiv);
+        createAppendChoicesDiv(thisDiv);
+        createAppendLegendDiv(thisDiv);
 
         // insert checkboxes
-        var choicesContainer = $('#' + this.graphIds['choicesDivId']);
+        var choicesContainer = $('#' + choicesDivId);
 
         var datasets = {};
         var curColor = 0;
@@ -635,7 +639,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
                     label += ", " + keyVals[i];
                 datasets[key] = {label: label, data: curData, color: curColor};
 
-                var colouredSpan = $('<span />').attr('id', this.graphIds['colouredSpanIdPrefix'] + curColor)
+                var colouredSpan = $('<span />').attr('id', colouredSpanIdPrefix + curColor)
                                                 .addClass('flotColour')
                                                 .html('&nbsp;&nbsp;');
                 var inputId = 'id' + key;
@@ -664,10 +668,10 @@ contentFlotPlotComparer.prototype.showContents = function ()
             'y_label': y_label
         };
 
-        plotAccordingToChoices(this, plotProperties, undefined);
+        plotAccordingToChoices(plotProperties, undefined);
         /* legend generated when graph plotted, so this must follow the plot creation! */
-        transferLegendColours(this, datasets);
-        setListeners(this, plotProperties, true);
+        transferLegendColours(datasets);
+        setListeners(plotProperties, true);
 
         // Save data for export if user requests it
         common.allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
@@ -695,20 +699,8 @@ contentFlotPlotComparer.prototype.redraw = function ()
 };
 
 
-function flotContent (prefix='')
+function flotContent ()
 {
-    this.graphIds = { choicesDivId: prefix + 'choices',
-                      resetButtonDivId: prefix + 'flot-buttons-div',
-                      resetButtonDivClass: 'flot-buttons-div',
-                      colouredSpanIdPrefix: prefix + 'legend-colour-span-',
-                      legendDivId: prefix + 'legend',
-                      tooltipId: prefix + 'flotTooltip',
-                      plottedGraph: {}, // TODO: probably safer if this is an instance property!
-                      resetButtonId: prefix + 'resetButton',
-                      legendHideButtonId: prefix + 'hideButton',
-                      selectTogglerId: prefix + 'selectToggler',
-    };
-
     this.name = "displayPlotFlot";
     this.icon = "displayPlotFlot.png";
     this.description = "display graphs using flot library";
@@ -741,16 +733,15 @@ flotContent.prototype.getDescription = function ()
 
 flotContent.prototype.setUp = function (file, div)
 {
-        return new contentFlotPlot (this.graphIds, file, div);
+    return new contentFlotPlot (file, div);
 };
 
 flotContent.prototype.setUpComparision = function (files, div)
 {
-    return new contentFlotPlotComparer (this.graphIds, files, div);
+    return new contentFlotPlotComparer (files, div);
 };
 
 module.exports = {
   'name': 'displayPlotFlot',
-  'get_visualizer': function(prefix) { return new flotContent(prefix); }
+  'get_visualizer': function() { return new flotContent(); }
 }
-
