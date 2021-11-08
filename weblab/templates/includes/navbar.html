@@ -2,7 +2,6 @@
 <nav>
   <ul class="navbar">
     <li><a href="{% url 'home' %}">Home</a></li>
-    <li><a href="{% url 'stories:stories' %}">Stories</a></li>
     {% if user.is_authenticated %}
       <li><a href="{% url 'experiments:list' 'mine' %}">Experiments</a></li>
       <li class="navbar-submenu">
