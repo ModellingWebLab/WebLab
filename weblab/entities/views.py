@@ -42,7 +42,7 @@ from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingResult, FittingSpec
 from repocache.exceptions import RepoCacheMiss
-from repocache.models import CachedProtocol, CachedProtocolVersion, CachedModel, CachedModelVersion
+from repocache.models import CachedProtocolVersion
 
 from .forms import (
     EntityChangeVisibilityForm,
