@@ -9,7 +9,7 @@
     <input type="file" name="upload" id="fileupload"
         data-url="{% url 'datasets:upload_file' dataset.id %}"
         data-form-data='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'
-        required-file-type=".csv">
+        data-required-file-type=".csv">
   </div>
 
   {{ form.as_p }}
