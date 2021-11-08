@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('repocache', '0024_auto_20210707_1504'),
         ('experiments', '0032_auto_20200317_0927'),
         ('entities', '0035_delete_story'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
