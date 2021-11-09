@@ -786,3 +786,6 @@ function initDb ()
   }
 }
 document.addEventListener("DOMContentLoaded", initDb, false);
+
+// Code to facilitate stories with text and graph parts
+const SimpleMDE = require('./lib/simplemde.js');
