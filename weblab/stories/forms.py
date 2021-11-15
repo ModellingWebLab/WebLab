@@ -75,17 +75,17 @@ class BaseStoryFormSet(forms.BaseFormSet):
                               and (protocol is None or e.protocol == protocol)
                               and (models is None or e.model in models)]
 
-        files = set()
+        graph_files = []
         for experimentver in experimentversions:
             # find outputs-contents.csv
             try:
                 plots_data_file = experimentver.open_file('outputs-default-plots.csv').read().decode("utf-8")
                 plots_data_stream = io.StringIO(plots_data_file)
                 for row in csv.DictReader(plots_data_stream):
-                    files.add(row['Data file name'])
+                    graph_files.append((row['Data file name'], row['Data file name']))
             except FileNotFoundError:
                 pass  # This experiemnt version has no graphs
-        return [(f, f) for f in files]
+        return graph_files
 
 
 class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
