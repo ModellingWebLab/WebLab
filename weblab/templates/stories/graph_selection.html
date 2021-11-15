@@ -1,5 +1,5 @@
 {% if  object_list|length == 0 %}
-    <option value="">--------- graph</option>
+<option value="">--------- graph</option>
 {% endif %}
 {% for entity in object_list %}
 <option value="{{ entity.0 }}">{{ entity.1 }}</option>
