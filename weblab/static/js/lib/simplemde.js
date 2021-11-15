@@ -1,4 +1,3 @@
-//Modified version of SimpleMDE, see https://simplemde.com/
 /*The MIT License (MIT)
 
 Copyright (c) 2015 Next Step Webs, Inc.
@@ -21,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
 
+//Modified version of SimpleMDE, see https://simplemde.com/
 //changed for weblab: require statements below, drawImage function, var insertTexts and require paths inside dependancies
 
 /*global require,module*/
