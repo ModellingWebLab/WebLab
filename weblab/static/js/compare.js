@@ -605,8 +605,11 @@ function displayFile(id, pluginName, prefix)
 
     // Show parent div of the file display, and scroll there
     graphGlobal[prefix]['doc'].fileDetails.style.display = "block";
-        var pos = utils.getPos (graphGlobal[prefix]['doc'].heading);
+    var pos = utils.getPos (graphGlobal[prefix]['doc'].heading);
+    if(graphGlobal[prefix]['scroll'])
+    {
         window.scrollTo(pos.xPos, pos.yPos);
+    }
 }
 
 function handleReq(prefix)
@@ -713,7 +716,7 @@ function parseUrl(event, prefix)
         
 }
 
-function initCompare(prefix)
+function initCompare(prefix, scroll=true)
 {
     graphGlobal[prefix] = { entities: {}, // Contains information about each experiment being compared
                                           // `files` contains information about each unique (by name) file within the compared experiments,
@@ -761,6 +764,7 @@ function initCompare(prefix)
                                                  fittingspec: false,
                                                  dataset: false,
                             },
+                            scroll: scroll,
     }
 
     graphGlobal[prefix]['doc'].fileDetails.style.display = "none";
@@ -784,11 +788,24 @@ function initCompare(prefix)
         }
     parseUrl(null, prefix);
 
-  $(plugins).each(function(i, plugin) {
-    graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
-  });
+    $(plugins).each(function(i, plugin) {
+        graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
+    });
 }
 
+
+// compse url for preview graph
+function getGraphPath(previewButton){
+    tableCell = $(previewButton).parent();
+
+    var url = $(location).attr('pathname').replace(/stories.*/i, ''); // may be running in subfolder
+    url += '/experiments/compare/18/54/show/outputs_Transmembrane_voltage_gnuplot_data.csv/displayPlotFlot';
+    url = url.replace('displayPlotFlot', $('#id_graphvisualizer').val());
+    graphFile = tableCell.find('.graphfiles').val();
+
+
+    return url;
+}
 
 $(document).ready(function() {
     if ($("#entitiesToCompare").length > 0) {
@@ -799,5 +816,30 @@ $(document).ready(function() {
        prefix = $(this).attr('id').replace("entitiesToCompare", "");
        initCompare(prefix);
     });
+
+
+
+    // preview graph
+    $("#storyparts").on("click", ".graph-preview-Icon", function(){
+       $('#graphPreviewDialog').remove();  // remove previous dialog if it exists
+        graphPreview = $('<div id="graphPreviewDialog"><input type="hidden" id="entityIdsToCompare" value="' + getGraphPath(this) + '"><div class="entitiesToCompare" id="entitiesToCompare" data-comparison-href="/weblab/experiments/compare/18/54/info">loading...</div><div id="filedetails" class="filedetails"><div id="filedisplay"></div></div></div>').dialog({
+            open: function(event, ui) {
+                $(".ui-dialog-titlebar-close").hide();
+            },
+            dialogClass: "image-dialog",
+            title: "Graph Preview ",
+            modal: true,
+            width: 825,
+            resizable: false,
+            position: { my: "center", at: "top" },
+            buttons:{
+                'Close': function () {
+                  $(this).dialog('close');
+                }
+            }
+        });
+        initCompare('', false);
+    });
+
 });
 

@@ -896,7 +896,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     ${protocolerr}
                     <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
                     ${graphfileserr}
-                    <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/>
+                    <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/>
                     <img class="graph-preview-Icon" alt="preview graph" title="preview graph">
                     <br/>
                   </td>

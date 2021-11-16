@@ -883,7 +883,11 @@ li.entityviz-PRIVATE
   content:url('../img/delete.png'); }
 
 .graph-preview-Icon{
-  content:url('../img/preview-graph-transparent.gif'); }
+    content:url('../img/preview-hover.png');
+}
+
+.graph-preview-Icon:hover{
+  opacity: 0.75; }
 
 /* SimpleMde markdown editor css */
 /**
