@@ -966,7 +966,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         // Fill dropdowns
         // fill models or groups
         $.ajax({
-          url: "/weblab/stories/modelorgroup",
+          url: getStoryBasePath() + "/modelorgroup",
           success: function (data) {
               $("#id_graph-" + currentGraphCount + "-models_or_group").html(data);
               if(modelOrGroupValue !== ""){
@@ -982,7 +982,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                       $("#id_graph-" + currentGraphCount + "-protocol").val(protocolValue);
                   }
 
-                  url2 = "/weblab/stories/model/0/graph".replace("0", protocolValue).replace("model", modelOrGroupValue);
+                  url2 = getStoryBasePath() + "/model/0/graph".replace("0", protocolValue).replace("model", modelOrGroupValue);
                   $.ajax({
                     url: url2,
                     success: function (data) {
