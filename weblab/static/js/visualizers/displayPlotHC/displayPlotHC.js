@@ -304,13 +304,17 @@ function HCPlot ()
 	this.name = "displayPlotHC";
 	this.icon = "displayPlotHC.png";
 	this.description = "display graphs using HighChart library";
-	
-	var el = document.createElement('script');
-	el.async = false;
-	el.src = staticPath + "js/visualizers/displayPlotHC/js/highcharts.js";//excanvas.min.js";
-	el.type = 'text/javascript';
 
-	(document.getElementsByTagName('head')[0]||document.body).appendChild(el);
+        if(!document.getElementById('highchartsinit'))
+        {
+            var el = document.createElement('script');
+            el.async = false;
+            el.src = staticPath + "js/visualizers/displayPlotHC/js/highcharts.js";//excanvas.min.js";
+            el.type = 'text/javascript';
+            el.id = 'highchartsinit';
+
+	    (document.getElementsByTagName('head')[0]||document.body).appendChild(el);
+        }
 };
 
 HCPlot.prototype.canRead = function (file)
