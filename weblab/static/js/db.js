@@ -848,7 +848,7 @@ function insertDescriptionForm(currentTextCount, descriptionValue, descriptionEr
                     <section style=" position: relative;top: 73px;">
                       <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
-                      <img class="deletepart" src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part"/><br/>
+                      <img class="deletepart" alt="remove story part" title="remove story part"/><br/>
                       <input class="order" type="hidden" name="text-${currentTextCount}-ORDER" id="id_text-${currentTextCount}-ORDER" value="${order}">
                     </section>
                   </td>
@@ -858,6 +858,12 @@ function insertDescriptionForm(currentTextCount, descriptionValue, descriptionEr
         $('#storyparts  > tbody').append(html);
         renderMde(currentTextCount);
     }
+}
+
+// we may be running in a subfolder so we can't just assume /stories is the base path
+function getStoryBasePath(){
+    var url = $(location).attr('pathname');
+    return url.replace(/stories.*/i, 'stories');
 }
 
 function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph)
@@ -890,13 +896,15 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     ${protocolerr}
                     <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
                     ${graphfileserr}
-                    <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/><br/>
+                    <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/>
+                    <img class="graph-preview-Icon" alt="preview graph" title="preview graph">
+                    <br/>
                   </td>
                   <td style="vertical-align:top;">
                     <section style=" position: relative;top: 73px;">
                       <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
-                      <img class="deletepart" src="/weblab/static/img/delete.png" alt="remove story part" title="remove story part"/><br/>
+                      <img class="deletepart" alt="remove story part" title="remove story part"/><br/>
                       <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
                       <input type="hidden" name="graph-${currentGraphCount}-currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="${currentGraph}">
                     </section>
@@ -924,7 +932,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         $('body').on('change', "#id_graph-" + currentGraphCount + "-protocol", function() {
             var model = $("#id_graph-" + currentGraphCount + "-models_or_group").val();
             var protocol = $(this).val();
-            var url = "/weblab/stories/model/0/graph".replace("0", protocol).replace("model", model);
+            var url = getStoryBasePath() + "/model/0/graph".replace("0", protocol).replace("model", model);
             $.ajax({
               url: url,
               success: function (data) {
@@ -945,7 +953,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         // update protocols when models change
         $('body').on('change', "#id_graph-" + currentGraphCount + "-models_or_group", function() {
             var model = $(this).val();
-            var url = "/weblab/stories/model/protocols".replace("model", model) ;
+            var url = getStoryBasePath() + "/model/protocols".replace("model", model) ;
             $.ajax({
               url: url,
               success: function (data) {
@@ -965,7 +973,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                   $("#id_graph-" + currentGraphCount + "-models_or_group").val(modelOrGroupValue);
               }
               // fill protocols
-              url = "/weblab/stories/model/protocols".replace("model", modelOrGroupValue);
+              url = getStoryBasePath() + "/model/protocols".replace("model", modelOrGroupValue);
               $.ajax({
                 url: url,
                 success: function (data) {
