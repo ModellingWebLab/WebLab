@@ -17,11 +17,11 @@ from .forms import (
     StoryTextFormSet,
     StoryGraphFormSet,
 )
-from entities.models import ModelEntity, ModelGroup
+from entities.models import ModelGroup
 from entities.views import EditCollaboratorsAbstractView
 from experiments.models import Experiment, ExperimentVersion, ProtocolEntity, Runnable
 from .models import Story, StoryText, StoryGraph
-from repocache.models import CachedProtocolVersion
+from repocache.models import CachedProtocolVersion, CachedModelVersion
 
 
 class StoryListView(ListView):
@@ -241,19 +241,19 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         mk = self.kwargs.get('mk', '')
-        models = []
         if mk.startswith('modelgroup'):
             mk = int(mk.replace('modelgroup', ''))
-            models = ModelGroup.objects.get(pk=mk).models.all()
+            model_versions = [m.repocache.latest_version for m in ModelGroup.objects.get(pk=mk).models.all()
+                              if m.repocache.versions.count()]
         elif mk.startswith('model'):
             mk = int(mk.replace('model', ''))
-            models = ModelEntity.objects.filter(pk=mk)
+            model_versions = CachedModelVersion.objects.filter(pk=mk)
         else:
             return []
 
         # Get protocols for which the latest result run succesful
         # that users can see for the model(s) we're looking at
-        return StoryGraphFormSet.get_protocol_choices(self.request.user, models=models)
+        return StoryGraphFormSet.get_protocol_choices(self.request.user, model_versions=model_versions)
 
 
 class StoryFilterGraphView(LoginRequiredMixin, ListView):
@@ -263,18 +263,20 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         mk = self.kwargs.get('mk', '')
         pk = self.kwargs.get('pk', '')
-        models = []
+        model_versions = []
         if pk == '':
             return []
         if mk.startswith('modelgroup'):
             mk = int(mk.replace('modelgroup', ''))
-            models = ModelGroup.objects.get(pk=mk).models.all()
+            model_versions = [m.repocache.latest_version for m in ModelGroup.objects.get(pk=mk).models.all()
+                              if m.repocache.versions.count()]
         else:
             assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
             mk = int(mk.replace('model', ''))
-            models = ModelEntity.objects.filter(pk=mk)
+            model_versions = CachedModelVersion.objects.filter(pk=mk)
         protocol_version = CachedProtocolVersion.objects.get(pk=pk)
-        return StoryGraphFormSet.get_graph_choices(self.request.user, protocol_version=protocol_version, models=models)
+        return StoryGraphFormSet.get_graph_choices(self.request.user, protocol_version=protocol_version,
+                                                   model_versions=model_versions)
 
 
 class StoryRenderView(UserPassesTestMixin, DetailView):

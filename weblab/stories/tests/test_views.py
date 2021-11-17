@@ -489,17 +489,18 @@ class TestStoryFilterModelOrGroupView:
         assert response.status_code == 302
         assert '/login/' in response.url
 
-    def test_get_model_groups(self, logged_in_user, other_user, client):
+    def test_get_model_groups(self, logged_in_user, other_user, client, helpers):
         recipes.model.make(author=logged_in_user, name='model-mine')
         recipes.modelgroup.make(author=logged_in_user, title='my-modelgroup')
 
-        recipes.model.make(author=other_user, name='model-other')
+        model_other = recipes.model.make(author=other_user, name='model-other')
+        helpers.add_version(model_other)
         recipes.modelgroup.make(author=other_user, title='other-modelgroup', visibility='private')
         recipes.modelgroup.make(author=other_user, title='public-modelgroup', visibility='public')
 
         response = client.get('/stories/modelorgroup')
         assert response.status_code == 200
-        assert 'model-mine' in str(response.content)
+        assert 'model-mine' not in str(response.content)  # has no version
         assert 'my-modelgroup' in str(response.content)
         assert 'public-modelgroup' in str(response.content)
         assert 'model-other' not in str(response.content)
@@ -522,7 +523,7 @@ class TestStoryFilterProtocolView:
 
     def test_get_protocol(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
-        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        response = client.get('/stories/model%d/protocols' % experiment.model_version.pk)
         assert response.status_code == 200
         assert experiment.protocol.name in str(response.content)
 
@@ -549,13 +550,15 @@ class TestStoryFilterGraphView:
 
     def test_get_graph_not_visible(self, client, logged_in_user, experiment_with_result):
         experiment = experiment_with_result.experiment
-        response = client.get('/stories/model%d/%d/graph' % (experiment.model.pk, experiment.protocol.pk))
+        response = client.get('/stories/model%d/%d/graph' %
+                              (experiment.model_version.pk, experiment.protocol_version.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").replace('\n', '') == '<option value="">--------- graph</option>'
 
     def test_get_graph(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
-        response = client.get('/stories/model%d/%d/graph' % (experiment.model.pk, experiment.protocol.pk))
+        response = client.get('/stories/model%d/%d/graph' %
+                              (experiment.model_version.pk, experiment.protocol_version.pk))
         assert response.status_code == 200
         assert 'outputs_Resting_potential_gnuplot_data.csv' in str(response.content)
         assert 'outputs_Relative_resting_potential_gnuplot_data.csv' in str(response.content)
@@ -563,7 +566,7 @@ class TestStoryFilterGraphView:
     def test_get_graph_via_modelgroup(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
         modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model])
-        response = client.get('/stories/modelgroup%d/%d/graph' % (modelgroup.pk, experiment.protocol.pk))
+        response = client.get('/stories/modelgroup%d/%d/graph' % (modelgroup.pk, experiment.protocol_version.pk))
         assert response.status_code == 200
         assert 'outputs_Resting_potential_gnuplot_data.csv' in str(response.content)
         assert 'outputs_Relative_resting_potential_gnuplot_data.csv' in str(response.content)

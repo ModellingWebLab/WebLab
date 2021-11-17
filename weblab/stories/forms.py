@@ -62,21 +62,21 @@ class BaseStoryFormSet(forms.BaseFormSet):
                 if model.repocache.versions.count()]
 
     @staticmethod
-    def get_protocol_choices(user, models=None):
+    def get_protocol_choices(user, model_versions=None):
         # Get protocols for which the latest result run succesful
         # that users can see for the model(s) we're looking at
         return set((e.protocol_version.pk, e.protocol.name) for e in Experiment.objects.all()
                    if e.latest_result == Runnable.STATUS_SUCCESS and
                    e.is_visible_to_user(user)
-                   and (models is None or e.model in models))
+                   and (model_versions is None or e.model_version in model_versions))
 
     @staticmethod
-    def get_graph_choices(user, protocol_version=None, models=None):
+    def get_graph_choices(user, protocol_version=None, model_versions=None):
         experimentversions = [e.latest_version for e in Experiment.objects.all()
                               if e.latest_result == Runnable.STATUS_SUCCESS and
                               e.is_visible_to_user(user)
                               and (protocol_version is None or e.protocol == protocol_version.protocol)
-                              and (models is None or e.model in models)]
+                              and (model_versions is None or e.model_version in model_versions)]
 
         graph_files = []
         for experimentver in experimentversions:
