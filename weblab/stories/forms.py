@@ -135,6 +135,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['ORDER'] = forms.IntegerField(required=False)
         self.fields['currentGraph'] = forms.CharField(required=False)
+        self.fields['experimentVersions'] = forms.CharField(required=False)
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
         self.fields['models_or_group'] = forms.ChoiceField(required=False,

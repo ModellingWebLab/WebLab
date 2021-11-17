@@ -24,6 +24,15 @@ from .models import Story, StoryText, StoryGraph
 from repocache.models import CachedProtocolVersion, CachedModelVersion
 
 
+def get_experiment_versions_url(user, cachedprotocolversion, cachedmodelversions):
+    experiment_versions = [e.latest_version.id for e in Experiment.objects.all()
+                           if e.latest_result == Runnable.STATUS_SUCCESS and
+                           e.is_visible_to_user(user) and
+                           e.protocol_version == cachedprotocolversion
+                           and e.model_version in cachedmodelversions]
+    return '/' + '/'.join(str(ver) for ver in experiment_versions)
+
+
 class StoryListView(ListView):
     """
     List all user's stories
@@ -150,7 +159,7 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
                 self.formset = self.formset_class(prefix='text', initial=initial, form_kwargs=form_kwargs)
         return self.formset
 
-    def get_formset_graph(self, initial=[{'ORDER': '', 'currentGraph': ''}]):
+    def get_formset_graph(self, initial=[{'ORDER': '', 'currentGraph': '', 'experimentVersions': ''}]):
         if not hasattr(self, 'formsetgraph') or self.formsetgraph is None:
             form_kwargs = {'user': self.request.user}
             if self.request.method == 'POST':
@@ -222,6 +231,9 @@ class StoryEditView(StoryView, UpdateView):
                     'protocol': s.cachedprotocolversion.pk,
                     'graphfiles': s.graphfilename,
                     'currentGraph': str(s),
+                    'experimentVersions': get_experiment_versions_url(s.author,
+                                                                      s.cachedprotocolversion,
+                                                                      s.cachedmodelversions.all()),
                     'ORDER': s.order,
                     'pk': s.pk} for s in StoryGraph.objects.filter(story=self.object)]
         return super().get_formset_graph(initial=initial)
@@ -295,10 +307,7 @@ class StoryRenderView(UserPassesTestMixin, DetailView):
                                       key=lambda f: f.order)
         for part in kwargs['storyparts']:
             if isinstance(part, StoryGraph):
-                experiment_versions = [e.latest_version.id for e in Experiment.objects.all()
-                                       if e.latest_result == Runnable.STATUS_SUCCESS and
-                                       e.is_visible_to_user(self.request.user) and
-                                       e.protocol_version == part.cachedprotocolversion
-                                       and e.model_version in part.cachedmodelversions.all()]
-                part.experiment_versions = '/' + '/'.join(str(ver) for ver in experiment_versions)
+                part.experiment_versions = get_experiment_versions_url(self.request.user,
+                                                                       part.cachedprotocolversion,
+                                                                       part.cachedmodelversions.all())
         return super().get_context_data(**kwargs)

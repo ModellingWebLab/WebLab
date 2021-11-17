@@ -7,6 +7,7 @@ from guardian.shortcuts import assign_perm, remove_perm
 
 from core import recipes
 from stories.models import Story, StoryText, StoryGraph
+from stories.views import get_experiment_versions_url
 
 
 @pytest.fixture
@@ -24,6 +25,15 @@ def experiment_with_result_public(experiment_with_result):
                 experiment_with_result.archive_path)
 
     return experiment_with_result
+
+
+@pytest.mark.django_db
+def test_get_experiment_versions_url(experiment_with_result_public):
+    user = experiment_with_result_public.author
+    cachedprotocolversion = experiment_with_result_public.experiment.protocol_version
+    cachedmodelversions = [experiment_with_result_public.experiment.model_version]
+    assert str(get_experiment_versions_url(user, cachedprotocolversion, cachedmodelversions)) == \
+        '/' + str(experiment_with_result_public.experiment.pk)
 
 
 @pytest.mark.django_db

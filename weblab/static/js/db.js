@@ -866,7 +866,7 @@ function getStoryBasePath(){
     return url.replace(/stories.*/i, 'stories');
 }
 
-function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph)
+function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph, experimentVersions)
 {
     if (del){
         html=`<input type="hidden" name="graph-${currentGraphCount}-DELETE" id="id_graph-${currentGraphCount}-DELETE" value="true">`;
@@ -879,6 +879,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
             <div class="StoryGraphRadio">
               <input type="radio" name="graph-${currentGraphCount}-update" value="" id="id_graph-${currentGraphCount}-update_1" name="graph-${currentGraphCount}-update" ${update ? '' : 'checked'}>
                <label for="id_graph-${currentGraphCount}-update_1"><em>${currentGraph}</em></label>
+               <input type="hidden" id="id_graph-${currentGraphCount}-experiment-versions" value="${experimentVersions}">
             </div><br/>`
         }
 
@@ -1038,7 +1039,8 @@ $( document ).ready(function()
               graphfileserr = $(this).find(".graphfileserr").val();
               update = $(this).find(".update").val().toLowerCase() === 'true';
               currentGraph = $(this).find(".currentGraph").val();
-              storyparts.push([order, insertGraphForm, [storyGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph]]);
+              experimentVersions = $(this).find(".experimentVersions").val();
+              storyparts.push([order, insertGraphForm, [storyGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph, experimentVersions]]);
               storyGraphCount++;
           }
           $(this).remove();
@@ -1064,7 +1066,7 @@ $( document ).ready(function()
 
     $("#add-graph").click(function()
     {
-        insertGraphForm(storyGraphCount, '', '', '', '', '', '', storyTextCount + storyGraphCount, false, true, '')
+        insertGraphForm(storyGraphCount, '', '', '', '', '', '', storyTextCount + storyGraphCount, false, true, '', '')
         storyGraphCount++;
         $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
     });
