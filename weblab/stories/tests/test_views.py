@@ -33,7 +33,7 @@ def test_get_experiment_versions_url(experiment_with_result_public):
     cachedprotocolversion = experiment_with_result_public.experiment.protocol_version
     cachedmodelversions = [experiment_with_result_public.experiment.model_version]
     assert str(get_experiment_versions_url(user, cachedprotocolversion, cachedmodelversions)) == \
-        '/' + str(experiment_with_result_public.experiment.pk)
+        '/' + str(experiment_with_result_public.pk)
 
 
 @pytest.mark.django_db
