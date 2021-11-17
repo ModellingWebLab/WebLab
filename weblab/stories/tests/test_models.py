@@ -85,7 +85,6 @@ def test_make_storygraph(user, other_user, experiment_with_result, model_with_ve
     # change
     modelgroup = recipes.modelgroup.make(author=user, models=[model_with_version, public_model],
                                          title="test model group")
-
     story_graph.author = other_user
     story_graph.story = stories[1]
     story_graph.cachedprotocolversion = public_protocol.repocache.latest_version
@@ -161,3 +160,22 @@ def test_model_constraints3(user, experiment_with_result, model_with_version, pu
                                  cachedprotocolversion=experiment.protocol_version,
                                  order=0, cachedmodelversions=[model_with_version.repocache.latest_version],
                                  graphfilename='outputs_Transmembrane_voltage_gnuplot_data.csv')
+
+
+@pytest.mark.django_db(transaction=True)
+def test_model_constraints_save_m2m(user, story, model_with_version, public_model, public_protocol):
+    story_graph = StoryGraph.objects.get(story=story)
+    story_graph.author = story.author
+    story_graph.story = story
+    story_graph.graphfilename = 'outputs_All_state_variables_gnuplot_data.csv'
+    story_graph.cachedprotocolversion = public_protocol.repocache.latest_version
+    story_graph.order = 3
+    story_graph.modelgroup = None
+    story_graph.save()
+    with pytest.raises(IntegrityError):
+        story_graph.cachedmodelversions.set([public_model.repocache.latest_version])
+    assert list(story_graph.cachedmodelversions.all()) != [public_model.repocache.latest_version]
+
+    story_graph.set_cachedmodelversions([public_model.repocache.latest_version])
+    assert list(story_graph.cachedmodelversions.all()) == [public_model.repocache.latest_version]
+    story_graph.save()

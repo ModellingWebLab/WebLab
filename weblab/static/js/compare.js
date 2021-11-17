@@ -802,7 +802,7 @@ function getGraphPath(previewButton){
     url += '/experiments/compare/18/54/show/outputs_Transmembrane_voltage_gnuplot_data.csv/displayPlotFlot';
     url = url.replace('displayPlotFlot', $('#id_graphvisualizer').val());
     graphFile = tableCell.find('.graphfiles').val();
-
+    graphProtocol = tableCell.find('.graphprotocol').val();
 
     return url;
 }

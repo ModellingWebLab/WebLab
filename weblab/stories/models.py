@@ -76,6 +76,13 @@ class StoryGraph(StoryItem):
                 else self.cachedmodelversions.first().model.name) +\
             " / " + self.cachedprotocolversion.protocol.name + " / " + self.graphfilename
 
+    def set_cachedmodelversions(self, cachedmodelversions):
+        self.setting_cachedmodelversions = True
+        self.save()
+        self.cachedmodelversions.set(cachedmodelversions)
+        self.setting_cachedmodelversions = False
+        self.save()
+
 
 @receiver(m2m_changed, sender=StoryGraph.cachedmodelversions.through)
 def storygraph_constraints(sender, **kwargs):
@@ -84,7 +91,7 @@ def storygraph_constraints(sender, **kwargs):
     """
     action = kwargs.pop('action', '')
     instance = kwargs.pop('instance', None)
-    if action.startswith('post'):
+    if action.startswith('post') and not getattr(instance, 'setting_cachedmodelversions', False):
         # must have at least 1 cachedmodelversion
         if instance.cachedmodelversions.count() == 0:
             raise IntegrityError("StoryGraph must have model")

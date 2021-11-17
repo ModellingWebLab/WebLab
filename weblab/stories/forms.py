@@ -184,9 +184,11 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             if not hasattr(storygraph, 'author') or storygraph.author is None:
                 storygraph.author = self.user
             storygraph.modelgroup = modelgroup
-            storygraph.save()
-            storygraph.cachedmodelversions.set([m.repocache.latest_version
+            storygraph.set_cachedmodelversions([m.repocache.latest_version
                                                 for m in models if m.repocache.versions.count()])
+#            storygraph.save()
+#            storygraph.cachedmodelversions.set([m.repocache.latest_version
+#                                                for m in models if m.repocache.versions.count()])
         storygraph.save()
         return storygraph
 
