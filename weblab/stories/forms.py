@@ -10,7 +10,7 @@ from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
 from entities.models import ModelEntity, ModelGroup
 from experiments.models import Experiment
 from .models import Story, StoryText, StoryGraph
-from repocache.models import CachedProtocolVersion
+from repocache.models import CachedProtocolVersion, CachedModelVersion
 from experiments.models import Runnable
 import csv
 import io
@@ -57,7 +57,9 @@ class BaseStoryFormSet(forms.BaseFormSet):
                [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
                 if modelgroup.visible_to_user(user)] +\
                [('', '--------- model')] +\
-               [('model' + str(model.pk), model.name) for model in ModelEntity.objects.visible_to_user(user)]
+               [('model' + str(model.repocache.latest_version.pk), model.name)
+                for model in ModelEntity.objects.visible_to_user(user)
+                if model.repocache.versions.count()]
 
     @staticmethod
     def get_protocol_choices(user, models=None):
@@ -176,17 +178,17 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             if mk.startswith('modelgroup'):
                 mk = int(mk.replace('modelgroup', ''))
                 modelgroup = ModelGroup.objects.get(pk=mk)
-                models = modelgroup.models.all()
+                model_versions = [m.repocache.latest_version for m in modelgroup.models.all()
+                                  if m.repocache.versions.count()]
             else:
                 assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
                 mk = int(mk.replace('model', ''))
-                models = ModelEntity.objects.filter(pk=mk)
+                model_versions = CachedModelVersion.objects.filter(pk=mk)
             storygraph.cachedprotocolversion = CachedProtocolVersion.objects.get(pk=pk)
             if not hasattr(storygraph, 'author') or storygraph.author is None:
                 storygraph.author = self.user
             storygraph.modelgroup = modelgroup
-            storygraph.set_cachedmodelversions([m.repocache.latest_version
-                                                for m in models if m.repocache.versions.count()])
+            storygraph.set_cachedmodelversions(model_versions)
         storygraph.save()
         return storygraph
 
