@@ -7,9 +7,10 @@ from django.forms import formset_factory, inlineformset_factory
 from core import visibility
 
 from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
-from entities.models import ModelEntity, ModelGroup, ProtocolEntity
+from entities.models import ModelEntity, ModelGroup
 from experiments.models import Experiment
 from .models import Story, StoryText, StoryGraph
+from repocache.models import CachedProtocolVersion
 from experiments.models import Runnable
 import csv
 import io
@@ -62,17 +63,17 @@ class BaseStoryFormSet(forms.BaseFormSet):
     def get_protocol_choices(user, models=None):
         # Get protocols for which the latest result run succesful
         # that users can see for the model(s) we're looking at
-        return set((e.protocol.pk, e.protocol.name) for e in Experiment.objects.all()
+        return set((e.protocol_version.pk, e.protocol.name) for e in Experiment.objects.all()
                    if e.latest_result == Runnable.STATUS_SUCCESS and
                    e.is_visible_to_user(user)
                    and (models is None or e.model in models))
 
     @staticmethod
-    def get_graph_choices(user, protocol=None, models=None):
+    def get_graph_choices(user, protocol_version=None, models=None):
         experimentversions = [e.latest_version for e in Experiment.objects.all()
                               if e.latest_result == Runnable.STATUS_SUCCESS and
                               e.is_visible_to_user(user)
-                              and (protocol is None or e.protocol == protocol)
+                              and (protocol_version is None or e.protocol == protocol_version.protocol)
                               and (models is None or e.model in models)]
 
         graph_files = []
@@ -180,7 +181,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
                 assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
                 mk = int(mk.replace('model', ''))
                 models = ModelEntity.objects.filter(pk=mk)
-            storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
+            storygraph.cachedprotocolversion = CachedProtocolVersion.objects.get(pk=pk)
             if not hasattr(storygraph, 'author') or storygraph.author is None:
                 storygraph.author = self.user
             storygraph.modelgroup = modelgroup

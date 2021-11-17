@@ -896,8 +896,8 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     ${protocolerr}
                     <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
                     ${graphfileserr}
-                    <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/>
-                    <img class="graph-preview-Icon" alt="preview graph" title="preview graph">
+                    <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/>
+                    <input id="id_graph-${currentGraphCount}-graph-preview-button" class="graph-preview-button" type="button" value="Preview graph" alt="preview graph" title="preview graph">
                     <br/>
                   </td>
                   <td style="vertical-align:top;">
@@ -914,6 +914,10 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         // add new form
         $('#storyparts  > tbody').append(html);
 
+        function updatePreviewButtonEnabled(){
+            $("#id_graph-" + currentGraphCount + "-graph-preview-button").prop("disabled", update && !$("#id_graph-" + currentGraphCount + "-graphfiles").val());
+        }
+
         //checkbox toggels dropdown enabled
         function graphMenuVisibility()
         {
@@ -924,6 +928,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
             $("#" + currentGraphCount + "-models_or_group-label").css('opacity', update ? '1.0' : '0.5');
             $("#" + currentGraphCount + "-protocol").css('opacity', update ? '1.0' : '0.5');
             $("#" + currentGraphCount + "-graphfiles").css('opacity', update ? '1.0' : '0.5');
+            updatePreviewButtonEnabled();
         }
         graphMenuVisibility();
         $("input[type='radio'][name='graph-" + currentGraphCount + "-update']").click(graphMenuVisibility);
@@ -937,6 +942,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
               url: url,
               success: function (data) {
                 $("#id_graph-" + currentGraphCount + "-graphfiles").html(data);
+                $("#id_graph-" + currentGraphCount + "-graphfiles").change();
               }
             })
         });
@@ -961,6 +967,11 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                 $("#id_graph-" + currentGraphCount + "-protocol").change();
               }
             })
+        });
+
+        // update preview button visibility when grapg file changes
+        $('body').on('change', "#id_graph-" + currentGraphCount + "-graphfiles", function() {
+            updatePreviewButtonEnabled();
         });
 
         // Fill dropdowns

@@ -820,7 +820,7 @@ $(document).ready(function() {
 
 
     // preview graph
-    $("#storyparts").on("click", ".graph-preview-Icon", function(){
+    $("#storyparts").on("click", ".graph-preview-button", function(){
        $('#graphPreviewDialog').remove();  // remove previous dialog if it exists
         graphPreview = $('<div id="graphPreviewDialog"><input type="hidden" id="entityIdsToCompare" value="' + getGraphPath(this) + '"><div class="entitiesToCompare" id="entitiesToCompare" data-comparison-href="/weblab/experiments/compare/18/54/info">loading...</div><div id="filedetails" class="filedetails"><div id="filedisplay"></div></div></div>').dialog({
             open: function(event, ui) {

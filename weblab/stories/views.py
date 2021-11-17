@@ -21,6 +21,7 @@ from entities.models import ModelEntity, ModelGroup
 from entities.views import EditCollaboratorsAbstractView
 from experiments.models import Experiment, ExperimentVersion, ProtocolEntity, Runnable
 from .models import Story, StoryText, StoryGraph
+from repocache.models import CachedProtocolVersion
 
 
 class StoryListView(ListView):
@@ -218,7 +219,7 @@ class StoryEditView(StoryView, UpdateView):
     def get_formset_graph(self):
         initial = [{'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
                     if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
-                    'protocol': s.cachedprotocolversion.protocol.pk,
+                    'protocol': s.cachedprotocolversion.pk,
                     'graphfiles': s.graphfilename,
                     'currentGraph': str(s),
                     'ORDER': s.order,
@@ -272,8 +273,8 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
             assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
             mk = int(mk.replace('model', ''))
             models = ModelEntity.objects.filter(pk=mk)
-        protocol = ProtocolEntity.objects.get(pk=pk)
-        return StoryGraphFormSet.get_graph_choices(self.request.user, protocol=protocol, models=models)
+        protocol_version = CachedProtocolVersion.objects.get(pk=pk)
+        return StoryGraphFormSet.get_graph_choices(self.request.user, protocol_version=protocol_version, models=models)
 
 
 class StoryRenderView(UserPassesTestMixin, DetailView):
