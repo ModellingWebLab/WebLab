@@ -218,7 +218,7 @@ class StoryEditView(StoryView, UpdateView):
 
     def get_formset_graph(self):
         initial = [{'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
-                    if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
+                    if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().pk),
                     'protocol': s.cachedprotocolversion.pk,
                     'graphfiles': s.graphfilename,
                     'currentGraph': str(s),
