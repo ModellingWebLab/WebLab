@@ -12,6 +12,7 @@ from guardian.shortcuts import get_objects_for_user
 from core.filetypes import get_file_type
 from core.models import UserCreatedModelMixin
 from core.visibility import Visibility, visibility_check
+from core.models import VisibilityModelMixin
 from repocache.exceptions import RepoCacheMiss
 
 from .repository import Repository
@@ -453,3 +454,34 @@ class AnalysisTask(models.Model):
     class Meta:
         # Don't analyse the same entity version twice at the same time!
         unique_together = ['entity', 'version']
+
+
+class ModelGroup(UserCreatedModelMixin, VisibilityModelMixin):
+    """
+    A group of models used for creating stories about aspects of several models together.
+    """
+    DEFAULT_VISIBILITY = Visibility.PRIVATE
+
+    permission_str = 'edit_modelgroup'
+    title = models.CharField(max_length=255)
+    models = models.ManyToManyField(ModelEntity)
+
+    class Meta:
+        ordering = ['title']
+        unique_together = ['title', 'author']
+        permissions = (
+            # edit_modelgroup is used as an object-level permission for the collaborator functionality
+            ('edit_modelgroup', 'Can edit modelgroup'),
+        )
+
+    def visible_to_user(self, user):
+        return self.is_editable_by(user) or self.visibility != 'private'
+
+    def is_editable_by(self, user):
+        return (
+            user == self.author or
+            user.has_perm(self.permission_str, self)
+        )
+
+    def __str__(self):
+        return self.title

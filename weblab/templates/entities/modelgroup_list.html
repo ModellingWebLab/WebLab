@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load entities %}
+
+{% block title %}Model groups you can edit - {% endblock title %}
+
+{% block content %}
+
+  <a class="button" href="{% url 'entities:list' 'model' %}">models</a>
+  <a class="button selected" href="{% url 'entities:modelgroup' %}">model groups</a>
+  <a class="button" href="{% url 'entities:list' 'protocol' %}">protocols</a>
+  <a class="button" href="{% url 'datasets:list' %}">datasets</a>
+  <a class="button" href="{% url 'fitting:list' 'spec' %}">fitting specifications</a>
+
+  <section id="modelgrouplist">
+    <h2>Your model groups</h2>
+
+    {% can_create_entity 'model' as permission %}
+    {% if permission %}
+    <small><a href="{% url 'entities:modelgroup_create' %}" class="pointer">Create a new model group</a></small>
+    {% else %}
+    <small>Your account doesn't have the authority to create new model groups; please <a href="{% url 'contact' %}">contact us</a> to request permission.</small>
+    {% endif %}
+
+    <ul>
+      {% for modelgroup in object_list %}
+        {% if modelgroup.author == user %}
+          <li title="{{ modelgroup.title }}">
+              <strong><a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{{ modelgroup.title }} </strong></a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+
+    <h2>Other model groups you can edit</h2>
+
+    <ul>
+      {% for modelgroup in object_list %}
+        {% if modelgroup.author != user %}
+          <li title="{{ modelgroup.title }}">
+              <strong><a href="{% url 'entities:modelgroup_edit' modelgroup.id %}">{{ modelgroup.title }} </strong><em>(by {{ modelgroup.author.full_name }})</em></a>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+
+  </section>
+{% endblock content %}
+

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Change owner for model group {{ modelgroup.title }}{% endblock title %}
+
+{% block content %}
+  {% include "./includes/modelgroup_header.html" %}
+
+  <h2><small>Transfer ownership of {{ modelgroup.title }}</small></h2>
+
+  <form method="POST" action="">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button>Transfer</button>
+  </form>
+
+{% endblock content %}

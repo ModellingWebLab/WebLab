@@ -275,6 +275,27 @@ form {
   .add-row::before {
     content:url('../img/add.png')
   }
+  #add-description::before {
+    content:url('../img/add.png')
+  }
+  #add-graph::before {
+    content:url('../img/add.png')
+  }
+}
+
+/* Useful for checkbox-style inputs */
+input.inline {
+  display: inline;
+  margin-left: 0;
+}
+
+input.inline+span {
+  display: inline;
+}
+
+#notifications {
+    position: absolute;
+    width: $page-width;
 }
 
 /* Useful for checkbox-style inputs */
@@ -389,7 +410,7 @@ h3#entityversionfilename
 
 #entityversion,
 #entityversionfiledetails,
-#filedetails
+#filedetails, .filedetails
 {
 	padding: 10px;
 	border: 1px solid #ccc;
@@ -780,4 +801,47 @@ li.entityviz-PRIVATE
 
 .dataset-column-mapper .older-version-mappings {
   display: none;
+}
+
+.checkboxesList {
+  color: black;
+  display: inline-block;
+  margin:auto;
+  vertical-align: middle;
+}
+
+/* model group selector */
+.modelgroup-model-selector {
+  display: table;
+  width: 100vh;
+}
+
+.selectList{
+  width:45vh;
+  height:45vh;
+}
+
+.modelgroup-model-selector-row{
+  display: table-row;
+  clear: both;
+  width: 100vh;
+}
+
+.modelgroup-model-selector-col{
+  float: left; /* fix for  buggy browsers */
+  display: table-column;
+}
+
+.div-table-buttons {
+  float: left; /* fix for  buggy browsers */
+  display: table-column;
+}
+
+.div-table-buttons {
+  width: 10vh;
+  text-align:center;
+}
+
+.modelgroup-model-selector-col.left{
+    width:55vh;
 }
