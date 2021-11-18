@@ -12,6 +12,7 @@ from experiments.models import Experiment
 from .models import Story, StoryText, StoryGraph
 from repocache.models import CachedProtocolVersion, CachedModelVersion
 from experiments.models import Runnable
+from collections import OrderedDict
 import csv
 import io
 
@@ -78,17 +79,17 @@ class BaseStoryFormSet(forms.BaseFormSet):
                               and (protocol_version is None or e.protocol == protocol_version.protocol)
                               and (model_versions is None or e.model_version in model_versions)]
 
-        graph_files = []
+        graph_files = OrderedDict()
         for experimentver in experimentversions:
             # find outputs-contents.csv
             try:
                 plots_data_file = experimentver.open_file('outputs-default-plots.csv').read().decode("utf-8")
                 plots_data_stream = io.StringIO(plots_data_file)
                 for row in csv.DictReader(plots_data_stream):
-                    graph_files.append((row['Data file name'], row['Data file name']))
+                    graph_files[(row['Data file name'], row['Data file name'])] = True
             except FileNotFoundError:
                 pass  # This experiemnt version has no graphs
-        return graph_files
+        return graph_files.keys()
 
 
 class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):

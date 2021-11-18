@@ -78,6 +78,24 @@ urlpatterns = [
         name='filter_graph_no_keys',
     ),
 
+    url(
+        r'^(?P<mk>\w+)/(?P<pk>\d+)/experimentversions$',
+        views.StoryFilterExperimentVersions.as_view(),
+        name='filter_graph',
+    ),
+
+    url(
+        r'^(?P<mk>\w+)/experimentversions$',
+        views.StoryFilterExperimentVersions.as_view(),
+        name='filter_graph',
+    ),
+
+    url(
+        r'^experimentversions$',
+        views.StoryFilterExperimentVersions.as_view(),
+        name='filter_graph_no_keys',
+    ),
+
 
     url(
         r'^(?P<pk>\d+)$',

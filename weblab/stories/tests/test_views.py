@@ -547,7 +547,49 @@ class TestStoryFilterProtocolView:
     def test_get_protocol_no_modelid(self, client, logged_in_user, experiment_with_result_public):
         response = client.get('/stories/protocols')
         assert response.status_code == 200
-        assert response.content.decode("utf-8").replace('\n', '') == '<option value="">--------- protocol</option>'
+        assert response.content.decode("utf-8").strip() == '<option value="">--------- protocol</option>'
+
+
+@pytest.mark.django_db
+class TestStoryFilterExperimentVersions:
+    def test_requires_login(self, experiment_with_result, client):
+        experiment = experiment_with_result.experiment
+        response = client.get('/stories/model%d/%d/experimentversions' % (experiment.model.pk, experiment.protocol.pk))
+        assert response.status_code == 302
+        assert '/login/' in response.url
+
+    def test_get_graph_not_visible(self, client, logged_in_user, experiment_with_result):
+        experiment = experiment_with_result.experiment
+        response = client.get('/stories/model%d/%d/experimentversions' %
+                              (experiment.model_version.pk, experiment.protocol_version.pk))
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").strip() == '/'
+
+    def test_get_graph(self, client, logged_in_user, experiment_with_result_public):
+        experiment = experiment_with_result_public.experiment
+        response = client.get('/stories/model%d/%d/experimentversions' %
+                              (experiment.model_version.pk, experiment.protocol_version.pk))
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").strip() == '/' + str(experiment_with_result_public.pk)
+
+    def test_get_graph_via_modelgroup(self, client, logged_in_user, experiment_with_result_public):
+        experiment = experiment_with_result_public.experiment
+        modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model])
+        response = client.get('/stories/modelgroup%d/%d/experimentversions' %
+                              (modelgroup.pk, experiment.protocol_version.pk))
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").strip() == '/' + str(experiment_with_result_public.pk)
+
+    def test_get_graph_no_ids(self, client, logged_in_user, experiment_with_result_public):
+        response = client.get('/stories/experimentversions')
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").strip() == '/'
+
+    def test_get_graph_no_protocol_id(self, client, logged_in_user, experiment_with_result_public):
+        model = experiment_with_result_public.experiment.model
+        response = client.get('/stories/model%d/experimentversions' % model.pk)
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").strip() == '/'
 
 
 @pytest.mark.django_db
@@ -563,7 +605,7 @@ class TestStoryFilterGraphView:
         response = client.get('/stories/model%d/%d/graph' %
                               (experiment.model_version.pk, experiment.protocol_version.pk))
         assert response.status_code == 200
-        assert response.content.decode("utf-8").replace('\n', '') == '<option value="">--------- graph</option>'
+        assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
 
     def test_get_graph(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
@@ -584,13 +626,13 @@ class TestStoryFilterGraphView:
     def test_get_graph_no_ids(self, client, logged_in_user, experiment_with_result_public):
         response = client.get('/stories/graph')
         assert response.status_code == 200
-        assert response.content.decode("utf-8").replace('\n', '') == '<option value="">--------- graph</option>'
+        assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
 
     def test_get_graph_no_protocol_id(self, client, logged_in_user, experiment_with_result_public):
         model = experiment_with_result_public.experiment.model
         response = client.get('/stories/model%d/graph' % model.pk)
         assert response.status_code == 200
-        assert response.content.decode("utf-8").replace('\n', '') == '<option value="">--------- graph</option>'
+        assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
 
 
 @pytest.mark.django_db

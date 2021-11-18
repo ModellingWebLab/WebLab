@@ -877,9 +877,9 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         if(currentGraph != ""){
           current_graph_html = `
             <div class="StoryGraphRadio">
-              <input type="radio" name="graph-${currentGraphCount}-update" value="" id="id_graph-${currentGraphCount}-update_1" name="graph-${currentGraphCount}-update" ${update ? '' : 'checked'}>
+              <input type="radio" name="graph-${currentGraphCount}-update" value="" id="id_graph-${currentGraphCount}-update_1" class="update_1" name="graph-${currentGraphCount}-update" ${update ? '' : 'checked'}>
                <label for="id_graph-${currentGraphCount}-update_1"><em>${currentGraph}</em></label>
-               <input type="hidden" id="id_graph-${currentGraphCount}-experiment-versions" value="${experimentVersions}">
+               <input type="hidden" id="id_graph-${currentGraphCount}-experiment-versions" class="experiment-versions" value="${experimentVersions}">
             </div><br/>`
         }
 
@@ -889,8 +889,9 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     <h2>Graph</h2>
                     ${current_graph_html}
                     <div class="StoryGraphRadio" ${currentGraph=="" ? 'style="Display: none"' : ''}>
-                      <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" name=\"graph-${currentGraphCount}-update\" ${update ? 'checked' : ''}>
+                      <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0" name=\"graph-${currentGraphCount}-update\" ${update ? 'checked' : ''}>
                       <label for="id_graph-${currentGraphCount}-update">Update graph</label>
+                      <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate" value="/">
                     </div>
                     ${models_or_grouperr}
                     <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><select name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
@@ -907,7 +908,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
                       <img class="deletepart" alt="remove story part" title="remove story part"/><br/>
                       <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
-                      <input type="hidden" name="graph-${currentGraphCount}-currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="${currentGraph}">
+                      <input type="hidden" name="graph-${currentGraphCount}-currentGraph" class="currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="${currentGraph}">
                     </section>
                   </td>
               </tr>`;
@@ -916,7 +917,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         $('#storyparts  > tbody').append(html);
 
         function updatePreviewButtonEnabled(){
-            $("#id_graph-" + currentGraphCount + "-graph-preview-button").prop("disabled", update && !$("#id_graph-" + currentGraphCount + "-graphfiles").val());
+            $("#id_graph-" + currentGraphCount + "-graph-preview-button").prop("disabled", update && $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val() == '/');
         }
 
         //checkbox toggels dropdown enabled
@@ -938,7 +939,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         $('body').on('change', "#id_graph-" + currentGraphCount + "-protocol", function() {
             var model = $("#id_graph-" + currentGraphCount + "-models_or_group").val();
             var protocol = $(this).val();
-            var url = getStoryBasePath() + "/model/0/graph".replace("0", protocol).replace("model", model);
+            var url = getStoryBasePath() + "/" + model+ "/" + protocol + "/graph";
             $.ajax({
               url: url,
               success: function (data) {
@@ -960,19 +961,31 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         // update protocols when models change
         $('body').on('change', "#id_graph-" + currentGraphCount + "-models_or_group", function() {
             var model = $(this).val();
-            var url = getStoryBasePath() + "/model/protocols".replace("model", model) ;
+            var url = getStoryBasePath() + "/" + model + "/protocols" ;
             $.ajax({
               url: url,
               success: function (data) {
                 $("#id_graph-" + currentGraphCount + "-protocol").html(data);
                 $("#id_graph-" + currentGraphCount + "-protocol").change();
               }
-            })
+            });
         });
 
-        // update preview button visibility when grapg file changes
+        // update preview button visibility when graph file changes
         $('body').on('change', "#id_graph-" + currentGraphCount + "-graphfiles", function() {
+            $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val('/'); // reset experiment versions
             updatePreviewButtonEnabled();
+            // retreive experiment versions
+            var model = $("#id_graph-" + currentGraphCount + "-models_or_group").val();
+            var protocol = $("#id_graph-" + currentGraphCount + "-protocol").val();
+            var url = getStoryBasePath() + "/" + model+ "/" + protocol + "/experimentversions";
+            $.ajax({
+                url: url,
+                success: function(data){
+                    $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val(data.trim());
+                    updatePreviewButtonEnabled();
+                }
+            });
         });
 
         // Fill dropdowns
@@ -985,7 +998,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                   $("#id_graph-" + currentGraphCount + "-models_or_group").val(modelOrGroupValue);
               }
               // fill protocols
-              url = getStoryBasePath() + "/model/protocols".replace("model", modelOrGroupValue);
+              url = getStoryBasePath() + "/" + modelOrGroupValue + "/protocols";
               $.ajax({
                 url: url,
                 success: function (data) {
@@ -993,21 +1006,21 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                   if(protocolValue !== ""){
                       $("#id_graph-" + currentGraphCount + "-protocol").val(protocolValue);
                   }
-
-                  url2 = getStoryBasePath() + "/model/0/graph".replace("0", protocolValue).replace("model", modelOrGroupValue);
+                  url2 = getStoryBasePath() + "/" + modelOrGroupValue + "/" + protocolValue + "/graph";
                   $.ajax({
                     url: url2,
                     success: function (data) {
                       $("#id_graph-" + currentGraphCount + "-graphfiles").html(data);
                       if(graphValue !== ""){
                           $("#id_graph-" + currentGraphCount + "-graphfiles").val(graphValue);
+                          $("#id_graph-" + currentGraphCount + "-graphfiles").change();
                       }
                     }
-                  })
+                  });
                 }
               })
           }
-        })
+        });
     }
 }
 
@@ -1052,6 +1065,7 @@ $( document ).ready(function()
     storyparts.sort((a, b) => {
         return a[0] - b[0];
     });
+
     for(var i = 0 ; i < storyparts.length; i++) {
         storyparts[i][1].apply(null, storyparts[i][2]);
     }

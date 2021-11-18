@@ -794,17 +794,40 @@ function initCompare(prefix, scroll=true)
 }
 
 
-// compse url for preview graph
-function getGraphPath(previewButton){
+
+/* Graph Preview functionality */
+
+// get the graph data
+function getGraph(previewButton){
     tableCell = $(previewButton).parent();
+    basePath = $(location).attr('pathname').replace(/stories.*/i, ''); // may be running in subfolder
+    experimentVersions = '/18/54';
+    graphFile = 'outputs_Transmembrane_voltage_gnuplot_data.csv';
+    if(tableCell.find('.update_1').is(':checked'))
+    {
+        experimentVersions = tableCell.find('.experiment-versions').val();
+        currentGraph = tableCell.parent().find('.currentGraph').val();
+        currentGraphParts = currentGraph.split(' / ');
+        graphFile = currentGraphParts[currentGraphParts.length - 1];
+    }
+    else
+    {
+        experimentVersions = tableCell.find('.experimentVersionsUpdate').val();
+        graphFile = tableCell.find('.graphfiles').val();
+    }
+    return {basePath: basePath, experimentVersions: experimentVersions, graphFile: graphFile}
+}
 
-    var url = $(location).attr('pathname').replace(/stories.*/i, ''); // may be running in subfolder
-    url += '/experiments/compare/18/54/show/outputs_Transmembrane_voltage_gnuplot_data.csv/displayPlotFlot';
-    url = url.replace('displayPlotFlot', $('#id_graphvisualizer').val());
-    graphFile = tableCell.find('.graphfiles').val();
-    graphProtocol = tableCell.find('.graphprotocol').val();
+// compse url for ids for preview graph
+function getGraphPathIds(previewButton){
+    graph = getGraph(previewButton);
+    return graph.basePath + '/experiments/compare/' + graph.experimentVersions + '/show/' + graph.graphFile + '/' + $('#id_graphvisualizer').val();
+}
 
-    return url;
+// compse url for entities for preview graph
+function getGraphPathEntities(previewButton){
+    graph = getGraph(previewButton);
+    return graph.basePath + '/experiments/compare/' + graph.experimentVersions + '/info';
 }
 
 $(document).ready(function() {
@@ -818,11 +841,10 @@ $(document).ready(function() {
     });
 
 
-
     // preview graph
     $("#storyparts").on("click", ".graph-preview-button", function(){
        $('#graphPreviewDialog').remove();  // remove previous dialog if it exists
-        graphPreview = $('<div id="graphPreviewDialog"><input type="hidden" id="entityIdsToCompare" value="' + getGraphPath(this) + '"><div class="entitiesToCompare" id="entitiesToCompare" data-comparison-href="/weblab/experiments/compare/18/54/info">loading...</div><div id="filedetails" class="filedetails"><div id="filedisplay"></div></div></div>').dialog({
+        graphPreview = $('<div id="graphPreviewDialog"><input type="hidden" id="entityIdsToCompare" value="' + getGraphPathIds(this) + '"><div class="entitiesToCompare" id="entitiesToCompare" data-comparison-href="' + getGraphPathEntities(this) + '">loading...</div><div id="filedetails" class="filedetails"><div id="filedisplay"></div></div></div>').dialog({
             open: function(event, ui) {
                 $(".ui-dialog-titlebar-close").hide();
             },

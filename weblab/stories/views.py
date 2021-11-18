@@ -268,27 +268,41 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
         return StoryGraphFormSet.get_protocol_choices(self.request.user, model_versions=model_versions)
 
 
-class StoryFilterGraphView(LoginRequiredMixin, ListView):
+class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
     model = ExperimentVersion
-    template_name = 'stories/graph_selection.html'
+    template_name = 'stories/experiment_versions.html'
 
-    def get_queryset(self):
+    def get_versions(self):
+        self.user = self.request.user
         mk = self.kwargs.get('mk', '')
         pk = self.kwargs.get('pk', '')
-        model_versions = []
+        self.model_versions = []
+        self.protocol_version = None
         if pk == '':
             return []
+        self.protocol_version = CachedProtocolVersion.objects.get(pk=pk)
+
         if mk.startswith('modelgroup'):
             mk = int(mk.replace('modelgroup', ''))
-            model_versions = [m.repocache.latest_version for m in ModelGroup.objects.get(pk=mk).models.all()
-                              if m.repocache.versions.count()]
+            self.model_versions = [m.repocache.latest_version for m in ModelGroup.objects.get(pk=mk).models.all()
+                                   if m.repocache.versions.count()]
         else:
             assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
             mk = int(mk.replace('model', ''))
-            model_versions = CachedModelVersion.objects.filter(pk=mk)
-        protocol_version = CachedProtocolVersion.objects.get(pk=pk)
-        return StoryGraphFormSet.get_graph_choices(self.request.user, protocol_version=protocol_version,
-                                                   model_versions=model_versions)
+            self.model_versions = list(CachedModelVersion.objects.filter(pk=mk))
+
+    def get_queryset(self):
+        self.get_versions()
+        return (get_experiment_versions_url(self.user, self.protocol_version, self.model_versions), )
+
+
+class StoryFilterGraphView(StoryFilterExperimentVersions):
+    template_name = 'stories/graph_selection.html'
+
+    def get_queryset(self):
+        self.get_versions()
+        return StoryGraphFormSet.get_graph_choices(self.user, protocol_version=self.protocol_version,
+                                                   model_versions=self.model_versions)
 
 
 class StoryRenderView(UserPassesTestMixin, DetailView):
