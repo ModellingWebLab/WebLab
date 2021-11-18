@@ -202,8 +202,8 @@ class TestStoryTextFormSet:
 
 @pytest.mark.django_db
 def test_graph_choices(experiment_with_result_public):
-    assert str(StoryGraphFormSet.get_graph_choices(experiment_with_result_public.author)) == "[]"
-    assert str(StoryGraphFormSet.get_graph_choices(experiment_with_result_public.author)) == "[]"
+    assert list(StoryGraphFormSet.get_graph_choices(experiment_with_result_public.author)) == []
+    assert list(StoryGraphFormSet.get_graph_choices(experiment_with_result_public.author)) == []
     assert str({c[1] for c in StoryGraphFormSet.get_protocol_choices(experiment_with_result_public.author)}) == \
         "{'my protocol1'}"
     assert str([c[1] for c in StoryGraphFormSet.get_modelgroup_choices(experiment_with_result_public.author)]) ==  \
