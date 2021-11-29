@@ -877,9 +877,9 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         if(currentGraph != ""){
           current_graph_html = `
             <div class="StoryGraphRadio">
-              <input type="radio" name="graph-${currentGraphCount}-update" value="" id="id_graph-${currentGraphCount}-update_1" class="update_1 preview-graph-control" name="graph-${currentGraphCount}-update" ${update ? '' : 'checked'}>
+              <input type="radio" name="graph-${currentGraphCount}-update" value="" id="id_graph-${currentGraphCount}-update_1" class="update_1" name="graph-${currentGraphCount}-update" ${update ? '' : 'checked'}>
                <label for="id_graph-${currentGraphCount}-update_1"><em>${currentGraph}</em></label>
-               <input type="hidden" id="id_graph-${currentGraphCount}-experiment-versions" class="experiment-versions preview-graph-control" value="${experimentVersions}">
+               <input type="hidden" id="id_graph-${currentGraphCount}-experiment-versions" class="experiment-versions" value="${experimentVersions}">
             </div><br/>`
         }
 
@@ -898,9 +898,9 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     <h2>Graph</h2>
                     ${current_graph_html}
                     <div class="StoryGraphRadio" ${currentGraph=="" ? 'style="Display: none"' : ''}>
-                      <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name=\"graph-${currentGraphCount}-update\" ${update ? 'checked' : ''}>
+                      <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0" name=\"graph-${currentGraphCount}-update\" ${update ? 'checked' : ''}>
                       <label for="id_graph-${currentGraphCount}-update">Update graph</label>
-                      <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
+                      <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate" value="/">
                     </div>
                     ${models_or_grouperr}
                     <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><select name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
@@ -1125,4 +1125,23 @@ $( document ).ready(function()
           source = $(this).find(".markdownsource").val();
           $(this).html(marked(source));
       });
+
+//    $('body').on('change', ".experimentVersionsUpdate", function() {
+//        id = $(this).attr("id");
+//        var match = id.match(/^id_graph-([0-9]*)-.*$/)
+//        alert(match[1]);
+//    });
+//    $('.update_0 .update_1 .experimentVersionsUpdate').change(function() {
+    $('.update-graph-0').change(function() {
+        id = $(this).attr("id");
+        var match = id.match(/^id_graph-([0-9]*)-.*$/)
+        alert(match[1]);
+    });
+//    $('body').on('change', ".update_0", function() {
+//        id = $(this).attr("id");
+//        var match = id.match(/^id_graph-([0-9]*)-.*$/)
+//        alert(match[1]);
+//
+//    });
+
 });

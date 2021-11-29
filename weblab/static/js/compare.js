@@ -801,8 +801,6 @@ function initCompare(prefix, scroll=true)
 function getGraph(previewButton){
     tableCell = $(previewButton).parent();
     basePath = $(location).attr('pathname').replace(/stories.*/i, ''); // may be running in subfolder
-    experimentVersions = '/18/54';
-    graphFile = 'outputs_Transmembrane_voltage_gnuplot_data.csv';
     if(tableCell.find('.update_1').is(':checked'))
     {
         experimentVersions = tableCell.find('.experiment-versions').val();
@@ -863,5 +861,30 @@ $(document).ready(function() {
         initCompare('', false);
     });
 
+    $('.preview-graph-control').change(function() {
+        var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
+        graphId = match[1];
+        if($('#id_graph-'+ graphId +'-update_1').is(':checked'))
+        {
+            experimentVersions = $('#id_graph-'+ graphId +'-experiment-versions').val();
+            currentGraph = $('#id_graph-'+ graphId +'-currentGraph').val();
+            currentGraphParts = currentGraph.split(' / ');
+            graphFile = currentGraphParts[currentGraphParts.length - 1];
+        }
+        else
+        {
+            experimentVersions = $('#id_graph-'+ graphId +'-experimentVersionsUpdate').val();
+            graphFile = $('#id_graph-'+ graphId +'-graphfiles').val();
+        }
+        if(experimentVersions != '/'){
+            basePath = $(location).attr('pathname').replace(/stories.*/i, ''); // may be running in subfolder
+            alert(experimentVersions);
+        }
+        else
+        {
+        }
+
+
+    });
 });
 
