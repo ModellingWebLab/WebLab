@@ -882,6 +882,21 @@ li.entityviz-PRIVATE
 .deletepart{
   content:url('../img/delete.png'); }
 
+
+/* bigger dahes lines around graph / text for story editing */
+tr.storypart{
+    border-top:2px dashed #A9A9A9;
+    border-bottom:2px dashed #A9A9A9;
+}
+
+/* remove dashed line for add text / graph buttons */
+tr.dynamic-form-add{
+    border-bottom: none;
+}
+
+
+
+
 /* SimpleMde markdown editor css */
 /**
  * simplemde v1.11.2
@@ -1530,4 +1545,3 @@ span.CodeMirror-selectedtext {
 .CodeMirror .cm-spell-error:not(.cm-url):not(.cm-comment):not(.cm-tag):not(.cm-word) {
     background: rgba(255, 0, 0, 0.15);
 }
-
