@@ -894,7 +894,18 @@ tr.dynamic-form-add{
     border-bottom: none;
 }
 
+tr.storypart{
+    vertical-align:top;
+}
 
+h2.storypart-controls{
+    border-right:1px dashed #A9A9A9;
+}
+
+td.storypart-content{
+    padding-left: 5px;
+    vertical-align: top;
+}
 
 
 /* SimpleMde markdown editor css */

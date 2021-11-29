@@ -839,18 +839,18 @@ function insertDescriptionForm(currentTextCount, descriptionValue, descriptionEr
     }else{
         html=`
               <tr class="storypart description">
-                  <td style="vertical-align: top;">
-                    <h2>Text field</h2>
-                    ${descriptionErrors}
-                    <textarea name="text-${currentTextCount}-description" cols="40" rows="10" id="id_text-${currentTextCount}-description">${descriptionValue}</textarea>
+                  <td>
+                      <h2 class="storypart-controls">
+                          <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                          <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
+                          <img class="deletepart" alt="remove story part" title="remove story part"/>
+                          <input class="order" type="hidden" name="text-${currentTextCount}-ORDER" id="id_text-${currentTextCount}-ORDER" value="${order}">
+                      </h2>
                   </td>
-                  <td style="vertical-align:top;">
-                    <section style=" position: relative;top: 73px;">
-                      <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
-                      <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
-                      <img class="deletepart" alt="remove story part" title="remove story part"/><br/>
-                      <input class="order" type="hidden" name="text-${currentTextCount}-ORDER" id="id_text-${currentTextCount}-ORDER" value="${order}">
-                    </section>
+                  <td class="storypart-content">
+                      <h2>Text field</h2>
+                      ${descriptionErrors}
+                     <textarea name="text-${currentTextCount}-description" cols="40" rows="10" id="id_text-${currentTextCount}-description">${descriptionValue}</textarea>
                   </td>
               </tr>`;
 
@@ -885,7 +885,16 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
 
         html=`
               <tr class="storypart graph">
-                  <td style="vertical-align: top;">
+                 <td>
+                    <h2 class="storypart-controls">
+                      <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                      <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
+                      <img class="deletepart" alt="remove story part" title="remove story part"/>
+                      <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
+                      <input type="hidden" name="graph-${currentGraphCount}-currentGraph" class="currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="${currentGraph}">
+                    </h2>
+                  </td>
+                  <td class="storypart-content">
                     <h2>Graph</h2>
                     ${current_graph_html}
                     <div class="StoryGraphRadio" ${currentGraph=="" ? 'style="Display: none"' : ''}>
@@ -901,15 +910,6 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/>
                     <input id="id_graph-${currentGraphCount}-graph-preview-button" class="graph-preview-button" type="button" value="Preview graph" alt="preview graph" title="preview graph">
                     <br/>
-                  </td>
-                  <td style="vertical-align:top;">
-                    <section style=" position: relative;top: 73px;">
-                      <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
-                      <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down"><br/>
-                      <img class="deletepart" alt="remove story part" title="remove story part"/><br/>
-                      <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
-                      <input type="hidden" name="graph-${currentGraphCount}-currentGraph" class="currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="${currentGraph}">
-                    </section>
                   </td>
               </tr>`;
 
