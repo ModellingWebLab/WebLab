@@ -289,7 +289,7 @@ function parseEntities(entityObj, prefix)
                     graphGlobal[prefix]['files'][sig].div = {};
                     graphGlobal[prefix]['files'][sig].viz = {};
                     graphGlobal[prefix]['files'][sig].hasContents = false;
-                    graphGlobal[prefix]['files'][sig].id = file.name;
+                    graphGlobal[prefix]['files'][sig].id = prefix + file.name;
                     setupDownloadFileContents(graphGlobal[prefix]['files'][sig], prefix);
                 }
                 if (file.name.toLowerCase () == "outputs-default-plots.csv")
@@ -794,74 +794,15 @@ function initCompare(prefix, scroll=true)
 }
 
 
-
-/* Graph Preview functionality */
-
-// get the graph data
-function getGraph(previewButton){
-    tableCell = $(previewButton).parent();
-    basePath = $(location).attr('pathname').replace(/stories.*/i, ''); // may be running in subfolder
-    if(tableCell.find('.update_1').is(':checked'))
-    {
-        experimentVersions = tableCell.find('.experiment-versions').val();
-        currentGraph = tableCell.parent().find('.currentGraph').val();
-        currentGraphParts = currentGraph.split(' / ');
-        graphFile = currentGraphParts[currentGraphParts.length - 1];
-    }
-    else
-    {
-        experimentVersions = tableCell.find('.experimentVersionsUpdate').val();
-        graphFile = tableCell.find('.graphfiles').val();
-    }
-    return {basePath: basePath, experimentVersions: experimentVersions, graphFile: graphFile}
-}
-
-// compse url for ids for preview graph
-function getGraphPathIds(previewButton){
-    graph = getGraph(previewButton);
-    return graph.basePath + '/experiments/compare/' + graph.experimentVersions + '/show/' + graph.graphFile + '/' + $('#id_graphvisualizer').val();
-}
-
-// compse url for entities for preview graph
-function getGraphPathEntities(previewButton){
-    graph = getGraph(previewButton);
-    return graph.basePath + '/experiments/compare/' + graph.experimentVersions + '/info';
-}
-
 $(document).ready(function() {
-    if ($("#entitiesToCompare").length > 0) {
-      initCompare('');
-    }
-
     $(".entitiesToCompare").each(function() {
        prefix = $(this).attr('id').replace("entitiesToCompare", "");
-       initCompare(prefix);
+       initCompare(prefix, prefix == "");
     });
 
-
-    // preview graph
-    $("#storyparts").on("click", ".graph-preview-button", function(){
-       $('#graphPreviewDialog').remove();  // remove previous dialog if it exists
-        graphPreview = $('<div id="graphPreviewDialog"><input type="hidden" id="entityIdsToCompare" value="' + getGraphPathIds(this) + '"><div class="entitiesToCompare" id="entitiesToCompare" data-comparison-href="' + getGraphPathEntities(this) + '">loading...</div><div id="filedetails" class="filedetails"><div id="filedisplay"></div></div></div>').dialog({
-            open: function(event, ui) {
-                $(".ui-dialog-titlebar-close").hide();
-            },
-            dialogClass: "image-dialog",
-            title: "Graph Preview ",
-            modal: true,
-            width: 825,
-            resizable: false,
-            position: { my: "center", at: "top" },
-            buttons:{
-                'Close': function () {
-                  $(this).dialog('close');
-                }
-            }
-        });
-        initCompare('', false);
-    });
-
-    $('.preview-graph-control').change(function() {
+    /* Graph Preview functionality */
+    // update graph preview if any of the controls change
+    $(body).on('change', '.preview-graph-control', function() {
         var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
         graphId = match[1];
         if($('#id_graph-'+ graphId +'-update_1').is(':checked'))
@@ -878,13 +819,26 @@ $(document).ready(function() {
         }
         if(experimentVersions != '/'){
             basePath = $(location).attr('pathname').replace(/stories.*/i, ''); // may be running in subfolder
-            alert(experimentVersions);
+            // compse url for ids for preview graph
+            graphPathIds = basePath + '/experiments/compare/' + experimentVersions + '/show/' + graphFile + '/' + $('#id_graphvisualizer').val();
+            // compse url for entities for preview graph
+           graphPathEntities = basePath + '/experiments/compare/' + experimentVersions + '/info';
+           $('#'+ graphId +'graphPreviewBox').html('<h3>Graph preview</h3><div class="graphPreviewDialog"><input type="hidden" id="'+ graphId +'entityIdsToCompare" value="' + graphPathIds + '"><div class="entitiesToCompare" id="'+ graphId +'entitiesToCompare" data-comparison-href="' + graphPathEntities + '">loading...</div><div id="' + graphId + 'filedetails" class="filedetails"><div id="'+ graphId + 'filedisplay"></div></div></div>');
+           initCompare(graphId, false);
         }
         else
         {
+            $('#'+ graphId +'graphPreviewBox').html('<h3>Graph preview</h3>Please select a graph...');
         }
 
 
+    });
+
+    // update all graph previews if graph ype changes
+    $('#id_graphvisualizer').change(function() {
+        $('.graphfiles').each(function(){
+            $(this).change();
+        });
     });
 });
 

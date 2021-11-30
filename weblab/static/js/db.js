@@ -908,18 +908,13 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
                     ${graphfileserr}
                     <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/>
-                    <input id="id_graph-${currentGraphCount}-graph-preview-button" class="graph-preview-button" type="button" value="Preview graph" alt="preview graph" title="preview graph">
-                    <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox"><h3>Graph preview</h3></div>
+                    <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox"><h3>Graph preview</h3>Please select a graph...</div>
                     <br/>
                   </td>
               </tr>`;
 
         // add new form
         $('#storyparts  > tbody').append(html);
-
-        function updatePreview(){ //currentGraphCount){
-            $("#id_graph-" + currentGraphCount + "-graph-preview-button").prop("disabled", update && $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val() == '/');
-        }
 
         //checkbox toggels dropdown enabled
         function graphMenuVisibility()
@@ -931,7 +926,6 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
             $("#" + currentGraphCount + "-models_or_group-label").css('opacity', update ? '1.0' : '0.5');
             $("#" + currentGraphCount + "-protocol").css('opacity', update ? '1.0' : '0.5');
             $("#" + currentGraphCount + "-graphfiles").css('opacity', update ? '1.0' : '0.5');
-              updatePreview();
         }
         graphMenuVisibility(currentGraphCount);
         $("input[type='radio'][name='graph-" + currentGraphCount + "-update']").click(graphMenuVisibility);
@@ -977,7 +971,6 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
             if($("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val() != '/'){
                 $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val('/'); // reset experiment versions
                 $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").change();
-                updatePreview(currentGraphCount);
             }
             // retreive experiment versions
             var model = $("#id_graph-" + currentGraphCount + "-models_or_group").val();
@@ -990,7 +983,6 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     if($("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val() != new_data){
                         $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val(new_data);
                         $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").change();
-                        updatePreview(currentGraphCount);
                     }
                 }
             });

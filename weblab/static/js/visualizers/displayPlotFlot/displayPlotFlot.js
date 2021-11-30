@@ -430,7 +430,7 @@ contentFlotPlot.prototype.drawPlot = function ()
         });
         var lastDatasetNumber = datasetNumber - 1;
 
-        var flotPlotDivId = 'flotplot-' + thisFileId.replace(/\W/g, '');
+        var flotPlotDivId = this.graphIds['prefix'] + 'flotplot-' + thisFileId.replace(/\W/g, '');
         createAppendFlotPlotDiv(this, thisDiv, flotPlotDivId);
         (datasetNumber > 1) && createAppendSelectToggler(this, thisDiv);
         createAppendResetButton(this, thisDiv);
@@ -447,7 +447,7 @@ contentFlotPlot.prototype.drawPlot = function ()
             var colouredSpan = $('<span />').attr('id', self.graphIds['colouredSpanIdPrefix'] + thisDatasetNumber)
                                             .addClass('flotColour')
                                             .html('&nbsp;&nbsp;');
-            var inputId = 'id' + key;
+            var inputId = this.graphIds['prefix'] + 'id' + key;
             var newLabel = $('<label />').attr('for', inputId).html(val.label);
             var newInput = $('<input />').attr({ 'type': 'checkbox',
                                                  'name': key,
@@ -595,7 +595,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
         var x_label = thisFile.xAxes || "";
         var y_label = thisFile.yAxes || "";
 
-        var flotPlotDivId = 'flotplot-' + thisFileSig;
+        var flotPlotDivId = this.graphIds['prefix'] + 'flotplot-' + thisFileSig;
         createAppendFlotPlotDiv(this, thisDiv, flotPlotDivId);
         createAppendSelectToggler(this, thisDiv);
         createAppendResetButton(this, thisDiv);
@@ -638,7 +638,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
                 var colouredSpan = $('<span />').attr('id', this.graphIds['colouredSpanIdPrefix'] + curColor)
                                                 .addClass('flotColour')
                                                 .html('&nbsp;&nbsp;');
-                var inputId = 'id' + key;
+                var inputId = this.graphIds['prefix'] + 'id' + key;
                 var newLabel = $('<label />').attr('for', inputId).html(label);
                 var newInput = $('<input />').attr({ 'type': 'checkbox',
                                                      'name': key,
@@ -697,7 +697,8 @@ contentFlotPlotComparer.prototype.redraw = function ()
 
 function flotContent (prefix='')
 {
-    this.graphIds = { choicesDivId: prefix + 'choices',
+    this.graphIds = { prefix: prefix,
+                      choicesDivId: prefix + 'choices',
                       resetButtonDivId: prefix + 'flot-buttons-div',
                       resetButtonDivClass: 'flot-buttons-div',
                       colouredSpanIdPrefix: prefix + 'legend-colour-span-',
