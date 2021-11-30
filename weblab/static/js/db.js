@@ -840,15 +840,14 @@ function insertDescriptionForm(currentTextCount, descriptionValue, descriptionEr
         html=`
               <tr class="storypart description">
                   <td>
-                      <h2 class="storypart-controls">
+                      <div class="storypart-controls">
                           <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                           <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
                           <img class="deletepart" alt="remove story part" title="remove story part"/>
                           <input class="order" type="hidden" name="text-${currentTextCount}-ORDER" id="id_text-${currentTextCount}-ORDER" value="${order}">
-                      </h2>
+                      </div>
                   </td>
                   <td class="storypart-content">
-                      <h2>Text field</h2>
                       ${descriptionErrors}
                      <textarea name="text-${currentTextCount}-description" cols="40" rows="10" id="id_text-${currentTextCount}-description">${descriptionValue}</textarea>
                   </td>
@@ -886,16 +885,15 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         html=`
               <tr class="storypart graph">
                  <td>
-                    <h2 class="storypart-controls">
+                    <div class="storypart-controls">
                       <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
                       <img class="deletepart" alt="remove story part" title="remove story part"/>
                       <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
                       <input type="hidden" name="graph-${currentGraphCount}-currentGraph" class="currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="${currentGraph}">
-                    </h2>
+                    </div>
                   </td>
                   <td class="storypart-content">
-                    <h2>Graph</h2>
                     ${current_graph_html}
                     <div class="StoryGraphRadio" ${currentGraph=="" ? 'style="Display: none"' : ''}>
                       <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name=\"graph-${currentGraphCount}-update\" ${update ? 'checked' : ''}>
@@ -908,7 +906,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                     <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
                     ${graphfileserr}
                     <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/>
-                    <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox"><h3>Graph preview</h3>Please select a graph...</div>
+                    <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox"></div>
                     <br/>
                   </td>
               </tr>`;
@@ -966,12 +964,11 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
             });
         });
 
-        // update preview button visibility when graph file changes
+        // update preview when graph file changes
         $('body').on('change', "#id_graph-" + currentGraphCount + "-graphfiles", function() {
-            if($("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val() != '/'){
-                $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val('/'); // reset experiment versions
-                $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").change();
-            }
+            $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val('/'); // reset experiment versions
+            $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").change();
+
             // retreive experiment versions
             var model = $("#id_graph-" + currentGraphCount + "-models_or_group").val();
             var protocol = $("#id_graph-" + currentGraphCount + "-protocol").val();
@@ -1015,6 +1012,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
                           $("#id_graph-" + currentGraphCount + "-graphfiles").val(graphValue);
                           $("#id_graph-" + currentGraphCount + "-graphfiles").change();
                       }
+                      $("#id_graph-" + currentGraphCount + "-graphfiles").change();
                     }
                   });
                 }

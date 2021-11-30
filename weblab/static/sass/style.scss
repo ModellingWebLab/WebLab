@@ -336,7 +336,7 @@ input.inline+span {
 table.leftright th {
 	text-align: left;
 	padding-right: 15px;
-	padding-top: 5px;
+        padding-top: 5px;
 }
 
 .failed {
@@ -885,8 +885,8 @@ li.entityviz-PRIVATE
 
 /* bigger dahes lines around graph / text for story editing */
 tr.storypart{
-    border-top:2px dashed #A9A9A9;
-    border-bottom:2px dashed #A9A9A9;
+    border-top: 2px dashed #A9A9A9;
+    border-bottom: 2px dashed #A9A9A9;
 }
 
 /* remove dashed line for add text / graph buttons */
@@ -898,8 +898,11 @@ tr.storypart{
     vertical-align:top;
 }
 
-h2.storypart-controls{
+.storypart-controls{
     border-right:1px dashed #A9A9A9;
+}
+tr.storypart td{
+    padding-top: 10px;
 }
 
 td.storypart-content{
@@ -907,12 +910,14 @@ td.storypart-content{
     vertical-align: top;
 }
 
-.graphPreviewBox{
-  border: 1px dashed #A9A9A9;
+.displayPlotFlot-preview{
+    border: 1px dashed #A9A9A9;
+    min-height: 676px;
 }
 
-.graphPreviewBox h3{
-    color: #A9A9A9;
+.displayPlotHC-preview{
+    border: 1px dashed #A9A9A9;
+    min-height: 526px;
 }
 
 

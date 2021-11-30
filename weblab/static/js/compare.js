@@ -803,8 +803,14 @@ $(document).ready(function() {
     /* Graph Preview functionality */
     // update graph preview if any of the controls change
     $(body).on('change', '.preview-graph-control', function() {
+        // get prefix graph Id
         var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
         graphId = match[1];
+
+        //set relevant css class for preview box size
+        $('#'+ graphId +'graphPreviewBox').removeClass();
+        $('#'+ graphId +'graphPreviewBox').addClass($('#id_graphvisualizer').val() + '-preview');
+
         if($('#id_graph-'+ graphId +'-update_1').is(':checked'))
         {
             experimentVersions = $('#id_graph-'+ graphId +'-experiment-versions').val();
@@ -823,12 +829,12 @@ $(document).ready(function() {
             graphPathIds = basePath + '/experiments/compare/' + experimentVersions + '/show/' + graphFile + '/' + $('#id_graphvisualizer').val();
             // compse url for entities for preview graph
            graphPathEntities = basePath + '/experiments/compare/' + experimentVersions + '/info';
-           $('#'+ graphId +'graphPreviewBox').html('<h3>Graph preview</h3><div class="graphPreviewDialog"><input type="hidden" id="'+ graphId +'entityIdsToCompare" value="' + graphPathIds + '"><div class="entitiesToCompare" id="'+ graphId +'entitiesToCompare" data-comparison-href="' + graphPathEntities + '">loading...</div><div id="' + graphId + 'filedetails" class="filedetails"><div id="'+ graphId + 'filedisplay"></div></div></div>');
+           $('#'+ graphId +'graphPreviewBox').html('<div class="graphPreviewDialog"><input type="hidden" id="'+ graphId +'entityIdsToCompare" value="' + graphPathIds + '"><div class="entitiesToCompare" id="'+ graphId +'entitiesToCompare" data-comparison-href="' + graphPathEntities + '">loading...</div><div id="' + graphId + 'filedetails" class="filedetails"><div id="'+ graphId + 'filedisplay"></div></div></div>');
            initCompare(graphId, false);
         }
         else
         {
-            $('#'+ graphId +'graphPreviewBox').html('<h3>Graph preview</h3>Please select a graph...');
+            $('#'+ graphId +'graphPreviewBox').html('Please select a graph...');
         }
 
 
