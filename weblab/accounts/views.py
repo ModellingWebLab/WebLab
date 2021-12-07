@@ -1,9 +1,9 @@
-from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Permission
 from django.urls import reverse
 from django.views.generic.edit import DeleteView, FormView, UpdateView
+from django.urls import reverse_lazy
 
 from .forms import MyAccountForm, RegistrationForm
 from .models import User
@@ -12,7 +12,7 @@ from .models import User
 class RegistrationView(FormView):
     form_class = RegistrationForm
     template_name = 'registration/register.html'
-    success_url = getattr(settings, 'FORCE_SCRIPT_NAME', '/')
+    success_url = reverse_lazy('home')
 
     class Meta:
         fields = ('email', 'full_name', 'institution')
