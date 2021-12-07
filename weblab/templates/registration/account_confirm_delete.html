@@ -1,0 +1,15 @@
+
+{% extends "base.html" %}
+
+{% block title %}Delete account{% endblock title %}
+
+{% block content %}
+
+<form action="" method="post">{% csrf_token %}
+    <p>Are you sure you want to delete your account?</p>
+    <p><strong>This operation cannot be undone. All entities owned by you (models, datasets, experiment results, etc) will be deleted.</strong></p>
+    <button>Confirm</button>
+    <a class="button" href="javascript:history.back()" title="Do not delete">Cancel</a>
+</form>
+
+{% endblock %}
