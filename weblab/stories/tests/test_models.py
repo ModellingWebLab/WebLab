@@ -10,7 +10,7 @@ def test_story(user, other_user):
     story = recipes.story.make(author=user, title='test title', visibility='private')
     assert story.author == user
     assert story.title == 'test title'
-    assert len(Story.objects.all()) == 1
+    assert Story.objects.count() == 1
     assert story.visible_to_user(user)
     assert not story.visible_to_user(other_user)
     assert story.is_editable_by(user)
@@ -23,7 +23,7 @@ def test_story(user, other_user):
     story.save()
     assert story.author == other_user
     assert story.title == str(story) == 'new title'
-    assert len(Story.objects.all()) == 1
+    assert Story.objects.count() == 1
     assert story.visible_to_user(user)
     assert story.visible_to_user(other_user)
     assert not story.is_editable_by(user)
@@ -31,7 +31,7 @@ def test_story(user, other_user):
 
     # delete
     story.delete()
-    assert len(Story.objects.all()) == 0
+    assert Story.objects.count() == 0
 
 
 @pytest.mark.django_db
@@ -44,7 +44,7 @@ def test_make_storytext(user, other_user):
     assert story_text.story == stories[0]
     assert story_text.order == 1
     assert story_text.description == str(story_text) == 'test descr'
-    assert len(StoryText.objects.all()) == 1
+    assert StoryText.objects.count() == 1
 
     # change
     story_text.author = other_user
@@ -56,11 +56,11 @@ def test_make_storytext(user, other_user):
     assert story_text.story == stories[1]
     assert story_text.order == 0
     assert story_text.description == str(story_text) == 'new descr'
-    assert len(StoryText.objects.all()) == 1
+    assert StoryText.objects.count() == 1
 
     # delete via cascade on story
     stories[1].delete()
-    assert len(StoryText.objects.all()) == 0
+    assert StoryText.objects.count() == 0
 
 
 @pytest.mark.django_db
@@ -80,7 +80,7 @@ def test_make_storygraph(user, other_user, experiment_with_result, model_with_ve
     assert list(story_graph.cachedmodelversions.all()) == [experiment.model_version]
     assert story_graph.graphfilename == 'outputs_Transmembrane_voltage_gnuplot_data.csv'
     assert str(story_graph) == 'my model1 / my protocol1 / outputs_Transmembrane_voltage_gnuplot_data.csv'
-    assert len(StoryGraph.objects.all()) == 1
+    assert StoryGraph.objects.count() == 1
 
     # change
     modelgroup = recipes.modelgroup.make(author=user, models=[model_with_version, public_model],
@@ -102,11 +102,11 @@ def test_make_storygraph(user, other_user, experiment_with_result, model_with_ve
     assert story_graph.modelgroup == modelgroup
     assert story_graph.graphfilename == 'outputs_All_state_variables_gnuplot_data.csv'
     assert str(story_graph) == 'test model group / public protocol / outputs_All_state_variables_gnuplot_data.csv'
-    assert len(StoryGraph.objects.all()) == 1
+    assert StoryGraph.objects.count() == 1
 
     # delete via cascade on story
     stories[1].delete()
-    assert len(StoryGraph.objects.all()) == 0
+    assert StoryGraph.objects.count() == 0
 
 
 @pytest.mark.django_db
