@@ -27,8 +27,14 @@ function sortTable (filesTable, plots)
         {
             to_be_sorted.push(this[key]);
         }
-        Object.keys(filesTable.otherCSV).forEach(adder, filesTable.otherCSV);
-        Object.keys(filesTable.other).forEach(adder, filesTable.other);
+        if(filesTable.otherCSV)
+        {
+            Object.keys(filesTable.otherCSV).forEach(adder, filesTable.otherCSV);
+        }
+        if(filesTable.other)
+        {
+            Object.keys(filesTable.other).forEach(adder, filesTable.other);
+        }
         filesTable.otherCSV = {};
         filesTable.other = {};
     }
@@ -38,29 +44,32 @@ function sortTable (filesTable, plots)
     }
 
     // Split the file list into categories
-    for (var i = 0; i < to_be_sorted.length; i++)
+    if(to_be_sorted)
     {
-        var f = to_be_sorted[i];
-        var found = false;
-        for (var j = 0; j < plots.length; j++)
-            if (f.name == plots[j])
-            {
-                filesTable.plots[f.name] = f;
-                found = true;
-                break;
-            }
-        if (found)
-            continue;
-        if (f.name.endsWith ("png") || f.name.endsWith ("eps"))
-            filesTable.pngeps[f.name] = f;
-        else if (f.name == "outputs-default-plots.csv" || f.name == "outputs-contents.csv")
-            filesTable.defaults[f.name] = f;
-        else if (f.name.endsWith ("csv"))
-            filesTable.otherCSV[f.name] = f;
-        else if (f.name.endsWith ("txt"))
-            filesTable.text[f.name] = f;
-        else 
-            filesTable.other[f.name] = f;
+        for (var i = 0; i < to_be_sorted.length; i++)
+        {
+            var f = to_be_sorted[i];
+            var found = false;
+            for (var j = 0; j < plots.length; j++)
+                if (f.name == plots[j])
+                {
+                    filesTable.plots[f.name] = f;
+                    found = true;
+                    break;
+                }
+            if (found)
+                continue;
+            if (f.name.endsWith ("png") || f.name.endsWith ("eps"))
+                filesTable.pngeps[f.name] = f;
+            else if (f.name == "outputs-default-plots.csv" || f.name == "outputs-contents.csv")
+                filesTable.defaults[f.name] = f;
+            else if (f.name.endsWith ("csv"))
+                filesTable.otherCSV[f.name] = f;
+            else if (f.name.endsWith ("txt"))
+                filesTable.text[f.name] = f;
+            else 
+                filesTable.other[f.name] = f;
+        }
     }
 
     // Figure out how many columns the table has (could be 3 or 4, depending on whether comparing!)

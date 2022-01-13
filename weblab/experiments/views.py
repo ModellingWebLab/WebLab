@@ -21,6 +21,7 @@ from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
 from entities.models import ModelEntity, ProtocolEntity
 from repocache.models import CACHED_VERSION_TYPE_MAP
+from stories.models import StoryGraph
 
 from .forms import ExperimentSimulateCallbackForm
 from .models import (
@@ -381,6 +382,17 @@ class ExperimentDeleteView(dataset_views.DatasetDeleteView):
     """
     model = Experiment
 
+    def get_context_data(self, **kwargs):
+        # disable deleting Experiments in use in a story
+        kwargs['in_use'] = set([])
+        exp = self.get_object()
+        model_version = exp.model_version
+        graphs_for_protocol = StoryGraph.objects.filter(cachedprotocolversion=exp.protocol_version)
+        for graph in graphs_for_protocol:
+            if model_version in graph.cachedmodelversions.all():
+                kwargs['in_use'].add((graph.story.id, graph.story.title))
+        return super().get_context_data(**kwargs)
+
 
 class ExperimentVersionDeleteView(dataset_views.DatasetDeleteView):
     """
@@ -390,6 +402,18 @@ class ExperimentVersionDeleteView(dataset_views.DatasetDeleteView):
 
     def get_success_url(self, *args, **kwargs):
         return reverse('experiments:versions', args=[self.get_object().experiment.id])
+
+    def get_context_data(self, **kwargs):
+        # disable deleting Experiment versions in use in a story
+        kwargs['in_use'] = set([])
+        exp = self.get_object()
+        if exp.is_latest:  # is latest version
+            model_version = exp.parent.model_version
+            graphs_for_protocol = StoryGraph.objects.filter(cachedprotocolversion=exp.parent.protocol_version)
+            for graph in graphs_for_protocol:
+                if model_version in graph.cachedmodelversions.all():
+                    kwargs['in_use'].add((graph.story.id, graph.story.title))
+        return super().get_context_data(**kwargs)
 
 
 class ExperimentComparisonView(TemplateView):

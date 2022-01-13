@@ -1,0 +1,27 @@
+{% load static %}
+{% load stories %}
+
+<a href="{% url 'stories:story_edit' object.id %}"><h1>Story: {{ object.title }}</h1></a>
+<small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.
+
+{% can_delete_story object as can_delete %}
+{% if can_delete %}
+  <a title="Delete this story" href="{% url 'stories:story_delete' object.id %}">
+    <img src="{% static 'img/delete.png' %}" alt="Delete this story group"/>
+    Delete {{object.title}}
+  </a> |
+{% endif %}
+{% can_manage_story object as can_manage %}
+{% if can_manage %}
+  <a title="Manage collaborators for this story" href="{% url 'stories:story_collaborators' object.id %}">
+    Manage collaborators | 
+  </a>
+  <a title="Transfer ownership of this story" href="{%  url 'stories:story_transfer' object.id %}">
+    Transfer ownership | 
+  </a>
+  <a title="View the story" href="{%  url 'stories:story_render' object.id %}">
+    View story
+  </a>
+
+{% endif %}
+

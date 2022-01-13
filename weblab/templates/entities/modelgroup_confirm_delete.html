@@ -1,13 +1,21 @@
 {% extends "base.html" %}
+{% load stories %}
 
 {% block title %}Delete entity{% endblock title %}
 
 {% block content %}
 
 <form action="" method="post">{% csrf_token %}
+    {% if in_use|length > 0 %}
+        <ul class="errorlist"><li><em>"{{ object }}"</em> is in use in {% if in_use|length == 1 %}story{% else %}stories{% endif %}:
+        {% for story in in_use %}
+            {% if forloop.counter0 != 0%},{% endif %} {% load stories %}<a href="{% url 'stories:story_edit' story.0 %}">"{{ story.1 }}"</a>
+        {% endfor %}
+        and cannot be deleted.</li></ul>
+    {% endif %}
     <p>Are you sure you want to delete "{{ object }}"?</p>
     <p><strong>This operation cannot be undone.</strong></p>
-    <button>Confirm</button>
+    <button {% if in_use|length > 0 %}disabled style="opacity: 0.5"{% endif %}>Confirm</button>
     <a class="button" href="javascript:history.back()" title="Do not delete">Cancel</a>
 </form>
 

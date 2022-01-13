@@ -13,3 +13,16 @@ def entity_deleted(sender, instance, **kwargs):
     """
     if instance.repo_abs_path.exists():
         instance.repo.delete()
+
+
+def entity_post_deleted(sender, instance, **kwargs):
+    """
+    Signal callback after an entity has been deleted.
+    """
+    from stories.models import StoryGraph
+    from .models import ModelGroup
+
+    # delete story graphs without cached model versions
+    StoryGraph.objects.filter(cachedmodelversions=None).delete()
+    # delete model groups without models
+    ModelGroup.objects.filter(models=None).delete()

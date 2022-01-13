@@ -243,6 +243,34 @@ class TestEntityDeletion:
 
 
 @pytest.mark.django_db
+class TestEntityDeletionInUseInStory:
+    def test_owner_cannot_delete_entity_if_in_use_in_story(
+        self, logged_in_user, helpers, client,
+        model_with_version, protocol_with_version, story
+    ):
+        # the presence of in_use (with len>0) will disable the confirm button and add a message in the template
+        model_with_version.author = logged_in_user
+        model_with_version.save()
+        protocol_with_version.author = logged_in_user
+        protocol_with_version.save()
+
+        response = client.get('/entities/models/%d/delete' % model_with_version.pk)
+        assert 'in_use' in response.context[-1]
+        assert str(response.context[-1]['in_use']) == str({(story.id, story.title)})
+
+        response = client.get('/entities/protocols/%d/delete' % protocol_with_version.pk)
+        assert 'in_use' in response.context[-1]
+        assert str(response.context[-1]['in_use']) == str({(story.id, story.title)})
+
+        # fitting specs are not involved stories
+        helpers.add_permission(logged_in_user, 'create_fittingspec')
+        fittingspec = recipes.fittingspec.make(author=logged_in_user)
+        response = client.get('/fitting/specs/%d/delete' % fittingspec.pk)
+        assert 'in_use' in response.context[-1]
+        assert len(response.context[-1]['in_use']) == 0
+
+
+@pytest.mark.django_db
 class TestEntityDetail:
     def test_redirects_to_new_version(self, client, logged_in_user):
         model = recipes.model.make(author=logged_in_user)

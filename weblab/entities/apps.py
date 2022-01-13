@@ -1,7 +1,7 @@
 from django.apps import AppConfig
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save, pre_delete, post_delete
 
-from .signals import entity_created, entity_deleted
+from .signals import entity_created, entity_deleted, entity_post_deleted
 
 
 class EntitiesConfig(AppConfig):
@@ -16,3 +16,4 @@ class EntitiesConfig(AppConfig):
         for sender in [Entity, ModelEntity, ProtocolEntity]:
             post_save.connect(entity_created, sender)
             pre_delete.connect(entity_deleted, sender)
+            post_delete.connect(entity_post_deleted, sender)

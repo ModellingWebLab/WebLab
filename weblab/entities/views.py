@@ -42,7 +42,8 @@ from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingResult, FittingSpec
 from repocache.exceptions import RepoCacheMiss
-from repocache.models import CachedProtocolVersion
+from repocache.models import CachedProtocol, CachedProtocolVersion, CachedModel, CachedModelVersion
+from stories.models import StoryGraph
 
 from .forms import (
     EntityChangeVisibilityForm,
@@ -468,6 +469,21 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':list', args=[self.kwargs['entity_type']])
+
+    def get_context_data(self, **kwargs):
+        kwargs['in_use'] = set()
+        # disable deleting models/protocols in use in a story
+        if self.kwargs['entity_type'] == 'model':
+            cached = CachedModelVersion.objects.filter(entity__in=CachedModel.objects.filter(entity=self.get_object()))
+            for entity in cached:
+                kwargs['in_use'] |= set([(graph.story.id, graph.story.title) for graph in entity.storygraph_set.all()])
+        elif self.kwargs['entity_type'] == 'protocol':
+            cached = CachedProtocolVersion.objects.filter(
+                entity__in=CachedProtocol.objects.filter(entity=self.get_object())
+            )
+            kwargs['in_use'] = set([(graph.story.id, graph.story.title)
+                                    for graph in StoryGraph.objects.filter(cachedprotocolversion__in=cached)])
+        return super().get_context_data(**kwargs)
 
 
 class EntityAlterFileView(
@@ -1298,6 +1314,11 @@ class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):
     def get_success_url(self, *args, **kwargs):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':modelgroup')
+
+    def get_context_data(self, **kwargs):
+        kwargs['in_use'] = set([(graph.story.id, graph.story.title)
+                                for graph in StoryGraph.objects.filter(modelgroup=self.get_object())])
+        return super().get_context_data(**kwargs)
 
 
 class ModelGroupCollaboratorsView(EditCollaboratorsAbstractView):

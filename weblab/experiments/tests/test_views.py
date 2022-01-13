@@ -2,6 +2,7 @@ import json
 import shutil
 import uuid
 import zipfile
+from datetime import date
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -1114,6 +1115,69 @@ class TestExperimentDeletion:
         assert ExperimentVersion.objects.filter(pk=experiment_with_result.pk).exists()
         assert Experiment.objects.filter(pk=experiment.pk).exists()
         assert exp_ver_path.exists()
+
+    def test_owner_cannot_delete_experiment_if_in_use_by_story(
+        self, logged_in_user, client, experiment_with_result, helpers, protocol_with_version, story
+    ):
+        # the presence of in_use (with len>0) will disable the confirm button and add a message in the template
+        experiment = experiment_with_result.experiment
+        experiment.author = logged_in_user
+        experiment.save()
+
+        assert Experiment.objects.filter(pk=experiment.pk).exists()
+
+        response = client.get('/experiments/%d/delete' % experiment.pk)
+        assert 'in_use' in response.context[-1]
+        assert str(response.context[-1]['in_use']) == str({(story.id, story.title)})
+
+        # Make a new experiment with same protocol but different model
+        new_model = recipes.model.make(author=logged_in_user)
+        helpers.add_version(new_model, visibility='public')
+        experiment.model_version = new_model.repocache.latest_version
+        experiment.save()
+
+        # protocol in use, but model not
+        response = client.get('/experiments/%d/delete' % experiment.pk)
+        assert 'in_use' in response.context[-1]
+        assert len(response.context[-1]['in_use']) == 0
+
+    def test_owner_cannot_delete_experiment_version_if_in_use_by_story(
+        self, logged_in_user, client, experiment_with_result, helpers, protocol_with_version, story
+    ):
+        # the presence of in_use (with len>0) will disable the confirm button and add a message in the template
+        experiment = experiment_with_result.experiment
+        experiment_with_result.author = logged_in_user
+        experiment_with_result.save()
+
+        response = client.get('/experiments/%d/versions/%d/delete' % (experiment.pk, experiment_with_result.pk))
+        assert 'in_use' in response.context[-1]
+        assert str(response.context[-1]['in_use']) == str({(story.id, story.title)})
+
+        # Make a new experiment with same protocol but different model
+        new_model = recipes.model.make(author=logged_in_user)
+        helpers.add_version(new_model, visibility='public')
+        exp_version = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=new_model,
+            experiment__model_version=new_model.repocache.latest_version,
+            experiment__protocol=protocol_with_version,
+            experiment__protocol_version=protocol_with_version.repocache.latest_version,
+            author=logged_in_user,
+        )
+        exp_version.mkdir()
+        with (exp_version.abs_path / 'result.txt').open('w') as f:
+            f.write('experiment results')
+
+        # protocol in use, but model not
+        response = client.get('/experiments/%d/versions/%d/delete' % (exp_version.experiment.pk, exp_version.pk))
+        assert 'in_use' in response.context[-1]
+        assert len(response.context[-1]['in_use']) == 0
+
+        # can delete if not latest
+        recipes.experiment_version.make(experiment=experiment_with_result.experiment, created_at=date(2017, 1, 3))
+        response = client.get('/experiments/%d/versions/%d/delete' % (experiment.pk, experiment_with_result.pk))
+        assert 'in_use' in response.context[-1]
+        assert len(response.context[-1]['in_use']) == 0
 
 
 @pytest.mark.django_db

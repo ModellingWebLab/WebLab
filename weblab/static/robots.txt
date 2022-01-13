@@ -2,6 +2,7 @@ User-agent: *
 
 # Bots can't log in, so don't bother trying
 Disallow: /accounts
+Disallow: /admin
 Disallow: /social
 
 # Robots can kill Web Lab responsiveness if left unchecked.
@@ -11,3 +12,4 @@ Disallow: /datasets
 Disallow: /entities
 Disallow: /experiments
 Disallow: /fitting
+Disallow: /stories

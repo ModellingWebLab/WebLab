@@ -85,3 +85,8 @@ column_mapping = Recipe('DatasetColumnMapping',
                         protocol_ioput=foreign_key(protocol_ioput),
                         dataset=foreign_key(dataset),
                         )
+
+story = Recipe('Story', title=seq('my story'), visibility='public')
+story_text = Recipe('StoryText', description=seq('my description'))
+story_graph = Recipe('StoryGraph')
+

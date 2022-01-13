@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+{% load stories %}
+{% load experiments %}
+
+{% block title %}Story {{ object.title }} - {% endblock title %}
+{% block content %}
+
+<a href="{% url 'stories:story_edit' object.id %}"><h1>Story: {{ object.title }}</h1></a>
+<small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.
+
+{% can_manage_story object as can_manage %}
+{% if can_manage %}
+  <a title="Edit story" href="{% url 'stories:story_edit' object.id %}">
+    Edit story
+  </a>
+{% endif %}
+<div id='storyrender'>
+{% for part in storyparts %}
+    {% if part.description %}
+       <div class="markdowrenderview">
+         <textarea class="markdownsource">{{part.description | safe}}</textarea>
+       </div>
+    {% else %}
+
+<!--<h2>{{part.graphfilename}} graph for {{ part.cachedprotocolversion.protocol.name }} experiment{% if part.modelgroup %}s for model group: {{ part.modelgroup }}{% else %} for model: {{part.cachedmodelversions.first.model.name}} {% endif %}</h2>-->
+
+<input type="hidden" id="{{ forloop.counter0 }}entityIdsToCompare" value="{%url 'experiments:compare' part.experiment_versions%}/show/{{ part.graphfilename }}/{{object.graphvisualizer}}">
+ <div class="entitiesToCompare" id="{{ forloop.counter0 }}entitiesToCompare" data-comparison-href="{% url 'experiments:compare_json' part.experiment_versions %}">
+    loading...
+    </div>
+    <div id="{{ forloop.counter0 }}filedetails" class="filedetails">
+        <div id="{{ forloop.counter0 }}filedisplay"></div>
+    </div>
+
+    {% endif %}
+{%endfor%}
+
+</div>
+{% endblock %}
