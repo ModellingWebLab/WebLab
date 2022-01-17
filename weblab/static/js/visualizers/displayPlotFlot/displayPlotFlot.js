@@ -2,14 +2,14 @@ var utils = require('../../lib/utils.js');
 var common = require('../../expt_common.js');
 
 /* create and append the div for showing the plot choices */
-function createAppendChoicesDiv (self, parentDiv) {
+function createAppendChoicesDiv (thisPlot, parentDiv) {
     var choicesDiv = document.createElement("div");
-    choicesDiv.id = self.graphIds['choicesDivId'];
+    choicesDiv.id = thisPlot.graphIds['choicesDivId'];
     parentDiv.appendChild (choicesDiv);
 }
 
 /* create and append the flot plotting div element with specified id attr */
-function createAppendFlotPlotDiv(self, parentDiv, flotPlotDivId) {
+function createAppendFlotPlotDiv(thisPlot, parentDiv, flotPlotDivId) {
     var flotPlotDiv = document.createElement("div");
     flotPlotDiv.id = flotPlotDivId;
     //flotPlotDiv.title = "Zoom available by selecting an area of the plot";
@@ -19,28 +19,28 @@ function createAppendFlotPlotDiv(self, parentDiv, flotPlotDivId) {
 }
 
 /* create and append the div for showing the legend */
-function createAppendLegendDiv(self, parentDiv) {
+function createAppendLegendDiv(thisPlot, parentDiv) {
     var legendContainer =  document.createElement("div");
-    legendContainer.id = self.graphIds['legendDivId'];
+    legendContainer.id = thisPlot.graphIds['legendDivId'];
     parentDiv.appendChild (legendContainer);
 }
 
 /* create and append a reset button to the div element */
-function createAppendResetButton(self, parentDiv) {
+function createAppendResetButton(thisPlot, parentDiv) {
     var resetButtonDiv = document.createElement("div");
-    resetButtonDiv.id = self.graphIds['resetButtonDivId'];
-    resetButtonDiv.classList.add(self.graphIds['resetButtonDivClass']);
+    resetButtonDiv.id = thisPlot.graphIds['resetButtonDivId'];
+    resetButtonDiv.classList.add(thisPlot.graphIds['resetButtonDivClass']);
     parentDiv.appendChild(resetButtonDiv);
 
     var resetButton = document.createElement('input');
-    resetButton.id = self.graphIds['resetButtonId'];
+    resetButton.id = thisPlot.graphIds['resetButtonId'];
     resetButton.title = 'Reset graph zoom based on currently selected datasets';
     resetButton.type = 'button';
     resetButton.value = 'Reset zoom';
     resetButtonDiv.appendChild (resetButton);
 
     var legendHideButton = document.createElement('input');
-    legendHideButton.id = self.graphIds['legendHideButtonId'];
+    legendHideButton.id = thisPlot.graphIds['legendHideButtonId'];
     legendHideButton.title = 'Toggle the visibility of the legend.';
     legendHideButton.type = 'button';
     legendHideButton.value = 'Toggle legend';
@@ -48,18 +48,18 @@ function createAppendResetButton(self, parentDiv) {
 }
 
 /* create and append a select toggler to the div element */
-function createAppendSelectToggler(self, parentDiv) {
+function createAppendSelectToggler(thisPlot, parentDiv) {
     var selectTogglerEl = document.createElement('input');
-    selectTogglerEl.id = self.graphIds['selectTogglerId'];
+    selectTogglerEl.id = thisPlot.graphIds['selectTogglerId'];
     selectTogglerEl.type = 'checkbox';
     parentDiv.appendChild (selectTogglerEl);
 
     var label = document.createElement('label');
-    label.setAttribute('for', self.graphIds['selectTogglerId']);
+    label.setAttribute('for', thisPlot.graphIds['selectTogglerId']);
     label.innerHTML = 'Select all';
     parentDiv.appendChild(label);
 
-    var selectToggler = $('#' + self.graphIds['selectTogglerId']);
+    var selectToggler = $('#' + thisPlot.graphIds['selectTogglerId']);
     selectToggler.attr({ 'checked': 'checked' });
     setTogglerTitle(selectToggler);
 }
@@ -70,12 +70,12 @@ function isStyleLinespointsOrPoints(lineStyle) {
 }
 
 /* Plot the graph */
-function plotAccordingToChoices(self, plotProperties, selectedCoords) {
+function plotAccordingToChoices(thisPlot, plotProperties, selectedCoords) {
     if ($.plot === undefined)
     {
         /// Wait 0.1s for flot to load and try again
         console.log("Waiting for flot to load.");
-        window.setTimeout(function(){plotAccordingToChoices(self, plotProperties, selectedCoords);}, 100);
+        window.setTimeout(function(){plotAccordingToChoices(thisPlot, plotProperties, selectedCoords);}, 100);
         return;
     }
 
@@ -95,7 +95,7 @@ function plotAccordingToChoices(self, plotProperties, selectedCoords) {
         }
     });
 
-    var genericSettings = retrieveGenericSettings($('#' + self.graphIds['legendDivId']));
+    var genericSettings = retrieveGenericSettings($('#' + thisPlot.graphIds['legendDivId']));
     var settings;
     if (selectedCoords != undefined)
     {
@@ -128,13 +128,13 @@ function plotAccordingToChoices(self, plotProperties, selectedCoords) {
         }
     }
 
-    self.graphIds['plottedGraph'] = $.plot("#" + flotPlotDivId, data, settings);
+    thisPlot.graphIds['plottedGraph'] = $.plot("#" + flotPlotDivId, data, settings);
 };
 
 /* retrieve min and max x and y axes values of current plot */
-function retrieveCurrentPlotCoords(self) {
-  var xAxis = self.graphIds['plottedGraph'].getAxes().xaxis;
-  var yAxis = self.graphIds['plottedGraph'].getAxes().yaxis;
+function retrieveCurrentPlotCoords(thisPlot) {
+  var xAxis = thisPlot.graphIds['plottedGraph'].getAxes().xaxis;
+  var yAxis = thisPlot.graphIds['plottedGraph'].getAxes().yaxis;
   var coords = { 'x': [xAxis.min, xAxis.max],
                  'y': [yAxis.min, yAxis.max] };
   return coords;
@@ -165,7 +165,7 @@ function retrieveGenericSettings(legendContainer) {
  * @param plotProperties Assembly of various plot properties.
  * @param moreThanOneDataset True if more than one dataset being plotted.
  */
-function setListeners(self, plotProperties, moreThanOneDataset) {
+function setListeners(thisPlot, plotProperties, moreThanOneDataset) {
     var choicesContainer = plotProperties.choicesContainer;
     var flotPlotDivId = plotProperties.flotPlotDivId;
 
@@ -179,15 +179,15 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
         {
           if (checkedCount == 1) {
             /* disable the input checkbox on whichever checked dataset remains */
-            $('#' + self.graphIds['choicesDivId'] + ' input:checkbox:checked').prop('disabled', true);
+            $('#' + thisPlot.graphIds['choicesDivId'] + ' input:checkbox:checked').prop('disabled', true);
           }
           else
           {
             /* more than one dataset selected, remove any disabled */
-            $('#' + self.graphIds['choicesDivId'] + ' input:checkbox:disabled').prop('disabled', false);
+            $('#' + thisPlot.graphIds['choicesDivId'] + ' input:checkbox:disabled').prop('disabled', false);
           }
           /* re-plot using existing coordinates */
-          plotAccordingToChoices(self, plotProperties, retrieveCurrentPlotCoords(self));
+          plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
         }
     });
 
@@ -202,8 +202,8 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
         var coords = { 'x': [ranges.xaxis.from, ranges.xaxis.to],
                        'y': [ranges.yaxis.from, ranges.yaxis.to] };
 
-        self.graphIds['plottedGraph'].setSelection(ranges, true);
-        plotAccordingToChoices(self, plotProperties, coords);
+        thisPlot.graphIds['plottedGraph'].setSelection(ranges, true);
+        plotAccordingToChoices(thisPlot, plotProperties, coords);
     });
 
     /* listen to user hovering over plot */
@@ -214,17 +214,17 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
           if (previousPoint != item.datapoint) {
             previousPoint = item.datapoint;
 
-            $('#' + self.graphIds['tooltipId']).remove();
+            $('#' + thisPlot.graphIds['tooltipId']).remove();
             var x = item.datapoint[0];
             var y = item.datapoint[1];
 
             var content = '[' + item.series.label + '] : ' +
                           plotProperties.x_label + ' \'' + x + '\' : ' +
                           plotProperties.y_label + ' \'' + y + '\'';
-            show_tooltip(self, item.pageX, item.pageY, content);
+            show_tooltip(thisPlot, item.pageX, item.pageY, content);
           }
         } else {
-          $('#' + self.graphIds['tooltipId']).remove();
+          $('#' + thisPlot.graphIds['tooltipId']).remove();
           previousPoint = null;
         }
       }
@@ -232,18 +232,18 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
 
 
     /* reset graphical display according to ranges defined by current dataset selection */
-    $('#' + self.graphIds['resetButtonId']).click(function() {
-        plotAccordingToChoices(self, plotProperties);
+    $('#' + thisPlot.graphIds['resetButtonId']).click(function() {
+        plotAccordingToChoices(thisPlot, plotProperties);
     });
 
     if (moreThanOneDataset)
     {
         /* action when all datasets toggler is clicked */
-        $('#' + self.graphIds['selectTogglerId']).click(function() {
+        $('#' + thisPlot.graphIds['selectTogglerId']).click(function() {
           var toggler = $(this);
           setTogglerTitle(toggler);
           /* remove any disabled inputs */
-          $('#' + self.graphIds['choicesDivId'] + ' input:checkbox:disabled').prop('disabled', false);
+          $('#' + thisPlot.graphIds['choicesDivId'] + ' input:checkbox:disabled').prop('disabled', false);
           if (toggler.is(':checked'))
           {
             /* check all currently unchecked datasets */
@@ -258,14 +258,14 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
               $(this).prop('checked', false);
             });
             /* switch on the first (just in case it was already de-selected) and disable it */
-            $('#' + self.graphIds['choicesDivId'] + ' input:checkbox:eq(0)').prop({ 'disabled': true, 'checked': true });
+            $('#' + thisPlot.graphIds['choicesDivId'] + ' input:checkbox:eq(0)').prop({ 'disabled': true, 'checked': true });
           }
-          plotAccordingToChoices(self, plotProperties, retrieveCurrentPlotCoords(self));
+          plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
       });
     }
 
     // mouse over for legend
-    var legend = $("#" + self.graphIds['choicesDivId']);
+    var legend = $("#" + thisPlot.graphIds['choicesDivId']);
     legend.append ($("<div></div>").addClass ("clearer"));
     if (legend.height () > 100)
     {
@@ -280,9 +280,9 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
     		legend.addClass ("legend-fade");
     	});
         // Toggle button implements persistent expand/collapse
-        $('#' + self.graphIds['legendHideButtonId']).click (function ()
+        $('#' + thisPlot.graphIds['legendHideButtonId']).click (function ()
             {
-                var legend = $('#' + self.graphIds['choicesDivId']);
+                var legend = $('#' + thisPlot.graphIds['choicesDivId']);
                 if (legend.hasClass("legend-fade"))
                 {
                     // Show, and disable mouseout behaviour
@@ -298,7 +298,7 @@ function setListeners(self, plotProperties, moreThanOneDataset) {
     else
     {
     	legend.removeClass ("legend-fade");
-    	$('#' + self.graphIds['legendHideButtonId']).hide();
+    	$('#' + thisPlot.graphIds['legendHideButtonId']).hide();
     }
 }
 
@@ -314,8 +314,8 @@ function setTogglerTitle(toggler) {
  * @param y Y-axis coordinate.
  * @param content Content of tooltip.
  */
-function show_tooltip(self, x, y, content) {
-  jQuery('<div />').attr({ 'id' : self.graphIds['tooltipId'] })
+function show_tooltip(thisPlot, x, y, content) {
+  jQuery('<div />').attr({ 'id' : thisPlot.graphIds['tooltipId'] })
                    .css({ 'top': y + 5, 'left': x + 5 })
                    .addClass('flotTooltip')
                    .html(content)
@@ -325,19 +325,19 @@ function show_tooltip(self, x, y, content) {
 
 /* Transfer the colours placed into the legend div by flot's plotting, to the spans corresponding
 to the dataset plot label. Once transfered the legend div serves no purpose. */
-function transferLegendColours(self, datasets) {
+function transferLegendColours(thisPlot, datasets) {
  /* we don't want to see the legend data so hide immediately, only use it to pinch the colour! */
-  $('#' + self.graphIds['legendDivId']).hide();
+  $('#' + thisPlot.graphIds['legendDivId']).hide();
  $.each(datasets, function(key, val) {
      /* class legendColorBox defined in jquery.flot.js in function insertLegend() */
      var thisDatasetNumber = val.color;
      var legendColorBox = $('td.legendColorBox:eq(' + thisDatasetNumber + ') div div');
      /* moz wasn't happy using border-color, which IE didn't mind */
      var colour = legendColorBox.css('border-left-color');
-     $('#' + self.graphIds['colouredSpanIdPrefix'] + thisDatasetNumber).css('background-color', colour);
+     $('#' + thisPlot.graphIds['colouredSpanIdPrefix'] + thisDatasetNumber).css('background-color', colour);
  });
  /* legend element is no longer required */
- $('#' + self.graphIds['legendDivId']).remove();
+ $('#' + thisPlot.graphIds['legendDivId']).remove();
 }
 
 /**
@@ -441,13 +441,13 @@ contentFlotPlot.prototype.drawPlot = function ()
         var onlyOneDataset = (datasetNumber == 1);
 
         /* insert checkboxes - note that colours will be applied to spans after plotting */
-        self = this;
+        thisPlot = this;
         $.each(datasets, function(key, val) {
             var thisDatasetNumber = val.color;
-            var colouredSpan = $('<span />').attr('id', self.graphIds['colouredSpanIdPrefix'] + thisDatasetNumber)
+            var colouredSpan = $('<span />').attr('id', thisPlot.graphIds['colouredSpanIdPrefix'] + thisDatasetNumber)
                                             .addClass('flotColour')
                                             .html('&nbsp;&nbsp;');
-            var inputId = this.graphIds['prefix'] + 'id' + key;
+            var inputId = thisPlot.graphIds['prefix'] + 'id' + key;
             var newLabel = $('<label />').attr('for', inputId).html(val.label);
             var newInput = $('<input />').attr({ 'type': 'checkbox',
                                                  'name': key,
