@@ -55,7 +55,7 @@ def archive_file_path():
     return str(Path(__file__).absolute().parent.joinpath('./test.omex'))
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def archive_file(archive_file_path):
     with open(archive_file_path, 'rb') as fp:
         yield fp

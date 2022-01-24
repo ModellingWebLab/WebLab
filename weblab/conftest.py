@@ -512,14 +512,14 @@ def fittingresult_with_result(model_with_version, protocol_with_version):
     return version
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def mock_column_names():
     with patch.object(Dataset, 'column_names',
                       new_callable=PropertyMock, return_value=['col']) as mock_col:
         yield mock_col
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def story(logged_in_user, experiment_with_result):
     experiment = experiment_with_result.experiment
     story = recipes.story.make(author=logged_in_user)
