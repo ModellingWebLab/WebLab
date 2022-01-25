@@ -18,7 +18,7 @@ defusedxml==0.7.1
     #   social-auth-core
 dj-database-url==0.4.2
     # via -r base.in
-django==2.2.24
+django==2.2.26
     # via
     #   -r base.in
     #   django-braces
