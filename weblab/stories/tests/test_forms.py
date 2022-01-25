@@ -201,16 +201,6 @@ class TestStoryTextFormSet:
 
 
 @pytest.mark.django_db
-def test_graph_choices(experiment_with_result_public):
-    assert list(StoryGraphFormSet.get_graph_choices(experiment_with_result_public.author)) == []
-    assert list(StoryGraphFormSet.get_graph_choices(experiment_with_result_public.author)) == []
-    assert str({c[1] for c in StoryGraphFormSet.get_protocol_choices(experiment_with_result_public.author)}) == \
-        "{'my protocol1'}"
-    assert str([c[1] for c in StoryGraphFormSet.get_modelgroup_choices(experiment_with_result_public.author)]) ==  \
-        "['--------- model group', '--------- model', 'my model1']"
-
-
-@pytest.mark.django_db
 class TestStoryGraphFormSet:
     @pytest.fixture
     def experiment(self, experiment_with_result_public):
@@ -218,18 +208,6 @@ class TestStoryGraphFormSet:
         shutil.copy(Path(__file__).absolute().parent.joinpath('./test.omex'),
                     experiment_with_result_public.archive_path)
         return experiment_with_result_public.experiment
-
-    def test_graph_choices(self, experiment):
-        assert str(sorted(StoryGraphFormSet.get_graph_choices(experiment.author), key=str)) == \
-            ("[('outputs_APD90_gnuplot_data.csv', 'outputs_APD90_gnuplot_data.csv'), "
-             "('outputs_Final_pace_voltage_gnuplot_data.csv', 'outputs_Final_pace_voltage_gnuplot_data.csv'), "
-             "('outputs_Relative_APD90_gnuplot_data.csv', 'outputs_Relative_APD90_gnuplot_data.csv'), "
-             "('outputs_Relative_resting_potential_gnuplot_data.csv', "
-             "'outputs_Relative_resting_potential_gnuplot_data.csv'), "
-             "('outputs_Resting_potential_gnuplot_data.csv', 'outputs_Resting_potential_gnuplot_data.csv')]")
-        assert str({c[1] for c in StoryGraphFormSet.get_protocol_choices(experiment.author)}) == "{'my protocol1'}"
-        assert str([c[1] for c in StoryGraphFormSet.get_modelgroup_choices(experiment.author)]) == \
-            "['--------- model group', '--------- model', 'my model1']"
 
     def test_missing_fields_storyGraph(self, experiment, story, model_with_version, protocol_with_version):
         data = {'ORDER': '0', 'currentGraph': '', 'update': 'True'}

@@ -1,20 +1,16 @@
 import re
+
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import formset_factory, inlineformset_factory
 
 from core import visibility
+from entities.forms import BaseEntityCollaboratorFormSet, EntityCollaboratorForm
+from entities.models import ModelGroup
+from repocache.models import CachedModelVersion, CachedProtocolVersion
 
-from entities.forms import EntityCollaboratorForm, BaseEntityCollaboratorFormSet
-from entities.models import ModelEntity, ModelGroup
-from experiments.models import Experiment
-from .models import Story, StoryText, StoryGraph
-from repocache.models import CachedProtocolVersion, CachedModelVersion
-from experiments.models import Runnable
-from collections import OrderedDict
-import csv
-import io
+from .models import Story, StoryGraph, StoryText
 
 
 # Helper dictionary for determining whether visibility of model groups / stories and their models works together
@@ -51,45 +47,6 @@ class BaseStoryFormSet(forms.BaseFormSet):
         for form in self.deleted_forms:
             form.delete(**kwargs)
         return [form.save(story=story, **kwargs) for form in self.ordered_forms]
-
-    @staticmethod
-    def get_modelgroup_choices(user):
-        return [('', '--------- model group')] +\
-               [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
-                if modelgroup.visible_to_user(user)] +\
-               [('', '--------- model')] +\
-               [('model' + str(model.repocache.latest_version.pk), model.name)
-                for model in ModelEntity.objects.visible_to_user(user)
-                if model.repocache.versions.count()]
-
-    @staticmethod
-    def get_protocol_choices(user, model_versions=None):
-        # Get protocols for which the latest result run succesful
-        # that users can see for the model(s) we're looking at
-        return set((e.protocol_version.pk, e.protocol.name) for e in Experiment.objects.all()
-                   if e.latest_result == Runnable.STATUS_SUCCESS and
-                   e.is_visible_to_user(user)
-                   and (model_versions is None or e.model_version in model_versions))
-
-    @staticmethod
-    def get_graph_choices(user, protocol_version=None, model_versions=None):
-        experimentversions = [e.latest_version for e in Experiment.objects.all()
-                              if e.latest_result == Runnable.STATUS_SUCCESS and
-                              e.is_visible_to_user(user)
-                              and (protocol_version is None or e.protocol == protocol_version.protocol)
-                              and (model_versions is None or e.model_version in model_versions)]
-
-        graph_files = OrderedDict()
-        for experimentver in experimentversions:
-            # find outputs-contents.csv
-            try:
-                plots_data_file = experimentver.open_file('outputs-default-plots.csv').read().decode("utf-8")
-                plots_data_stream = io.StringIO(plots_data_file)
-                for row in csv.DictReader(plots_data_stream):
-                    graph_files[(row['Data file name'], row['Data file name'])] = True
-            except FileNotFoundError:
-                pass  # This experiemnt version has no graphs
-        return graph_files.keys()
 
 
 class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -139,12 +96,9 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['experimentVersions'] = forms.CharField(required=False)
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
-        self.fields['models_or_group'] = forms.ChoiceField(required=False,
-                                                           choices=StoryGraphFormSet.get_modelgroup_choices(self.user))
-        self.fields['protocol'] = forms.ChoiceField(required=False,
-                                                    choices=StoryGraphFormSet.get_protocol_choices(self.user))
-        self.fields['graphfiles'] = forms.ChoiceField(required=False,
-                                                      choices=StoryGraphFormSet.get_graph_choices(self.user))
+        self.fields['models_or_group'] = forms.CharField(required=False, widget=forms.Select(choices=[]))
+        self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(choices=[]))
+        self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(choices=[]))
 
     def clean_models_or_group(self):
         if self.cleaned_data.get('update', False) and self.cleaned_data['models_or_group'] == "":
@@ -269,4 +223,3 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
             self.instance.author = self.user
         self.instance.save()
         return self.instance
-

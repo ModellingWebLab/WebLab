@@ -521,13 +521,15 @@ class TestStoryFilterModelOrGroupView:
 class TestStoryFilterProtocolView:
     def test_requires_login(self, client):
         model = recipes.model.make()
-        response = client.get('/stories/model%d/protocols' % model.pk)
+        cached_model = recipes.cached_model.make(entity=model)
+        model_version = recipes.cached_model_version.make(entity=cached_model)
+        response = client.get('/stories/model%d/protocols' % model_version.pk)
         assert response.status_code == 302
         assert '/login/' in response.url
 
     def test_get_protocol_not_visible(self, client, logged_in_user, experiment_with_result):
         experiment = experiment_with_result.experiment
-        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        response = client.get('/stories/model%d/protocols' % experiment.model_version.pk)
         assert response.status_code == 200
         assert experiment.protocol.name not in str(response.content)
 

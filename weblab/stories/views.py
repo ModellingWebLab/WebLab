@@ -1,27 +1,37 @@
-from braces.views import UserFormKwargsMixin
-from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
-    UserPassesTestMixin,
-)
+import csv
+import io
+from collections import OrderedDict
 
+from braces.views import UserFormKwargsMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, DeleteView, FormMixin, UpdateView
+from django.views.generic.edit import (
+    CreateView,
+    DeleteView,
+    FormMixin,
+    UpdateView,
+)
 from django.views.generic.list import ListView
 
 from accounts.forms import OwnershipTransferForm
+from entities.models import ModelEntity, ModelGroup
+from entities.views import EditCollaboratorsAbstractView
+from experiments.models import (
+    Experiment,
+    ExperimentVersion,
+    ProtocolEntity,
+    Runnable,
+)
+from repocache.models import CachedModelVersion, CachedProtocolVersion
 
 from .forms import (
     StoryCollaboratorFormSet,
     StoryForm,
-    StoryTextFormSet,
     StoryGraphFormSet,
+    StoryTextFormSet,
 )
-from entities.models import ModelGroup
-from entities.views import EditCollaboratorsAbstractView
-from experiments.models import Experiment, ExperimentVersion, ProtocolEntity, Runnable
-from .models import Story, StoryText, StoryGraph
-from repocache.models import CachedProtocolVersion, CachedModelVersion
+from .models import Story, StoryGraph, StoryText
 
 
 def get_experiment_versions_url(user, cachedprotocolversion, cachedmodelversions):
@@ -244,7 +254,13 @@ class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
     template_name = 'stories/modelorgroup_selection.html'
 
     def get_queryset(self):
-        return StoryGraphFormSet.get_modelgroup_choices(self.request.user)
+        return [('', '--------- model group')] +\
+               [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
+                if modelgroup.visible_to_user(self.request.user)] +\
+               [('', '--------- model')] +\
+               [('model' + str(model.repocache.latest_version.pk), model.name)
+                for model in ModelEntity.objects.visible_to_user(self.request.user)
+                if model.repocache.versions.count()]
 
 
 class StoryFilterProtocolView(LoginRequiredMixin, ListView):
@@ -253,19 +269,22 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         mk = self.kwargs.get('mk', '')
+        model_version_pks = []
         if mk.startswith('modelgroup'):
             mk = int(mk.replace('modelgroup', ''))
-            model_versions = [m.repocache.latest_version for m in ModelGroup.objects.get(pk=mk).models.all()
-                              if m.repocache.versions.count()]
+            model_version_pks = [m.repocache.latest_version.pk for m in ModelGroup.objects.get(pk=mk).models.all()
+                                 if m.repocache.versions.count()]
         elif mk.startswith('model'):
             mk = int(mk.replace('model', ''))
-            model_versions = CachedModelVersion.objects.filter(pk=mk)
-        else:
+            model_version_pks = [CachedModelVersion.objects.get(pk=mk).pk]
+        if  model_version_pks == []:
             return []
 
         # Get protocols for which the latest result run succesful
         # that users can see for the model(s) we're looking at
-        return StoryGraphFormSet.get_protocol_choices(self.request.user, model_versions=model_versions)
+        return set((e.protocol_version.pk, e.protocol.name) for e in Experiment.objects.filter(model_version__in=model_version_pks)
+                   if e.latest_result == Runnable.STATUS_SUCCESS and
+                   e.is_visible_to_user(self.request.user))
 
 
 class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
@@ -301,8 +320,23 @@ class StoryFilterGraphView(StoryFilterExperimentVersions):
 
     def get_queryset(self):
         self.get_versions()
-        return StoryGraphFormSet.get_graph_choices(self.user, protocol_version=self.protocol_version,
-                                                   model_versions=self.model_versions)
+        experimentversions = [e.latest_version for e in Experiment.objects.all()
+                              if e.latest_result == Runnable.STATUS_SUCCESS and
+                              e.is_visible_to_user(self.user)
+                              and (self.protocol_version is None or e.protocol == self.protocol_version.protocol)
+                              and (self.model_versions is None or e.model_version in self.model_versions)]
+
+        graph_files = OrderedDict()
+        for experimentver in experimentversions:
+            # find outputs-contents.csv
+            try:
+                plots_data_file = experimentver.open_file('outputs-default-plots.csv').read().decode("utf-8")
+                plots_data_stream = io.StringIO(plots_data_file)
+                for row in csv.DictReader(plots_data_stream):
+                    graph_files[(row['Data file name'], row['Data file name'])] = True
+            except FileNotFoundError:
+                pass  # This experiemnt version has no graphs
+        return graph_files.keys()
 
 
 class StoryRenderView(UserPassesTestMixin, DetailView):
