@@ -1,14 +1,20 @@
-import pytest
 import shutil
 from pathlib import Path
 
+import pytest
 from django import forms
 from guardian.shortcuts import assign_perm, remove_perm
 
 from core import recipes
-from stories.models import Story, StoryText, StoryGraph
-from stories.forms import (StoryCollaboratorForm, StoryForm, StoryTextForm, StoryTextFormSet, StoryGraphForm,
-                           StoryGraphFormSet)
+from stories.forms import (
+    StoryCollaboratorForm,
+    StoryForm,
+    StoryGraphForm,
+    StoryGraphFormSet,
+    StoryTextForm,
+    StoryTextFormSet,
+)
+from stories.models import Story, StoryGraph, StoryText
 
 
 @pytest.fixture

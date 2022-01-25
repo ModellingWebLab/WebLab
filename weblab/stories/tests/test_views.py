@@ -1,13 +1,13 @@
-import pytest
 import shutil
 from pathlib import Path
 
+import pytest
 from django.urls import reverse
 from guardian.shortcuts import assign_perm, remove_perm
 
 from core import recipes
-from stories.models import Story, StoryText, StoryGraph
-from stories.views import get_experiment_versions_url
+from stories.models import Story, StoryGraph, StoryText
+from stories.views import get_experiment_versions, get_url
 
 
 @pytest.fixture
@@ -31,9 +31,10 @@ def experiment_with_result_public(experiment_with_result):
 def test_get_experiment_versions_url(experiment_with_result_public):
     user = experiment_with_result_public.author
     cachedprotocolversion = experiment_with_result_public.experiment.protocol_version
-    cachedmodelversions = [experiment_with_result_public.experiment.model_version]
-    assert str(get_experiment_versions_url(user, cachedprotocolversion, cachedmodelversions)) == \
-        '/' + str(experiment_with_result_public.pk)
+    cachedmodelversion_pks = [experiment_with_result_public.experiment.model_version.pk]
+    experiment_versions = get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks)
+    assert [v.pk for v in experiment_versions] == [experiment_with_result_public.pk]
+    assert str(get_url(experiment_versions)) == '/' + str(experiment_with_result_public.pk)
 
 
 @pytest.mark.django_db
