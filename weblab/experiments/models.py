@@ -101,6 +101,10 @@ class Experiment(ExperimentMixin, UserCreatedModelMixin, models.Model):
         unique_together = ('model', 'protocol', 'model_version', 'protocol_version')
         verbose_name_plural = 'Experiments'
 
+        indexes = [
+            models.Index(fields=['model_version', 'protocol_version']),
+        ]
+
         permissions = (
             ('create_experiment', 'Can create experiments'),
         )
