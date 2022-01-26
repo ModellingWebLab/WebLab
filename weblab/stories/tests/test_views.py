@@ -11,20 +11,24 @@ from stories.views import get_experiment_versions, get_url
 
 
 @pytest.fixture
-def experiment_with_result_public(experiment_with_result):
+def experiment_with_result_public_no_file(experiment_with_result):
     experiment = experiment_with_result.experiment
     # make sure protocol / models are visible
     experiment.model_version.visibility = 'public'
     experiment.protocol_version.visibility = 'public'
     experiment.model_version.save()
     experiment.protocol_version.save()
-
-    # add graphs
-    experiment_with_result.mkdir()
-    shutil.copy(Path(__file__).absolute().parent.joinpath('./test.omex'),
-                experiment_with_result.archive_path)
-
     return experiment_with_result
+
+
+@pytest.fixture
+def experiment_with_result_public(experiment_with_result_public_no_file):
+    # add graphs
+    experiment_with_result_public_no_file.mkdir()
+    shutil.copy(Path(__file__).absolute().parent.joinpath('./test.omex'),
+                experiment_with_result_public_no_file.archive_path)
+
+    return experiment_with_result_public_no_file
 
 
 @pytest.mark.django_db
@@ -610,14 +614,8 @@ class TestStoryFilterGraphView:
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
 
-    def test_get_graph_not_no_files(self, client, logged_in_user, model_with_version, protocol_with_version):
-        experiment = recipes.experiment_version.make(
-            status='SUCCESS',
-            experiment__model=model_with_version,
-            experiment__model_version=model_with_version.repocache.latest_version,
-            experiment__protocol=protocol_with_version,
-            experiment__protocol_version=protocol_with_version.repocache.latest_version,
-        ).experiment
+    def test_get_graph_not_no_files(self, client, logged_in_admin, experiment_with_result_public_no_file):
+        experiment = experiment_with_result_public_no_file.experiment
         response = client.get('/stories/model%d/%d/graph' %
                               (experiment.model_version.pk, experiment.protocol_version.pk))
         assert response.status_code == 200
