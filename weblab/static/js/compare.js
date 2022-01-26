@@ -39,12 +39,12 @@ function registerFileDisplayer(elem, prefix)
  */
 function setupDownloadFileContents(f, prefix)
 {
-    f.getContents = function (callBack)
+    f.getContents = function (callBack, pref=prefix)
     {
         if (f.hasContents)
-            callBack.getContentsCallback (true);
+            callBack.getContentsCallback (true, pref);
         f.hasContents = true;
-        
+
         //console.log ("file appears in " + f.entities.length);
         for (var i = 0; i < f.entities.length; i++)
         {
@@ -62,6 +62,10 @@ function setupDownloadFileContents(f, prefix)
  */
 function highlightPlots(entity, showDefault, prefix)
 {
+ if(typeof pref !='string'){
+   alert('type in highlightPlots: ' + typeof prefix);
+ }
+
 //    console.log(entity);
     // Plot description has fields: Plot title,File name,Data file name,Line style,First variable id,Optional second variable id,Optional key variable id
     // Output contents has fields: Variable id,Variable name,Units,Number of dimensions,File name,Type,Dimensions
@@ -166,15 +170,18 @@ function parseOutputContents (entity, file, showDefault, prefix)
     entity.outputContents = null; // Note that there is one to parse
     
     var goForIt = {
-        getContentsCallback : function (succ)
+        getContentsCallback : function (succ, pref=prefix)
         {
             if (succ)
             {
                 utils.parseCsvRaw(file);
                 entity.outputContents = file.csv;
                 graphGlobal[prefix]['metadataParsed'] += 1;
-                if (entity.plotDescription)
-                    highlightPlots (entity, showDefault, prefix);
+//if(typeof pref !='string')
+//alert('type in callback: ' + typeof pref);
+                if (entity.plotDescription){
+                    highlightPlots (entity, showDefault, pref);
+                }
             }
         }
     };
@@ -189,15 +196,16 @@ function parsePlotDescription (entity, file, showDefault, prefix)
     entity.plotDescription = null; // Note that there is one to parse
     
     var goForIt = {
-        getContentsCallback : function (succ)
+        getContentsCallback : function (succ, pref=prefix)
         {
             if (succ)
             {
                 utils.parseCsvRaw(file);
                 entity.plotDescription = file.csv;
                 graphGlobal[prefix]['metadataParsed'] += 1;
-                if (entity.outputContents)
-                    highlightPlots (entity, showDefault, prefix);
+                if (entity.outputContents){
+                    highlightPlots (entity, showDefault, pref);
+                }
             }
         }
     };
