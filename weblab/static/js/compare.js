@@ -733,11 +733,14 @@ $(document).ready(function() {
             graphFile = $('#id_graph-' + graphId + '-graphfiles').val();
         }
         if (experimentVersions != '/') {
-            basePath = $(location).attr('pathname').replace(/stories.*/i, ''); // may be running in subfolder
+            basePath = $('#base_uri').val(); // may be running in subfolder, so the base path (without /stories) is passed form django
             // compse url for ids for preview graph
-            graphPathIds = basePath + '/experiments/compare/' + experimentVersions + '/show/' + graphFile + '/' + $('#id_graphvisualizer').val();
+            graphPathIds = '/experiments/compare/' + experimentVersions + '/show/' + graphFile + '/' + $('#id_graphvisualizer').val();
+            graphPathIds = basePath + graphPathIds.replace('//', '/');
+
             // compse url for entities for preview graph
-            graphPathEntities = basePath + '/experiments/compare/' + experimentVersions + '/info';
+            graphPathEntities = '/experiments/compare/' + experimentVersions + '/info';
+            graphPathEntities = basePath + graphPathEntities.replace('//', '/');
             $('#' + graphId + 'graphPreviewBox').html('<div class="graphPreviewDialog"><input type="hidden" id="' + graphId + 'entityIdsToCompare" value="' + graphPathIds + '"><div class="entitiesToCompare" id="' + graphId + 'entitiesToCompare" data-comparison-href="' + graphPathEntities + '">loading...</div><div id="' + graphId + 'filedetails" class="filedetails"><div id="' + graphId + 'filedisplay"></div></div></div>');
             initCompare(graphId, false);
         } else {
@@ -747,7 +750,7 @@ $(document).ready(function() {
 
     });
 
-    // update all graph previews if graph ype changes
+    // update all graph previews if graph type changes
     $('#id_graphvisualizer').change(function() {
         $('.graphfiles').each(function() {
             $(this).change();

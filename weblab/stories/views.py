@@ -1,3 +1,4 @@
+import re
 import csv
 import io
 from collections import OrderedDict
@@ -185,6 +186,11 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         return self.formsetgraph
 
     def get_context_data(self, **kwargs):
+        # get base uri, to use for graph previews
+        ns = self.request.resolver_match.namespace
+        absolute_uri = self.request.build_absolute_uri()
+        kwargs['base_uri'] = re.sub('/' + ns + '/.*', '', absolute_uri)
+
         kwargs['formset'] = self.get_formset()
         kwargs['formsetgraph'] = self.get_formset_graph()
         return super().get_context_data(**kwargs)

@@ -12,7 +12,8 @@
   <form method="POST" action="" novalidate id="storyform">
     {% csrf_token %}
 
-<ul class="errorlist"><li>{{ form.non_field_errors }}</li></ul>
+  <input type="hidden" id="base_uri" value="{{base_uri}}">
+  <ul class="errorlist"><li>{{ form.non_field_errors }}</li></ul>
 
     <p>{{ form.title.label_tag }} {{ form.title }}</p>
     {% if  form.title.errors  %}
