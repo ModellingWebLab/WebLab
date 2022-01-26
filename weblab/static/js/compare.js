@@ -22,13 +22,13 @@ function nextPage(url, replace, prefix)
 
 function registerFileDisplayer(elem, prefix)
 {
-    elem.addEventListener("click", function (ev) {
+    elem.addEventListener("click", function (ev, pref=prefix) {
         if (ev.which == 1)
         {
             ev.preventDefault();
-            nextPage(elem.href, prefix);
+            nextPage(elem.href, pref);
         }
-        }, true);
+    }, true);
 }
 
 /**
@@ -62,10 +62,6 @@ function setupDownloadFileContents(f, prefix)
  */
 function highlightPlots(entity, showDefault, prefix)
 {
- if(typeof pref !='string'){
-   alert('type in highlightPlots: ' + typeof prefix);
- }
-
 //    console.log(entity);
     // Plot description has fields: Plot title,File name,Data file name,Line style,First variable id,Optional second variable id,Optional key variable id
     // Output contents has fields: Variable id,Variable name,Units,Number of dimensions,File name,Type,Dimensions
@@ -176,9 +172,7 @@ function parseOutputContents (entity, file, showDefault, prefix)
             {
                 utils.parseCsvRaw(file);
                 entity.outputContents = file.csv;
-                graphGlobal[prefix]['metadataParsed'] += 1;
-//if(typeof pref !='string')
-//alert('type in callback: ' + typeof pref);
+                graphGlobal[pref]['metadataParsed'] += 1;
                 if (entity.plotDescription){
                     highlightPlots (entity, showDefault, pref);
                 }
@@ -202,7 +196,7 @@ function parsePlotDescription (entity, file, showDefault, prefix)
             {
                 utils.parseCsvRaw(file);
                 entity.plotDescription = file.csv;
-                graphGlobal[prefix]['metadataParsed'] += 1;
+                graphGlobal[pref]['metadataParsed'] += 1;
                 if (entity.outputContents){
                     highlightPlots (entity, showDefault, pref);
                 }
@@ -720,7 +714,7 @@ function parseUrl(event, prefix)
         getInfos ($("#" + prefix + "entitiesToCompare").data('comparison-href'), prefix);
     }
     else
-        handleReq(handleReq);
+        handleReq(prefix);
         
 }
 
@@ -779,14 +773,13 @@ function initCompare(prefix, scroll=true)
 
     // Prevent redirection to the default plot when we close it
         if(graphGlobal[prefix]['doc'].displayClose){
-            graphGlobal[prefix]['doc'].displayClose.addEventListener("click", function (ev) {
-        if (ev.which == 1)
-        {
-            ev.preventDefault();
-            graphGlobal[prefix]['doc'].fileDetails.style.display = "none";
-            shownDefault = true;
-            nextPage(graphGlobal[prefix]['doc'].displayClose.href, prefix);
-        }
+            graphGlobal[prefix]['doc'].displayClose.addEventListener("click", function (ev, pref=prefix) {
+                if (ev.which == 1){
+                    ev.preventDefault();
+                    graphGlobal[pref]['doc'].fileDetails.style.display = "none";
+                    shownDefault = true;
+                    nextPage(graphGlobal[prefix]['doc'].displayClose.href, prefix);
+                }
             }, true);
         }
 
@@ -855,4 +848,5 @@ $(document).ready(function() {
         });
     });
 });
+
 
