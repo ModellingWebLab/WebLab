@@ -610,6 +610,19 @@ class TestStoryFilterGraphView:
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
 
+    def test_get_graph_not_no_files(self, client, logged_in_user, model_with_version, protocol_with_version):
+        experiment = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=model_with_version,
+            experiment__model_version=model_with_version.repocache.latest_version,
+            experiment__protocol=protocol_with_version,
+            experiment__protocol_version=protocol_with_version.repocache.latest_version,
+        ).experiment
+        response = client.get('/stories/model%d/%d/graph' %
+                              (experiment.model_version.pk, experiment.protocol_version.pk))
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
+
     def test_get_graph(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
         response = client.get('/stories/model%d/%d/graph' %
