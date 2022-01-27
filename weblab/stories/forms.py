@@ -13,12 +13,6 @@ from repocache.models import CachedModelVersion, CachedProtocolVersion
 from .models import Story, StoryGraph, StoryText
 
 
-# Helper dictionary for determining whether visibility of model groups / stories and their models works together
-vis_ord = {'private': 0,
-           'moderated': 1,
-           'public': 2}
-
-
 class StoryCollaboratorForm(EntityCollaboratorForm):
     def clean_email(self):
         email = super().clean_email()
