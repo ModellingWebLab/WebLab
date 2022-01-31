@@ -1,6 +1,6 @@
-import re
 import csv
 import io
+import re
 from collections import OrderedDict
 
 from braces.views import UserFormKwargsMixin
@@ -24,7 +24,6 @@ from experiments.models import (
     ProtocolEntity,
     Runnable,
 )
-from repocache.models import CachedModelVersion, CachedProtocolVersion
 
 from .forms import (
     StoryCollaboratorFormSet,
@@ -36,14 +35,15 @@ from .models import Story, StoryGraph, StoryText
 
 
 def get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks):
-    return [e.latest_version for e in Experiment.objects.filter(model_version__in=cachedmodelversion_pks,
-                                                                protocol_version=cachedprotocolversion)
-            if e.latest_result == Runnable.STATUS_SUCCESS and
-            e.is_visible_to_user(user)]
+    result = [e.latest_version for e in Experiment.objects.filter(model_version__in=cachedmodelversion_pks,
+                                                                  protocol_version=cachedprotocolversion)
+              if e.latest_result == Runnable.STATUS_SUCCESS and
+              e.is_visible_to_user(user)]
+    return result
 
 
 def get_url(experiment_versions):
-    return '/' + '/'.join(str(ver.id) for ver in experiment_versions)
+    return '/' + '/'.join(str(ver.pk) for ver in experiment_versions)
 
 
 class StoryListView(ListView):
@@ -266,7 +266,7 @@ class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
                [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
                 if modelgroup.visible_to_user(self.request.user)] +\
                [('', '--------- model')] +\
-               [('model' + str(model.repocache.latest_version.pk), model.name)
+               [('model' + str(model.pk), model.name)
                 for model in ModelEntity.objects.visible_to_user(self.request.user)
                 if model.repocache.versions.count()]
 
@@ -284,13 +284,13 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
                                  if m.repocache.versions.count()]
         elif mk.startswith('model'):
             mk = int(mk.replace('model', ''))
-            model_version_pks = [CachedModelVersion.objects.get(pk=mk).pk]
+            model_version_pks = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
         if model_version_pks == []:
             return []
 
         # Get protocols for which the latest result run succesful
         # that users can see for the model(s) we're looking at
-        return set((e.protocol_version.pk, e.protocol.name)
+        return set((e.protocol.pk, e.protocol.name)
                    for e in Experiment.objects.filter(model_version__in=model_version_pks)
                    if e.latest_result == Runnable.STATUS_SUCCESS and
                    e.is_visible_to_user(self.request.user))
@@ -308,7 +308,7 @@ class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
         self.protocol_version = None
         self.experiment_versions = []
         if pk:
-            self.protocol_version = CachedProtocolVersion.objects.get(pk=pk)
+            self.protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version.pk
 
             if mk.startswith('modelgroup'):
                 mk = int(mk.replace('modelgroup', ''))
@@ -318,13 +318,13 @@ class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
             else:
                 assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
                 mk = int(mk.replace('model', ''))
-                self.model_version_pks = [CachedModelVersion.objects.get(pk=mk).pk]
+                self.model_version_pks = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
 
             self.experiment_versions = get_experiment_versions(self.user, self.protocol_version, self.model_version_pks)
 
     def get_queryset(self):
         self.get_versions()
-        return '/' + '/'.join(str(ver.id) for ver in self.experiment_versions)
+        return get_url(self.experiment_versions)
 
 
 class StoryFilterGraphView(StoryFilterExperimentVersions):
