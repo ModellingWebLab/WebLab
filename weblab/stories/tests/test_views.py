@@ -551,6 +551,13 @@ class TestStoryFilterProtocolView:
         assert response.status_code == 200
         assert experiment.protocol.name in str(response.content)
 
+#    def test_get_protocol_via_modelgroup_multile_versions(self, client, logged_in_user, experiment_with_result_public):
+#        experiment = experiment_with_result_public.experiment
+#        modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model])
+#        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+#        assert response.status_code == 200
+#        assert experiment.protocol.name in str(response.content)
+
     def test_get_protocol_no_modelid(self, client, logged_in_user, experiment_with_result_public):
         response = client.get('/stories/protocols')
         assert response.status_code == 200
@@ -568,14 +575,14 @@ class TestStoryFilterExperimentVersions:
     def test_get_graph_not_visible(self, client, logged_in_user, experiment_with_result):
         experiment = experiment_with_result.experiment
         response = client.get('/stories/model%d/%d/experimentversions' %
-                              (experiment.model_version.pk, experiment.protocol_version.pk))
+                              (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '/'
 
     def test_get_graph(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
         response = client.get('/stories/model%d/%d/experimentversions' %
-                              (experiment.model_version.pk, experiment.protocol_version.pk))
+                              (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '/' + str(experiment_with_result_public.pk)
 
@@ -583,7 +590,7 @@ class TestStoryFilterExperimentVersions:
         experiment = experiment_with_result_public.experiment
         modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model])
         response = client.get('/stories/modelgroup%d/%d/experimentversions' %
-                              (modelgroup.pk, experiment.protocol_version.pk))
+                              (modelgroup.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '/' + str(experiment_with_result_public.pk)
 
@@ -610,21 +617,21 @@ class TestStoryFilterGraphView:
     def test_get_graph_not_visible(self, client, logged_in_user, experiment_with_result):
         experiment = experiment_with_result.experiment
         response = client.get('/stories/model%d/%d/graph' %
-                              (experiment.model_version.pk, experiment.protocol_version.pk))
+                              (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
 
     def test_get_graph_not_no_files(self, client, logged_in_admin, experiment_with_result_public_no_file):
         experiment = experiment_with_result_public_no_file.experiment
         response = client.get('/stories/model%d/%d/graph' %
-                              (experiment.model_version.pk, experiment.protocol_version.pk))
+                              (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
 
     def test_get_graph(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
         response = client.get('/stories/model%d/%d/graph' %
-                              (experiment.model_version.pk, experiment.protocol_version.pk))
+                              (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert 'outputs_Resting_potential_gnuplot_data.csv' in str(response.content)
         assert 'outputs_Relative_resting_potential_gnuplot_data.csv' in str(response.content)
