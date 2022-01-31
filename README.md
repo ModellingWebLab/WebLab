@@ -14,7 +14,7 @@ If you want to install Django locally for development purposes, read on...
 
 ### Install system requirements
 
-* Python 3.5+
+* Python 3.6+
 * Postgres 9.4+ (with dev headers)
 * NodeJS 8.x / NPM 5.x (to build static files)
 
