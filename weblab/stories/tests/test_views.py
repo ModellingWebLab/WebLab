@@ -527,20 +527,20 @@ class TestStoryFilterProtocolView:
     def test_requires_login(self, client):
         model = recipes.model.make()
         cached_model = recipes.cached_model.make(entity=model)
-        model_version = recipes.cached_model_version.make(entity=cached_model)
-        response = client.get('/stories/model%d/protocols' % model_version.pk)
+        recipes.cached_model_version.make(entity=cached_model)
+        response = client.get('/stories/model%d/protocols' % model.pk)
         assert response.status_code == 302
         assert '/login/' in response.url
 
     def test_get_protocol_not_visible(self, client, logged_in_user, experiment_with_result):
         experiment = experiment_with_result.experiment
-        response = client.get('/stories/model%d/protocols' % experiment.model_version.pk)
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
         assert response.status_code == 200
         assert experiment.protocol.name not in str(response.content)
 
     def test_get_protocol(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
-        response = client.get('/stories/model%d/protocols' % experiment.model_version.pk)
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
         assert response.status_code == 200
         assert experiment.protocol.name in str(response.content)
 
@@ -632,7 +632,7 @@ class TestStoryFilterGraphView:
     def test_get_graph_via_modelgroup(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
         modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model])
-        response = client.get('/stories/modelgroup%d/%d/graph' % (modelgroup.pk, experiment.protocol_version.pk))
+        response = client.get('/stories/modelgroup%d/%d/graph' % (modelgroup.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert 'outputs_Resting_potential_gnuplot_data.csv' in str(response.content)
         assert 'outputs_Relative_resting_potential_gnuplot_data.csv' in str(response.content)
