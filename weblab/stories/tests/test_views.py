@@ -6,6 +6,7 @@ from django.urls import reverse
 from guardian.shortcuts import assign_perm, remove_perm
 
 from core import recipes
+from experiments.models import Experiment
 from stories.models import Story, StoryGraph, StoryText
 from stories.views import get_experiment_versions, get_url
 
@@ -551,17 +552,61 @@ class TestStoryFilterProtocolView:
         assert response.status_code == 200
         assert experiment.protocol.name in str(response.content)
 
-#    def test_get_protocol_via_modelgroup_multile_versions(self, client, logged_in_user, experiment_with_result_public):
-#        experiment = experiment_with_result_public.experiment
-#        modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model])
-#        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
-#        assert response.status_code == 200
-#        assert experiment.protocol.name in str(response.content)
-
     def test_get_protocol_no_modelid(self, client, logged_in_user, experiment_with_result_public):
         response = client.get('/stories/protocols')
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '<option value="">--------- protocol</option>'
+
+    def test_get_protocol_via_modelgroup_multile_versions(self, client, logged_in_user, experiment_with_result,
+                                                          helpers):
+        # test added to check we don't get the same protocol twice of there are multiple versions
+        # (verified that the test fails with the old version of the views)
+        experiment = experiment_with_result.experiment
+
+        # add a new model & run the experiment with the same protocol
+        model2 = recipes.model.make()
+        helpers.add_version(model2, visibility='public')
+        version = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=model2,
+            experiment__model_version=model2.repocache.latest_version,
+            experiment__protocol=experiment.protocol,
+            experiment__protocol_version=experiment.protocol.repocache.latest_version,
+        )
+        version.mkdir()
+        with (version.abs_path / 'result.txt').open('w') as f:
+            f.write('experiment results')
+
+        # add new protocol version
+        helpers.add_version(experiment.protocol, visibility='public')
+
+        # rerun the experiment with this protocol version & the original experiment
+        version = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=experiment.model,
+            experiment__model_version=experiment.model.repocache.latest_version,
+            experiment__protocol=experiment.protocol,
+            experiment__protocol_version=experiment.protocol.repocache.latest_version,
+        )
+        version.mkdir()
+        with (version.abs_path / 'result.txt').open('w') as f:
+            f.write('experiment results')
+
+        # make sure everything is public for conveniance
+        for experiment in Experiment.objects.all():
+            experiment.model_version.visibility = 'public'
+            experiment.protocol_version.visibility = 'public'
+            experiment.model_version.save()
+            experiment.protocol_version.save()
+
+        modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model, model2])
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        # check we do get the protocol
+        assert experiment.protocol.name in str(response.content)
+        # check we don't get multiple instances of protocol
+        response_without_protocol = str(response.content).replace(experiment.protocol.name, '', 1)
+        assert experiment.protocol.name not in response_without_protocol
 
 
 @pytest.mark.django_db
