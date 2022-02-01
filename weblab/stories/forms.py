@@ -7,8 +7,7 @@ from django.forms import formset_factory, inlineformset_factory
 
 from core import visibility
 from entities.forms import BaseEntityCollaboratorFormSet, EntityCollaboratorForm
-from entities.models import ModelGroup
-from repocache.models import CachedModelVersion, CachedProtocolVersion
+from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 
 from .models import Story, StoryGraph, StoryText
 
@@ -133,8 +132,8 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             else:
                 assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
                 mk = int(mk.replace('model', ''))
-                model_versions = CachedModelVersion.objects.filter(pk=mk)
-            storygraph.cachedprotocolversion = CachedProtocolVersion.objects.get(pk=pk)
+                model_versions = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
+            storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
             if not hasattr(storygraph, 'author') or storygraph.author is None:
                 storygraph.author = self.user
             storygraph.modelgroup = modelgroup
