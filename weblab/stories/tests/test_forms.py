@@ -221,15 +221,15 @@ class TestStoryGraphFormSet:
         form = StoryGraphForm(data=data, user=story.author)
         assert not form.is_valid()
 
-        data['models_or_group'] = str(experiment.model_version.pk)
+        data['models_or_group'] = str(experiment.model.pk)
         form = StoryGraphForm(data=data, user=story.author)
         assert not form.is_valid()
 
-        data['models_or_group'] = 'model' + str(experiment.model_version.pk)
+        data['models_or_group'] = 'model' + str(experiment.model.pk)
         form = StoryGraphForm(data=data, user=story.author)
         assert not form.is_valid()
 
-        data['protocol'] = str(experiment.protocol_version.pk)
+        data['protocol'] = str(experiment.protocol.pk)
         form = StoryGraphForm(data=data, user=story.author)
         assert not form.is_valid()
 
@@ -241,8 +241,8 @@ class TestStoryGraphFormSet:
         story_graph_count = StoryGraph.objects.count()
 
         data = {'ORDER': '0', 'currentGraph': '', 'update': 'True', 'models_or_group':
-                'model' + str(experiment.model_version.pk),
-                'protocol': str(experiment.protocol_version.pk),
+                'model' + str(experiment.model.pk),
+                'protocol': str(experiment.protocol.pk),
                 'graphfiles': 'outputs_APD90_gnuplot_data.csv'}
 
         form = StoryGraphForm(data=data, user=story.author)
@@ -266,8 +266,8 @@ class TestStoryGraphFormSet:
         story_graph_count = StoryGraph.objects.count()
 
         data = {'ORDER': '1', 'currentGraph': str(story_graph), 'update': 'True',
-                'models_or_group': 'model' + str(experiment.model_version.pk),
-                'protocol': str(experiment.protocol_version.pk),
+                'models_or_group': 'model' + str(experiment.model.pk),
+                'protocol': str(experiment.protocol.pk),
                 'graphfiles': 'outputs_APD90_gnuplot_data.csv', 'pk': story_graph.pk}
         form = StoryGraphForm(data=data, user=story.author, instance=story_graph)
 
@@ -275,8 +275,8 @@ class TestStoryGraphFormSet:
         assert form.cleaned_data['ORDER'] == 1
         assert form.cleaned_data['currentGraph'] == str(story_graph)
         assert form.cleaned_data['update'] == 'True'
-        assert form.cleaned_data['models_or_group'] == 'model' + str(experiment.model_version.pk)
-        assert form.cleaned_data['protocol'] == str(experiment.protocol_version.pk)
+        assert form.cleaned_data['models_or_group'] == 'model' + str(experiment.model.pk)
+        assert form.cleaned_data['protocol'] == str(experiment.protocol.pk)
         assert form.cleaned_data['graphfiles'] == 'outputs_APD90_gnuplot_data.csv'
         assert StoryGraph.objects.count() == story_graph_count
 
@@ -289,8 +289,8 @@ class TestStoryGraphFormSet:
 
         # only update order
         data = {'ORDER': '2', 'currentGraph': str(story_graph), 'update': '', 'models_or_group':
-                'model' + str(experiment.model_version.pk),
-                'protocol': str(experiment.protocol_version.pk),
+                'model' + str(experiment.model.pk),
+                'protocol': str(experiment.protocol.pk),
                 'graphfiles': 'outputs_Resting_potential_gnuplot_data.csv', 'pk': story_graph.pk}
         form = StoryGraphForm(data=data, user=story.author, instance=story_graph)
         form.save(story)
@@ -339,7 +339,7 @@ class TestStoryGraphFormSet:
         post_data = {'graph-TOTAL_FORMS': 1, 'graph-INITIAL_FORMS': 0, 'graph-MIN_NUM_FORMS': 0,
                      'graph-MAX_NUM_FORMS': 1000, 'graph-0-ORDER': '10', 'graph-0-currentGraph': '',
                      'graph-0-update': 'True', 'graph-0-models_or_group': 'modelgroup' + str(modelgroup.pk),
-                     'graph-0-protocol': str(experiment.protocol_version.pk),
+                     'graph-0-protocol': str(experiment.protocol.pk),
                      'graph-0-graphfiles': 'outputs_APD90_gnuplot_data.csv'}
 
         formset = StoryGraphFormSet(post_data, prefix='graph', initial=[{'ORDER': '', 'currentGraph': ''}],
@@ -356,7 +356,7 @@ class TestStoryGraphFormSet:
         assert new_graphs[0].graphfilename == 'outputs_APD90_gnuplot_data.csv'
 
     def test_edit_storyGraph_via_formset(self, experiment, story):
-        modelgroup = recipes.modelgroup.make(author=story.author, models=[experiment.model_version.model],
+        modelgroup = recipes.modelgroup.make(author=story.author, models=[experiment.model],
                                              title='test model group', visibility='public')
 
         story_graph = recipes.story_graph.make(author=story.author, story=story,
@@ -370,11 +370,11 @@ class TestStoryGraphFormSet:
                      'graph-MAX_NUM_FORMS': 1000, 'graph-0-ORDER': 10,
                      'graph-0-currentGraph': str(story_graph), 'graph-0-update': '',
                      'graph-0-models_or_group': 'modelgroup' + str(story_graph.modelgroup.pk),
-                     'graph-0-protocol': str(story_graph.cachedprotocolversion.pk),
+                     'graph-0-protocol': str(story_graph.cachedprotocolversion.protocol.pk),
                      'graph-0-graphfiles': 'outputs_APD90_gnuplot_data.csv'}
 
         initial = [{'models_or_group': 'modelgroup' + str(story_graph.modelgroup.pk),
-                    'protocol': story_graph.cachedprotocolversion.pk,
+                    'protocol': story_graph.cachedprotocolversion.protocol.pk,
                     'graphfiles': story_graph.graphfilename, 'currentGraph': str(story_graph),
                     'ORDER': story_graph.order, 'pk': story_graph.pk}]
 
