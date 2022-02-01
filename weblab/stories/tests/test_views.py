@@ -285,6 +285,38 @@ class TestStoryTransferView:
 
 @pytest.mark.django_db
 class TestStoryCreateView:
+    @pytest.fixture
+    def models(self, logged_in_user, helpers):
+        return recipes.model.make(_quantity=5, author=logged_in_user)
+
+    @pytest.fixture
+    def experiment_versions(self, logged_in_user, helpers, models):
+        # make some models and protocols
+        protocols = recipes.protocol.make(_quantity=3, author=logged_in_user)
+        exp_versions = []
+
+        # add some versions and add experiment versions
+        for model in models:
+            helpers.add_version(model, visibility='private')
+            # for the last protocol add another experiment version
+            for protocol in protocols + [protocols[-1]]:
+                helpers.add_version(protocol, visibility='public')
+                exp_version = recipes.experiment_version.make(
+                    status='SUCCESS',
+                    experiment__model=model,
+                    experiment__model_version=model.repocache.latest_version,
+                    experiment__protocol=protocol,
+                    experiment__protocol_version=protocol.repocache.latest_version)
+                exp_version.mkdir()
+                with (exp_version.abs_path / 'result.txt').open('w') as f:
+                    f.write('experiment results')
+
+                # add graphs
+                exp_version.mkdir()
+                shutil.copy(Path(__file__).absolute().parent.joinpath('./test.omex'), exp_version.archive_path)
+                exp_versions.append(exp_version)
+        return exp_versions
+
     def test_create_story_page_loads(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
         response = client.get('/stories/new')
@@ -378,6 +410,88 @@ class TestStoryCreateView:
         assert Story.objects.count() == story_count
         assert StoryText.objects.count() == story_text_count
         assert StoryGraph.objects.count() == story_graph_count
+
+    def test_create_story_with_graph_model(self, logged_in_user, client, helpers, experiment_versions):
+        Story.objects.count() == 0
+        StoryText.objects.count() == 0
+        StoryGraph.objects.count() == 0
+        helpers.add_permission(logged_in_user, 'create_model')
+
+        experiment = experiment_versions[-1].experiment
+        data = {'title': 'new test to check error where form save wrong protocol version',
+                'visibility': 'public',
+                'graphvisualizer': 'displayPlotFlot',
+                'text-TOTAL_FORMS': '1',
+                'text-INITIAL_FORMS': '1',
+                'text-MIN_NUM_FORMS': '0',
+                'text-MAX_NUM_FORMS': '1000',
+                'graph-TOTAL_FORMS': '  1',
+                'graph-INITIAL_FORMS': '1',
+                'graph-MIN_NUM_FORMS': '0',
+                'graph-MAX_NUM_FORMS': '1000',
+                'text-0-description': 'test text',
+                'text-0-ORDER': '0',
+                'graph-0-ORDER': '1',
+                'graph-0-update': 'True',
+                'graph-0-models_or_group': 'model%s' % experiment.model.pk,
+                'graph-0-protocol': '%s' % experiment.protocol.pk,
+                'graph-0-graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv'}
+
+        response = client.post('/stories/new', data=data)
+        assert response.status_code == 302
+        assert Story.objects.count() == 1
+        assert StoryText.objects.count() == 1
+        assert StoryGraph.objects.count() == 1
+
+        assert Story.objects.first().title == data['title']
+        assert StoryText.objects.first().story == Story.objects.first()
+        assert StoryGraph.objects.first().story == Story.objects.first()
+        assert StoryGraph.objects.first().cachedprotocolversion == experiment.protocol.repocache.latest_version
+        assert list(StoryGraph.objects.first().cachedmodelversions.all()) == [experiment.model.repocache.latest_version]
+        assert StoryGraph.objects.first().graphfilename == data['graph-0-graphfiles']
+
+    def test_create_story_with_graph_modelgroup(self, logged_in_user, client, helpers, models, experiment_versions):
+        Story.objects.count() == 0
+        StoryText.objects.count() == 0
+        StoryGraph.objects.count() == 0
+        helpers.add_permission(logged_in_user, 'create_model')
+
+        models = models[1:4]
+        modelgroup = recipes.modelgroup.make(models=models, author=logged_in_user)
+        experiment = experiment_versions[-1].experiment
+
+        data = {'title': 'new test to check error where form save wrong protocol version',
+                'visibility': 'public',
+                'graphvisualizer': 'displayPlotFlot',
+                'text-TOTAL_FORMS': '1',
+                'text-INITIAL_FORMS': '1',
+                'text-MIN_NUM_FORMS': '0',
+                'text-MAX_NUM_FORMS': '1000',
+                'graph-TOTAL_FORMS': '  1',
+                'graph-INITIAL_FORMS': '1',
+                'graph-MIN_NUM_FORMS': '0',
+                'graph-MAX_NUM_FORMS': '1000',
+                'text-0-description': 'test text',
+                'text-0-ORDER': '0',
+                'graph-0-ORDER': '1',
+                'graph-0-update': 'True',
+                'graph-0-models_or_group': 'modelgroup%s' % modelgroup.pk,
+                'graph-0-protocol': '%s' % experiment.protocol.pk,
+                'graph-0-graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv'}
+
+        response = client.post('/stories/new', data=data)
+        assert response.status_code == 302
+        assert Story.objects.count() == 1
+        assert StoryText.objects.count() == 1
+        assert StoryGraph.objects.count() == 1
+
+        assert Story.objects.first().title == data['title']
+        assert StoryText.objects.first().story == Story.objects.first()
+        assert StoryGraph.objects.first().story == Story.objects.first()
+        assert StoryGraph.objects.first().cachedprotocolversion == experiment.protocol.repocache.latest_version
+        assert sorted(StoryGraph.objects.first().cachedmodelversions.all(), key=str) == \
+            sorted([m.repocache.latest_version for m in models], key=str)
+        assert StoryGraph.objects.first().graphfilename == data['graph-0-graphfiles']
 
 
 @pytest.mark.django_db
