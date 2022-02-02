@@ -304,7 +304,7 @@ class TestStoryCreateView:
         exp_versions = []
 
         # add some versions and add experiment versions
-        for i, model in enumerate(models):
+        for model in models:
             helpers.add_version(model, visibility='private')
             # for the last protocol add another experiment version
             for protocol in protocols + [protocols[-1]]:
@@ -501,9 +501,51 @@ class TestStoryCreateView:
             sorted([m.repocache.latest_version for m in models], key=str)
         assert StoryGraph.objects.first().graphfilename == data['graph-0-graphfiles']
 
+    def test_edite_storygraph_initial(self, logged_in_user, client, helpers, models, experiment_versions):
+        story = recipes.story.make(author=logged_in_user, title='story1', id=10001)
+        models = models[-2:]
+        modelgroup = recipes.modelgroup.make(models=models, author=logged_in_user, id=20001)
+        experiment = experiment_versions[-1].experiment
 
-@pytest.mark.django_db
-class TestStoryEditView:
+        storygraph = recipes.story_graph.make(id=30001, author=logged_in_user, story=story, modelgroup=modelgroup,
+                                              cachedprotocolversion=experiment.protocol_version, order=0,
+                                              graphfilename='outputs_Relative_resting_potential_gnuplot_data.csv')
+        model_group_mv = [m.repocache.latest_version for m in modelgroup.models.all() if m.repocache.versions.count()]
+        storygraph.set_cachedmodelversions(model_group_mv)
+
+        Story.objects.count() == 1
+        StoryGraph.objects.count() == 1
+        helpers.add_permission(logged_in_user, 'create_model')
+
+        data = {'title': 'new test to check error where form save wrong protocol version',
+                'visibility': 'public',
+                'graphvisualizer': 'displayPlotFlot',
+                'text-TOTAL_FORMS': '0',
+                'text-INITIAL_FORMS': '0',
+                'text-MIN_NUM_FORMS': '0',
+                'text-MAX_NUM_FORMS': '1000',
+                'graph-TOTAL_FORMS': '  1',
+                'graph-INITIAL_FORMS': '1',
+                'graph-MIN_NUM_FORMS': '0',
+                'graph-MAX_NUM_FORMS': '1000',
+                'text-0-description': 'test text',
+                'graph-0-ORDER': '0',
+                'graph-0-update': 'True',
+                'graph-0-models_or_group': 'modelgroup%s' % modelgroup.pk,
+                'graph-0-protocol': '%s' % experiment.protocol.pk,
+                'graph-0-graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv'}
+
+        response = client.get('/stories/%s/edit' % story.pk, data=data)
+        assert response.context['formsetgraph'].initial == [
+            {'models_or_group': 'modelgroup%s' % modelgroup.pk,
+             'protocol': experiment.protocol_version.protocol.pk,
+             'graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv',
+             'currentGraph': str(storygraph),
+             'experimentVersions': '/%s' % experiment.latest_version.pk,
+             'ORDER': 0,
+             'pk': 30001}
+        ]
+
     def test_edit_story_without_text_or_graph(self, logged_in_user, client):
         story = recipes.story.make(author=logged_in_user, title='story1')
         assert story.title == 'story1'

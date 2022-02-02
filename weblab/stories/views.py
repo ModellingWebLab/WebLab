@@ -35,11 +35,9 @@ from .models import Story, StoryGraph, StoryText
 
 
 def get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks):
-    result = [e.latest_version for e in Experiment.objects.filter(model_version__in=cachedmodelversion_pks,
-                                                                  protocol_version=cachedprotocolversion)
-              if e.latest_result == Runnable.STATUS_SUCCESS and
-              e.is_visible_to_user(user)]
-    return result
+    return [e.latest_version for e in Experiment.objects.filter(model_version__pk__in=cachedmodelversion_pks,
+                                                                protocol_version=cachedprotocolversion)
+            if e.latest_result == Runnable.STATUS_SUCCESS and e.is_visible_to_user(user)]
 
 
 def get_url(experiment_versions):
@@ -245,8 +243,8 @@ class StoryEditView(StoryView, UpdateView):
 
     def get_formset_graph(self):
         initial = [{'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
-                    if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().pk),
-                    'protocol': s.cachedprotocolversion.pk,
+                    if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
+                    'protocol': s.cachedprotocolversion.protocol.pk,
                     'graphfiles': s.graphfilename,
                     'currentGraph': str(s),
                     'experimentVersions': get_url(get_experiment_versions(s.author,
@@ -291,7 +289,7 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
         # Get protocols for which the latest result run succesful
         # that users can see for the model(s) we're looking at
         return set((e.protocol.pk, e.protocol.name)
-                   for e in Experiment.objects.filter(model_version__in=model_version_pks)
+                   for e in Experiment.objects.filter(model_version__pk__in=model_version_pks)
                    if e.latest_result == Runnable.STATUS_SUCCESS and
                    e.is_visible_to_user(self.request.user))
 

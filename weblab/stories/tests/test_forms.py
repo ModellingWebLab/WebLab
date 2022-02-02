@@ -321,7 +321,7 @@ class TestStoryGraphFormSet:
                                                graphfilename='outputs_Resting_potential_gnuplot_data.csv')
         story_graph_count = StoryGraph.objects.count()
 
-        data = {'models_or_group': 'model' + str(story_graph.cachedmodelversions.first().pk),
+        data = {'models_or_group': 'model' + str(story_graph.cachedmodelversions.first().model.pk),
                 'protocol': story_graph.cachedprotocolversion.pk, 'graphfiles': story_graph.graphfilename,
                 'currentGraph': str(story_graph), 'ORDER': story_graph.order, 'pk': story_graph.pk}
 

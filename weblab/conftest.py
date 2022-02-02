@@ -151,102 +151,102 @@ def fake_dataset_path(settings, tmpdir):
 
 @pytest.fixture
 def model_with_version():
-    model = recipes.model.make()
+    model = recipes.model.make(id=1001)
     Helpers.add_version(model, visibility='private')
     return model
 
 
 @pytest.fixture
 def protocol_with_version():
-    protocol = recipes.protocol.make()
+    protocol = recipes.protocol.make(id=2001)
     Helpers.add_version(protocol, visibility='private')
     return protocol
 
 
 @pytest.fixture
 def fittingspec_with_version():
-    fittingspec = recipes.fittingspec.make()
+    fittingspec = recipes.fittingspec.make(id=3001)
     Helpers.add_version(fittingspec, visibility='private')
     return fittingspec
 
 
 @pytest.fixture
 def public_model(helpers):
-    model = recipes.model.make(name='public model')
+    model = recipes.model.make(name='public model', id=1002)
     helpers.add_version(model, visibility='public')
     return model
 
 
 @pytest.fixture
 def public_protocol(helpers):
-    protocol = recipes.protocol.make(name='public protocol')
+    protocol = recipes.protocol.make(name='public protocol', id=2002)
     helpers.add_version(protocol, visibility='public')
     return protocol
 
 
 @pytest.fixture
 def public_fittingspec(helpers):
-    fittingspec = recipes.fittingspec.make(name='public fitting spec')
+    fittingspec = recipes.fittingspec.make(name='public fitting spec', id=3002)
     helpers.add_version(fittingspec, visibility='public')
     return fittingspec
 
 
 @pytest.fixture
 def public_dataset():
-    dataset = recipes.dataset.make(visibility='public', name='public dataset')
+    dataset = recipes.dataset.make(visibility='public', name='public dataset', id=4001)
     return dataset
 
 
 @pytest.fixture
 def moderated_model(helpers):
-    model = recipes.model.make()
+    model = recipes.model.make(id=1003)
     helpers.add_version(model, visibility='moderated')
     return model
 
 
 @pytest.fixture
 def moderated_protocol(helpers):
-    protocol = recipes.protocol.make()
+    protocol = recipes.protocol.make(id=2003)
     helpers.add_version(protocol, visibility='moderated')
     return protocol
 
 
 @pytest.fixture
 def moderated_fittingspec(helpers):
-    fittingspec = recipes.fittingspec.make()
+    fittingspec = recipes.fittingspec.make(id=3003)
     helpers.add_version(fittingspec, visibility='moderated')
     return fittingspec
 
 
 @pytest.fixture
 def moderated_dataset(helpers):
-    return recipes.dataset.make(visibility='moderated')
+    return recipes.dataset.make(visibility='moderated', id=4002)
 
 
 @pytest.fixture
 def private_model(helpers):
-    model = recipes.model.make(name='private model')
+    model = recipes.model.make(name='private model', id=1004)
     helpers.add_version(model, visibility='private')
     return model
 
 
 @pytest.fixture
 def private_protocol(helpers):
-    protocol = recipes.protocol.make(name='private protocol')
+    protocol = recipes.protocol.make(name='private protocol', id=2004)
     helpers.add_version(protocol, visibility='private')
     return protocol
 
 
 @pytest.fixture
 def private_fittingspec(helpers):
-    fittingspec = recipes.fittingspec.make(name='private fittingspec')
+    fittingspec = recipes.fittingspec.make(name='private fittingspec', id=3004)
     helpers.add_version(fittingspec, visibility='private')
     return fittingspec
 
 
 @pytest.fixture
 def private_dataset():
-    return recipes.dataset.make(name='private dataset', visibility='private')
+    return recipes.dataset.make(name='private dataset', visibility='private', id=4003)
 
 
 @pytest.fixture
@@ -281,13 +281,13 @@ def queued_fittingresult(public_model, public_protocol, public_fittingspec, publ
 @pytest.fixture
 def quick_fittingresult_version(helpers):
     """A fitting result version that exists only in the DB - no repos, no results."""
-    model = recipes.model.make()
+    model = recipes.model.make(id=1005)
     model_version = helpers.add_fake_version(model, 'public')
-    protocol = recipes.protocol.make()
+    protocol = recipes.protocol.make(id=2005)
     protocol_version = helpers.add_fake_version(protocol, 'public')
-    fittingspec = recipes.fittingspec.make(protocol=protocol)
+    fittingspec = recipes.fittingspec.make(protocol=protocol, id=3005)
     fittingspec_version = helpers.add_fake_version(fittingspec, 'public')
-    dataset = recipes.dataset.make(visibility='public', protocol=protocol)
+    dataset = recipes.dataset.make(visibility='public', protocol=protocol, id=4004)
     return recipes.fittingresult_version.make(
         status='SUCCESS',
         fittingresult__model=model,
@@ -344,9 +344,9 @@ def experiment_version(public_model, public_protocol):
 @pytest.fixture
 def quick_experiment_version(helpers):
     """An experiment version that exists only in the DB - no model/proto repos, no results."""
-    model = recipes.model.make()
+    model = recipes.model.make(id=1006)
     model_version = helpers.add_fake_version(model, 'public')
-    protocol = recipes.protocol.make()
+    protocol = recipes.protocol.make(id=2006)
     protocol_version = helpers.add_fake_version(protocol, 'public')
     return recipes.experiment_version.make(
         status='SUCCESS',
@@ -451,7 +451,7 @@ def dataset_creator(user, helpers):
 @pytest.fixture
 def my_dataset(logged_in_user, helpers, public_protocol):
     helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
-    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol, id=4005)
     yield dataset
     dataset.delete()
 
@@ -459,7 +459,7 @@ def my_dataset(logged_in_user, helpers, public_protocol):
 @pytest.fixture
 def my_dataset_with_file(logged_in_user, helpers, public_protocol, client):
     helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
-    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol, id=4006)
     file_name = 'mydataset.csv'
     file_contents = b'my test dataset'
     recipes.dataset_file.make(

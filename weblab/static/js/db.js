@@ -930,6 +930,8 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
 
         // update graphs when protocol changes
         $('body').on('change', "#id_graph-" + currentGraphCount + "-protocol", function() {
+            // file while waiting
+            $("#id_graph-" + currentGraphCount + "-graphfiles").html('');
             var model = $("#id_graph-" + currentGraphCount + "-models_or_group").val();
             var protocol = $(this).val();
             var url = getStoryBasePath() + "/" + model+ "/" + protocol + "/graph";
@@ -954,6 +956,10 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         // update protocols when models change
         $('body').on('change', "#id_graph-" + currentGraphCount + "-models_or_group", function() {
             var model = $(this).val();
+            // empty protocol & file while waiting
+            $("#id_graph-" + currentGraphCount + "-protocol").html('');
+            $("#id_graph-" + currentGraphCount + "-graphfiles").html('');
+            
             var url = getStoryBasePath() + "/" + model + "/protocols" ;
             $.ajax({
               url: url,
@@ -1116,3 +1122,4 @@ $( document ).ready(function()
           $(this).html(marked(source));
       });
 });
+
