@@ -513,10 +513,6 @@ class TestStoryCreateView:
         model_group_mv = [m.repocache.latest_version for m in modelgroup.models.all() if m.repocache.versions.count()]
         storygraph.set_cachedmodelversions(model_group_mv)
 
-        Story.objects.count() == 1
-        StoryGraph.objects.count() == 1
-        helpers.add_permission(logged_in_user, 'create_model')
-
         data = {'title': 'new test to check error where form save wrong protocol version',
                 'visibility': 'public',
                 'graphvisualizer': 'displayPlotFlot',
@@ -538,7 +534,22 @@ class TestStoryCreateView:
         response = client.get('/stories/%s/edit' % story.pk, data=data)
         assert response.context['formsetgraph'].initial == [
             {'models_or_group': 'modelgroup%s' % modelgroup.pk,
-             'protocol': experiment.protocol_version.protocol.pk,
+             'protocol': experiment.protocol.pk,
+             'graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv',
+             'currentGraph': str(storygraph),
+             'experimentVersions': '/%s' % experiment.latest_version.pk,
+             'ORDER': 0,
+             'pk': 30001}
+        ]
+
+        # check without modelgroup
+        storygraph.modelgroup = None
+        storygraph.set_cachedmodelversions([experiment.model_version])
+        storygraph.save()
+        response = client.get('/stories/%s/edit' % story.pk, data=data)
+        assert response.context['formsetgraph'].initial == [
+            {'models_or_group': 'model%s' % experiment.model.pk,
+             'protocol': experiment.protocol.pk,
              'graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv',
              'currentGraph': str(storygraph),
              'experimentVersions': '/%s' % experiment.latest_version.pk,
