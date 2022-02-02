@@ -287,16 +287,24 @@ class TestStoryTransferView:
 class TestStoryCreateView:
     @pytest.fixture
     def models(self, logged_in_user, helpers):
-        return recipes.model.make(_quantity=5, author=logged_in_user)
+        models = []
+        # want to make sure ids from models, protocols and experiments are unique
+        # to avoid being able to assign wrong objects
+        for i in range(5):
+            models.append(recipes.model.make(author=logged_in_user, id=100 + i))
+        return models
 
     @pytest.fixture
     def experiment_versions(self, logged_in_user, helpers, models):
         # make some models and protocols
-        protocols = recipes.protocol.make(_quantity=3, author=logged_in_user)
+        protocols = []
+        # make sure ids are unique
+        for i in range(3):
+            protocols.append(recipes.protocol.make(author=logged_in_user, id=200 + i))
         exp_versions = []
 
         # add some versions and add experiment versions
-        for model in models:
+        for i, model in enumerate(models):
             helpers.add_version(model, visibility='private')
             # for the last protocol add another experiment version
             for protocol in protocols + [protocols[-1]]:
