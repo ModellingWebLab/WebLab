@@ -293,21 +293,11 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
 
         experiments = Experiment.objects.filter(pk__in=succesful_experiment_pks,
                                                 model_version__pk__in=model_version_pks) \
-                                        .select_related('protocol, protocol__pk, protocol__name')
+                                        .prefetch_related('protocol, protocol__pk, protocol__name')
+        protocols_user_can_view = ProtocolEntity.objects.visible_to_user(self.request.user).values_list('pk', 'name', flat=False)
+        protocols = experiments.order_by('protocol__pk').values_list('protocol__pk', 'protocol__name', flat=False).distinct()
+        return protocols.intersection(protocols_user_can_view)
 
-        if self.request.user.is_superuser:
-            protocols_user_can_view = ProtocolEntity.objects.values_list('pk', flat=True)
-        else:
-            can_view = CachedProtocolVersion.objects.exclude(visibility='private') \
-                                            .prefetch_related('entity__entity__pk') \
-                                            .values_list('entity__entity__pk', flat=True)
-
-            can_edit = get_objects_for_user(self.request.user, 'edit_entity',
-                                            ProtocolEntity.objects.all()).values_list('pk', flat=True)
-
-            protocols_user_can_view = chain(can_view, can_edit)
-        return experiments.filter(protocol__pk__in=protocols_user_can_view).order_by('protocol__pk') \
-                          .values_list('protocol__pk', 'protocol__name', flat=False).distinct()
 
 
 class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
