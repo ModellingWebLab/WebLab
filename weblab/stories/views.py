@@ -2,6 +2,7 @@ import csv
 import io
 import re
 from collections import OrderedDict
+from itertools import chain
 
 from braces.views import UserFormKwargsMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -14,16 +15,13 @@ from django.views.generic.edit import (
     UpdateView,
 )
 from django.views.generic.list import ListView
+from guardian.shortcuts import get_objects_for_user
 
 from accounts.forms import OwnershipTransferForm
-from entities.models import ModelEntity, ModelGroup
+from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 from entities.views import EditCollaboratorsAbstractView
-from experiments.models import (
-    Experiment,
-    ExperimentVersion,
-    ProtocolEntity,
-    Runnable,
-)
+from experiments.models import Experiment, ExperimentVersion, Runnable
+from repocache.models import CachedModel, CachedModelVersion, CachedProtocolVersion
 
 from .forms import (
     StoryCollaboratorFormSet,
@@ -275,23 +273,41 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         mk = self.kwargs.get('mk', '')
-        model_version_pks = []
         if mk.startswith('modelgroup'):
             mk = int(mk.replace('modelgroup', ''))
-            model_version_pks = [m.repocache.latest_version.pk for m in ModelGroup.objects.get(pk=mk).models.all()
-                                 if m.repocache.versions.count()]
+            models = ModelGroup.objects.get(pk=mk).models.all()
         elif mk.startswith('model'):
             mk = int(mk.replace('model', ''))
-            model_version_pks = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
-        if model_version_pks == []:
+            models = ModelEntity.objects.filter(pk=mk)
+        else:
             return []
 
-        # Get protocols for which the latest result run succesful
-        # that users can see for the model(s) we're looking at
-        return set((e.protocol.pk, e.protocol.name)
-                   for e in Experiment.objects.filter(model_version__pk__in=model_version_pks)
-                   if e.latest_result == Runnable.STATUS_SUCCESS and
-                   e.is_visible_to_user(self.request.user))
+        model_version_pks = CachedModelVersion.objects.prefetch_related('entity') \
+                                              .filter(entity__in=CachedModel.objects.prefetch_related('entity')
+                                                                            .filter(entity__in=models)) \
+                                              .values_list('pk', flat=True)
+
+        succesful_experiment_pks = ExperimentVersion.objects.filter(status=Runnable.STATUS_SUCCESS) \
+                                                    .prefetch_related('experiment__pk') \
+                                                    .values_list('experiment__pk', flat=True)
+
+        experiments = Experiment.objects.filter(pk__in=succesful_experiment_pks,
+                                                model_version__pk__in=model_version_pks) \
+                                        .select_related('protocol, protocol__pk, protocol__name')
+
+        if self.request.user.is_superuser:
+            protocols_user_can_view = ProtocolEntity.objects.values_list('pk', flat=True)
+        else:
+            can_view = CachedProtocolVersion.objects.exclude(visibility='private') \
+                                            .prefetch_related('entity__entity__pk') \
+                                            .values_list('entity__entity__pk', flat=True)
+
+            can_edit = get_objects_for_user(self.request.user, 'edit_entity',
+                                            ProtocolEntity.objects.all()).values_list('pk', flat=True)
+
+            protocols_user_can_view = chain(can_view, can_edit)
+        return experiments.filter(protocol__pk__in=protocols_user_can_view).order_by('protocol__pk') \
+                          .values_list('protocol__pk', 'protocol__name', flat=False).distinct()
 
 
 class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
