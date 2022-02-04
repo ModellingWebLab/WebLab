@@ -733,10 +733,11 @@ class TestStoryFilterProtocolView:
         assert response.content.decode("utf-8").strip() == '<option value="">--------- protocol</option>'
 
     def test_get_protocol_via_modelgroup_multile_versions(self, client, logged_in_user, experiment_with_result,
-                                                          helpers):
+                                                          helpers, other_user):
         # test added to check we don't get the same protocol twice of there are multiple versions
         # (verified that the test fails with the old version of the views)
         experiment = experiment_with_result.experiment
+        experiment.protocol.author = other_user
 
         # add a new model & run the experiment with the same protocol
         model2 = recipes.model.make()
@@ -767,7 +768,7 @@ class TestStoryFilterProtocolView:
         with (version.abs_path / 'result.txt').open('w') as f:
             f.write('experiment results')
 
-        # make sure everything is public for conveniance
+        # make sure everything is public for convenience
         for experiment in Experiment.objects.all():
             experiment.model_version.visibility = 'public'
             experiment.protocol_version.visibility = 'public'
@@ -775,6 +776,7 @@ class TestStoryFilterProtocolView:
             experiment.protocol_version.save()
 
         modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model, model2])
+        
         response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
         assert response.status_code == 200
         # check we do get the protocol
@@ -782,6 +784,60 @@ class TestStoryFilterProtocolView:
         # check we don't get multiple instances of protocol
         response_without_protocol = str(response.content).replace(experiment.protocol.name, '', 1)
         assert experiment.protocol.name not in response_without_protocol
+        
+        # Now check that we do not get the protocol if we make it private
+        experiment.protocol.author=other_user
+        experiment.protocol.save()
+        experiment.protocol_version.visibility = 'private'
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name not in str(response.content)
+        
+        # check that we do get it if we make us a collaborator
+        assign_perm('edit_entity', logged_in_user, experiment.protocol)
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name in str(response.content)
+
+        # Now check that we do not get the protocol if we make the model private
+        # make sure modelgroup just has this model
+        modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model], visibility='public')
+        experiment.model.author=other_user
+        experiment.model.save()
+        experiment.model_version.visibility = 'private'
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name not in str(response.content)
+        
+        # check that we do get it if we make us a collaborator
+        assign_perm('edit_entity', logged_in_user, experiment.model)
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name in str(response.content)
+        
+        # check protocol doesn't show if no succesful run for latest protocol version
+        new_version = helpers.add_version(experiment.protocol, visibility='public')
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name not in str(response.content)
+        
+        # check it works again if we remove that version
+        new_version.delete()
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name in str(response.content)
+        
+        # check protocol doesn't show if no successful run for latest model version
+        new_version = helpers.add_version(experiment.model, visibility='public')
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name not in str(response.content)
+
+        # check it works again if we remove that version
+        new_version.delete()
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name in str(response.content)
 
 
 @pytest.mark.django_db
