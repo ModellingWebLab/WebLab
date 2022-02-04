@@ -94,12 +94,6 @@ class TestStoryCreateView:
                     for m in ModelGroup.objects.get(pk=modelgroup.pk).models.all()
                     if m.repocache.versions.count()]
 
-        def method2(modelgroup):
-            models = ModelGroup.objects.get(pk=modelgroup.pk).models.all()
-            return CachedModelVersion.objects.prefetch_related('entity') \
-                                             .filter(entity__in=CachedModel.objects.prefetch_related('entity')
-                                                                           .filter(entity__in=models)) \
-                                             .values_list('pk', flat=True)
 
         def get_protocol1(modelgroup, logged_in_user):
             model_version_pks = method1(modelgroup)
@@ -109,24 +103,28 @@ class TestStoryCreateView:
                        e.is_visible_to_user(logged_in_user))
 
         def get_protocol2(modelgroup, logged_in_user):
-            model_version_pks = method2(modelgroup)
+            models = ModelGroup.objects.get(pk=modelgroup.pk).models.all()
+            selected_model_pks = models.values_list('pk', flat=True)
+            latest_model_versions_visible_to_user_pk = CachedModelVersion.objects.visible_to_user(logged_in_user).order_by('entity', '-timestamp').values_list('pk', flat=True).distinct('entity')
+            latest_protocol_versions_visible_to_user_pks = CachedProtocolVersion.objects.visible_to_user(logged_in_user).order_by('entity', '-timestamp').values_list('pk', flat=True).distinct('entity')
+            succesful_experiment_pks = ExperimentVersion.objects.filter(status=Runnable.STATUS_SUCCESS) \
+                                                        .prefetch_related('experiment__pk') \
+                                                        .values_list('experiment__pk', flat=True)
+            experiments = Experiment.objects.filter(pk__in=succesful_experiment_pks,
+                                                    model__pk__in=selected_model_pks,
+                                                    model_version__pk__in=latest_model_versions_visible_to_user_pk,
+                                                    protocol_version__pk__in=latest_protocol_versions_visible_to_user_pks) \
+                                            .prefetch_related('protocol, protocol__pk, protocol__name')
+            return experiments.order_by('protocol__pk').values_list('protocol__pk', 'protocol__name', flat=False).distinct()
 
-            succesful_experiment_pks = ExperimentVersion.objects.filter(status=Runnable.STATUS_SUCCESS).prefetch_related('experiment__pk').values_list('experiment__pk', flat=True)
-
-            experiments = Experiment.objects.filter(pk__in=succesful_experiment_pks, model_version__pk__in=model_version_pks).prefetch_related('protocol', 'protocol__pk', 'protocol__name')
-            if logged_in_user.is_superuser:
-                protocols_user_can_view = ProtocolEntity.objects.prefetch_related('pk').values_list('pk', flat=True)
-            else:
-                protocols_user_can_view = ProtocolEntity.objects.visible_to_user(logged_in_user).prefetch_related('pk').values_list('pk', flat=True)
-            protocols = experiments.select_related('protocol, protocol__pk, protocol__name').filter(protocol__pk__in=protocols_user_can_view).order_by('protocol__pk').values_list('protocol__pk', 'protocol__name', flat=False).distinct()
-            return protocols
 
 
         protocol2 = get_protocol2(modelgroup, logged_in_user)
         protocol1 = get_protocol1(modelgroup, logged_in_user)
-        assert sorted(protocol1) == sorted(protocol2)
+#        assert sorted(protocol1) == sorted(protocol2)
 
         time_protocol2 = timeit.Timer(lambda: get_protocol2(modelgroup, logged_in_user)).timeit(10)
         time_protocol1 = timeit.Timer(lambda: get_protocol1(modelgroup, logged_in_user)).timeit(10)
         assert False, str((time_protocol1, time_protocol2, protocol1, protocol2))
+
 
