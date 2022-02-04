@@ -2,7 +2,6 @@ import csv
 import io
 import re
 from collections import OrderedDict
-from itertools import chain
 
 from braces.views import UserFormKwargsMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -15,13 +14,12 @@ from django.views.generic.edit import (
     UpdateView,
 )
 from django.views.generic.list import ListView
-from guardian.shortcuts import get_objects_for_user
 
 from accounts.forms import OwnershipTransferForm
 from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 from entities.views import EditCollaboratorsAbstractView
 from experiments.models import Experiment, ExperimentVersion, Runnable
-from repocache.models import CachedModel, CachedModelVersion, CachedProtocolVersion
+from repocache.models import CachedModelVersion, CachedProtocolVersion
 
 from .forms import (
     StoryCollaboratorFormSet,
@@ -283,18 +281,27 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
             return []
 
         selected_model_pks = models.values_list('pk', flat=True)
-        latest_model_versions_visible_to_user_pk = CachedModelVersion.objects.visible_to_user(self.request.user).order_by('entity', '-timestamp').values_list('pk', flat=True).distinct('entity')
-        latest_protocol_versions_visible_to_user_pks = CachedProtocolVersion.objects.visible_to_user(self.request.user).order_by('entity', '-timestamp').values_list('pk', flat=True).distinct('entity')
+        latest_model_versions_visible_pk = CachedModelVersion.objects.visible_to_user(self.request.user) \
+                                                                     .order_by('entity', '-timestamp') \
+                                                                     .values_list('pk', flat=True) \
+                                                                     .distinct('entity')
+
+        latest_protocol_versions_visible_pks = CachedProtocolVersion.objects.visible_to_user(self.request.user) \
+                                                                    .order_by('entity', '-timestamp') \
+                                                                    .values_list('pk', flat=True) \
+                                                                    .distinct('entity')
+
         succesful_experiment_pks = ExperimentVersion.objects.filter(status=Runnable.STATUS_SUCCESS) \
                                                     .prefetch_related('experiment__pk') \
                                                     .values_list('experiment__pk', flat=True)
+
         experiments = Experiment.objects.filter(pk__in=succesful_experiment_pks,
                                                 model__pk__in=selected_model_pks,
-                                                model_version__pk__in=latest_model_versions_visible_to_user_pk,
-                                                protocol_version__pk__in=latest_protocol_versions_visible_to_user_pks) \
+                                                model_version__pk__in=latest_model_versions_visible_pk,
+                                                protocol_version__pk__in=latest_protocol_versions_visible_pks) \
                                         .prefetch_related('protocol, protocol__pk, protocol__name')
-        return experiments.order_by('protocol__pk').values_list('protocol__pk', 'protocol__name', flat=False).distinct()
 
+        return experiments.order_by('protocol__pk').values_list('protocol__pk', 'protocol__name', flat=False).distinct()
 
 
 class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
