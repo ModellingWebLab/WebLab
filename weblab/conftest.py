@@ -165,7 +165,7 @@ def protocol_with_version():
 
 @pytest.fixture
 def fittingspec_with_version():
-    fittingspec = recipes.fittingspec.make(id=3001)
+    fittingspec = recipes.fittingspec.make()
     Helpers.add_version(fittingspec, visibility='private')
     return fittingspec
 
@@ -186,14 +186,14 @@ def public_protocol(helpers):
 
 @pytest.fixture
 def public_fittingspec(helpers):
-    fittingspec = recipes.fittingspec.make(name='public fitting spec', id=3002)
+    fittingspec = recipes.fittingspec.make(name='public fitting spec')
     helpers.add_version(fittingspec, visibility='public')
     return fittingspec
 
 
 @pytest.fixture
 def public_dataset():
-    dataset = recipes.dataset.make(visibility='public', name='public dataset', id=4001)
+    dataset = recipes.dataset.make(visibility='public', name='public dataset')
     return dataset
 
 
@@ -213,14 +213,14 @@ def moderated_protocol(helpers):
 
 @pytest.fixture
 def moderated_fittingspec(helpers):
-    fittingspec = recipes.fittingspec.make(id=3003)
+    fittingspec = recipes.fittingspec.make()
     helpers.add_version(fittingspec, visibility='moderated')
     return fittingspec
 
 
 @pytest.fixture
 def moderated_dataset(helpers):
-    return recipes.dataset.make(visibility='moderated', id=4002)
+    return recipes.dataset.make(visibility='moderated')
 
 
 @pytest.fixture
@@ -239,14 +239,14 @@ def private_protocol(helpers):
 
 @pytest.fixture
 def private_fittingspec(helpers):
-    fittingspec = recipes.fittingspec.make(name='private fittingspec', id=3004)
+    fittingspec = recipes.fittingspec.make(name='private fittingspec')
     helpers.add_version(fittingspec, visibility='private')
     return fittingspec
 
 
 @pytest.fixture
 def private_dataset():
-    return recipes.dataset.make(name='private dataset', visibility='private', id=4003)
+    return recipes.dataset.make(name='private dataset', visibility='private')
 
 
 @pytest.fixture
@@ -285,9 +285,9 @@ def quick_fittingresult_version(helpers):
     model_version = helpers.add_fake_version(model, 'public')
     protocol = recipes.protocol.make(id=2005)
     protocol_version = helpers.add_fake_version(protocol, 'public')
-    fittingspec = recipes.fittingspec.make(protocol=protocol, id=3005)
+    fittingspec = recipes.fittingspec.make(protocol=protocol)
     fittingspec_version = helpers.add_fake_version(fittingspec, 'public')
-    dataset = recipes.dataset.make(visibility='public', protocol=protocol, id=4004)
+    dataset = recipes.dataset.make(visibility='public', protocol=protocol)
     return recipes.fittingresult_version.make(
         status='SUCCESS',
         fittingresult__model=model,
@@ -451,7 +451,7 @@ def dataset_creator(user, helpers):
 @pytest.fixture
 def my_dataset(logged_in_user, helpers, public_protocol):
     helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
-    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol, id=4005)
+    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
     yield dataset
     dataset.delete()
 
@@ -459,7 +459,7 @@ def my_dataset(logged_in_user, helpers, public_protocol):
 @pytest.fixture
 def my_dataset_with_file(logged_in_user, helpers, public_protocol, client):
     helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
-    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol, id=4006)
+    dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
     file_name = 'mydataset.csv'
     file_contents = b'my test dataset'
     recipes.dataset_file.make(
