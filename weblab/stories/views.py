@@ -283,25 +283,17 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
             return []
 
         selected_model_pks = models.values_list('pk', flat=True)
-        latest_model_version_pks = CachedModelVersion.objects.order_by('entity', '-timestamp').values_list('pk', flat=True).distinct('entity')
-#        selected_model_version_pks = CachedModelVersion.objects.prefetch_related('entity') \
-#                                              .filter(entity__in=CachedModel.objects.prefetch_related('entity')
-#                                                                            .filter(entity__in=models)) \
-#                                              .values_list('pk', flat=True)
-        latest_protocol_version_pks = CachedProtocolVersion.objects.order_by('entity', '-timestamp').values_list('pk', flat=True).distinct('entity')
-        
+        latest_model_versions_visible_to_user_pk = CachedModelVersion.objects.visible_to_user(self.request.user).order_by('entity', '-timestamp').values_list('pk', flat=True).distinct('entity')
+        latest_protocol_versions_visible_to_user_pks = CachedProtocolVersion.objects.visible_to_user(self.request.user).order_by('entity', '-timestamp').values_list('pk', flat=True).distinct('entity')
         succesful_experiment_pks = ExperimentVersion.objects.filter(status=Runnable.STATUS_SUCCESS) \
                                                     .prefetch_related('experiment__pk') \
                                                     .values_list('experiment__pk', flat=True)
-
         experiments = Experiment.objects.filter(pk__in=succesful_experiment_pks,
-                                                model_version__pk__in=latest_model_version_pks,
-                                                protocol_version__pk__in=latest_protocol_version_pks,
-                                                model__pk__in=selected_model_pks) \
+                                                model__pk__in=selected_model_pks,
+                                                model_version__pk__in=latest_model_versions_visible_to_user_pk,
+                                                protocol_version__pk__in=latest_protocol_versions_visible_to_user_pks) \
                                         .prefetch_related('protocol, protocol__pk, protocol__name')
-        protocols_user_can_view = ProtocolEntity.objects.visible_to_user(self.request.user).values_list('pk', 'name', flat=False)
-        protocols = experiments.order_by('protocol__pk').values_list('protocol__pk', 'protocol__name', flat=False).distinct()
-        return protocols.intersection(protocols_user_can_view)
+        return experiments.order_by('protocol__pk').values_list('protocol__pk', 'protocol__name', flat=False).distinct()
 
 
 
