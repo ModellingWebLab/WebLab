@@ -6,6 +6,7 @@ from django.urls import reverse
 from guardian.shortcuts import assign_perm, remove_perm
 
 from core import recipes
+from entities.models import ProtocolEntity
 from experiments.models import Experiment
 from stories.models import Story, StoryGraph, StoryText
 from stories.views import get_experiment_versions, get_url
@@ -305,10 +306,10 @@ class TestStoryCreateView:
 
         # add some versions and add experiment versions
         for model in models:
-            helpers.add_version(model, visibility='private')
+            helpers.add_cached_version(model, visibility='private')
             # for the last protocol add another experiment version
             for protocol in protocols + [protocols[-1]]:
-                helpers.add_version(protocol, visibility='public')
+                helpers.add_cached_version(protocol, visibility='public')
                 exp_version = recipes.experiment_version.make(
                     status='SUCCESS',
                     experiment__model=model,
@@ -737,11 +738,13 @@ class TestStoryFilterProtocolView:
         # test added to check we don't get the same protocol twice of there are multiple versions
         # (verified that the test fails with the old version of the views)
         experiment = experiment_with_result.experiment
-        experiment.protocol.author = other_user
+        experiment.protool = recipes.protocol.make(author=logged_in_user, id=200001)
+        experiment.protocol_version = helpers.add_cached_version(experiment.protocol, visibility='public')
+        experiment.save()
 
         # add a new model & run the experiment with the same protocol
         model2 = recipes.model.make()
-        helpers.add_version(model2, visibility='public')
+        helpers.add_cached_version(model2, visibility='public')
         version = recipes.experiment_version.make(
             status='SUCCESS',
             experiment__model=model2,
@@ -754,7 +757,8 @@ class TestStoryFilterProtocolView:
             f.write('experiment results')
 
         # add new protocol version
-        helpers.add_version(experiment.protocol, visibility='public')
+        old_protocol_version = experiment.protocol_version
+        helpers.add_cached_version(experiment.protocol, visibility='public')
 
         # rerun the experiment with this protocol version & the original experiment
         version = recipes.experiment_version.make(
@@ -776,7 +780,7 @@ class TestStoryFilterProtocolView:
             experiment.protocol_version.save()
 
         modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model, model2])
-        
+
         response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
         assert response.status_code == 200
         # check we do get the protocol
@@ -784,58 +788,56 @@ class TestStoryFilterProtocolView:
         # check we don't get multiple instances of protocol
         response_without_protocol = str(response.content).replace(experiment.protocol.name, '', 1)
         assert experiment.protocol.name not in response_without_protocol
-        
+
         # Now check that we do not get the protocol if we make it private
-        experiment.protocol.author=other_user
-        experiment.protocol.save()
+        experiment.protocol.author = other_user
         experiment.protocol_version.visibility = 'private'
-        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        experiment.protocol_version.save()
+        old_protocol_version.visibility = 'private'
+        old_protocol_version.save()
+        experiment.save()
+
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
         assert response.status_code == 200
         assert experiment.protocol.name not in str(response.content)
-        
+
         # check that we do get it if we make us a collaborator
         assign_perm('edit_entity', logged_in_user, experiment.protocol)
-        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
         assert response.status_code == 200
         assert experiment.protocol.name in str(response.content)
 
         # Now check that we do not get the protocol if we make the model private
         # make sure modelgroup just has this model
-        modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model], visibility='public')
-        experiment.model.author=other_user
-        experiment.model.save()
+        experiment.model.author = other_user
+        assert len(experiment.model.repocache.versions.all()) == 1
         experiment.model_version.visibility = 'private'
-        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
-        assert response.status_code == 200
-        assert experiment.protocol.name not in str(response.content)
-        
-        # check that we do get it if we make us a collaborator
-        assign_perm('edit_entity', logged_in_user, experiment.model)
-        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
-        assert response.status_code == 200
-        assert experiment.protocol.name in str(response.content)
-        
-        # check protocol doesn't show if no succesful run for latest protocol version
-        new_version = helpers.add_version(experiment.protocol, visibility='public')
-        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
-        assert response.status_code == 200
-        assert experiment.protocol.name not in str(response.content)
-        
-        # check it works again if we remove that version
-        new_version.delete()
-        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
-        assert response.status_code == 200
-        assert experiment.protocol.name in str(response.content)
-        
-        # check protocol doesn't show if no successful run for latest model version
-        new_version = helpers.add_version(experiment.model, visibility='public')
-        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        experiment.model_version.save()
+        experiment.model.save()
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
         assert response.status_code == 200
         assert experiment.protocol.name not in str(response.content)
 
-        # check it works again if we remove that version
-        new_version.delete()
-        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        # check that we do get it if we make us a collaborator
+        assign_perm('edit_entity', logged_in_user, experiment.model)
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name in str(response.content)
+
+        # check protocol doesn't show if no succesful run for latest protocol version
+        protocol = ProtocolEntity.objects.get(pk=experiment.protocol.pk)
+        helpers.add_cached_version(protocol, visibility='private')
+        assert experiment.versions.count() > 0
+
+        experiment.protocol.repocache.latest_version
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name not in str(response.content)
+
+        # check it works again if we hide that version
+        # remove us as collaborator (version was already private)
+        remove_perm('edit_entity', logged_in_user, experiment.protocol)
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
         assert response.status_code == 200
         assert experiment.protocol.name in str(response.content)
 
