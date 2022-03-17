@@ -14,7 +14,7 @@ from accounts.models import User
 from core import recipes
 from datasets.models import Dataset
 from entities.models import Entity
-from fitting.models import FittingResult
+from fitting.models import FittingResult, FittingResultVersion
 from repocache.populate import populate_entity_cache
 
 
@@ -499,13 +499,23 @@ def fittingresult_version(public_model, public_protocol, public_fittingspec, pub
 
 @pytest.fixture
 def fittingresult_with_result(model_with_version, protocol_with_version):
-    version = recipes.fittingresult_version.make(
+    existsing_versions = FittingResultVersion.objects.filter(
         status='SUCCESS',
         fittingresult__model=model_with_version,
         fittingresult__model_version=model_with_version.repocache.latest_version,
         fittingresult__protocol=protocol_with_version,
-        fittingresult__protocol_version=protocol_with_version.repocache.latest_version,
+        fittingresult__protocol_version=protocol_with_version.repocache.latest_version
     )
+    if not existsing_versions.exists():
+        version = recipes.fittingresult_version.make(
+            status='SUCCESS',
+            fittingresult__model=model_with_version,
+            fittingresult__model_version=model_with_version.repocache.latest_version,
+            fittingresult__protocol=protocol_with_version,
+            fittingresult__protocol_version=protocol_with_version.repocache.latest_version,
+        )
+    else:
+        version = existsing_versions.first()
     version.mkdir()
     with (version.abs_path / 'result.txt').open('w') as f:
         f.write('fitting results')
