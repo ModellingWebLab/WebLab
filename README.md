@@ -1,7 +1,7 @@
 # WebLab
 Django-based front-end for the modelling Web Lab
 
-[![Build Status](https://travis-ci.org/ModellingWebLab/WebLab.svg?branch=master)](https://travis-ci.org/ModellingWebLab/WebLab)
+![Build Status](https://github.com/ModellingWebLab/Weblab/actions/workflows/pytest.yml/badge.svg)
 
 ## Setup
 
