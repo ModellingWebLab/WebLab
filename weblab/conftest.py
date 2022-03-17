@@ -14,7 +14,7 @@ from accounts.models import User
 from core import recipes
 from datasets.models import Dataset
 from entities.models import Entity
-from fitting.models import FittingResult, FittingResultVersion
+from fitting.models import FittingResult
 from repocache.populate import populate_entity_cache
 
 
@@ -151,14 +151,14 @@ def fake_dataset_path(settings, tmpdir):
 
 @pytest.fixture
 def model_with_version():
-    model = recipes.model.make(id=1001)
+    model = recipes.model.make()
     Helpers.add_version(model, visibility='private')
     return model
 
 
 @pytest.fixture
 def protocol_with_version():
-    protocol = recipes.protocol.make(id=2001)
+    protocol = recipes.protocol.make()
     Helpers.add_version(protocol, visibility='private')
     return protocol
 
@@ -172,14 +172,14 @@ def fittingspec_with_version():
 
 @pytest.fixture
 def public_model(helpers):
-    model = recipes.model.make(name='public model', id=1002)
+    model = recipes.model.make(name='public model')
     helpers.add_version(model, visibility='public')
     return model
 
 
 @pytest.fixture
 def public_protocol(helpers):
-    protocol = recipes.protocol.make(name='public protocol', id=2002)
+    protocol = recipes.protocol.make(name='public protocol')
     helpers.add_version(protocol, visibility='public')
     return protocol
 
@@ -199,14 +199,14 @@ def public_dataset():
 
 @pytest.fixture
 def moderated_model(helpers):
-    model = recipes.model.make(id=1003)
+    model = recipes.model.make()
     helpers.add_version(model, visibility='moderated')
     return model
 
 
 @pytest.fixture
 def moderated_protocol(helpers):
-    protocol = recipes.protocol.make(id=2003)
+    protocol = recipes.protocol.make()
     helpers.add_version(protocol, visibility='moderated')
     return protocol
 
@@ -225,14 +225,14 @@ def moderated_dataset(helpers):
 
 @pytest.fixture
 def private_model(helpers):
-    model = recipes.model.make(name='private model', id=1004)
+    model = recipes.model.make(name='private model')
     helpers.add_version(model, visibility='private')
     return model
 
 
 @pytest.fixture
 def private_protocol(helpers):
-    protocol = recipes.protocol.make(name='private protocol', id=2004)
+    protocol = recipes.protocol.make(name='private protocol')
     helpers.add_version(protocol, visibility='private')
     return protocol
 
@@ -281,9 +281,9 @@ def queued_fittingresult(public_model, public_protocol, public_fittingspec, publ
 @pytest.fixture
 def quick_fittingresult_version(helpers):
     """A fitting result version that exists only in the DB - no repos, no results."""
-    model = recipes.model.make(id=1005)
+    model = recipes.model.make()
     model_version = helpers.add_fake_version(model, 'public')
-    protocol = recipes.protocol.make(id=2005)
+    protocol = recipes.protocol.make()
     protocol_version = helpers.add_fake_version(protocol, 'public')
     fittingspec = recipes.fittingspec.make(protocol=protocol)
     fittingspec_version = helpers.add_fake_version(fittingspec, 'public')
@@ -344,9 +344,9 @@ def experiment_version(public_model, public_protocol):
 @pytest.fixture
 def quick_experiment_version(helpers):
     """An experiment version that exists only in the DB - no model/proto repos, no results."""
-    model = recipes.model.make(id=1006)
+    model = recipes.model.make()
     model_version = helpers.add_fake_version(model, 'public')
-    protocol = recipes.protocol.make(id=2006)
+    protocol = recipes.protocol.make()
     protocol_version = helpers.add_fake_version(protocol, 'public')
     return recipes.experiment_version.make(
         status='SUCCESS',
@@ -499,23 +499,13 @@ def fittingresult_version(public_model, public_protocol, public_fittingspec, pub
 
 @pytest.fixture
 def fittingresult_with_result(model_with_version, protocol_with_version):
-    existsing_versions = FittingResultVersion.objects.filter(
+    version = recipes.fittingresult_version.make(
         status='SUCCESS',
         fittingresult__model=model_with_version,
         fittingresult__model_version=model_with_version.repocache.latest_version,
         fittingresult__protocol=protocol_with_version,
-        fittingresult__protocol_version=protocol_with_version.repocache.latest_version
+        fittingresult__protocol_version=protocol_with_version.repocache.latest_version,
     )
-    if not existsing_versions.exists():
-        version = recipes.fittingresult_version.make(
-            status='SUCCESS',
-            fittingresult__model=model_with_version,
-            fittingresult__model_version=model_with_version.repocache.latest_version,
-            fittingresult__protocol=protocol_with_version,
-            fittingresult__protocol_version=protocol_with_version.repocache.latest_version,
-        )
-    else:
-        version = existsing_versions.first()
     version.mkdir()
     with (version.abs_path / 'result.txt').open('w') as f:
         f.write('fitting results')
