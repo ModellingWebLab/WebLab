@@ -781,7 +781,7 @@ function flotContent (prefix='')
     this.graphIds = { prefix: prefix,
                       choicesDivId: prefix + 'choices',
                       resetButtonDivId: prefix + 'flot-buttons-div',
-                      resetButtonDivClass: 'flot-buttons-div',
+                      resetButtonDivClass: 'buttons-div',
                       colouredSpanIdPrefix: prefix + 'legend-colour-span-',
                       legendDivId: prefix + 'legend',
                       tooltipId: prefix + 'flotTooltip',

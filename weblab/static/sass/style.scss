@@ -834,12 +834,17 @@ li.entityviz-PRIVATE
 }
 
 /* style for graphs using prefix ids */
-.flot-buttons-div input {
+.flot-buttons-div input, .buttons-div input {
   margin-left: 5px; }
 
+.flot-buttons-div, .buttons-div {
+  text-align: left;
+  padding: 5px 0px 5px 0px;
+ }
+
 .flot-buttons-div {
-  float: right;
-  text-align: right; }
+  text-align: right;
+  float: right;}
 
 
 /* model group selector */
