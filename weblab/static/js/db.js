@@ -823,40 +823,38 @@ function remove(clicked)
     $(clicked.closest('tr')).remove();
 }
 
-function renderMde(currentTextCount) // render text editor
+function renderMde(id) // render text editor
 {
-    element = document.getElementById('id_text-' + currentTextCount + '-description'); //grab new text area
+//    element = document.getElementById('id_text-' + id + '-description'); //grab new text area
+    element = document.getElementById(id);
     // initialise editor
     var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo'], element:element});
     simplemde.render();
 }
 
-function insertDescriptionForm(currentTextCount, descriptionValue, descriptionErrors, order, del)
+function insertDescriptionForm()
 {
-    if (del){
-        html=`<input type="hidden" name="text-${currentTextCount}-DELETE" id="id_text-${currentTextCount}-DELETE" value="true">`;
-        $('#storyparts  > tfoot').append(html);  // add new hidden delete form
-    }else{
-        html=`
-              <tr class="storypart description">
-                  <td>
-                      <div class="storypart-controls">
-                          <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
-                          <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
-                          <img class="deletepart" alt="remove story part" title="remove story part"/>
-                          <input class="order" type="hidden" name="text-${currentTextCount}-ORDER" id="id_text-${currentTextCount}-ORDER" value="${order}">
-                      </div>
-                  </td>
-                  <td class="storypart-content">
-                      ${descriptionErrors}
-                     <textarea name="text-${currentTextCount}-description" cols="40" rows="10" id="id_text-${currentTextCount}-description">${descriptionValue}</textarea>
-                  </td>
-              </tr>`;
-
-        // add new form
-        $('#storyparts  > tbody').append(html);
-        renderMde(currentTextCount);
-    }
+    currentTextCount = parseInt($('#id_text-TOTAL_FORMS').val());
+    order = parseInt($('#id_graph-TOTAL_FORMS').val()) + currentTextCount;
+    html=`
+          <tr class="storypart description">
+              <td>
+                  <div class="storypart-controls">
+                      <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                      <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
+                      <img class="deletepart" alt="remove story part" title="remove story part"/>
+                      <input class="order" type="hidden" name="text-${currentTextCount}-ORDER" id="id_text-${currentTextCount}-ORDER" value="${order}">
+                  </div>
+              </td>
+              <td class="storypart-content">
+                 <textarea name="text-${currentTextCount}-description" cols="40" rows="10" id="id_text-${currentTextCount}-description"></textarea>
+              </td>
+          </tr>`;
+    // add new form
+    $('#storyparts  > tbody').append(html);
+    renderMde(`id_text-${currentTextCount}-description`);
+    currentTextCount++;
+    $('#id_text-TOTAL_FORMS').val(currentTextCount);
 }
 
 // we may be running in a subfolder so we can't just assume /stories is the base path
@@ -864,6 +862,23 @@ function getStoryBasePath(){
     var url = $(location).attr('pathname');
     return url.replace(/stories.*/i, 'stories');
 }
+
+//checkbox toggels dropdown enabled
+function graphMenuVisibility()
+{
+    var id = $(this).attr('id');
+    id = id.replace('id_graph-', '');
+    id = id.replace('-update_0', '');
+    id = id.replace('-update_1', '');
+    update = $(`#id_graph-${id}-update_0`).is(':checked');
+    $(`#id_graph-${id}-models_or_group`).prop("disabled", !update);
+    $(`#id_graph-${id}-protocol`).prop("disabled", !update);
+    $(`#id_graph-${id}-graphfiles`).prop("disabled", !update);
+    $(`#${id}-models_or_group-label`).css('opacity', update ? '1.0' : '0.5');
+    $(`#${id}-protocol`).css('opacity', update ? '1.0' : '0.5');
+    $(`#${id}-graphfiles`).css('opacity', update ? '1.0' : '0.5');
+}
+
 
 function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph, experimentVersions)
 {
@@ -914,19 +929,9 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
         // add new form
         $('#storyparts  > tbody').append(html);
 
-        //checkbox toggels dropdown enabled
-        function graphMenuVisibility()
-        {
-            update = $("#id_graph-" + currentGraphCount + "-update_0").is(':checked');
-            $("#id_graph-" + currentGraphCount + "-models_or_group").prop("disabled", !update);
-            $("#id_graph-" + currentGraphCount + "-protocol").prop("disabled", !update);
-            $("#id_graph-" + currentGraphCount + "-graphfiles").prop("disabled", !update);
-            $("#" + currentGraphCount + "-models_or_group-label").css('opacity', update ? '1.0' : '0.5');
-            $("#" + currentGraphCount + "-protocol").css('opacity', update ? '1.0' : '0.5');
-            $("#" + currentGraphCount + "-graphfiles").css('opacity', update ? '1.0' : '0.5');
-        }
-        graphMenuVisibility(currentGraphCount);
-        $("input[type='radio'][name='graph-" + currentGraphCount + "-update']").click(graphMenuVisibility);
+//        graphMenuVisibility(currentGraphCount);
+//        $("input[type='radio'][name='graph-" + currentGraphCount + "-update']").click(graphMenuVisibility);
+
 
         // update graphs when protocol changes
         $('body').on('change', "#id_graph-" + currentGraphCount + "-protocol", function() {
@@ -959,7 +964,7 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
             // empty protocol & file while waiting
             $("#id_graph-" + currentGraphCount + "-protocol").html('');
             $("#id_graph-" + currentGraphCount + "-graphfiles").html('');
-            
+
             var url = getStoryBasePath() + "/" + model + "/protocols" ;
             $.ajax({
               url: url,
@@ -1028,59 +1033,68 @@ function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, gr
     }
 }
 
-$( document ).ready(function()
-{
-
-  var storyparts = [];
-  // render the pre-set story parts in the correct order
-  $(".storypart").each(function()
-  {
-      order = $(this).find(".partorder").val();
-      del = $(this).find(".partdel").val() === 'true';
-      if (order ==''){
-          order = storyTextCount + storyGraphCount;
-      }else{
-          order=parseInt(order);
-      }
-      if($(this).hasClass('description')){
-              partval = $(this).find(".partval").val();
-              parterr = $(this).find(".parterr").val();
-              storyparts.push([order, insertDescriptionForm, [storyTextCount, partval, parterr, order, del]]);
-              storyTextCount++;
-          }else if ($(this).hasClass('graph')){
-              modelOrGroupValue = $(this).find(".models_or_groupval").val();
-              protocolValue = $(this).find(".protocolval").val();
-              graphValue = $(this).find(".graphfiles").val();
-              models_or_grouperr = $(this).find(".models_or_grouperr").val();
-              protocolerr = $(this).find(".protocolerr").val();
-              graphfileserr = $(this).find(".graphfileserr").val();
-              update = $(this).find(".update").val().toLowerCase() === 'true';
-              currentGraph = $(this).find(".currentGraph").val();
-              experimentVersions = $(this).find(".experimentVersions").val();
-              storyparts.push([order, insertGraphForm, [storyGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph, experimentVersions]]);
-              storyGraphCount++;
-          }
-          $(this).remove();
+$( document ).ready(function(){
+    $('#newstoryform').submit(function() {
+      $('.graphPreviewDialog').remove();
     });
 
-    $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
-    $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
-
-    storyparts.sort((a, b) => {
-        return a[0] - b[0];
-    });
-
-    for(var i = 0 ; i < storyparts.length; i++) {
-        storyparts[i][1].apply(null, storyparts[i][2]);
+  $(".storypart").each(function(){
+    if($(this).hasClass('description')){
+        renderMde($(this).find('textarea').attr('id'));
     }
+    if($(this).hasClass('graph')){
+       $(this).find("input[type='radio']").click(graphMenuVisibility);
+    }
+  });
+
+
+//  var storyparts = [];
+//  // render the pre-set story parts in the correct order
+//
+//  $(".storypart").each(function()
+//  {
+//      order = $(this).find(".partorder").val();
+//      del = $(this).find(".partdel").val() === 'true';
+//      if (order ==''){
+//          order = storyTextCount + storyGraphCount;
+//      }else{
+//          order=parseInt(order);
+//      }
+//      if($(this).hasClass('description')){
+////              partval = $(this).find(".partval").val();
+////              parterr = $(this).find(".parterr").val();
+////              storyparts.push([order, insertDescriptionForm, [storyTextCount, partval, parterr, order, del]]);
+//              storyTextCount++;
+//          }else if ($(this).hasClass('graph')){
+//              modelOrGroupValue = $(this).find(".models_or_groupval").val();
+//              protocolValue = $(this).find(".protocolval").val();
+//              graphValue = $(this).find(".graphfiles").val();
+//              models_or_grouperr = $(this).find(".models_or_grouperr").val();
+//              protocolerr = $(this).find(".protocolerr").val();
+//              graphfileserr = $(this).find(".graphfileserr").val();
+//              update = $(this).find(".update").val().toLowerCase() === 'true';
+//              currentGraph = $(this).find(".currentGraph").val();
+//              experimentVersions = $(this).find(".experimentVersions").val();
+//              storyparts.push([order, insertGraphForm, [storyGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph, experimentVersions]]);
+//              storyGraphCount++;
+//          }
+//          $(this).remove();
+//    });
+//
+//
+//    $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
+//    $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
+//
+//    storyparts.sort((a, b) => {
+//        return a[0] - b[0];
+//    });
+//
+//    for(var i = 0 ; i < storyparts.length; i++) {
+//        storyparts[i][1].apply(null, storyparts[i][2]);
+//    }
 
     //link add, delete and up/down button clicks
-    $("#add-description").click(function()
-    {
-        insertDescriptionForm(storyTextCount, '', '', storyTextCount + storyGraphCount, false)
-        storyTextCount++;
-        $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
-    });
+    $("#add-description").click(insertDescriptionForm);
 
     $("#add-graph").click(function()
     {

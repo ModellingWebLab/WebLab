@@ -270,13 +270,13 @@ function parseEntities(entityObj, prefix) {
             }
     }
 
-    console.log(graphGlobal[prefix]['singleEntities'].model ? 'single model' : 'multiple models',
-        graphGlobal[prefix]['versionComparisons'].model ? ('- compare versions of ' + graphGlobal[prefix]['modelsWithMultipleVersions'].join(',')) : '');
-    console.log(graphGlobal[prefix]['singleEntities'].protocol ? 'single protocol' : 'multiple protocols',
-        graphGlobal[prefix]['versionComparisons'].protocol ? ('- compare versions of ' + graphGlobal[prefix]['protocolsWithMultipleVersions'].join(',')) : '');
-    console.log(graphGlobal[prefix]['singleEntities'].fittingspec ? 'single fitting spec' : 'multiple fitting specs',
-        graphGlobal[prefix]['versionComparisons'].fittingspec ? ('- compare versions of ' + graphGlobal[prefix]['fittingSpecsWithMultipleVersions'].join(',')) : '');
-    console.log(graphGlobal[prefix]['singleEntities'].dataset ? 'single dataset' : 'multiple datasets')
+//    console.log(graphGlobal[prefix]['singleEntities'].model ? 'single model' : 'multiple models',
+//        graphGlobal[prefix]['versionComparisons'].model ? ('- compare versions of ' + graphGlobal[prefix]['modelsWithMultipleVersions'].join(',')) : '');
+//    console.log(graphGlobal[prefix]['singleEntities'].protocol ? 'single protocol' : 'multiple protocols',
+//        graphGlobal[prefix]['versionComparisons'].protocol ? ('- compare versions of ' + graphGlobal[prefix]['protocolsWithMultipleVersions'].join(',')) : '');
+//    console.log(graphGlobal[prefix]['singleEntities'].fittingspec ? 'single fitting spec' : 'multiple fitting specs',
+//        graphGlobal[prefix]['versionComparisons'].fittingspec ? ('- compare versions of ' + graphGlobal[prefix]['fittingSpecsWithMultipleVersions'].join(',')) : '');
+//    console.log(graphGlobal[prefix]['singleEntities'].dataset ? 'single dataset' : 'multiple datasets')
 
 
     var entityTypes = ['model', 'protocol'];

@@ -374,3 +374,67 @@ class StoryRenderView(UserPassesTestMixin, DetailView):
                                             part.cachedprotocolversion,
                                             [v.pk for v in part.cachedmodelversions.all()]))
         return super().get_context_data(**kwargs)
+
+class StoryEditView2(StoryView, UpdateView):
+    model = Story
+    template_name = 'stories/story_edit.html'
+    context_object_name = 'story'
+
+    def test_func(self):
+        self.object = self.get_object()
+        return self.get_object().is_editable_by(self.request.user)
+
+    def get_formset(self):
+        self.formset_initial = [{'number': i,
+                                 'description': s.description,
+                                 'ORDER': s.order,
+                                 'pk': s.pk} for i, s in enumerate(StoryText.objects.filter(story=self.object))]
+        return super().get_formset(initial=self.formset_initial)
+
+    def get_formset_graph(self):
+        self.get_formset_graph_initial = [{'number': i,
+                                         'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
+                                          if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
+                                         'protocol': s.cachedprotocolversion.protocol.pk,
+                                         'graphfilename': s.graphfilename,
+                                         'currentGraph': str(s),
+                                         'experiment_versions': get_url(get_experiment_versions(s.author,
+                                                                                               s.cachedprotocolversion,
+                                                                                               [v.pk for v in s.cachedmodelversions.all()])),
+                                         'ORDER': s.order,
+                                         'pk': s.pk} for i, s in enumerate(StoryGraph.objects.filter(story=self.object))]
+        return super().get_formset_graph(initial=self.get_formset_graph_initial)
+
+    def get_context_data(self, **kwargs):
+        kwargs = super().get_context_data(**kwargs)
+        kwargs['storyparts'] = sorted(self.formset_initial + self.get_formset_graph_initial, key=lambda p: p['ORDER'])
+        return kwargs
+
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        formset = self.get_formset()
+        formsetgraph = self.get_formset_graph()
+        if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
+            if len(formset.ordered_forms + formsetgraph.ordered_forms) == 0:
+                form.add_error(
+                    None,
+                    "Story is empty add at least one text box or graph. "
+                )
+                self.object = None
+                return self.form_invalid(form)
+
+            # make sure formsets are ordered correctly starting at 0
+            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
+                                               key=lambda f: f.cleaned_data['ORDER'])):
+                frm.cleaned_data['ORDER'] = order
+            story = form.save()
+            formset.save(story=story)
+            formsetgraph.save(story=story)
+            return self.form_valid(form)
+        else:
+            assert form.is_valid(), str(form.errors)
+            assert formset.is_valid(), str(formset.errors)
+            assert formsetgraph.is_valid(), str(formsetgraph.errors)
+            self.object = getattr(self, 'object', None)
+            return self.form_invalid(form)

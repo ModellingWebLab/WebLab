@@ -102,6 +102,13 @@ urlpatterns = [
         views.StoryRenderView.as_view(),
         name='story_render',
     ),
+
+
+    url(
+        r'^(?P<pk>\d+)/edit2$',
+        views.StoryEditView2.as_view(),
+        name='story_edit2',
+    ),
 ]
 
 app_name = 'stories'

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+{% load stories %}
+{% load experiments %}
+
+{% block title %}Story {{ object.title }} - {% endblock title %}
+{% block content %}
+
+<a href="{% url 'stories:story_edit' object.id %}"><h1>Story: {{ object.title }}</h1></a>
+<small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.
+
+<div id='newstoryform'>
+
+<form method="POST" action="" novalidate id="storyform">
+ {% csrf_token %}
+
+  <input type="hidden" id="base_uri" value="{{base_uri}}">
+  <ul class="errorlist"><li>{{ form.non_field_errors }}</li></ul>
+
+  <p>{{ form.title.label_tag }} {{ form.title }}</p>
+  {% if  form.title.errors  %}
+      <ul class="errorlist"><li>{{ form.title.errors }}</li></ul>
+  {% endif %}
+  <p>{{ form.visibility.label_tag }} {{ form.visibility }} <span class="helptext">{{form.visibility.help_text | safe }}</span></p>
+  <p>Graph visualizer {{ form.graphvisualizer }}<span class="helptext">{{form.graphvisualizer.help_text | safe }}</span></p>
+
+{{ formset.management_form }}
+{{ formsetgraph.management_form }}
+
+
+  <table class="formset manual-add" id="storyparts">
+      <tbody>
+{% for part in storyparts %}
+    {% if part.description %}
+              <tr class="storypart description">
+                  <td>
+                      <div class="storypart-controls">
+                          <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                          <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
+                          <img class="deletepart" alt="remove story part" title="remove story part">
+                          <input class="order" type="hidden" name="text-{{part.number}}-ORDER" id="id_text-{{part.number}}-ORDER" value="{{part.ORDER}}">
+                      </div>
+                  </td>
+                  <td class="storypart-content">
+                    {% with frm=formset|get_at_index:part.number %}
+                      <ul class="errorlist"><li>{{ frm.non_field_errors }}</li></ul>
+                      <ul class="errorlist"><li>{{ frm.description.errors }}</li></ul>
+                      {{frm.description}}
+                    {% endwith  %}
+                  </td>
+              </tr>
+    {% else %}
+              <tr class="storypart graph">
+                 <td>
+                    <div class="storypart-controls">
+                      <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                      <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
+                      <img class="deletepart" alt="remove story part" title="remove story part"/>
+                      <input class="order" type="hidden" name="graph-{{part.number}}-ORDER" id="id_graph-{{part.number}}-ORDER" value="{{part.ORDER}}">
+                      <input type="hidden" name="graph-{{part.number}}-currentGraph" class="currentGraph" id="id_graph-{{part.number}}-currentGraph" value="{{part.currentGraph}}">
+                    </div>
+                  </td>
+                  <td class="storypart-content">
+                    {% with frm=formsetgraph|get_at_index:part.number %}
+                    <ul class="errorlist"><li>{{ frm.non_field_errors }}</li></ul>
+                    <div class="StoryGraphRadio">
+                      <input type="radio" name="graph-{{part.number}}-update" value="" id="id_graph-{{part.number}}-update_1" class="update_1 preview-graph-control" name="graph-{{part.number}}-update" checked>
+                       <label for="id_graph-{{part.number}}-update_1"><em>{{part.currentGraph}}</em></label>
+                       <input type="hidden" id="id_graph-{{part.number}}-experiment-versions" class="experiment-versions preview-graph-control" value="{{part.experiment_versions}}">
+                    </div><br/>
+
+                    <div class="StoryGraphRadio" "{{part.currentGraph}}"=="" ? 'style="Display: none"' : ''}>
+                      <input type="radio" name="graph-{{part.number}}-update" value="True" id="id_graph-{{part.number}}-update_0" class="update_0 preview-graph-control" name=\"graph-{{part.number}}-update\">
+                      <label for="id_graph-{{part.number}}-update">Update graph</label>
+                      <input type="hidden" id="id_graph-{{part.number}}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
+                    </div>
+                    <ul class="errorlist"><li>{{ frm.currentGraph.errors }}</li></ul>
+                    <label id="{part.number}}-models_or_group-label" for="id_graph-{{part.number}}-models_or_group">Select model or model group: </label><select name="graph-{{part.number}}-models_or_group" id="id_graph-{{part.number}}-models_or_group" disabled></select><br/>
+
+                    <ul class="errorlist"><li>{{ frm.protocol.errors }}</li></ul>
+                    <label id="{{part.number}}-protocol" for="id_graph-{{part.number}}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-{{part.number}}-protocol" id="id_graph-{{part.number}}-protocol" disabled></select><br/>
+
+                    <ul class="errorlist"><li>{{ frm.graphfiles.errors }}</li></ul>
+                    <label id="{{part.number}}-graphfiles" for="id_graph-{{part.number}}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-{{part.number}}-graphfiles" id="id_graph-{{part.number}}-graphfiles" disabled></select><br/><br/>
+                    <div id="{{part.number}}graphPreviewBox" class="graphPreviewBox">
+                      <div class="graphPreviewDialog"><input type="hidden" id="{{part.number}}entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experiment_versions}}/show/{{part.graphfilename}}/{{form.graphvisualizer.value}}">
+                        <div class="entitiesToCompare" id="{{part.number}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{{part.experiment_versions}}/info">loading...</div>
+                          <div id="{{part.number}}filedetails" class="filedetails">
+                          <div id="{{part.number}}filedisplay"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <br/>
+                  {% endwith %}
+                  </td>
+              </tr>
+    {% endif %}
+{% endfor %}
+      </tbody>
+      <tfoot style="border-top: 1px solid black;">
+        <tr class="dynamic-form-add">
+          <td class="django-formset-add td" colspan="2">
+              <a id="add-description">add decription text</a>
+              <a id="add-graph">add graph</a>
+          </td>
+        </tr>
+      </tfoot>
+  </table>
+  <button id="savebutton">Save Story</button>
+  </form>
+</div>
+
+{% endblock %}
