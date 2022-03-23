@@ -348,7 +348,7 @@ class StoryFilterGraphView(StoryFilterExperimentVersions):
                 plots_data_stream = io.StringIO(plots_data_file)
                 for row in csv.DictReader(plots_data_stream):
                     graph_files[(row['Data file name'], row['Data file name'])] = True
-            except FileNotFoundError:
+            except (FileNotFoundError, KeyError):
                 pass  # This experiemnt version has no graphs
         return graph_files.keys()
 

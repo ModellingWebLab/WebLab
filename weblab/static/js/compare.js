@@ -23,7 +23,7 @@ function registerFileDisplayer(elem, prefix) {
     elem.addEventListener("click", function(ev, pref = prefix) {
         if (ev.which == 1) {
             ev.preventDefault();
-            nextPage(elem.href, pref);
+            nextPage(elem.href, false, pref);
         }
     }, true);
 }
@@ -690,13 +690,13 @@ function initCompare(prefix, scroll = true) {
                 ev.preventDefault();
                 graphGlobal[pref]['doc'].fileDetails.style.display = "none";
                 shownDefault = true;
-                nextPage(graphGlobal[prefix]['doc'].displayClose.href, prefix);
+                nextPage(graphGlobal[prefix]['doc'].displayClose.href, false, prefix);
             }
         }, true);
     }
 
     if (prefix == '') {
-        window.onpopstate = parseUrl;
+        window.onpopstate = (event) => {parseUrl(event, '');}
     }
     parseUrl(null, prefix);
 
