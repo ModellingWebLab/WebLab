@@ -220,32 +220,32 @@ class StoryCreateView(StoryView, CreateView):
         return self.request.user.has_perm('entities.create_model')
 
 
-class StoryEditView(StoryView, UpdateView):
-    """
-    View for editing stories
-    """
-    def test_func(self):
-        self.object = self.get_object()
-        return self.get_object().is_editable_by(self.request.user)
-
-    def get_formset(self):
-        initial = [{'description': s.description,
-                    'ORDER': s.order,
-                    'pk': s.pk} for s in StoryText.objects.filter(story=self.object)]
-        return super().get_formset(initial=initial)
-
-    def get_formset_graph(self):
-        initial = [{'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
-                    if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
-                    'protocol': s.cachedprotocolversion.protocol.pk,
-                    'graphfiles': s.graphfilename,
-                    'currentGraph': str(s),
-                    'experimentVersions': get_url(get_experiment_versions(s.author,
-                                                                          s.cachedprotocolversion,
-                                                                          [v.pk for v in s.cachedmodelversions.all()])),
-                    'ORDER': s.order,
-                    'pk': s.pk} for s in StoryGraph.objects.filter(story=self.object)]
-        return super().get_formset_graph(initial=initial)
+#class StoryEditView(StoryView, UpdateView):
+#    """
+#    View for editing stories
+#    """
+#    def test_func(self):
+#        self.object = self.get_object()
+#        return self.get_object().is_editable_by(self.request.user)
+#
+#    def get_formset(self):
+#        initial = [{'description': s.description,
+#                    'ORDER': s.order,
+#                    'pk': s.pk} for s in StoryText.objects.filter(story=self.object)]
+#        return super().get_formset(initial=initial)
+#
+#    def get_formset_graph(self):
+#        initial = [{'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
+#                    if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
+#                    'protocol': s.cachedprotocolversion.protocol.pk,
+#                    'graphfiles': s.graphfilename,
+#                    'currentGraph': str(s),
+#                    'experimentVersions': get_url(get_experiment_versions(s.author,
+#                                                                          s.cachedprotocolversion,
+#                                                                          [v.pk for v in s.cachedmodelversions.all()])),
+#                    'ORDER': s.order,
+#                    'pk': s.pk} for s in StoryGraph.objects.filter(story=self.object)]
+#        return super().get_formset_graph(initial=initial)
 
 
 class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
@@ -366,7 +366,7 @@ class StoryRenderView(UserPassesTestMixin, DetailView):
                                             [v.pk for v in part.cachedmodelversions.all()]))
         return super().get_context_data(**kwargs)
 
-class StoryEditView2(StoryView, UpdateView):
+class StoryEditView(StoryView, UpdateView):
     model = Story
     template_name = 'stories/story_edit.html'
     context_object_name = 'story'
@@ -376,66 +376,30 @@ class StoryEditView2(StoryView, UpdateView):
         return self.get_object().is_editable_by(self.request.user)
 
     def get_formset(self):
-        self.formset_initial = [{'number': i,
-                                 'description': s.description,
-                                 'ORDER': s.order,
-                                 'pk': s.pk} for i, s in enumerate(StoryText.objects.filter(story=self.object))]
-        return super().get_formset(initial=self.formset_initial)
-
+        return super().get_formset(initial=[{'number': i,
+                                             'description': s.description,
+                                             'ORDER': s.order,
+                                             'pk': s.pk}
+                                            for i, s in enumerate(StoryText.objects.filter(story=self.object))])
     def get_formset_graph(self):
         modelgroupselectors = get_modelgroups(self.request.user)
-        self.get_formset_graph_initial = [{'number': i,
-                                         'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
-                                          if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
-                                         'protocol': s.cachedprotocolversion.protocol.pk,
-                                         'graphfilename': s.graphfilename,
-                                         'currentGraph': str(s),
-                                         'experimentVersions': get_url(get_experiment_versions(s.author,
-                                                                                               s.cachedprotocolversion,
-                                                                                               [v.pk for v in s.cachedmodelversions.all()])),
-                                         'ORDER': s.order,
-                                         'pk': s.pk} for i, s in enumerate(StoryGraph.objects.filter(story=self.object))]
-        return super().get_formset_graph(initial=self.get_formset_graph_initial)
+        return super().get_formset_graph(
+            initial=[{'number': i,
+                      'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
+                      if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
+                      'protocol': s.cachedprotocolversion.protocol.pk,
+                      'graphfilename': s.graphfilename,
+                      'currentGraph': str(s),
+                      'experimentVersions': get_url(get_experiment_versions(s.author,
+                                                                            s.cachedprotocolversion,
+                                                                            [v.pk for v in s.cachedmodelversions.all()])),
+                      'ORDER': s.order,
+                      'pk': s.pk} for i, s in enumerate(StoryGraph.objects.filter(story=self.object))]
+        )
 
     def get_context_data(self, **kwargs):
         kwargs = super().get_context_data(**kwargs)
-#        def get_order(frm):
-#            assert frm is not None, "none"
-#            try:
-#                return frm['ORDER'].value()
-#            except Exception as e:
-#                assert False, str((e, 'bla'))
-#        formsets = []
-#        formset = self.get_formset()
-#        if formset is not None:
-#            formsets += list(formset)
-#        formset_graph = self.get_formset_graph()
-#        if formset_graph is not None:
-#            formsets += list(formset_graph)
-#        formsets = list(self.get_formset()) + list(self.get_formset_graph())
-#        kwargs['storyparts'] = [frm for frm in formsets if frm] #+  [frm for frm in formsets if not frm]
-#        assert False, str([frm['ORDER'].value() for frm in formsets if frm])
-#        def getKey(frm):
-#if 
         kwargs['storyparts'] = sorted(list(self.get_formset()) + list(self.get_formset_graph()), key=lambda f: f['ORDER'].value())
         kwargs['modelgroupselectors'] = get_modelgroups(self.request.user)
         return kwargs
 
-#
-#    def post(self, request, *args, **kwargs):
-#        form = self.get_form()
-#        formset = self.get_formset()
-#        formsetgraph = self.get_formset_graph()
-#        form.num_parts = len(getattr(formset, 'ordered_forms', [])) + len(getattr(formsetgraph, 'ordered_forms', []))
-#        if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
-#            # make sure formsets are ordered correctly starting at 0
-#            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
-#                                               key=lambda f: f.cleaned_data['ORDER'])):
-#                frm.cleaned_data['ORDER'] = order
-#            story = form.save()
-#            formset.save(story=story)
-#            formsetgraph.save(story=story)
-#            return self.form_valid(form)
-#        else:
-#            self.object = getattr(self, 'object', None)
-#            return self.form_invalid(form)
