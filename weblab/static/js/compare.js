@@ -722,7 +722,6 @@ $(document).ready(function() {
         //set relevant css class for preview box size
         $('#' + graphId + 'graphPreviewBox').removeClass();
         $('#' + graphId + 'graphPreviewBox').addClass($('#id_graphvisualizer').val() + '-preview');
-
         if ($('#id_graph-' + graphId + '-update_1').is(':checked')) {
             experimentVersions = $('#id_graph-' + graphId + '-experiment-versions').val();
             currentGraph = $('#id_graph-' + graphId + '-currentGraph').val();
@@ -752,8 +751,6 @@ $(document).ready(function() {
 
     // update all graph previews if graph type changes
     $('#id_graphvisualizer').change(function() {
-        $('.graphfiles').each(function() {
-            $(this).change();
-        });
+        $('.experimentVersionsUpdate').change();
     });
 });

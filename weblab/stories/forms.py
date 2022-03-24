@@ -117,7 +117,6 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         else:
             storygraph = super().save(commit=False)
         storygraph.order = self.cleaned_data['ORDER']
-
         if self.cleaned_data.get('update', False):
             storygraph.story = story
             storygraph.graphfilename = self.cleaned_data['graphfiles']
@@ -209,6 +208,12 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
             raise ValidationError(
                 'You already have a story named "%s"' % title)
         return title
+
+    def clean(self):
+        data = cleaned_data = super().clean()
+        if not getattr(self, 'num_parts', 0):
+              raise ValidationError("Story is empty add at least one text box or graph. ")
+        return data
 
     def save(self, **kwargs):
         self.instance = super().save(commit=False)

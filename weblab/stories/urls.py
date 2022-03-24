@@ -17,11 +17,11 @@ urlpatterns = [
         name='story_create',
     ),
 
-    url(
-        r'^(?P<pk>\d+)/edit$',
-        views.StoryEditView.as_view(),
-        name='story_edit',
-    ),
+#    url(
+#        r'^(?P<pk>\d+)/edit$',
+#        views.StoryEditView.as_view(),
+#        name='story_edit',
+#    ),
 
     url(
         r'^(?P<pk>\d+)/delete$',
@@ -105,9 +105,9 @@ urlpatterns = [
 
 
     url(
-        r'^(?P<pk>\d+)/edit2$',
+        r'^(?P<pk>\d+)/edit$',
         views.StoryEditView2.as_view(),
-        name='story_edit2',
+        name='story_edit',
     ),
 ]
 

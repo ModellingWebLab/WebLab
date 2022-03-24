@@ -39,6 +39,14 @@ def get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks)
 def get_url(experiment_versions):
     return '/' + '/'.join(str(ver.pk) for ver in experiment_versions)
 
+def get_modelgroups(user):
+    return [('', '--------- model group')] +\
+           [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
+            if modelgroup.visible_to_user(user)] +\
+           [('', '--------- model')] +\
+           [('model' + str(model.pk), model.name)
+            for model in ModelEntity.objects.visible_to_user(user)
+            if model.repocache.versions.count()]
 
 class StoryListView(ListView):
     """
@@ -184,7 +192,6 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         ns = self.request.resolver_match.namespace
         absolute_uri = self.request.build_absolute_uri()
         kwargs['base_uri'] = re.sub('/' + ns + '/.*', '', absolute_uri)
-
         kwargs['formset'] = self.get_formset()
         kwargs['formsetgraph'] = self.get_formset_graph()
         return super().get_context_data(**kwargs)
@@ -193,26 +200,16 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         form = self.get_form()
         formset = self.get_formset()
         formsetgraph = self.get_formset_graph()
-        if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
-            if len(formset.ordered_forms + formsetgraph.ordered_forms) == 0:
-                form.add_error(
-                    None,
-                    "Story is empty add at least one text box or graph. "
-                )
-                self.object = None
-                return self.form_invalid(form)
-
-            # make sure formsets are ordered correctly starting at 0
-            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
-                                               key=lambda f: f.cleaned_data['ORDER'])):
-                frm.cleaned_data['ORDER'] = order
-            story = form.save()
-            formset.save(story=story)
-            formsetgraph.save(story=story)
-            return self.form_valid(form)
-        else:
-            self.object = getattr(self, 'object', None)
-            return self.form_invalid(form)
+        form.num_parts = 1
+        if formset.is_valid() and formsetgraph.is_valid():
+            form.num_parts = len(formset.ordered_forms) + len(formsetgraph.ordered_forms)
+            if form.is_valid():
+                story = form.save()
+                formset.save(story=story)
+                formsetgraph.save(story=story)
+                return self.form_valid(form)
+        self.object = getattr(self, 'object', None)
+        return self.form_invalid(form)
 
 
 class StoryCreateView(StoryView, CreateView):
@@ -256,13 +253,7 @@ class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
     template_name = 'stories/modelorgroup_selection.html'
 
     def get_queryset(self):
-        return [('', '--------- model group')] +\
-               [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
-                if modelgroup.visible_to_user(self.request.user)] +\
-               [('', '--------- model')] +\
-               [('model' + str(model.pk), model.name)
-                for model in ModelEntity.objects.visible_to_user(self.request.user)
-                if model.repocache.versions.count()]
+        return get_modelgroups(self.request.user)
 
 
 class StoryFilterProtocolView(LoginRequiredMixin, ListView):
@@ -392,6 +383,7 @@ class StoryEditView2(StoryView, UpdateView):
         return super().get_formset(initial=self.formset_initial)
 
     def get_formset_graph(self):
+        modelgroupselectors = get_modelgroups(self.request.user)
         self.get_formset_graph_initial = [{'number': i,
                                          'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
                                           if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
@@ -407,34 +399,28 @@ class StoryEditView2(StoryView, UpdateView):
 
     def get_context_data(self, **kwargs):
         kwargs = super().get_context_data(**kwargs)
-        kwargs['storyparts'] = sorted(self.formset_initial + self.get_formset_graph_initial, key=lambda p: p['ORDER'])
+#        kwargs['storyparts'] = sorted(self.formset_initial + self.get_formset_graph_initial, key=lambda p: p['ORDER'])
+#        f = [frm for frm in self.get_formset_graph()][0]
+#        assert False, str(f['ORDER'].value())
+        kwargs['storyparts'] = sorted([frm for frm in self.get_formset()] + [frm for frm in self.get_formset_graph()], key=lambda frm: frm['ORDER'].value() if 'ORDER' in frm else -1)
+        kwargs['modelgroupselectors'] = get_modelgroups(self.request.user)
         return kwargs
 
-
-    def post(self, request, *args, **kwargs):
-        form = self.get_form()
-        formset = self.get_formset()
-        formsetgraph = self.get_formset_graph()
-        if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
-            if len(formset.ordered_forms + formsetgraph.ordered_forms) == 0:
-                form.add_error(
-                    None,
-                    "Story is empty add at least one text box or graph. "
-                )
-                self.object = None
-                return self.form_invalid(form)
-
-            # make sure formsets are ordered correctly starting at 0
-            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
-                                               key=lambda f: f.cleaned_data['ORDER'])):
-                frm.cleaned_data['ORDER'] = order
-            story = form.save()
-            formset.save(story=story)
-            formsetgraph.save(story=story)
-            return self.form_valid(form)
-        else:
-#            assert form.is_valid(), str(form.errors)
-#            assert formset.is_valid(), str(formset.errors)
-#            assert formsetgraph.is_valid(), str(formsetgraph.errors)
-            self.object = getattr(self, 'object', None)
-            return self.form_invalid(form)
+#
+#    def post(self, request, *args, **kwargs):
+#        form = self.get_form()
+#        formset = self.get_formset()
+#        formsetgraph = self.get_formset_graph()
+#        form.num_parts = len(getattr(formset, 'ordered_forms', [])) + len(getattr(formsetgraph, 'ordered_forms', []))
+#        if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
+#            # make sure formsets are ordered correctly starting at 0
+#            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
+#                                               key=lambda f: f.cleaned_data['ORDER'])):
+#                frm.cleaned_data['ORDER'] = order
+#            story = form.save()
+#            formset.save(story=story)
+#            formsetgraph.save(story=story)
+#            return self.form_valid(form)
+#        else:
+#            self.object = getattr(self, 'object', None)
+#            return self.form_invalid(form)

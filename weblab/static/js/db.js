@@ -85,11 +85,6 @@ function drawMatrix(matrix, tablePrefix)
         return (columnMapper[a].name.toLocaleLowerCase() > columnMapper[b].name.toLocaleLowerCase()) ? 1 : ((columnMapper[b].name.toLocaleLowerCase() > columnMapper[a].name.toLocaleLowerCase()) ? -1 : 0);
     });
 
-    /*console.log ("rows");
-    console.log (rowMapper);
-    console.log ("columns");
-    console.log (columnMapper);*/
-
     for (var i = 0; i < rows.length; i++) {
         mat[i] = [];
         for (var j = 0; j < columns.length; j++) {
@@ -863,22 +858,6 @@ function getStoryBasePath(){
 }
 
 //checkbox toggels dropdown enabled
-function graphMenuVisibility()
-{
-    var id = $(this).attr('id');
-    id = id.replace('id_graph-', '');
-    id = id.replace('-update_0', '');
-    id = id.replace('-update_1', '');
-    update = $(`#id_graph-${id}-update_0`).is(':checked');
-    $(`#id_graph-${id}-models_or_group`).prop("disabled", !update);
-    $(`#id_graph-${id}-protocol`).prop("disabled", !update);
-    $(`#id_graph-${id}-graphfiles`).prop("disabled", !update);
-    $(`#${id}-models_or_group-label`).css('opacity', update ? '1.0' : '0.5');
-    $(`#${id}-protocol`).css('opacity', update ? '1.0' : '0.5');
-    $(`#${id}-graphfiles`).css('opacity', update ? '1.0' : '0.5');
-}
-
-
 function insertGraphForm(){
     currentTextCount = parseInt($('#id_text-TOTAL_FORMS').val());
     currentGraphCount = parseInt($('#id_graph-TOTAL_FORMS').val())
@@ -892,12 +871,12 @@ function insertGraphForm(){
                   <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
                   <img class="deletepart" alt="remove story part" title="remove story part"/>
                   <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
+                  <input type="hidden" name="graph-${currentGraphCount}-currentGraph" class="currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="/">
                 </div>
               </td>
               <td class="storypart-content">
                 <div class="StoryGraphRadio" style="Display:none">
-                  <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name="graph-${currentGraphCount}-update" 'checked'}>
-                  <label for="id_graph-${currentGraphCount}-update">Update graph</label>
+                  <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name="graph-${currentGraphCount}-update" checked>
                   <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
                 </div>
                 <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><select class="modelgroupselect" name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
@@ -911,61 +890,11 @@ function insertGraphForm(){
     // add new form
     $('#storyparts  > tbody').append(html);
 
-     // get graph selection elements
-     modelorgroup = $(`#id_graph-${currentGraphCount}-models_or_group`);
-     protocol = $(`#id_graph-${currentGraphCount}-protocol`);
-     filename = $(`#id_graph-${currentGraphCount}-graphfiles`);
-     experimentVersionsUpdate = $(`#id_graph-${currentGraphCount}-experimentVersionsUpdate`);
-
-
-    // update graphs when protocol changes
-    protocol.change(function(){
-        model = modelorgroup.val();
-        protocol_val = protocol.val();
-        url = `${getStoryBasePath()}/${model}/${protocol_val}/graph`;
-        $.ajax({url: url,
-                success: function (data) {
-                    filename.html(data);
-                    filename.change();
-               }
-        });
-    });
-
-    // update protocols when models change
-    modelorgroup.change(function(){
-        model = modelorgroup.val();
-        // empty protocol & file while waiting
-        protocol.html('');
-        filename.html('');
-        url = `${getStoryBasePath()}/${model}/protocols`;
-        $.ajax({url: url,
-                success: function (data) {
-                    protocol.html(data);
-                    protocol.change();
-               }
-        });
-    });
-
-    // update preview when graph file changes
-    filename.change(function(){
-        experimentVersionsUpdate.val('/'); // reset experiment versions
-        experimentVersionsUpdate.change();
-        // retreive experiment versions
-        model = modelorgroup.val();
-        protocol_val = protocol.val();
-        url = `${getStoryBasePath()}/${model}/${protocol_val}/experimentversions`;
-        $.ajax({url: url,
-                success: function(data){
-                    data = data.trim();
-                    if(experimentVersionsUpdate.val() != data){
-                        experimentVersionsUpdate.val(data);
-                         experimentVersionsUpdate.change();
-                   }
-                }
-        });
-    });
-
     // Fill dropdowns
+    // get graph selection elements
+    modelorgroup = $(`#id_graph-${currentGraphCount}-models_or_group`);
+    protocol = $(`#id_graph-${currentGraphCount}-protocol`);
+    filename = $(`#id_graph-${currentGraphCount}-graphfiles`);
     // fill models or groups
     $.ajax({
       url: getStoryBasePath() + "/modelorgroup",
@@ -977,12 +906,12 @@ function insertGraphForm(){
             url: url,
             success: function (data) {
               protocol.html(data);
+              // file graph file names
               url2 = getStoryBasePath() + "/graph";
               $.ajax({
                 url: url2,
                 success: function (data) {
                   filename.html(data);
-//                  $("#id_graph-" + currentGraphCount + "-graphfiles").change();
                 }
               });
             }
@@ -1009,108 +938,105 @@ $( document ).ready(function(){
         renderMde($(this).find('textarea').attr('id'));
     }
   });
-  // link visibility change when switching between updating graph
-  $(document).on('click', '.preview-graph-control', graphMenuVisibility);
-//  $(document).on('change', '.modelgroupselect', function(){
-//      id = $(this).attr('id').replace('-models_or_group');
-//      model = $(this).val();
-//      protocol = $(`#${id}-protocol`);
-//      filename = $(`#${id}-graphfiles`);
-//      // empty protocol & file while waiting
-//      protocol.html('');
-//      filename.html('');
-//      url = `${getStoryBasePath()}/${model}/protocols`;
-//      $.ajax({url: url,
-//              success: function (data) {
-//                  protocol.html(data);
-//                  protocol.change();
-//             }
-//      });
-//  });
-});
+  //checkbox toggels dropdown enabled
+  $(document).on('click', '.preview-graph-control', function graphMenuVisibility(){
+      id = $(this).attr('id');
+      id = id.replace('id_graph-', '');
+      id = id.replace('-update_0', '');
+      id = id.replace('-update_1', '');
+      update = $(`#id_graph-${id}-update_0`).is(':checked');
+      $(`#id_graph-${id}-models_or_group`).prop("disabled", !update);
+      $(`#id_graph-${id}-protocol`).prop("disabled", !update);
+      $(`#id_graph-${id}-graphfiles`).prop("disabled", !update);
+      $(`#${id}-models_or_group-label`).css('opacity', update ? '1.0' : '0.5');
+      $(`#${id}-protocol`).css('opacity', update ? '1.0' : '0.5');
+      $(`#${id}-graphfiles`).css('opacity', update ? '1.0' : '0.5');
+  });
 
 
-//  var storyparts = [];
-//  // render the pre-set story parts in the correct order
-//
-//  $(".storypart").each(function()
-//  {
-//      order = $(this).find(".partorder").val();
-//      del = $(this).find(".partdel").val() === 'true';
-//      if (order ==''){
-//          order = storyTextCount + storyGraphCount;
-//      }else{
-//          order=parseInt(order);
-//      }
-//      if($(this).hasClass('description')){
-////              partval = $(this).find(".partval").val();
-////              parterr = $(this).find(".parterr").val();
-////              storyparts.push([order, insertDescriptionForm, [storyTextCount, partval, parterr, order, del]]);
-//              storyTextCount++;
-//          }else if ($(this).hasClass('graph')){
-//              modelOrGroupValue = $(this).find(".models_or_groupval").val();
-//              protocolValue = $(this).find(".protocolval").val();
-//              graphValue = $(this).find(".graphfiles").val();
-//              models_or_grouperr = $(this).find(".models_or_grouperr").val();
-//              protocolerr = $(this).find(".protocolerr").val();
-//              graphfileserr = $(this).find(".graphfileserr").val();
-//              update = $(this).find(".update").val().toLowerCase() === 'true';
-//              currentGraph = $(this).find(".currentGraph").val();
-//              experimentVersions = $(this).find(".experimentVersions").val();
-//              storyparts.push([order, insertGraphForm, [storyGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph, experimentVersions]]);
-//              storyGraphCount++;
-//          }
-//          $(this).remove();
-//    });
-//
-//
-//    $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
-//    $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
-//
-//    storyparts.sort((a, b) => {
-//        return a[0] - b[0];
-//    });
-//
-//    for(var i = 0 ; i < storyparts.length; i++) {
-//        storyparts[i][1].apply(null, storyparts[i][2]);
-//    }
-
-    //link add, delete and up/down button clicks
-    $("#add-description").click(insertDescriptionForm);
-
-    $("#add-graph").click(insertGraphForm);
-
-    $("#storyparts").on("click", ".deletepart", function()
-    {
-        remove($(this));
-    });
-
-    $("#storyparts").on("click", ".uppart", function()
-    {
-        moveUp($(this));
-    });
-
-    $("#storyparts").on("click", ".downpart", function()
-    {
-        moveDown($(this));
-    });
-
-});
-
-
-
-// render markdown in story view
-$( document ).ready(function()
-{
-
-    const marked = require("./lib/marked.min.js");
-    marked.setOptions({
-        breaks: true,
-    });
-
-    $(".markdowrenderview").each(function(){
-          source = $(this).find(".markdownsource").val();
-          $(this).html(marked(source));
+  // update protocols when model changes
+  $(document).on('change', '.modelgroupselect', function(){
+      id = $(this).attr('id').replace('-models_or_group', '');
+      model = $(this).val();
+      protocol = $(`#${id}-protocol`);
+      filename = $(`#${id}-graphfiles`);
+      // empty protocol & file while waiting
+      protocol.html('');
+      filename.html('');
+      url = `${getStoryBasePath()}/${model}/protocols`;
+      $.ajax({url: url,
+              success: function (data) {
+                  protocol.html(data);
+                  protocol.change();
+             }
       });
+  });
+
+  // update graphs when protocol changes
+  $(document).on('change', '.graphprotocol', function(){
+      id = $(this).attr('id').replace('-protocol', '');
+      model = $(`#${id}-models_or_group`).val();
+      protocol = $(this).val();
+      filename = $(`#${id}-graphfiles`);
+      filename.html('');
+      url = `${getStoryBasePath()}/${model}/${protocol}/graph`;
+      $.ajax({url: url,
+              success: function (data) {
+                  filename.html(data);
+                  filename.change();
+             }
+      });
+  });
+
+  // update graph preview when file changes
+  $(document).on('change', '.graphfiles', function(){
+      id = $(this).attr('id').replace('-graphfiles', '');
+      model = $(`#${id}-models_or_group`).val();
+      protocol = $(`#${id}-protocol`).val();
+      graphfile = $(this).val();
+      experimentVersionsUpdate = $(`#${id}-experimentVersionsUpdate`);
+
+      if(graphfile != ''){
+        // retreive experiment versions
+        url = `${getStoryBasePath()}/${model}/${protocol}/experimentversions`;
+        $.ajax({url: url,
+                success: function(data){
+                    data = data.trim();
+                    experimentVersionsUpdate.val(data);
+                    experimentVersionsUpdate.change();
+                }
+        });
+      }else{
+          if(experimentVersionsUpdate.val().trim() != '/'){
+            experimentVersionsUpdate.val('/');
+            experimentVersionsUpdate.change();
+          }
+      }
+  });
+
+  //link add, delete and up/down button clicks
+  $("#add-description").click(insertDescriptionForm);
+  $("#add-graph").click(insertGraphForm);
+
+  $("#storyparts").on("click", ".deletepart", function(){
+      remove($(this));
+  });
+
+  $("#storyparts").on("click", ".uppart", function(){
+      moveUp($(this));
+  });
+
+  $("#storyparts").on("click", ".downpart", function(){
+      moveDown($(this));
+  });
+
+  // render markdown in story view
+  const marked = require("./lib/marked.min.js");
+  marked.setOptions({breaks: true,});
+
+  $(".markdowrenderview").each(function(){
+        source = $(this).find(".markdownsource").val();
+        $(this).html(marked(source));
+    });
 });
 

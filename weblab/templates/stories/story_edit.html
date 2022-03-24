@@ -7,10 +7,10 @@
 {% block content %}
 
 <a href="{% url 'stories:story_edit' object.id %}"><h1>Story: {{ object.title }}</h1></a>
-<small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.
+<small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.</small>
 
 <div id='newstoryform'>
-
+<h1>{{storyparts|length}} -- {{formset|length}} -- {{formsetgraph|length}}</h1>
 <form method="POST" action="" novalidate id="storyform">
  {% csrf_token %}
 
@@ -75,13 +75,17 @@
                       <input type="hidden" id="id_graph-{{part.number}}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
                     </div>
                     <ul class="errorlist"><li>{{ frm.models_or_group.errors }}</li></ul>
-                    <label id="{part.number}}-models_or_group-label" for="id_graph-{{part.number}}-models_or_group">Select model or model group: </label><select name="graph-{{part.number}}-models_or_group" id="id_graph-{{part.number}}-models_or_group" disabled></select><br/>
-
+                    <label id="{part.number}}-models_or_group-label" for="id_graph-{{part.number}}-models_or_group">Select model or model group: </label>
+                      <select class="modelgroupselect" name="graph-{{part.number}}-models_or_group" id="id_graph-{{part.number}}-models_or_group" disabled>
+                      {% for optn in modelgroupselectors %}
+                        <option value="{{optn.0}}">{{optn.1}}</option>
+                      {%endfor%}
+                      </select><br/>
                     <ul class="errorlist"><li>{{ frm.protocol.errors }}</li></ul>
-                    <label id="{{part.number}}-protocol" for="id_graph-{{part.number}}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-{{part.number}}-protocol" id="id_graph-{{part.number}}-protocol" disabled></select><br/>
+                    <label id="{{part.number}}-protocol" for="id_graph-{{part.number}}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-{{part.number}}-protocol" id="id_graph-{{part.number}}-protocol" disabled><option value="">--------- protocol</option></select><br/>
 
                     <ul class="errorlist"><li>{{ frm.graphfiles.errors }}</li></ul>
-                    <label id="{{part.number}}-graphfiles" for="id_graph-{{part.number}}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-{{part.number}}-graphfiles" id="id_graph-{{part.number}}-graphfiles" disabled></select><br/><br/>
+                    <label id="{{part.number}}-graphfiles" for="id_graph-{{part.number}}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-{{part.number}}-graphfiles" id="id_graph-{{part.number}}-graphfiles" disabled><option value="">--------- graph</option></select><br/><br/>
                     <div id="{{part.number}}graphPreviewBox" class="graphPreviewBox">
                       <div class="graphPreviewDialog"><input type="hidden" id="{{part.number}}entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experiment_versions}}/show/{{part.graphfilename}}/{{form.graphvisualizer.value}}">
                         <div class="entitiesToCompare" id="{{part.number}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{{part.experiment_versions}}/info">loading...</div>
