@@ -390,7 +390,7 @@ class StoryEditView2(StoryView, UpdateView):
                                          'protocol': s.cachedprotocolversion.protocol.pk,
                                          'graphfilename': s.graphfilename,
                                          'currentGraph': str(s),
-                                         'experiment_versions': get_url(get_experiment_versions(s.author,
+                                         'experimentVersions': get_url(get_experiment_versions(s.author,
                                                                                                s.cachedprotocolversion,
                                                                                                [v.pk for v in s.cachedmodelversions.all()])),
                                          'ORDER': s.order,
@@ -399,10 +399,25 @@ class StoryEditView2(StoryView, UpdateView):
 
     def get_context_data(self, **kwargs):
         kwargs = super().get_context_data(**kwargs)
-#        kwargs['storyparts'] = sorted(self.formset_initial + self.get_formset_graph_initial, key=lambda p: p['ORDER'])
-#        f = [frm for frm in self.get_formset_graph()][0]
-#        assert False, str(f['ORDER'].value())
-        kwargs['storyparts'] = sorted([frm for frm in self.get_formset()] + [frm for frm in self.get_formset_graph()], key=lambda frm: frm['ORDER'].value() if 'ORDER' in frm else -1)
+#        def get_order(frm):
+#            assert frm is not None, "none"
+#            try:
+#                return frm['ORDER'].value()
+#            except Exception as e:
+#                assert False, str((e, 'bla'))
+#        formsets = []
+#        formset = self.get_formset()
+#        if formset is not None:
+#            formsets += list(formset)
+#        formset_graph = self.get_formset_graph()
+#        if formset_graph is not None:
+#            formsets += list(formset_graph)
+#        formsets = list(self.get_formset()) + list(self.get_formset_graph())
+#        kwargs['storyparts'] = [frm for frm in formsets if frm] #+  [frm for frm in formsets if not frm]
+#        assert False, str([frm['ORDER'].value() for frm in formsets if frm])
+#        def getKey(frm):
+#if 
+        kwargs['storyparts'] = sorted(list(self.get_formset()) + list(self.get_formset_graph()), key=lambda f: f['ORDER'].value())
         kwargs['modelgroupselectors'] = get_modelgroups(self.request.user)
         return kwargs
 

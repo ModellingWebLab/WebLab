@@ -15,6 +15,3 @@ def can_manage_story(context, story):
     user = context['user']
     return story.is_managed_by(user)
 
-@register.filter
-def get_at_index(list, index):
-    return list[index]

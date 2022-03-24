@@ -49,6 +49,7 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['number'] = forms.IntegerField(required=False)
         self.fields['ORDER'] = forms.IntegerField(required=False)
 
     def save(self, story=None, **kwargs):
@@ -84,7 +85,9 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['number'] = forms.IntegerField(required=False)
         self.fields['ORDER'] = forms.IntegerField(required=False)
+        self.fields['graphfilename'] = forms.CharField(required=False)
         self.fields['currentGraph'] = forms.CharField(required=False)
         self.fields['experimentVersions'] = forms.CharField(required=False)
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,

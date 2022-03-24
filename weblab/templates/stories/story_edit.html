@@ -10,7 +10,7 @@
 <small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.</small>
 
 <div id='newstoryform'>
-<h1>{{storyparts|length}} -- {{formset|length}} -- {{formsetgraph|length}}</h1>
+
 <form method="POST" action="" novalidate id="storyform">
  {% csrf_token %}
 
@@ -31,73 +31,81 @@
   <table class="formset manual-add" id="storyparts">
       <tbody>
 {% for part in storyparts %}
-    {% if part.description %}
+    {% if part.DELETE and part.DELETE.value %}
+    {% elif part.description %}
               <tr class="storypart description">
                   <td>
                       <div class="storypart-controls">
                           <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                           <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
                           <img class="deletepart" alt="remove story part" title="remove story part">
-                          <input class="order" type="hidden" name="text-{{part.number}}-ORDER" id="id_text-{{part.number}}-ORDER" value="{{part.ORDER}}">
+                          <input class="order" type="hidden" name="text-{{part.number.value}}-ORDER" id="id_text-{{part.number.value}}-ORDER" value="{{part.ORDER.value}}">
+                          <input class="number" type="hidden" name="text-{{part.number.value}}-number" id="id_text-{{part.number.value}}-number" value="{{part.number.value}}">
                       </div>
                   </td>
                   <td class="storypart-content">
-                    {% with frm=formset|get_at_index:part.number %}
-                      <ul class="errorlist"><li>{{ frm.non_field_errors }}</li></ul>
-                      <ul class="errorlist"><li>{{ frm.description.errors }}</li></ul>
-                      {{frm.description}}
-                    {% endwith  %}
+                    <ul class="errorlist"><li>{{ part.non_field_errors }}</li></ul>
+                    <ul class="errorlist"><li>{{ part.description.errors }}</li></ul>
+                    {{part.description}}
                   </td>
               </tr>
-    {% else %}
+    {% elif part.protocol %}
               <tr class="storypart graph">
                  <td>
                     <div class="storypart-controls">
                       <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
                       <img class="deletepart" alt="remove story part" title="remove story part"/>
-                      <input class="order" type="hidden" name="graph-{{part.number}}-ORDER" id="id_graph-{{part.number}}-ORDER" value="{{part.ORDER}}">
-                      <input type="hidden" name="graph-{{part.number}}-currentGraph" class="currentGraph" id="id_graph-{{part.number}}-currentGraph" value="{{part.currentGraph}}">
+                      <input class="order" type="hidden" name="graph-{{part.number.value}}-ORDER" id="id_graph-{{part.number.value}}-ORDER" value="{{part.ORDER.value}}">
+                      <input type="hidden" name="graph-{{part.number.value}}-currentGraph" class="currentGraph" id="id_graph-{{part.number.value}}-currentGraph" value="{{part.currentGraph.value}}">
+                      <input class="number" type="hidden" name="graph-{{part.number.value}}-number" id="id_graph-{{part.number.value}}-number" value="{{part.number.value}}">
                     </div>
                   </td>
                   <td class="storypart-content">
-                    {% with frm=formsetgraph|get_at_index:part.number %}
-                    <ul class="errorlist"><li>{{ frm.non_field_errors }}</li></ul>
+                    <ul class="errorlist"><li>{{ part.non_field_errors }}</li></ul>
                     <div class="StoryGraphRadio">
-                      <input type="radio" name="graph-{{part.number}}-update" value="" id="id_graph-{{part.number}}-update_1" class="update_1 preview-graph-control" name="graph-{{part.number}}-update" checked>
-                       <label for="id_graph-{{part.number}}-update_1"><em>{{part.currentGraph}}</em></label>
-                       <input type="hidden" id="id_graph-{{part.number}}-experiment-versions" class="experiment-versions preview-graph-control" value="{{part.experiment_versions}}">
+                      <input type="radio" name="graph-{{part.number.value}}-update" value="" id="id_graph-{{part.number.value}}-update_1" class="update_1 preview-graph-control" name="graph-{{part.number.value}}-update" checked>
+                       <label for="id_graph-{{part.number.value}}-update_1"><em>{{part.currentGraph.value}}</em></label>
+                       <input type="hidden" id="id_graph-{{part.number.value}}-experiment-versions" class="experiment-versions preview-graph-control" value="{{part.experimentVersions.value}}">
                     </div><br/>
 
                     <div class="StoryGraphRadio" {% if part.currentGraph == '' %}style="display:none"{% endif %}>
-                      <input type="radio" name="graph-{{part.number}}-update" value="True" id="id_graph-{{part.number}}-update_0" class="update_0 preview-graph-control" name="graph-{{part.number}}-update">
-                      <label for="id_graph-{{part.number}}-update">Update graph</label>
-                      <input type="hidden" id="id_graph-{{part.number}}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
+                      <input type="radio" name="graph-{{part.number.value}}-update" value="True" id="id_graph-{{part.number.value}}-update_0" class="update_0 preview-graph-control" name="graph-{{part.number.value}}-update">
+                      <label for="id_graph-{{part.number.value}}-update">Update graph</label>
+                      <input type="hidden" id="id_graph-{{part.number.value}}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
                     </div>
-                    <ul class="errorlist"><li>{{ frm.models_or_group.errors }}</li></ul>
-                    <label id="{part.number}}-models_or_group-label" for="id_graph-{{part.number}}-models_or_group">Select model or model group: </label>
-                      <select class="modelgroupselect" name="graph-{{part.number}}-models_or_group" id="id_graph-{{part.number}}-models_or_group" disabled>
+                    <ul class="errorlist"><li>{{ part.models_or_group.errors }}</li></ul>
+                    <label id="{part.number.value}}-models_or_group-label" for="id_graph-{{part.number.value}}-models_or_group">Select model or model group: </label>
+                      <select class="modelgroupselect" name="graph-{{part.number.value}}-models_or_group" id="id_graph-{{part.number.value}}-models_or_group" disabled>
                       {% for optn in modelgroupselectors %}
                         <option value="{{optn.0}}">{{optn.1}}</option>
                       {%endfor%}
                       </select><br/>
-                    <ul class="errorlist"><li>{{ frm.protocol.errors }}</li></ul>
-                    <label id="{{part.number}}-protocol" for="id_graph-{{part.number}}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-{{part.number}}-protocol" id="id_graph-{{part.number}}-protocol" disabled><option value="">--------- protocol</option></select><br/>
+                    <ul class="errorlist"><li>{{ part.protocol.errors }}</li></ul>
+                    <label id="{{part.number.value}}-protocol" for="id_graph-{{part.number.value}}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-{{part.number.value}}-protocol" id="id_graph-{{part.number.value}}-protocol" disabled><option value="">--------- protocol</option></select><br/>
 
-                    <ul class="errorlist"><li>{{ frm.graphfiles.errors }}</li></ul>
-                    <label id="{{part.number}}-graphfiles" for="id_graph-{{part.number}}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-{{part.number}}-graphfiles" id="id_graph-{{part.number}}-graphfiles" disabled><option value="">--------- graph</option></select><br/><br/>
-                    <div id="{{part.number}}graphPreviewBox" class="graphPreviewBox">
-                      <div class="graphPreviewDialog"><input type="hidden" id="{{part.number}}entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experiment_versions}}/show/{{part.graphfilename}}/{{form.graphvisualizer.value}}">
-                        <div class="entitiesToCompare" id="{{part.number}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{{part.experiment_versions}}/info">loading...</div>
-                          <div id="{{part.number}}filedetails" class="filedetails">
-                          <div id="{{part.number}}filedisplay"></div>
+                    <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
+                    <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-{{part.number.value}}-graphfiles" id="id_graph-{{part.number.value}}-graphfiles" disabled><option value="">--------- graph</option></select><br/><br/>
+                    <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox">
+                      <div class="graphPreviewDialog"><input type="hidden" id="{{part.number.value}}entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experimentVersions.value}}/show/{{part.graphfilename.value}}/{{form.graphvisualizer.value}}">
+                        <div class="entitiesToCompare" id="{{part.number.value}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{{part.experimentVersions.value}}/info">loading...</div>
+                          <div id="{{part.number.value}}filedetails" class="filedetails">
+                          <div id="{{part.number.value}}filedisplay"></div>
                         </div>
                       </div>
                     </div>
                     <br/>
-                  {% endwith %}
                   </td>
               </tr>
+    {% endif %}
+{% endfor %}
+{% for part in storyparts %}
+    {% if part.DELETE and part.DELETE.value and part.description %}
+      <input type="hidden" name="text-{{part.number.value}}-DELETE" id="id_text-{{part.number.value}}-DELETE" value="true">
+      <input type="hidden" name="text-{{part.number.value}}-number" id="id_text-{{part.number.value}}-number" value="{{part.number.value}}">
+    {% elif part.DELETE and part.DELETE.value %}
+      <input type="hidden" name="graph-{{part.number.value}}-DELETE" id="id_graph-{{part.number.value}}-DELETE" value="true">
+      <input type="hidden" name="graph-{{part.number.value}}-number" id="id_graph-{{part.number.value}}-number" value="{{part.number.value}}">
     {% endif %}
 {% endfor %}
       </tbody>

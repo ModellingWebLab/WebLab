@@ -808,11 +808,16 @@ function remove(clicked)
     id = $(clicked.closest('tr')).find('.order').attr('id');
     name =  $(clicked.closest('tr')).find('.order').attr('name');
     order = $(clicked.closest('tr')).find('.order').val();
+    number = $(clicked.closest('tr')).find('.number').val();
     $("#storyform").append(`<input class="order" type="hidden" name="${name}" id="${id}" value="${order}">`);
 
     id = id.replace("ORDER", "DELETE");
     name = name.replace("ORDER", "DELETE");
     $("#storyform").append(`<input type="hidden" name="${name}" id="${id}" value="true">`);
+
+    id = id.replace("DELETE", "number");
+    name = name.replace("DELETE", "number");
+    $("#storyform").append(`<input type="hidden" name="${name}" id="${id}" value="${number}">`);
     $(clicked.closest('tr')).remove();
 }
 
@@ -838,6 +843,7 @@ function insertDescriptionForm()
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
                       <img class="deletepart" alt="remove story part" title="remove story part"/>
                       <input class="order" type="hidden" name="text-${currentTextCount}-ORDER" id="id_text-${currentTextCount}-ORDER" value="${order}">
+                      <input class="number" type="hidden" name="text-${currentTextCount}-number" id="id_text-${currentTextCount}-number" value="${currentTextCount}">
                   </div>
               </td>
               <td class="storypart-content">
@@ -872,6 +878,7 @@ function insertGraphForm(){
                   <img class="deletepart" alt="remove story part" title="remove story part"/>
                   <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
                   <input type="hidden" name="graph-${currentGraphCount}-currentGraph" class="currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="/">
+                  <input class="number" type="hidden" name="graph-${currentGraphCount}-number" id="id_graph-${currentGraphCount}-number" value="${currentGraphCount}">
                 </div>
               </td>
               <td class="storypart-content">
