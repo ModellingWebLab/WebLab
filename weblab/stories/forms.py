@@ -94,10 +94,11 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(choices=[]))
 
     def clean_models_or_group(self):
-        if self.cleaned_data.get('update', False) and self.cleaned_data['models_or_group'] == "":
-            raise ValidationError("This field is required.")
-        if not self.cleaned_data['models_or_group'].startswith('model'):
-            raise ValidationError("The model of group field value should start with model or modelgroup.")
+        if self.cleaned_data.get('update', False):
+            if self.cleaned_data.get('update', False) and self.cleaned_data['models_or_group'] == "":
+                raise ValidationError("This field is required.")
+            if not self.cleaned_data['models_or_group'].startswith('model'):
+                raise ValidationError("The model of group field value should start with model or modelgroup.")
         return self.cleaned_data['models_or_group']
 
     def clean_protocol(self):

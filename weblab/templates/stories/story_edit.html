@@ -69,12 +69,12 @@
                        <input type="hidden" id="id_graph-{{part.number}}-experiment-versions" class="experiment-versions preview-graph-control" value="{{part.experiment_versions}}">
                     </div><br/>
 
-                    <div class="StoryGraphRadio" "{{part.currentGraph}}"=="" ? 'style="Display: none"' : ''}>
-                      <input type="radio" name="graph-{{part.number}}-update" value="True" id="id_graph-{{part.number}}-update_0" class="update_0 preview-graph-control" name=\"graph-{{part.number}}-update\">
+                    <div class="StoryGraphRadio" {% if part.currentGraph == '' %}style="display:none"{% endif %}>
+                      <input type="radio" name="graph-{{part.number}}-update" value="True" id="id_graph-{{part.number}}-update_0" class="update_0 preview-graph-control" name="graph-{{part.number}}-update">
                       <label for="id_graph-{{part.number}}-update">Update graph</label>
                       <input type="hidden" id="id_graph-{{part.number}}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
                     </div>
-                    <ul class="errorlist"><li>{{ frm.currentGraph.errors }}</li></ul>
+                    <ul class="errorlist"><li>{{ frm.models_or_group.errors }}</li></ul>
                     <label id="{part.number}}-models_or_group-label" for="id_graph-{{part.number}}-models_or_group">Select model or model group: </label><select name="graph-{{part.number}}-models_or_group" id="id_graph-{{part.number}}-models_or_group" disabled></select><br/>
 
                     <ul class="errorlist"><li>{{ frm.protocol.errors }}</li></ul>

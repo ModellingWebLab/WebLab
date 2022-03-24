@@ -433,8 +433,8 @@ class StoryEditView2(StoryView, UpdateView):
             formsetgraph.save(story=story)
             return self.form_valid(form)
         else:
-            assert form.is_valid(), str(form.errors)
-            assert formset.is_valid(), str(formset.errors)
-            assert formsetgraph.is_valid(), str(formsetgraph.errors)
+#            assert form.is_valid(), str(form.errors)
+#            assert formset.is_valid(), str(formset.errors)
+#            assert formsetgraph.is_valid(), str(formsetgraph.errors)
             self.object = getattr(self, 'object', None)
             return self.form_invalid(form)
