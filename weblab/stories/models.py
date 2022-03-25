@@ -1,13 +1,13 @@
 from django.db import models
 from django.db.models import TextField
-from django.db.utils import IntegrityError
 from django.db.models.signals import m2m_changed
+from django.db.utils import IntegrityError
 from django.dispatch import receiver
-from core.visibility import Visibility
-from core.models import UserCreatedModelMixin, VisibilityModelMixin
 
-from repocache.models import CachedModelVersion, CachedProtocolVersion
+from core.models import UserCreatedModelMixin, VisibilityModelMixin
+from core.visibility import Visibility
 from entities.models import ModelGroup
+from repocache.models import CachedModelVersion, CachedProtocolVersion
 
 
 class Story(UserCreatedModelMixin, VisibilityModelMixin):

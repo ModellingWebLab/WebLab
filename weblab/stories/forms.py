@@ -9,8 +9,8 @@ from core import visibility
 from entities.forms import BaseEntityCollaboratorFormSet, EntityCollaboratorForm
 from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 
+from .graph_filters import get_graph_file_names, get_modelgroups, get_protocols
 from .models import Story, StoryGraph, StoryText
-import stories
 
 
 class StoryCollaboratorForm(EntityCollaboratorForm):
@@ -92,13 +92,16 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['ORDER'] = forms.IntegerField(required=False)
         self.fields['graphfilename'] = forms.CharField(required=False, widget=forms.HiddenInput)
         self.fields['currentGraph'] = forms.CharField(required=False)
-        self.fields['experimentVersions'] = forms.CharField(required=False,
-                                                            widget=forms.HiddenInput(attrs={'class': 'preview-graph-control'}))
-        self.fields['experimentVersionsUpdate'] = forms.CharField(required=False,
-                                                                  widget=forms.HiddenInput(attrs={'class': 'preview-graph-control'}))
+        self.fields['experimentVersions'] = \
+            forms.CharField(required=False, widget=forms.HiddenInput(attrs={'class': 'preview-graph-control'}))
+
+        self.fields['experimentVersionsUpdate'] = \
+            forms.CharField(required=False, widget=forms.HiddenInput(attrs={'class': 'preview-graph-control'}))
+
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
-        self.fields['models_or_group'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'modelgroupselect'}))
+        self.fields['models_or_group'] = forms.CharField(required=False,
+                                                         widget=forms.Select(attrs={'class': 'modelgroupselect'}))
         self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
         self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphfiles'}))
 
@@ -106,9 +109,12 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
         self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
         self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        self.fields['models_or_group'].widget.choices = choices=stories.views.get_modelgroups(self.user)
-        self.fields['protocol'].widget.choices = [('', '--------- protocol')] + list(stories.views.get_protocols(kwargs['initial']['models_or_group'], self.user))
-        graph_coices = list(stories.views.get_graph_file_names(self.user, kwargs['initial']['models_or_group'], kwargs['initial']['protocol']))
+        self.fields['models_or_group'].widget.choices = get_modelgroups(self.user)
+        self.fields['protocol'].widget.choices = \
+            [('', '--------- protocol')] + list(get_protocols(kwargs['initial']['models_or_group'], self.user))
+        graph_coices = list(get_graph_file_names(self.user,
+                                                 kwargs['initial']['models_or_group'],
+                                                 kwargs['initial']['protocol']))
         if not graph_coices:
             graph_coices = [('', '--------- graph')]
         self.fields['graphfiles'].widget.choices = graph_coices
@@ -121,8 +127,14 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
             self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
             if not disabled:
-                self.fields['protocol'].widget.choices = [('', '--------- protocol')] + list(stories.views.get_protocols(cleaned_data.get('models_or_group', ''), self.user))
-                graph_coices = list(stories.views.get_graph_file_names(self.user, cleaned_data.get('models_or_group', ''), cleaned_data.get('protocol', '')))
+                self.fields['protocol'].widget.choices = \
+                    [('', '--------- protocol')] + list(get_protocols(cleaned_data.get('models_or_group', ''),
+                                                                      self.user))
+                graph_coices = list(
+                    get_graph_file_names(self.user,
+                                         cleaned_data.get('models_or_group', ''),
+                                         cleaned_data.get('protocol', ''))
+                )
                 if not graph_coices:
                     graph_coices = [('', '--------- graph')]
                 self.fields['graphfiles'].widget.choices = graph_coices
@@ -246,9 +258,9 @@ class StoryForm(UserKwargModelFormMixin, forms.ModelForm):
         return title
 
     def clean(self):
-        data = cleaned_data = super().clean()
+        data = super().clean()
         if not getattr(self, 'num_parts', 0):
-              raise ValidationError("Story is empty add at least one text box or graph. ")
+            raise ValidationError("Story is empty add at least one text box or graph. ")
         return data
 
     def save(self, **kwargs):

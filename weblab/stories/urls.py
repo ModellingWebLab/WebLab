@@ -106,4 +106,3 @@ urlpatterns = [
 ]
 
 app_name = 'stories'
-
