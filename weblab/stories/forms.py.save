@@ -105,42 +105,42 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
         self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphfiles'}))
 
-        self.fields['models_or_group'].widget.choices = get_modelgroups(self.user)
-        if 'initial' in kwargs:
-            disabled = not kwargs['initial'].get('update', True)
-            models_or_group = kwargs['initial'].get('models_or_group', '')
-            protocol = kwargs['initial'].get('protocol', '')
+        disabled = not kwargs.get('initial', None).get('update', True)
+        models_or_group = kwargs['initial'].get('models_or_group', '')
+        protocol = kwargs['initial'].get('protocol', '')
 
-            self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
-            self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
-            self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
-            self.fields['protocol'].widget.choices = \
-                [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
-            graph_coices = list(get_graph_file_names(self.user,
-                                                     models_or_group,
-                                                     protocol))
-            if not graph_coices:
-                graph_coices = [('', '--------- graph')]
-            self.fields['graphfiles'].widget.choices = graph_coices
+        self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
+        self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
+        self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
+        self.fields['models_or_group'].widget.choices = get_modelgroups(self.user)
+        self.fields['protocol'].widget.choices = \
+            [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
+        graph_coices = list(get_graph_file_names(self.user,
+                                                 models_or_group,
+                                                 protocol))
+        if not graph_coices:
+            graph_coices = [('', '--------- graph')]
+        self.fields['graphfiles'].widget.choices = graph_coices
 
     def clean(self):
         cleaned_data = super().clean()
         disabled = not cleaned_data['update']
-        self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        if not disabled:
-            self.fields['protocol'].widget.choices = \
-                [('', '--------- protocol')] + list(get_protocols(cleaned_data.get('models_or_group', ''),
-                                                                  self.user))
-            graph_coices = list(
-                get_graph_file_names(self.user,
-                                     cleaned_data.get('models_or_group', ''),
-                                     cleaned_data.get('protocol', ''))
-            )
-            if not graph_coices:
-                graph_coices = [('', '--------- graph')]
-            self.fields['graphfiles'].widget.choices = graph_coices
+        if cleaned_data.get('update', False):
+            self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
+            self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
+            self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
+            if not disabled:
+                self.fields['protocol'].widget.choices = \
+                    [('', '--------- protocol')] + list(get_protocols(cleaned_data.get('models_or_group', ''),
+                                                                      self.user))
+                graph_coices = list(
+                    get_graph_file_names(self.user,
+                                         cleaned_data.get('models_or_group', ''),
+                                         cleaned_data.get('protocol', ''))
+                )
+                if not graph_coices:
+                    graph_coices = [('', '--------- graph')]
+                self.fields['graphfiles'].widget.choices = graph_coices
         return cleaned_data
 
     def clean_models_or_group(self):

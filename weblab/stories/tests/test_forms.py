@@ -486,6 +486,12 @@ class TestStoryForm:
         assert form.cleaned_data['visibility'] == story.visibility
         assert form.cleaned_data['graphvisualizer'] == story.graphvisualizer
 
+    def test_edit_story_invalid(self, story):
+        form = StoryForm(user=story.author, instance=story, data={'title': '', 'visibility': 'private',
+                                                                  'graphvisualizer': 'displayPlotHC'})
+        form.num_parts = 1
+        assert not form.is_valid()
+
     def test_edit_story(self, story):
         form = StoryForm(user=story.author, instance=story, data={'title': 'new title', 'visibility': 'private',
                                                                   'graphvisualizer': 'displayPlotHC'})

@@ -779,6 +779,7 @@ $(document).ready(function()
 })
 
 
+/* stories facilities */
 // Code to facilitate stories with text and graph parts
 const SimpleMDE = require('./lib/simplemde.js');
 
@@ -823,7 +824,6 @@ function remove(clicked)
 
 function renderMde(id) // render text editor
 {
-//    element = document.getElementById('id_text-' + id + '-description'); //grab new text area
     element = document.getElementById(id);
     // initialise editor
     var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo'], element:element});
