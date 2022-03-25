@@ -145,7 +145,6 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
     template_name = 'stories/story_edit.html'
     context_object_name = 'story'
 
-
     def get_success_url(self):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':stories')
