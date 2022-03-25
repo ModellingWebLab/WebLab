@@ -74,7 +74,7 @@ class StoryGraph(StoryItem):
     def __str__(self):
         return (self.modelgroup.title if self.modelgroup is not None
                 else self.cachedmodelversions.first().model.name) +\
-            " / " + self.cachedprotocolversion.protocol.name + " / " + self.graphfilename
+            f' / {self.cachedprotocolversion.protocol.name} / {self.graphfilename}'
 
     def set_cachedmodelversions(self, cachedmodelversions):
         self.setting_cachedmodelversions = True
