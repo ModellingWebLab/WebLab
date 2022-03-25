@@ -65,7 +65,7 @@ class StoryGraph(StoryItem):
     """
     A graph for a story
     """
-    graphfilename = TextField(blank=False)
+    graphfilename = TextField(blank=True, null=True)
     cachedprotocolversion = models.ForeignKey(CachedProtocolVersion, null=False, blank=False, on_delete=models.CASCADE,
                                               related_name="protocolforgraph")
     cachedmodelversions = models.ManyToManyField(CachedModelVersion)
