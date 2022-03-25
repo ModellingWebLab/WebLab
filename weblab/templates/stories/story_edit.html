@@ -6,7 +6,7 @@
 {% block title %}Story {{ object.title }} - {% endblock title %}
 {% block content %}
 
-<a href="{% url 'stories:story_edit' object.id %}"><h1>Story: {{ object.title }}</h1></a>
+{%if objec.id %}<a href="{% url 'stories:story_edit' object.id %}"><h1>Story: {{ object.title }}</h1></a>{% else %}<h1>Create a new story</h1>{% endif %}
 <small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.</small>
 
 <div id='newstoryform'>

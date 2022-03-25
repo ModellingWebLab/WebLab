@@ -105,16 +105,19 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
         self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphfiles'}))
 
-        disabled = not kwargs['initial']['update']
+        disabled = not kwargs['initial'].get('update', True)
+        models_or_group = kwargs['initial'].get('models_or_group', '')
+        protocol = kwargs['initial'].get('protocol', '')
+
         self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
         self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
         self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
         self.fields['models_or_group'].widget.choices = get_modelgroups(self.user)
         self.fields['protocol'].widget.choices = \
-            [('', '--------- protocol')] + list(get_protocols(kwargs['initial']['models_or_group'], self.user))
+            [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
         graph_coices = list(get_graph_file_names(self.user,
-                                                 kwargs['initial']['models_or_group'],
-                                                 kwargs['initial']['protocol']))
+                                                 models_or_group,
+                                                 protocol))
         if not graph_coices:
             graph_coices = [('', '--------- graph')]
         self.fields['graphfiles'].widget.choices = graph_coices
