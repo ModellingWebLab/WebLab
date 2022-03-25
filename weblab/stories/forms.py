@@ -10,6 +10,7 @@ from entities.forms import BaseEntityCollaboratorFormSet, EntityCollaboratorForm
 from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 
 from .models import Story, StoryGraph, StoryText
+import stories
 
 
 class StoryCollaboratorForm(EntityCollaboratorForm):
@@ -85,16 +86,47 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = kwargs.pop('user', None)
+
         self.fields['number'] = forms.IntegerField(required=False)
         self.fields['ORDER'] = forms.IntegerField(required=False)
-        self.fields['graphfilename'] = forms.CharField(required=False)
+        self.fields['graphfilename'] = forms.CharField(required=False, widget=forms.HiddenInput)
         self.fields['currentGraph'] = forms.CharField(required=False)
-        self.fields['experimentVersions'] = forms.CharField(required=False)
+        self.fields['experimentVersions'] = forms.CharField(required=False,
+                                                            widget=forms.HiddenInput(attrs={'class': 'preview-graph-control'}))
+        self.fields['experimentVersionsUpdate'] = forms.CharField(required=False,
+                                                                  widget=forms.HiddenInput(attrs={'class': 'preview-graph-control'}))
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
-        self.fields['models_or_group'] = forms.CharField(required=False, widget=forms.Select(choices=[]))
-        self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(choices=[]))
-        self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(choices=[]))
+        self.fields['models_or_group'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'modelgroupselect'}))
+        self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
+        self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphfiles'}))
+
+        disabled = not kwargs['initial']['update']
+        self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
+        self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
+        self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
+        self.fields['models_or_group'].widget.choices = choices=stories.views.get_modelgroups(self.user)
+        self.fields['protocol'].widget.choices = [('', '--------- protocol')] + list(stories.views.get_protocols(kwargs['initial']['models_or_group'], self.user))
+        graph_coices = list(stories.views.get_graph_file_names(self.user, kwargs['initial']['models_or_group'], kwargs['initial']['protocol']))
+        if not graph_coices:
+            graph_coices = [('', '--------- graph')]
+        self.fields['graphfiles'].widget.choices = graph_coices
+
+    def clean(self):
+        cleaned_data = super().clean()
+        disabled = not cleaned_data['update']
+        if cleaned_data.get('update', False):
+            self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
+            self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
+            self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
+            if not disabled:
+                self.fields['protocol'].widget.choices = [('', '--------- protocol')] + list(stories.views.get_protocols(cleaned_data.get('models_or_group', ''), self.user))
+                graph_coices = list(stories.views.get_graph_file_names(self.user, cleaned_data.get('models_or_group', ''), cleaned_data.get('protocol', '')))
+                if not graph_coices:
+                    graph_coices = [('', '--------- graph')]
+                self.fields['graphfiles'].widget.choices = graph_coices
+        return cleaned_data
 
     def clean_models_or_group(self):
         if self.cleaned_data.get('update', False):
@@ -105,6 +137,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         return self.cleaned_data['models_or_group']
 
     def clean_protocol(self):
+        self.fields['protocol'].disabled = not self.cleaned_data['update']
         if self.cleaned_data.get('update', False) and self.cleaned_data['protocol'] == "":
             raise ValidationError("This field is required.")
         return self.cleaned_data['protocol']

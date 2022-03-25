@@ -883,6 +883,7 @@ function insertGraphForm(){
               </td>
               <td class="storypart-content">
                 <div class="StoryGraphRadio" style="Display:none">
+                  <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_1" class="update_1 preview-graph-control" name="graph-${currentGraphCount}-update">
                   <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name="graph-${currentGraphCount}-update" checked>
                   <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
                 </div>
@@ -937,6 +938,9 @@ $( document ).ready(function(){
         $('.graphPreviewDialog').find('input').each(function(){
             $(this).prop('disabled', true);
         });
+        $('.modelgroupselect').prop('disabled', false);
+        $('.graphprotocol').prop('disabled', false);
+        $('.graphfiles').prop('disabled', false);
     });
 
   // render markdown editors if editing
@@ -959,7 +963,6 @@ $( document ).ready(function(){
       $(`#${id}-protocol`).css('opacity', update ? '1.0' : '0.5');
       $(`#${id}-graphfiles`).css('opacity', update ? '1.0' : '0.5');
   });
-
 
   // update protocols when model changes
   $(document).on('change', '.modelgroupselect', function(){
