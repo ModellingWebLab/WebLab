@@ -121,7 +121,6 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-#        assert False, str((self.fields['graphfilename'], cleaned_data))
         disabled = not cleaned_data['update']
         if cleaned_data.get('update', False):
             self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
@@ -139,7 +138,6 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
                 if not graph_coices:
                     graph_coices = [('', '--------- graph')]
                 self.fields['graphfiles'].widget.choices = graph_coices
-#        self.fields.pop('graphfilename', None)
         return cleaned_data
 
     def clean_models_or_group(self):
@@ -160,9 +158,6 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         if self.cleaned_data.get('update', False) and self.cleaned_data['graphfiles'] == "":
             raise ValidationError("This field is required.")
         return self.cleaned_data['graphfiles']
-
-    def clean_graphfilename(self):
-        return 'bla' #self.cleaned_data['graphfilename']
 
     def save(self, story=None, **kwargs):
         if 'pk' in self.initial:
