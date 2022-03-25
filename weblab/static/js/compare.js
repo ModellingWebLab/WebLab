@@ -705,52 +705,15 @@ function initCompare(prefix, scroll = true) {
     });
 }
 
-
+// initialise (all) compare graphs on the page
 $(document).ready(function() {
-    $(".entitiesToCompare").each(function() {
-        prefix = $(this).attr('id').replace("entitiesToCompare", "");
-        initCompare(prefix, prefix == "");
-    });
-
-    /* Graph Preview functionality */
-    // update graph preview if any of the controls change
-    $(body).on('change', '.preview-graph-control', function() {
-        // get prefix graph Id
-        var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
-        graphId = match[1];
-
-        //set relevant css class for preview box size
-        $(`#${graphId}graphPreviewBox`).removeClass();
-        $(`#${graphId}graphPreviewBox`).addClass(`${$('#id_graphvisualizer').val()}-preview`);
-        if ($(`#id_graph-${graphId}-update_1`).is(':checked')) {
-            experimentVersions = $(`#id_graph-${graphId}-experimentVersions`).val();
-            currentGraph = $(`#id_graph-${graphId}-currentGraph`).val();
-            currentGraphParts = currentGraph.split(' / ');
-            graphFile = currentGraphParts[currentGraphParts.length - 1];
-        } else {
-            experimentVersions = $(`#id_graph-${graphId}-experimentVersionsUpdate`).val();
-            graphFile = $(`#id_graph-${graphId}-graphfiles`).val();
-        }
-        if (experimentVersions != '/') {
-            basePath = $('#base_uri').val(); // may be running in subfolder, so the base path (without /stories) is passed form django
-            // compse url for ids for preview graph
-            graphPathIds = `/experiments/compare/${experimentVersions}/show/${graphFile}/${$('#id_graphvisualizer').val()}`;
-            graphPathIds = basePath + graphPathIds.replace('//', '/');
-
-            // compse url for entities for preview graph
-            graphPathEntities = `/experiments/compare/${experimentVersions}/info`;
-            graphPathEntities = basePath + graphPathEntities.replace('//', '/');
-            $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" value="${graphPathIds}"><div class="entitiesToCompare" id="${graphId}entitiesToCompare" data-comparison-href="${graphPathEntities}">loading...</div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay"></div></div></div>`);
-            initCompare(graphId, false);
-        } else {
-            $(`#${graphId}graphPreviewBox`).html('Please select a graph...');
-        }
-
-
-    });
-
-    // update all graph previews if graph type changes
-    $('#id_graphvisualizer').change(function() {
-        $('.experimentVersionsUpdate').change();
-    });
+  $(".entitiesToCompare").each(function() {
+      prefix = $(this).attr('id').replace("entitiesToCompare", "");
+      initCompare(prefix, prefix == "");
+  });
 });
+
+// export the initCompare function so stories can create comparisson graph
+module.exports = {
+  initCompare: initCompare
+}
