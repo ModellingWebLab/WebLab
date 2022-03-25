@@ -270,13 +270,13 @@ function parseEntities(entityObj, prefix) {
             }
     }
 
-    console.log(graphGlobal[prefix]['singleEntities'].model ? 'single model' : 'multiple models',
-        graphGlobal[prefix]['versionComparisons'].model ? ('- compare versions of ' + graphGlobal[prefix]['modelsWithMultipleVersions'].join(',')) : '');
-    console.log(graphGlobal[prefix]['singleEntities'].protocol ? 'single protocol' : 'multiple protocols',
-        graphGlobal[prefix]['versionComparisons'].protocol ? ('- compare versions of ' + graphGlobal[prefix]['protocolsWithMultipleVersions'].join(',')) : '');
-    console.log(graphGlobal[prefix]['singleEntities'].fittingspec ? 'single fitting spec' : 'multiple fitting specs',
-        graphGlobal[prefix]['versionComparisons'].fittingspec ? ('- compare versions of ' + graphGlobal[prefix]['fittingSpecsWithMultipleVersions'].join(',')) : '');
-    console.log(graphGlobal[prefix]['singleEntities'].dataset ? 'single dataset' : 'multiple datasets')
+//    console.log(graphGlobal[prefix]['singleEntities'].model ? 'single model' : 'multiple models',
+//        graphGlobal[prefix]['versionComparisons'].model ? ('- compare versions of ' + graphGlobal[prefix]['modelsWithMultipleVersions'].join(',')) : '');
+//    console.log(graphGlobal[prefix]['singleEntities'].protocol ? 'single protocol' : 'multiple protocols',
+//        graphGlobal[prefix]['versionComparisons'].protocol ? ('- compare versions of ' + graphGlobal[prefix]['protocolsWithMultipleVersions'].join(',')) : '');
+//    console.log(graphGlobal[prefix]['singleEntities'].fittingspec ? 'single fitting spec' : 'multiple fitting specs',
+//        graphGlobal[prefix]['versionComparisons'].fittingspec ? ('- compare versions of ' + graphGlobal[prefix]['fittingSpecsWithMultipleVersions'].join(',')) : '');
+//    console.log(graphGlobal[prefix]['singleEntities'].dataset ? 'single dataset' : 'multiple datasets')
 
 
     var entityTypes = ['model', 'protocol'];
@@ -722,7 +722,6 @@ $(document).ready(function() {
         //set relevant css class for preview box size
         $('#' + graphId + 'graphPreviewBox').removeClass();
         $('#' + graphId + 'graphPreviewBox').addClass($('#id_graphvisualizer').val() + '-preview');
-
         if ($('#id_graph-' + graphId + '-update_1').is(':checked')) {
             experimentVersions = $('#id_graph-' + graphId + '-experiment-versions').val();
             currentGraph = $('#id_graph-' + graphId + '-currentGraph').val();
@@ -752,8 +751,6 @@ $(document).ready(function() {
 
     // update all graph previews if graph type changes
     $('#id_graphvisualizer').change(function() {
-        $('.graphfiles').each(function() {
-            $(this).change();
-        });
+        $('.experimentVersionsUpdate').change();
     });
 });

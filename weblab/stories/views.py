@@ -1,7 +1,4 @@
-import csv
-import io
 import re
-from collections import OrderedDict
 
 from braces.views import UserFormKwargsMixin
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -16,10 +13,9 @@ from django.views.generic.edit import (
 from django.views.generic.list import ListView
 
 from accounts.forms import OwnershipTransferForm
-from entities.models import ModelEntity, ModelGroup, ProtocolEntity
+from entities.models import ModelGroup, ProtocolEntity
 from entities.views import EditCollaboratorsAbstractView
-from experiments.models import Experiment, ExperimentVersion, Runnable
-from repocache.models import CachedModelVersion, CachedProtocolVersion
+from experiments.models import ExperimentVersion
 
 from .forms import (
     StoryCollaboratorFormSet,
@@ -27,17 +23,15 @@ from .forms import (
     StoryGraphFormSet,
     StoryTextFormSet,
 )
+from .graph_filters import (
+    get_experiment_versions,
+    get_graph_file_names,
+    get_modelgroups,
+    get_protocols,
+    get_url,
+    get_versions_for_model_and_protocol,
+)
 from .models import Story, StoryGraph, StoryText
-
-
-def get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks):
-    return [e.latest_version for e in Experiment.objects.filter(model_version__pk__in=cachedmodelversion_pks,
-                                                                protocol_version=cachedprotocolversion)
-            if e.latest_result == Runnable.STATUS_SUCCESS and e.is_visible_to_user(user)]
-
-
-def get_url(experiment_versions):
-    return '/' + '/'.join(str(ver.pk) for ver in experiment_versions)
 
 
 class StoryListView(ListView):
@@ -148,12 +142,14 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
     form_class = StoryForm
     formset_class = StoryTextFormSet
     formset_graph_class = StoryGraphFormSet
+    template_name = 'stories/story_edit.html'
+    context_object_name = 'story'
 
     def get_success_url(self):
         ns = self.request.resolver_match.namespace
         return reverse(ns + ':stories')
 
-    def get_formset(self, initial=[{'ORDER': ''}]):
+    def get_formset(self, initial=[{'ORDER': 0, 'number': 0}]):
         if not hasattr(self, 'formset') or self.formset is None:
             form_kwargs = {'user': self.request.user}
             if self.request.method == 'POST':
@@ -166,7 +162,7 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
                 self.formset = self.formset_class(prefix='text', initial=initial, form_kwargs=form_kwargs)
         return self.formset
 
-    def get_formset_graph(self, initial=[{'ORDER': '', 'currentGraph': '', 'experimentVersions': ''}]):
+    def get_formset_graph(self, initial=[{'ORDER': 1, 'number': 0, 'currentGraph': '', 'experimentVersions': ''}]):
         if not hasattr(self, 'formsetgraph') or self.formsetgraph is None:
             form_kwargs = {'user': self.request.user}
             if self.request.method == 'POST':
@@ -184,35 +180,26 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         ns = self.request.resolver_match.namespace
         absolute_uri = self.request.build_absolute_uri()
         kwargs['base_uri'] = re.sub('/' + ns + '/.*', '', absolute_uri)
-
         kwargs['formset'] = self.get_formset()
         kwargs['formsetgraph'] = self.get_formset_graph()
+        kwargs['storyparts'] = sorted(list(kwargs['formset']) + list(kwargs['formsetgraph']),
+                                      key=lambda f: f['ORDER'].value())
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         formset = self.get_formset()
         formsetgraph = self.get_formset_graph()
-        if form.is_valid() and formset.is_valid() and formsetgraph.is_valid():
-            if len(formset.ordered_forms + formsetgraph.ordered_forms) == 0:
-                form.add_error(
-                    None,
-                    "Story is empty add at least one text box or graph. "
-                )
-                self.object = None
-                return self.form_invalid(form)
-
-            # make sure formsets are ordered correctly starting at 0
-            for order, frm in enumerate(sorted(formset.ordered_forms + formsetgraph.ordered_forms,
-                                               key=lambda f: f.cleaned_data['ORDER'])):
-                frm.cleaned_data['ORDER'] = order
-            story = form.save()
-            formset.save(story=story)
-            formsetgraph.save(story=story)
-            return self.form_valid(form)
-        else:
-            self.object = getattr(self, 'object', None)
-            return self.form_invalid(form)
+        form.num_parts = 1
+        if formset.is_valid() and formsetgraph.is_valid():
+            form.num_parts = len(formset.ordered_forms) + len(formsetgraph.ordered_forms)
+            if form.is_valid():
+                story = form.save()
+                formset.save(story=story)
+                formsetgraph.save(story=story)
+                return self.form_valid(form)
+        self.object = getattr(self, 'object', None)
+        return self.form_invalid(form)
 
 
 class StoryCreateView(StoryView, CreateView):
@@ -224,30 +211,38 @@ class StoryCreateView(StoryView, CreateView):
 
 
 class StoryEditView(StoryView, UpdateView):
-    """
-    View for editing stories
-    """
     def test_func(self):
         self.object = self.get_object()
         return self.get_object().is_editable_by(self.request.user)
 
     def get_formset(self):
-        initial = [{'description': s.description,
-                    'ORDER': s.order,
-                    'pk': s.pk} for s in StoryText.objects.filter(story=self.object)]
-        return super().get_formset(initial=initial)
+        return super().get_formset(initial=[{'number': i,
+                                             'description': s.description,
+                                             'ORDER': s.order,
+                                             'pk': s.pk}
+                                            for i, s in enumerate(StoryText.objects.filter(story=self.object))])
 
     def get_formset_graph(self):
-        initial = [{'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
-                    if s.modelgroup is not None else 'model' + str(s.cachedmodelversions.first().model.pk),
-                    'protocol': s.cachedprotocolversion.protocol.pk,
-                    'graphfiles': s.graphfilename,
-                    'currentGraph': str(s),
-                    'experimentVersions': get_url(get_experiment_versions(s.author,
-                                                                          s.cachedprotocolversion,
-                                                                          [v.pk for v in s.cachedmodelversions.all()])),
-                    'ORDER': s.order,
-                    'pk': s.pk} for s in StoryGraph.objects.filter(story=self.object)]
+        initial = []
+        for i, s in enumerate(StoryGraph.objects.filter(story=self.object)):
+            experimentVersions = get_url(get_experiment_versions(s.author,
+                                                                 s.cachedprotocolversion,
+                                                                 [v.pk for v in s.cachedmodelversions.all()]))
+            initial.append(
+                {'number': i,
+                 'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
+                                    if s.modelgroup is not None
+                                    else 'model' + str(s.cachedmodelversions.first().model.pk),
+                 'protocol': s.cachedprotocolversion.protocol.pk,
+                 'graphfilename': s.graphfilename,
+                 'graphfiles': s.graphfilename,
+                 'currentGraph': str(s),
+                 'experimentVersionsUpdate': experimentVersions,
+                 'experimentVersions': experimentVersions,
+                 'ORDER': s.order,
+                 'update': False,
+                 'pk': s.pk}
+            )
         return super().get_formset_graph(initial=initial)
 
 
@@ -256,13 +251,7 @@ class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
     template_name = 'stories/modelorgroup_selection.html'
 
     def get_queryset(self):
-        return [('', '--------- model group')] +\
-               [('modelgroup' + str(modelgroup.pk), modelgroup.title) for modelgroup in ModelGroup.objects.all()
-                if modelgroup.visible_to_user(self.request.user)] +\
-               [('', '--------- model')] +\
-               [('model' + str(model.pk), model.name)
-                for model in ModelEntity.objects.visible_to_user(self.request.user)
-                if model.repocache.versions.count()]
+        return get_modelgroups(self.request.user)
 
 
 class StoryFilterProtocolView(LoginRequiredMixin, ListView):
@@ -271,86 +260,25 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         mk = self.kwargs.get('mk', '')
-        if mk.startswith('modelgroup'):
-            mk = int(mk.replace('modelgroup', ''))
-            models = ModelGroup.objects.get(pk=mk).models.all()
-        elif mk.startswith('model'):
-            mk = int(mk.replace('model', ''))
-            models = ModelEntity.objects.filter(pk=mk)
-        else:
-            return []
-
-        selected_model_pks = models.values_list('pk', flat=True)
-        latest_model_versions_visible_pk = CachedModelVersion.objects.visible_to_user(self.request.user) \
-                                                                     .order_by('entity', '-timestamp') \
-                                                                     .values_list('pk', flat=True) \
-                                                                     .distinct('entity')
-
-        latest_protocol_versions_visible_pks = CachedProtocolVersion.objects.visible_to_user(self.request.user) \
-                                                                    .order_by('entity', '-timestamp') \
-                                                                    .values_list('pk', flat=True) \
-                                                                    .distinct('entity')
-
-        succesful_experiment_pks = ExperimentVersion.objects.filter(status=Runnable.STATUS_SUCCESS) \
-                                                    .prefetch_related('experiment__pk') \
-                                                    .values_list('experiment__pk', flat=True)
-
-        experiments = Experiment.objects.filter(pk__in=succesful_experiment_pks,
-                                                model__pk__in=selected_model_pks,
-                                                model_version__pk__in=latest_model_versions_visible_pk,
-                                                protocol_version__pk__in=latest_protocol_versions_visible_pks) \
-                                        .prefetch_related('protocol, protocol__pk, protocol__name')
-
-        return experiments.order_by('protocol__pk').values_list('protocol__pk', 'protocol__name', flat=False).distinct()
+        return get_protocols(mk, self.request.user)
 
 
 class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
     model = ExperimentVersion
     template_name = 'stories/experiment_versions.html'
 
-    def get_versions(self):
-        self.user = self.request.user
-        mk = self.kwargs.get('mk', '')
-        pk = self.kwargs.get('pk', '')
-        self.model_version_pks = []
-        self.protocol_version = None
-        self.experiment_versions = []
-        if pk:
-            self.protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version.pk
-
-            if mk.startswith('modelgroup'):
-                mk = int(mk.replace('modelgroup', ''))
-                self.model_version_pks = [m.repocache.latest_version.pk
-                                          for m in ModelGroup.objects.get(pk=mk).models.all()
-                                          if m.repocache.versions.count()]
-            else:
-                assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
-                mk = int(mk.replace('model', ''))
-                self.model_version_pks = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
-
-            self.experiment_versions = get_experiment_versions(self.user, self.protocol_version, self.model_version_pks)
-
     def get_queryset(self):
-        self.get_versions()
-        return get_url(self.experiment_versions)
+        return get_url(get_versions_for_model_and_protocol(self.request.user,
+                                                           self.kwargs.get('mk', ''),
+                                                           self.kwargs.get('pk', '')))
 
 
-class StoryFilterGraphView(StoryFilterExperimentVersions):
+class StoryFilterGraphView(LoginRequiredMixin, ListView):
+    model = ExperimentVersion
     template_name = 'stories/graph_selection.html'
 
     def get_queryset(self):
-        self.get_versions()
-
-        graph_files = OrderedDict()
-        for experimentver in self.experiment_versions:
-            try:
-                plots_data_file = experimentver.open_file('outputs-default-plots.csv').read().decode("utf-8")
-                plots_data_stream = io.StringIO(plots_data_file)
-                for row in csv.DictReader(plots_data_stream):
-                    graph_files[(row['Data file name'], row['Data file name'])] = True
-            except (FileNotFoundError, KeyError):
-                pass  # This experiemnt version has no graphs
-        return graph_files.keys()
+        return get_graph_file_names(self.request.user, self.kwargs.get('mk', ''), self.kwargs.get('pk', ''))
 
 
 class StoryRenderView(UserPassesTestMixin, DetailView):

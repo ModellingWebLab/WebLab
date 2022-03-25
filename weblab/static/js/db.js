@@ -85,11 +85,6 @@ function drawMatrix(matrix, tablePrefix)
         return (columnMapper[a].name.toLocaleLowerCase() > columnMapper[b].name.toLocaleLowerCase()) ? 1 : ((columnMapper[b].name.toLocaleLowerCase() > columnMapper[a].name.toLocaleLowerCase()) ? -1 : 0);
     });
 
-    /*console.log ("rows");
-    console.log (rowMapper);
-    console.log ("columns");
-    console.log (columnMapper);*/
-
     for (var i = 0; i < rows.length; i++) {
         mat[i] = [];
         for (var j = 0; j < columns.length; j++) {
@@ -786,8 +781,6 @@ $(document).ready(function()
 
 // Code to facilitate stories with text and graph parts
 const SimpleMDE = require('./lib/simplemde.js');
-var storyTextCount = 0;
-var storyGraphCount = 0;
 
 function moveUp(id)
 {
@@ -815,48 +808,53 @@ function remove(clicked)
     id = $(clicked.closest('tr')).find('.order').attr('id');
     name =  $(clicked.closest('tr')).find('.order').attr('name');
     order = $(clicked.closest('tr')).find('.order').val();
+    number = $(clicked.closest('tr')).find('.number').val();
     $("#storyform").append(`<input class="order" type="hidden" name="${name}" id="${id}" value="${order}">`);
 
     id = id.replace("ORDER", "DELETE");
     name = name.replace("ORDER", "DELETE");
     $("#storyform").append(`<input type="hidden" name="${name}" id="${id}" value="true">`);
+
+    id = id.replace("DELETE", "number");
+    name = name.replace("DELETE", "number");
+    $("#storyform").append(`<input type="hidden" name="${name}" id="${id}" value="${number}">`);
     $(clicked.closest('tr')).remove();
 }
 
-function renderMde(currentTextCount) // render text editor
+function renderMde(id) // render text editor
 {
-    element = document.getElementById('id_text-' + currentTextCount + '-description'); //grab new text area
+//    element = document.getElementById('id_text-' + id + '-description'); //grab new text area
+    element = document.getElementById(id);
     // initialise editor
     var simplemde = new SimpleMDE({hideIcons:['guide', 'quote', 'heading'], showIcons: ['strikethrough', 'heading-1', 'heading-2', 'heading-3', 'code', 'table', 'horizontal-rule', 'undo', 'redo'], element:element});
     simplemde.render();
 }
 
-function insertDescriptionForm(currentTextCount, descriptionValue, descriptionErrors, order, del)
+function insertDescriptionForm()
 {
-    if (del){
-        html=`<input type="hidden" name="text-${currentTextCount}-DELETE" id="id_text-${currentTextCount}-DELETE" value="true">`;
-        $('#storyparts  > tfoot').append(html);  // add new hidden delete form
-    }else{
-        html=`
-              <tr class="storypart description">
-                  <td>
-                      <div class="storypart-controls">
-                          <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
-                          <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
-                          <img class="deletepart" alt="remove story part" title="remove story part"/>
-                          <input class="order" type="hidden" name="text-${currentTextCount}-ORDER" id="id_text-${currentTextCount}-ORDER" value="${order}">
-                      </div>
-                  </td>
-                  <td class="storypart-content">
-                      ${descriptionErrors}
-                     <textarea name="text-${currentTextCount}-description" cols="40" rows="10" id="id_text-${currentTextCount}-description">${descriptionValue}</textarea>
-                  </td>
-              </tr>`;
-
-        // add new form
-        $('#storyparts  > tbody').append(html);
-        renderMde(currentTextCount);
-    }
+    currentTextCount = parseInt($('#id_text-TOTAL_FORMS').val());
+    currentGraphCount = parseInt($('#id_graph-TOTAL_FORMS').val())
+    order = currentGraphCount + currentTextCount;
+    html=`
+          <tr class="storypart description">
+              <td>
+                  <div class="storypart-controls">
+                      <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                      <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
+                      <img class="deletepart" alt="remove story part" title="remove story part"/>
+                      <input class="order" type="hidden" name="text-${currentTextCount}-ORDER" id="id_text-${currentTextCount}-ORDER" value="${order}">
+                      <input class="number" type="hidden" name="text-${currentTextCount}-number" id="id_text-${currentTextCount}-number" value="${currentTextCount}">
+                  </div>
+              </td>
+              <td class="storypart-content">
+                 <textarea name="text-${currentTextCount}-description" cols="40" rows="10" id="id_text-${currentTextCount}-description"></textarea>
+              </td>
+          </tr>`;
+    // add new form
+    $('#storyparts  > tbody').append(html);
+    renderMde(`id_text-${currentTextCount}-description`);
+    currentTextCount++;
+    $('#id_text-TOTAL_FORMS').val(currentTextCount);
 }
 
 // we may be running in a subfolder so we can't just assume /stories is the base path
@@ -865,261 +863,190 @@ function getStoryBasePath(){
     return url.replace(/stories.*/i, 'stories');
 }
 
-function insertGraphForm(currentGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph, experimentVersions)
-{
-    if (del){
-        html=`<input type="hidden" name="graph-${currentGraphCount}-DELETE" id="id_graph-${currentGraphCount}-DELETE" value="true">`;
-        $('#storyparts  > tfoot').append(html);  // add new hidden delete form
-    }else{
+//checkbox toggels dropdown enabled
+function insertGraphForm(){
+    currentTextCount = parseInt($('#id_text-TOTAL_FORMS').val());
+    currentGraphCount = parseInt($('#id_graph-TOTAL_FORMS').val())
+    order = currentGraphCount + currentTextCount;
 
-        current_graph_html = "";
-        if(currentGraph != ""){
-          current_graph_html = `
-            <div class="StoryGraphRadio">
-              <input type="radio" name="graph-${currentGraphCount}-update" value="" id="id_graph-${currentGraphCount}-update_1" class="update_1 preview-graph-control" name="graph-${currentGraphCount}-update" ${update ? '' : 'checked'}>
-               <label for="id_graph-${currentGraphCount}-update_1"><em>${currentGraph}</em></label>
-               <input type="hidden" id="id_graph-${currentGraphCount}-experiment-versions" class="experiment-versions preview-graph-control" value="${experimentVersions}">
-            </div><br/>`
-        }
+    html=`
+          <tr class="storypart graph">
+             <td>
+                <div class="storypart-controls">
+                  <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
+                  <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
+                  <img class="deletepart" alt="remove story part" title="remove story part"/>
+                  <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
+                  <input type="hidden" name="graph-${currentGraphCount}-currentGraph" class="currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="/">
+                  <input class="number" type="hidden" name="graph-${currentGraphCount}-number" id="id_graph-${currentGraphCount}-number" value="${currentGraphCount}">
+                </div>
+              </td>
+              <td class="storypart-content">
+                <div class="StoryGraphRadio" style="Display:none">
+                  <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_1" class="update_1 preview-graph-control" name="graph-${currentGraphCount}-update">
+                  <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name="graph-${currentGraphCount}-update" checked>
+                  <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
+                </div>
+                <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><select class="modelgroupselect" name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
+                <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
+                <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/>
+                <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox"></div>
+                <br/>
+              </td>
+          </tr>`;
 
-        html=`
-              <tr class="storypart graph">
-                 <td>
-                    <div class="storypart-controls">
-                      <input class="uppart" type="button" value="▲" style="font-size:15px;margin:0;padding:0;width:20px;" title="move up" alt="move up">
-                      <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
-                      <img class="deletepart" alt="remove story part" title="remove story part"/>
-                      <input class="order" type="hidden" name="graph-${currentGraphCount}-ORDER" id="id_graph-${currentGraphCount}-ORDER" value="${order}">
-                      <input type="hidden" name="graph-${currentGraphCount}-currentGraph" class="currentGraph" id="id_graph-${currentGraphCount}-currentGraph" value="${currentGraph}">
-                    </div>
-                  </td>
-                  <td class="storypart-content">
-                    ${current_graph_html}
-                    <div class="StoryGraphRadio" ${currentGraph=="" ? 'style="Display: none"' : ''}>
-                      <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name=\"graph-${currentGraphCount}-update\" ${update ? 'checked' : ''}>
-                      <label for="id_graph-${currentGraphCount}-update">Update graph</label>
-                      <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
-                    </div>
-                    ${models_or_grouperr}
-                    <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><select name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
-                    ${protocolerr}
-                    <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
-                    ${graphfileserr}
-                    <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/>
-                    <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox"></div>
-                    <br/>
-                  </td>
-              </tr>`;
+    // add new form
+    $('#storyparts  > tbody').append(html);
 
-        // add new form
-        $('#storyparts  > tbody').append(html);
-
-        //checkbox toggels dropdown enabled
-        function graphMenuVisibility()
-        {
-            update = $("#id_graph-" + currentGraphCount + "-update_0").is(':checked');
-            $("#id_graph-" + currentGraphCount + "-models_or_group").prop("disabled", !update);
-            $("#id_graph-" + currentGraphCount + "-protocol").prop("disabled", !update);
-            $("#id_graph-" + currentGraphCount + "-graphfiles").prop("disabled", !update);
-            $("#" + currentGraphCount + "-models_or_group-label").css('opacity', update ? '1.0' : '0.5');
-            $("#" + currentGraphCount + "-protocol").css('opacity', update ? '1.0' : '0.5');
-            $("#" + currentGraphCount + "-graphfiles").css('opacity', update ? '1.0' : '0.5');
-        }
-        graphMenuVisibility(currentGraphCount);
-        $("input[type='radio'][name='graph-" + currentGraphCount + "-update']").click(graphMenuVisibility);
-
-        // update graphs when protocol changes
-        $('body').on('change', "#id_graph-" + currentGraphCount + "-protocol", function() {
-            // file while waiting
-            $("#id_graph-" + currentGraphCount + "-graphfiles").html('');
-            var model = $("#id_graph-" + currentGraphCount + "-models_or_group").val();
-            var protocol = $(this).val();
-            var url = getStoryBasePath() + "/" + model+ "/" + protocol + "/graph";
-            $.ajax({
-              url: url,
-              success: function (data) {
-                $("#id_graph-" + currentGraphCount + "-graphfiles").html(data);
-                $("#id_graph-" + currentGraphCount + "-graphfiles").change();
-              }
-            })
-        });
-
-        // make sure dropdown menu for graphs is enabled when submitting
-        // in order to retain value if disabled and the form throws an error
-        $('#newstoryform').on('submit', function() {
-            $('select').each(function(){
-                    $(this).prop('disabled', false);
-                }
-            );
-        })
-
-        // update protocols when models change
-        $('body').on('change', "#id_graph-" + currentGraphCount + "-models_or_group", function() {
-            var model = $(this).val();
-            // empty protocol & file while waiting
-            $("#id_graph-" + currentGraphCount + "-protocol").html('');
-            $("#id_graph-" + currentGraphCount + "-graphfiles").html('');
-            
-            var url = getStoryBasePath() + "/" + model + "/protocols" ;
-            $.ajax({
-              url: url,
-              success: function (data) {
-                $("#id_graph-" + currentGraphCount + "-protocol").html(data);
-                $("#id_graph-" + currentGraphCount + "-protocol").change();
-              }
-            });
-        });
-
-        // update preview when graph file changes
-        $('body').on('change', "#id_graph-" + currentGraphCount + "-graphfiles", function() {
-            $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val('/'); // reset experiment versions
-            $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").change();
-
-            // retreive experiment versions
-            var model = $("#id_graph-" + currentGraphCount + "-models_or_group").val();
-            var protocol = $("#id_graph-" + currentGraphCount + "-protocol").val();
-            var url = getStoryBasePath() + "/" + model+ "/" + protocol + "/experimentversions";
-            $.ajax({
-                url: url,
-                success: function(data){
-                    new_data = data.trim();
-                    if($("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val() != new_data){
-                        $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").val(new_data);
-                        $("#id_graph-" + currentGraphCount + "-experimentVersionsUpdate").change();
-                    }
-                }
-            });
-        });
-
-        // Fill dropdowns
-        // fill models or groups
-        $.ajax({
-          url: getStoryBasePath() + "/modelorgroup",
-          success: function (data) {
-              $("#id_graph-" + currentGraphCount + "-models_or_group").html(data);
-              if(modelOrGroupValue !== ""){
-                  $("#id_graph-" + currentGraphCount + "-models_or_group").val(modelOrGroupValue);
-              }
-              // fill protocols
-              url = getStoryBasePath() + "/" + modelOrGroupValue + "/protocols";
+    // Fill dropdowns
+    // get graph selection elements
+    modelorgroup = $(`#id_graph-${currentGraphCount}-models_or_group`);
+    protocol = $(`#id_graph-${currentGraphCount}-protocol`);
+    filename = $(`#id_graph-${currentGraphCount}-graphfiles`);
+    // fill models or groups
+    $.ajax({
+      url: getStoryBasePath() + "/modelorgroup",
+      success: function (data) {
+          modelorgroup.html(data);
+          // fill protocols
+          url = getStoryBasePath() + "/protocols";
+          $.ajax({
+            url: url,
+            success: function (data) {
+              protocol.html(data);
+              // file graph file names
+              url2 = getStoryBasePath() + "/graph";
               $.ajax({
-                url: url,
+                url: url2,
                 success: function (data) {
-                  $("#id_graph-" + currentGraphCount + "-protocol").html(data);
-                  if(protocolValue !== ""){
-                      $("#id_graph-" + currentGraphCount + "-protocol").val(protocolValue);
-                  }
-                  url2 = getStoryBasePath() + "/" + modelOrGroupValue + "/" + protocolValue + "/graph";
-                  $.ajax({
-                    url: url2,
-                    success: function (data) {
-                      $("#id_graph-" + currentGraphCount + "-graphfiles").html(data);
-                      if(graphValue !== ""){
-                          $("#id_graph-" + currentGraphCount + "-graphfiles").val(graphValue);
-                          $("#id_graph-" + currentGraphCount + "-graphfiles").change();
-                      }
-                      $("#id_graph-" + currentGraphCount + "-graphfiles").change();
-                    }
-                  });
+                  filename.html(data);
                 }
-              })
-          }
-        });
-    }
+              });
+            }
+          })
+      }
+    });
+
+    // update number of graphs on page
+    currentGraphCount++;
+    $("#id_graph-TOTAL_FORMS").val(currentGraphCount);  // update number of forms
 }
 
-$( document ).ready(function()
-{
-
-  var storyparts = [];
-  // render the pre-set story parts in the correct order
-  $(".storypart").each(function()
-  {
-      order = $(this).find(".partorder").val();
-      del = $(this).find(".partdel").val() === 'true';
-      if (order ==''){
-          order = storyTextCount + storyGraphCount;
-      }else{
-          order=parseInt(order);
-      }
-      if($(this).hasClass('description')){
-              partval = $(this).find(".partval").val();
-              parterr = $(this).find(".parterr").val();
-              storyparts.push([order, insertDescriptionForm, [storyTextCount, partval, parterr, order, del]]);
-              storyTextCount++;
-          }else if ($(this).hasClass('graph')){
-              modelOrGroupValue = $(this).find(".models_or_groupval").val();
-              protocolValue = $(this).find(".protocolval").val();
-              graphValue = $(this).find(".graphfiles").val();
-              models_or_grouperr = $(this).find(".models_or_grouperr").val();
-              protocolerr = $(this).find(".protocolerr").val();
-              graphfileserr = $(this).find(".graphfileserr").val();
-              update = $(this).find(".update").val().toLowerCase() === 'true';
-              currentGraph = $(this).find(".currentGraph").val();
-              experimentVersions = $(this).find(".experimentVersions").val();
-              storyparts.push([order, insertGraphForm, [storyGraphCount, modelOrGroupValue, protocolValue, graphValue, models_or_grouperr, protocolerr, graphfileserr, order, del, update, currentGraph, experimentVersions]]);
-              storyGraphCount++;
-          }
-          $(this).remove();
+$( document ).ready(function(){
+    // disable graph legend when submitting
+    $('#newstoryform').submit(function(e) {
+        $('.graphPreviewDialog').find('input').each(function(){
+            $(this).prop('disabled', true);
+        });
+        $('.modelgroupselect').prop('disabled', false);
+        $('.graphprotocol').prop('disabled', false);
+        $('.graphfiles').prop('disabled', false);
     });
 
-    $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
-    $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
-
-    storyparts.sort((a, b) => {
-        return a[0] - b[0];
-    });
-
-    for(var i = 0 ; i < storyparts.length; i++) {
-        storyparts[i][1].apply(null, storyparts[i][2]);
+  // render markdown editors if editing
+  $(".storypart").each(function(){
+    if($(this).hasClass('description')){
+        renderMde($(this).find('textarea').attr('id'));
     }
+  });
+  //checkbox toggels dropdown enabled
+  $(document).on('click', '.preview-graph-control', function graphMenuVisibility(){
+      id = $(this).attr('id');
+      id = id.replace('id_graph-', '');
+      id = id.replace('-update_0', '');
+      id = id.replace('-update_1', '');
+      update = $(`#id_graph-${id}-update_0`).is(':checked');
+      $(`#id_graph-${id}-models_or_group`).prop("disabled", !update);
+      $(`#id_graph-${id}-protocol`).prop("disabled", !update);
+      $(`#id_graph-${id}-graphfiles`).prop("disabled", !update);
+      $(`#${id}-models_or_group-label`).css('opacity', update ? '1.0' : '0.5');
+      $(`#${id}-protocol`).css('opacity', update ? '1.0' : '0.5');
+      $(`#${id}-graphfiles`).css('opacity', update ? '1.0' : '0.5');
+  });
 
-    //link add, delete and up/down button clicks
-    $("#add-description").click(function()
-    {
-        insertDescriptionForm(storyTextCount, '', '', storyTextCount + storyGraphCount, false)
-        storyTextCount++;
-        $("#id_text-TOTAL_FORMS").val(storyTextCount);  // update number of forms
-    });
-
-    $("#add-graph").click(function()
-    {
-        insertGraphForm(storyGraphCount, '', '', '', '', '', '', storyTextCount + storyGraphCount, false, true, '', '')
-        storyGraphCount++;
-        $("#id_graph-TOTAL_FORMS").val(storyGraphCount);  // update number of forms
-    });
-
-    $("#storyparts").on("click", ".deletepart", function()
-    {
-        remove($(this));
-    });
-
-    $("#storyparts").on("click", ".uppart", function()
-    {
-        moveUp($(this));
-    });
-
-    $("#storyparts").on("click", ".downpart", function()
-    {
-        moveDown($(this));
-    });
-
-});
-
-
-
-// render markdown in story view
-$( document ).ready(function()
-{
-
-    const marked = require("./lib/marked.min.js");
-    marked.setOptions({
-        breaks: true,
-    });
-
-    $(".markdowrenderview").each(function(){
-          source = $(this).find(".markdownsource").val();
-          $(this).html(marked(source));
+  // update protocols when model changes
+  $(document).on('change', '.modelgroupselect', function(){
+      id = $(this).attr('id').replace('-models_or_group', '');
+      model = $(this).val();
+      protocol = $(`#${id}-protocol`);
+      filename = $(`#${id}-graphfiles`);
+      // empty protocol & file while waiting
+      protocol.html('');
+      filename.html('');
+      url = `${getStoryBasePath()}/${model}/protocols`;
+      $.ajax({url: url,
+              success: function (data) {
+                  protocol.html(data);
+                  protocol.change();
+             }
       });
+  });
+
+  // update graphs when protocol changes
+  $(document).on('change', '.graphprotocol', function(){
+      id = $(this).attr('id').replace('-protocol', '');
+      model = $(`#${id}-models_or_group`).val();
+      protocol = $(this).val();
+      filename = $(`#${id}-graphfiles`);
+      filename.html('');
+      url = `${getStoryBasePath()}/${model}/${protocol}/graph`;
+      $.ajax({url: url,
+              success: function (data) {
+                  filename.html(data);
+                  filename.change();
+             }
+      });
+  });
+
+  // update graph preview when file changes
+  $(document).on('change', '.graphfiles', function(){
+      id = $(this).attr('id').replace('-graphfiles', '');
+      model = $(`#${id}-models_or_group`).val();
+      protocol = $(`#${id}-protocol`).val();
+      graphfile = $(this).val();
+      experimentVersionsUpdate = $(`#${id}-experimentVersionsUpdate`);
+
+      if(graphfile != ''){
+        // retreive experiment versions
+        url = `${getStoryBasePath()}/${model}/${protocol}/experimentversions`;
+        $.ajax({url: url,
+                success: function(data){
+                    data = data.trim();
+                    experimentVersionsUpdate.val(data);
+                    experimentVersionsUpdate.change();
+                }
+        });
+      }else{
+          if(experimentVersionsUpdate.val().trim() != '/'){
+            experimentVersionsUpdate.val('/');
+            experimentVersionsUpdate.change();
+          }
+      }
+  });
+
+  //link add, delete and up/down button clicks
+  $("#add-description").click(insertDescriptionForm);
+  $("#add-graph").click(insertGraphForm);
+
+  $("#storyparts").on("click", ".deletepart", function(){
+      remove($(this));
+  });
+
+  $("#storyparts").on("click", ".uppart", function(){
+      moveUp($(this));
+  });
+
+  $("#storyparts").on("click", ".downpart", function(){
+      moveDown($(this));
+  });
+
+  // render markdown in story view
+  const marked = require("./lib/marked.min.js");
+  marked.setOptions({breaks: true,});
+
+  $(".markdowrenderview").each(function(){
+        source = $(this).find(".markdownsource").val();
+        $(this).html(marked(source));
+    });
 });
 
