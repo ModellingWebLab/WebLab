@@ -502,7 +502,7 @@ class TestStoryCreateView:
             sorted([m.repocache.latest_version for m in models], key=str)
         assert StoryGraph.objects.first().graphfilename == data['graph-0-graphfiles']
 
-    def test_edite_storygraph_initial(self, logged_in_user, client, helpers, models, experiment_versions):
+    def test_edit_storygraph_initial(self, logged_in_user, client, helpers, models, experiment_versions):
         story = recipes.story.make(author=logged_in_user, title='story1', id=10001)
         models = models[-2:]
         modelgroup = recipes.modelgroup.make(models=models, author=logged_in_user, id=20001)
@@ -534,11 +534,15 @@ class TestStoryCreateView:
 
         response = client.get('/stories/%s/edit' % story.pk, data=data)
         assert response.context['formsetgraph'].initial == [
-            {'models_or_group': 'modelgroup%s' % modelgroup.pk,
+            {'number': 0,
+             'models_or_group': 'modelgroup%s' % modelgroup.pk,
              'protocol': experiment.protocol.pk,
+             'graphfilename': 'outputs_Relative_resting_potential_gnuplot_data.csv',
              'graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv',
              'currentGraph': str(storygraph),
-             'experimentVersions': '/%s' % experiment.latest_version.pk,
+             'experimentVersionsUpdate': f'/{experiment.latest_version.pk}',
+             'experimentVersions': f'/{experiment.latest_version.pk}',
+             'update': False,
              'ORDER': 0,
              'pk': 30001}
         ]
@@ -549,11 +553,15 @@ class TestStoryCreateView:
         storygraph.save()
         response = client.get('/stories/%s/edit' % story.pk, data=data)
         assert response.context['formsetgraph'].initial == [
-            {'models_or_group': 'model%s' % experiment.model.pk,
+            {'number': 0,
+             'models_or_group': 'model%s' % experiment.model.pk,
              'protocol': experiment.protocol.pk,
+             'graphfilename': 'outputs_Relative_resting_potential_gnuplot_data.csv',
              'graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv',
              'currentGraph': str(storygraph),
-             'experimentVersions': '/%s' % experiment.latest_version.pk,
+             'experimentVersionsUpdate': f'/{experiment.latest_version.pk}',
+             'experimentVersions': f'/{experiment.latest_version.pk}',
+             'update': False,
              'ORDER': 0,
              'pk': 30001}
         ]
