@@ -502,6 +502,31 @@ class TestStoryCreateView:
             sorted([m.repocache.latest_version for m in models], key=str)
         assert StoryGraph.objects.first().graphfilename == data['graph-0-graphfiles']
 
+    def test_create_story_invalid_text(self, logged_in_admin, client):
+        assert Story.objects.count() == 0
+        assert StoryText.objects.count() == 0
+
+        data = {'title': 'new title',
+                'visibility': 'private',
+                'graphvisualizer': 'displayPlotFlot',
+                'text-TOTAL_FORMS': 1,
+                'text-INITIAL_FORMS': 1,
+                'text-MIN_NUM_FORMS': 0,
+                'text-MAX_NUM_FORMS': 1000,
+                'graph-TOTAL_FORMS': 0,
+                'graph-INITIAL_FORMS': 0,
+                'graph-MIN_NUM_FORMS': 0,
+                'graph-MAX_NUM_FORMS': 1000,
+                'text-0-ORDER': 0,
+                'text-0-description': '',
+                'text-0-ORDER': 0,
+                'text-0-number': 0}
+
+        response = client.post('/stories/new', data=data)
+        assert response.status_code == 200
+        assert Story.objects.count() == 0
+        assert StoryText.objects.count() == 0
+
     def test_edit_storygraph_initial(self, logged_in_user, client, helpers, models, experiment_versions):
         story = recipes.story.make(author=logged_in_user, title='story1', id=10001)
         models = models[-2:]
