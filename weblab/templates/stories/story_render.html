@@ -24,13 +24,15 @@
     {% else %}
 
 {% if part.experiment_versions|length > 1 %}
-<input type="hidden" id="{{ forloop.counter0 }}entityIdsToCompare" value="{%url 'experiments:compare' part.experiment_versions%}/show/{{ part.graphfilename }}/{{object.graphvisualizer}}">
- <div class="entitiesToCompare" id="{{ forloop.counter0 }}entitiesToCompare" data-comparison-href="{% url 'experiments:compare_json' part.experiment_versions %}">
-    loading...
-    </div>
-    <div id="{{ forloop.counter0 }}filedetails" class="filedetails">
-        <div id="{{ forloop.counter0 }}filedisplay"></div>
-    </div>
+ <div class="graphPreviewBox">
+ <input type="hidden" id="{{ forloop.counter0 }}entityIdsToCompare" value="{%url 'experiments:compare' part.experiment_versions%}/show/{{ part.graphfilename }}/{{object.graphvisualizer}}">
+  <div class="entitiesToCompare" id="{{ forloop.counter0 }}entitiesToCompare" data-comparison-href="{% url 'experiments:compare_json' part.experiment_versions %}">
+     loading...
+     </div>
+     <div id="{{ forloop.counter0 }}filedetails" class="filedetails">
+         <div id="{{ forloop.counter0 }}filedisplay"></div>
+     </div>
+ </div>
 {% endif %}
 
     {% endif %}

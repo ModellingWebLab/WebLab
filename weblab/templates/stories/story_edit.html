@@ -6,7 +6,7 @@
 {% block title %}Story {{ object.title }} - {% endblock title %}
 {% block content %}
 
-{%if objec.id %}
+{%if object.id %}
   <a href="{% url 'stories:story_edit' object.id %}"><h1>Story: {{ object.title }}</h1></a>
   <small>Created <time>{{object.created_at}}</time> by <em>{{object.author.full_name}}</em>.</small>
 {% else %}
@@ -89,11 +89,11 @@
                     <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
                     <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label>{{part.graphfiles}}<br/><br/>
                     <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox">
-                      <div class="graphPreviewDialog"><input type="hidden" id="{{part.number.value}}entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experimentVersions.value}}/show/{%if part.update.value %}{{ part.graphfiles.value  }}{% else %}{{ part.graphfilename.value }}{%endif%}/{{form.graphvisualizer.value}}">
+                      <div class="graphPreviewDialog">{% if  part.update.value and not part.graphfiles.value %}Please select a graph...{% else %}<input type="hidden" id="{{part.number.value}}entityIdsToCompare" class="entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experimentVersions.value}}/show/{%if part.update.value %}{{ part.graphfiles.value  }}{% else %}{{ part.graphfilename.value }}{%endif%}/{{form.graphvisualizer.value}}">
                         <div class="entitiesToCompare" id="{{part.number.value}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{%if part.update.value %}{{ part.experimentVersionsUpdate.value  }}{% else %}{{part.experimentVersions.value}}{% endif %}/info">loading...</div>
                           <div id="{{part.number.value}}filedetails" class="filedetails">
                           <div id="{{part.number.value}}filedisplay"></div>
-                        </div>
+                        </div>{% endif %}
                       </div>
                     </div>
                     <br/>

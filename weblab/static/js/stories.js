@@ -1,7 +1,55 @@
+/* stories facilities */
+
 var $ = require('jquery');
 var compare = require('./compare.js')
 
-/* stories facilities */
+//spinner to indicate page is loading
+var loadingSpinner = null;
+class jQuerySpinner {
+  constructor(options) {
+    const opt = Object.assign({
+      duration: 300,
+      created: true
+                }, options);
+                this.parentId_ = opt.parentId;
+                this.appendId_ = '_spinner_wrap';
+                this.overlayId_ = `${this.parentId_}${this.appendId_}`;
+    this.duration_ = opt.duration;
+    if (opt.created) {
+      this.createElement();
+    }
+  }
+
+  createElement() {
+      try {
+          const $el = $(`#${this.parentId_}`);
+          const str = `<div id="${this.overlayId_}" class="jquery-spinner-wrap"><div class="jquery-spinner-circle"><span class="jquery-spinner-bar"></span></div></div>`;
+          const html = $.parseHTML(str);
+          $el.append(html);
+      } catch (err) {
+          console.error(err);
+      }
+  }
+
+  removeElement() {
+    try {
+      const $el = $(`#${this.overlayId_}`);
+      $el.remove();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  show() {
+    $(`#${this.overlayId_}`).fadeIn(this.duration_);
+  }
+
+  hide() {
+    $(`#${this.overlayId_}`).fadeOut(this.duration_);
+  }
+}
+
+
 // Code to facilitate stories with text and graph parts
 const SimpleMDE = require('./lib/simplemde.js');
 
@@ -112,7 +160,7 @@ function insertGraphForm(){
                 <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><select class="modelgroupselect" name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
                 <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
                 <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/>
-                <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox"></div>
+                <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox">Please select a graph...</div>
                 <br/>
               </td>
           </tr>`;
@@ -154,8 +202,32 @@ function insertGraphForm(){
     $("#id_graph-TOTAL_FORMS").val(currentGraphCount);  // update number of forms
 }
 
+function updateLoadingSpinner(){
+    num_not_loading = 0;
+    $('.graphPreviewBox').each(function(){
+        txt = $(this).text().trim();
+        if(txt == 'Please select a graph...' || txt == 'failed to load the contents'){
+            num_not_loading ++;
+        }
+    });
+
+    if ((num_not_loading +  ($('.graphPreviewBox').find('canvas').length /2) + $('.graphPreviewBox').find('svg').length) <  $('.graphPreviewBox').length){
+        if(loadingSpinner == null){
+            loadingSpinner = new jQuerySpinner({parentId: 'fullwidthpage'});
+        }
+        loadingSpinner.show();
+        setTimeout(updateLoadingSpinner, 1000);
+    }else if(loadingSpinner != null){
+        loadingSpinner.hide();
+    }
+}
+
 // hook up functionality when document has loaded
-$(document ).ready(function(){
+$(document).ready(function(){
+
+    // start loading spinner if needed
+    updateLoadingSpinner();
+
     // disable graph legend when submitting
     $('#newstoryform').submit(function(e) {
         $('.graphPreviewDialog').find('input').each(function(){
@@ -236,7 +308,7 @@ $(document ).ready(function(){
                 success: function(data){
                     data = data.trim();
                     experimentVersionsUpdate.val(data);
-                    experimentVersionsUpdate.change();
+                    experimentVersionsUpdate.change();experimentVersionsUpdate
                 }
         });
       }else{
@@ -280,7 +352,8 @@ $(document ).ready(function(){
         graphId = match[1];
 
         //set relevant css class for preview box size
-        $(`#${graphId}graphPreviewBox`).removeClass();
+        $(`#${graphId}graphPreviewBox`).removeClass('displayPlotFlot-preview');
+        $(`#${graphId}graphPreviewBox`).removeClass('displayPlotHC-preview');
         $(`#${graphId}graphPreviewBox`).addClass(`${$('#id_graphvisualizer').val()}-preview`);
         if ($(`#id_graph-${graphId}-update_1`).is(':checked')) {
             experimentVersions = $(`#id_graph-${graphId}-experimentVersions`).val();
@@ -300,18 +373,21 @@ $(document ).ready(function(){
             // compse url for entities for preview graph
             graphPathEntities = `/experiments/compare/${experimentVersions}/info`;
             graphPathEntities = basePath + graphPathEntities.replace('//', '/');
-            $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" value="${graphPathIds}"><div class="entitiesToCompare" id="${graphId}entitiesToCompare" data-comparison-href="${graphPathEntities}">loading...</div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay"></div></div></div>`);
+            $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" class="entityIdsToCompare" value="${graphPathIds}"><div class="entitiesToCompare" id="${graphId}entitiesToCompare" data-comparison-href="${graphPathEntities}">loading...</div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay"></div></div></div>`);
             compare.initCompare(graphId, false);
         } else {
             $(`#${graphId}graphPreviewBox`).html('Please select a graph...');
         }
-
-
     });
 
     // update all graph previews if graph type changes
     $('#id_graphvisualizer').change(function() {
-        $('.experimentVersionsUpdate').change();
+        $('.graphPreviewBox').each(function(){
+            $(this).html('Switching graph visualizer...');
+        });
+        updateLoadingSpinner();
+        $('.update_1').change();
+
     });
 });
 
