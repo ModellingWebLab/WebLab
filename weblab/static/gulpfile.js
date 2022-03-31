@@ -1,5 +1,5 @@
 var gulp = require('gulp');
-var sass = require('gulp-sass');
+const sass = require('gulp-sass')(require('node-sass'));
 var watchify = require('watchify');
 var browserify = require('browserify');
 var source = require('vinyl-source-stream');
