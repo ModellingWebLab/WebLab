@@ -245,8 +245,8 @@ class ModelGroupForm(UserKwargModelFormMixin, forms.ModelForm):
     def clean_models(self):
         # Ordering mapping for visibility checking
         ORDER_MAP = {'private': 0,
-                     'moderated': 1,
-                     'public': 2}
+                     'public': 1,
+                     'moderated': 2}
         models = self.cleaned_data['models']
         visibility = self.cleaned_data['visibility']
         if any([ORDER_MAP[m.visibility] < ORDER_MAP[visibility] for m in models]):

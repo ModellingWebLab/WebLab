@@ -25,4 +25,3 @@ class StoriesConfig(AppConfig):
 
         # Connect signal to post_save
         post_delete.connect(model_deleted, ModelEntity)
-

@@ -1,39 +1,46 @@
-import pytest
 import shutil
 from pathlib import Path
 
+import pytest
 from django.urls import reverse
 from guardian.shortcuts import assign_perm, remove_perm
 
 from core import recipes
-from stories.models import Story, StoryText, StoryGraph
-from stories.views import get_experiment_versions_url
+from entities.models import ProtocolEntity
+from experiments.models import Experiment
+from stories.models import Story, StoryGraph, StoryText
+from stories.views import get_experiment_versions, get_url
 
 
 @pytest.fixture
-def experiment_with_result_public(experiment_with_result):
+def experiment_with_result_public_no_file(experiment_with_result):
     experiment = experiment_with_result.experiment
     # make sure protocol / models are visible
     experiment.model_version.visibility = 'public'
     experiment.protocol_version.visibility = 'public'
     experiment.model_version.save()
     experiment.protocol_version.save()
-
-    # add graphs
-    experiment_with_result.mkdir()
-    shutil.copy(Path(__file__).absolute().parent.joinpath('./test.omex'),
-                experiment_with_result.archive_path)
-
     return experiment_with_result
+
+
+@pytest.fixture
+def experiment_with_result_public(experiment_with_result_public_no_file):
+    # add graphs
+    experiment_with_result_public_no_file.mkdir()
+    shutil.copy(Path(__file__).absolute().parent.joinpath('./test.omex'),
+                experiment_with_result_public_no_file.archive_path)
+
+    return experiment_with_result_public_no_file
 
 
 @pytest.mark.django_db
 def test_get_experiment_versions_url(experiment_with_result_public):
     user = experiment_with_result_public.author
     cachedprotocolversion = experiment_with_result_public.experiment.protocol_version
-    cachedmodelversions = [experiment_with_result_public.experiment.model_version]
-    assert str(get_experiment_versions_url(user, cachedprotocolversion, cachedmodelversions)) == \
-        '/' + str(experiment_with_result_public.pk)
+    cachedmodelversion_pks = [experiment_with_result_public.experiment.model_version.pk]
+    experiment_versions = get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks)
+    assert [v.pk for v in experiment_versions] == [experiment_with_result_public.pk]
+    assert str(get_url(experiment_versions)) == '/' + str(experiment_with_result_public.pk)
 
 
 @pytest.mark.django_db
@@ -279,6 +286,46 @@ class TestStoryTransferView:
 
 @pytest.mark.django_db
 class TestStoryCreateView:
+    @pytest.fixture
+    def models(self, logged_in_user, helpers):
+        models = []
+        # want to make sure ids from models, protocols and experiments are unique
+        # to avoid being able to assign wrong objects
+        for i in range(5):
+            models.append(recipes.model.make(author=logged_in_user, id=100 + i))
+        return models
+
+    @pytest.fixture
+    def experiment_versions(self, logged_in_user, helpers, models):
+        # make some models and protocols
+        protocols = []
+        # make sure ids are unique
+        for i in range(3):
+            protocols.append(recipes.protocol.make(author=logged_in_user, id=200 + i))
+        exp_versions = []
+
+        # add some versions and add experiment versions
+        for model in models:
+            helpers.add_cached_version(model, visibility='private')
+            # for the last protocol add another experiment version
+            for protocol in protocols + [protocols[-1]]:
+                helpers.add_cached_version(protocol, visibility='public')
+                exp_version = recipes.experiment_version.make(
+                    status='SUCCESS',
+                    experiment__model=model,
+                    experiment__model_version=model.repocache.latest_version,
+                    experiment__protocol=protocol,
+                    experiment__protocol_version=protocol.repocache.latest_version)
+                exp_version.mkdir()
+                with (exp_version.abs_path / 'result.txt').open('w') as f:
+                    f.write('experiment results')
+
+                # add graphs
+                exp_version.mkdir()
+                shutil.copy(Path(__file__).absolute().parent.joinpath('./test.omex'), exp_version.archive_path)
+                exp_versions.append(exp_version)
+        return exp_versions
+
     def test_create_story_page_loads(self, logged_in_user, client, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
         response = client.get('/stories/new')
@@ -373,9 +420,177 @@ class TestStoryCreateView:
         assert StoryText.objects.count() == story_text_count
         assert StoryGraph.objects.count() == story_graph_count
 
+    def test_create_story_with_graph_model(self, logged_in_user, client, helpers, experiment_versions):
+        Story.objects.count() == 0
+        StoryText.objects.count() == 0
+        StoryGraph.objects.count() == 0
+        helpers.add_permission(logged_in_user, 'create_model')
 
-@pytest.mark.django_db
-class TestStoryEditView:
+        experiment = experiment_versions[-1].experiment
+        data = {'title': 'new test to check error where form save wrong protocol version',
+                'visibility': 'public',
+                'graphvisualizer': 'displayPlotFlot',
+                'text-TOTAL_FORMS': '1',
+                'text-INITIAL_FORMS': '1',
+                'text-MIN_NUM_FORMS': '0',
+                'text-MAX_NUM_FORMS': '1000',
+                'graph-TOTAL_FORMS': '  1',
+                'graph-INITIAL_FORMS': '1',
+                'graph-MIN_NUM_FORMS': '0',
+                'graph-MAX_NUM_FORMS': '1000',
+                'text-0-description': 'test text',
+                'text-0-ORDER': '0',
+                'graph-0-ORDER': '1',
+                'graph-0-update': 'True',
+                'graph-0-models_or_group': 'model%s' % experiment.model.pk,
+                'graph-0-protocol': '%s' % experiment.protocol.pk,
+                'graph-0-graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv'}
+
+        response = client.post('/stories/new', data=data)
+        assert response.status_code == 302
+        assert Story.objects.count() == 1
+        assert StoryText.objects.count() == 1
+        assert StoryGraph.objects.count() == 1
+
+        assert Story.objects.first().title == data['title']
+        assert StoryText.objects.first().story == Story.objects.first()
+        assert StoryGraph.objects.first().story == Story.objects.first()
+        assert StoryGraph.objects.first().cachedprotocolversion == experiment.protocol.repocache.latest_version
+        assert list(StoryGraph.objects.first().cachedmodelversions.all()) == [experiment.model.repocache.latest_version]
+        assert StoryGraph.objects.first().graphfilename == data['graph-0-graphfiles']
+
+    def test_create_story_with_graph_modelgroup(self, logged_in_user, client, helpers, models, experiment_versions):
+        Story.objects.count() == 0
+        StoryText.objects.count() == 0
+        StoryGraph.objects.count() == 0
+        helpers.add_permission(logged_in_user, 'create_model')
+
+        models = models[1:4]
+        modelgroup = recipes.modelgroup.make(models=models, author=logged_in_user)
+        experiment = experiment_versions[-1].experiment
+
+        data = {'title': 'new test to check error where form save wrong protocol version',
+                'visibility': 'public',
+                'graphvisualizer': 'displayPlotFlot',
+                'text-TOTAL_FORMS': '1',
+                'text-INITIAL_FORMS': '1',
+                'text-MIN_NUM_FORMS': '0',
+                'text-MAX_NUM_FORMS': '1000',
+                'graph-TOTAL_FORMS': '  1',
+                'graph-INITIAL_FORMS': '1',
+                'graph-MIN_NUM_FORMS': '0',
+                'graph-MAX_NUM_FORMS': '1000',
+                'text-0-description': 'test text',
+                'text-0-ORDER': '0',
+                'graph-0-ORDER': '1',
+                'graph-0-update': 'True',
+                'graph-0-models_or_group': 'modelgroup%s' % modelgroup.pk,
+                'graph-0-protocol': '%s' % experiment.protocol.pk,
+                'graph-0-graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv'}
+
+        response = client.post('/stories/new', data=data)
+        assert response.status_code == 302
+        assert Story.objects.count() == 1
+        assert StoryText.objects.count() == 1
+        assert StoryGraph.objects.count() == 1
+
+        assert Story.objects.first().title == data['title']
+        assert StoryText.objects.first().story == Story.objects.first()
+        assert StoryGraph.objects.first().story == Story.objects.first()
+        assert StoryGraph.objects.first().cachedprotocolversion == experiment.protocol.repocache.latest_version
+        assert sorted(StoryGraph.objects.first().cachedmodelversions.all(), key=str) == \
+            sorted([m.repocache.latest_version for m in models], key=str)
+        assert StoryGraph.objects.first().graphfilename == data['graph-0-graphfiles']
+
+    def test_create_story_invalid_text(self, logged_in_admin, client):
+        assert Story.objects.count() == 0
+        assert StoryText.objects.count() == 0
+
+        data = {'title': 'new title',
+                'visibility': 'private',
+                'graphvisualizer': 'displayPlotFlot',
+                'text-TOTAL_FORMS': 1,
+                'text-INITIAL_FORMS': 1,
+                'text-MIN_NUM_FORMS': 0,
+                'text-MAX_NUM_FORMS': 1000,
+                'graph-TOTAL_FORMS': 0,
+                'graph-INITIAL_FORMS': 0,
+                'graph-MIN_NUM_FORMS': 0,
+                'graph-MAX_NUM_FORMS': 1000,
+                'text-0-ORDER': 0,
+                'text-0-description': '',
+                'text-0-ORDER': 0,
+                'text-0-number': 0}
+
+        response = client.post('/stories/new', data=data)
+        assert response.status_code == 200
+        assert Story.objects.count() == 0
+        assert StoryText.objects.count() == 0
+
+    def test_edit_storygraph_initial(self, logged_in_user, client, helpers, models, experiment_versions):
+        story = recipes.story.make(author=logged_in_user, title='story1', id=10001)
+        models = models[-2:]
+        modelgroup = recipes.modelgroup.make(models=models, author=logged_in_user, id=20001)
+        experiment = experiment_versions[-1].experiment
+
+        storygraph = recipes.story_graph.make(id=30001, author=logged_in_user, story=story, modelgroup=modelgroup,
+                                              cachedprotocolversion=experiment.protocol_version, order=0,
+                                              graphfilename='outputs_Relative_resting_potential_gnuplot_data.csv')
+        model_group_mv = [m.repocache.latest_version for m in modelgroup.models.all() if m.repocache.versions.count()]
+        storygraph.set_cachedmodelversions(model_group_mv)
+
+        data = {'title': 'new test to check error where form save wrong protocol version',
+                'visibility': 'public',
+                'graphvisualizer': 'displayPlotFlot',
+                'text-TOTAL_FORMS': '0',
+                'text-INITIAL_FORMS': '0',
+                'text-MIN_NUM_FORMS': '0',
+                'text-MAX_NUM_FORMS': '1000',
+                'graph-TOTAL_FORMS': '  1',
+                'graph-INITIAL_FORMS': '1',
+                'graph-MIN_NUM_FORMS': '0',
+                'graph-MAX_NUM_FORMS': '1000',
+                'text-0-description': 'test text',
+                'graph-0-ORDER': '0',
+                'graph-0-update': 'True',
+                'graph-0-models_or_group': 'modelgroup%s' % modelgroup.pk,
+                'graph-0-protocol': '%s' % experiment.protocol.pk,
+                'graph-0-graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv'}
+
+        response = client.get('/stories/%s/edit' % story.pk, data=data)
+        assert response.context['formsetgraph'].initial == [
+            {'number': 0,
+             'models_or_group': 'modelgroup%s' % modelgroup.pk,
+             'protocol': experiment.protocol.pk,
+             'graphfilename': 'outputs_Relative_resting_potential_gnuplot_data.csv',
+             'graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv',
+             'currentGraph': str(storygraph),
+             'experimentVersionsUpdate': f'/{experiment.latest_version.pk}',
+             'experimentVersions': f'/{experiment.latest_version.pk}',
+             'update': False,
+             'ORDER': 0,
+             'pk': 30001}
+        ]
+
+        # check without modelgroup
+        storygraph.modelgroup = None
+        storygraph.set_cachedmodelversions([experiment.model_version])
+        storygraph.save()
+        response = client.get('/stories/%s/edit' % story.pk, data=data)
+        assert response.context['formsetgraph'].initial == [
+            {'number': 0,
+             'models_or_group': 'model%s' % experiment.model.pk,
+             'protocol': experiment.protocol.pk,
+             'graphfilename': 'outputs_Relative_resting_potential_gnuplot_data.csv',
+             'graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv',
+             'currentGraph': str(storygraph),
+             'experimentVersionsUpdate': f'/{experiment.latest_version.pk}',
+             'experimentVersions': f'/{experiment.latest_version.pk}',
+             'update': False,
+             'ORDER': 0,
+             'pk': 30001}
+        ]
+
     def test_edit_story_without_text_or_graph(self, logged_in_user, client):
         story = recipes.story.make(author=logged_in_user, title='story1')
         assert story.title == 'story1'
@@ -521,6 +736,8 @@ class TestStoryFilterModelOrGroupView:
 class TestStoryFilterProtocolView:
     def test_requires_login(self, client):
         model = recipes.model.make()
+        cached_model = recipes.cached_model.make(entity=model)
+        recipes.cached_model_version.make(entity=cached_model)
         response = client.get('/stories/model%d/protocols' % model.pk)
         assert response.status_code == 302
         assert '/login/' in response.url
@@ -533,7 +750,7 @@ class TestStoryFilterProtocolView:
 
     def test_get_protocol(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
-        response = client.get('/stories/model%d/protocols' % experiment.model_version.pk)
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
         assert response.status_code == 200
         assert experiment.protocol.name in str(response.content)
 
@@ -549,6 +766,114 @@ class TestStoryFilterProtocolView:
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '<option value="">--------- protocol</option>'
 
+    def test_get_protocol_via_modelgroup_multile_versions(self, client, logged_in_user, experiment_with_result,
+                                                          helpers, other_user):
+        # test added to check we don't get the same protocol twice of there are multiple versions
+        # (verified that the test fails with the old version of the views)
+        experiment = experiment_with_result.experiment
+        experiment.protool = recipes.protocol.make(author=logged_in_user, id=200001)
+        experiment.protocol_version = helpers.add_cached_version(experiment.protocol, visibility='public')
+        experiment.save()
+
+        # add a new model & run the experiment with the same protocol
+        model2 = recipes.model.make()
+        helpers.add_cached_version(model2, visibility='public')
+        version = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=model2,
+            experiment__model_version=model2.repocache.latest_version,
+            experiment__protocol=experiment.protocol,
+            experiment__protocol_version=experiment.protocol.repocache.latest_version,
+        )
+        version.mkdir()
+        with (version.abs_path / 'result.txt').open('w') as f:
+            f.write('experiment results')
+
+        # add new protocol version
+        old_protocol_version = experiment.protocol_version
+        helpers.add_cached_version(experiment.protocol, visibility='public')
+
+        # rerun the experiment with this protocol version & the original experiment
+        version = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=experiment.model,
+            experiment__model_version=experiment.model.repocache.latest_version,
+            experiment__protocol=experiment.protocol,
+            experiment__protocol_version=experiment.protocol.repocache.latest_version,
+        )
+        version.mkdir()
+        with (version.abs_path / 'result.txt').open('w') as f:
+            f.write('experiment results')
+
+        # make sure everything is public for convenience
+        for experiment in Experiment.objects.all():
+            experiment.model_version.visibility = 'public'
+            experiment.protocol_version.visibility = 'public'
+            experiment.model_version.save()
+            experiment.protocol_version.save()
+
+        modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model, model2])
+
+        response = client.get('/stories/modelgroup%d/protocols' % modelgroup.pk)
+        assert response.status_code == 200
+        # check we do get the protocol
+        assert experiment.protocol.name in str(response.content)
+        # check we don't get multiple instances of protocol
+        response_without_protocol = str(response.content).replace(experiment.protocol.name, '', 1)
+        assert experiment.protocol.name not in response_without_protocol
+
+        # Now check that we do not get the protocol if we make it private
+        experiment.protocol.author = other_user
+        experiment.protocol_version.visibility = 'private'
+        experiment.protocol_version.save()
+        old_protocol_version.visibility = 'private'
+        old_protocol_version.save()
+        experiment.save()
+
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name not in str(response.content)
+
+        # check that we do get it if we make us a collaborator
+        assign_perm('edit_entity', logged_in_user, experiment.protocol)
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name in str(response.content)
+
+        # Now check that we do not get the protocol if we make the model private
+        # make sure modelgroup just has this model
+        experiment.model.author = other_user
+        assert len(experiment.model.repocache.versions.all()) == 1
+        experiment.model_version.visibility = 'private'
+        experiment.model_version.save()
+        experiment.model.save()
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name not in str(response.content)
+
+        # check that we do get it if we make us a collaborator
+        assign_perm('edit_entity', logged_in_user, experiment.model)
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name in str(response.content)
+
+        # check protocol doesn't show if no succesful run for latest protocol version
+        protocol = ProtocolEntity.objects.get(pk=experiment.protocol.pk)
+        helpers.add_cached_version(protocol, visibility='private')
+        assert experiment.versions.count() > 0
+
+        experiment.protocol.repocache.latest_version
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name not in str(response.content)
+
+        # check it works again if we hide that version
+        # remove us as collaborator (version was already private)
+        remove_perm('edit_entity', logged_in_user, experiment.protocol)
+        response = client.get('/stories/model%d/protocols' % experiment.model.pk)
+        assert response.status_code == 200
+        assert experiment.protocol.name in str(response.content)
+
 
 @pytest.mark.django_db
 class TestStoryFilterExperimentVersions:
@@ -561,14 +886,14 @@ class TestStoryFilterExperimentVersions:
     def test_get_graph_not_visible(self, client, logged_in_user, experiment_with_result):
         experiment = experiment_with_result.experiment
         response = client.get('/stories/model%d/%d/experimentversions' %
-                              (experiment.model_version.pk, experiment.protocol_version.pk))
+                              (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '/'
 
     def test_get_graph(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
         response = client.get('/stories/model%d/%d/experimentversions' %
-                              (experiment.model_version.pk, experiment.protocol_version.pk))
+                              (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '/' + str(experiment_with_result_public.pk)
 
@@ -576,7 +901,7 @@ class TestStoryFilterExperimentVersions:
         experiment = experiment_with_result_public.experiment
         modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model])
         response = client.get('/stories/modelgroup%d/%d/experimentversions' %
-                              (modelgroup.pk, experiment.protocol_version.pk))
+                              (modelgroup.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '/' + str(experiment_with_result_public.pk)
 
@@ -603,14 +928,21 @@ class TestStoryFilterGraphView:
     def test_get_graph_not_visible(self, client, logged_in_user, experiment_with_result):
         experiment = experiment_with_result.experiment
         response = client.get('/stories/model%d/%d/graph' %
-                              (experiment.model_version.pk, experiment.protocol_version.pk))
+                              (experiment.model.pk, experiment.protocol.pk))
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
+
+    def test_get_graph_not_no_files(self, client, logged_in_admin, experiment_with_result_public_no_file):
+        experiment = experiment_with_result_public_no_file.experiment
+        response = client.get('/stories/model%d/%d/graph' %
+                              (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == '<option value="">--------- graph</option>'
 
     def test_get_graph(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
         response = client.get('/stories/model%d/%d/graph' %
-                              (experiment.model_version.pk, experiment.protocol_version.pk))
+                              (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert 'outputs_Resting_potential_gnuplot_data.csv' in str(response.content)
         assert 'outputs_Relative_resting_potential_gnuplot_data.csv' in str(response.content)
@@ -618,7 +950,7 @@ class TestStoryFilterGraphView:
     def test_get_graph_via_modelgroup(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
         modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model])
-        response = client.get('/stories/modelgroup%d/%d/graph' % (modelgroup.pk, experiment.protocol_version.pk))
+        response = client.get('/stories/modelgroup%d/%d/graph' % (modelgroup.pk, experiment.protocol.pk))
         assert response.status_code == 200
         assert 'outputs_Resting_potential_gnuplot_data.csv' in str(response.content)
         assert 'outputs_Relative_resting_potential_gnuplot_data.csv' in str(response.content)

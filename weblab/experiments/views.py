@@ -465,6 +465,7 @@ class ExperimentComparisonJsonView(View):
             'modelVersion': exp.model_version.get_name(),
             'protoVersion': exp.protocol_version.get_name(),
             'runNumber': version.run_number,
+            'groups': [{'id': group.pk, 'title': group.title} for group in version.experiment.model.model_groups.all()]
         })
         return details
 
@@ -569,3 +570,4 @@ class ExperimentVersionArchiveView(dataset_views.DatasetArchiveView):
     def get_archive_name(self, version):
         """For historical reasons this is different from the archive_name."""
         return get_valid_filename('%s.zip' % version.experiment.name)
+

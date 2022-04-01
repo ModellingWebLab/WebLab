@@ -157,6 +157,13 @@ class TestModelGroupForm:
         form = ModelGroupForm(user=admin_user, data=form_data)
         assert form.fields['visibility'].choices == [('private', 'Private'),
                                                      ('public', 'Public'), ('moderated', 'Moderated')]
+        assert not form.is_valid()
+
+        models = recipes.model.make(_quantity=2, author=admin_user)
+        form_data = {'title': 'new model group', 'visibility': 'public', 'models': [public_model], }
+        form = ModelGroupForm(user=admin_user, data=form_data)
+        assert form.fields['visibility'].choices == [('private', 'Private'),
+                                                     ('public', 'Public'), ('moderated', 'Moderated')]
         assert form.is_valid()
 
     def test_fil_edit_form(self, user, models):

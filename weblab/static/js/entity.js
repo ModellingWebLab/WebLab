@@ -940,11 +940,33 @@ $(document).ready(function(){
         });
     });
 
+
+    ORDER_MAP = {'private': 0,
+                 'public': 1,
+                 'moderated': 2};
+
+    // set which visibility levels are available
+    function set_visibility(){
+        $('#id_visibility option').each(function(){
+          $(this).removeAttr('disabled');
+        });
+        $('#id_models option').each(function(){
+            my_visibility = $('#modelvisibility' + $(this).val()).val();
+            $('#id_visibility option').each(function(){
+                if(ORDER_MAP[$(this).val()] > ORDER_MAP[my_visibility]){
+                    $(this).attr('disabled', 'disabled');
+                }
+            });
+        });
+    }
+
     $('#deselectModelFromGroup').click(function(){
         $('#availableModels').append($('#id_models').find(":selected"));
+        set_visibility();
     });
     $('#slectModelForGroup').click(function(){
-        $('#id_models').append($('#availableModels').find(":selected"));
+        $('#id_models').append(selected = $('#availableModels').find(":selected"));
+        set_visibility();
     });
 
     $('.modelGroupSavebutton').click(function(){
@@ -953,5 +975,17 @@ $(document).ready(function(){
             $(this).prop('selected', true);
         });
     });
+
+    // disable models with wrong visibility for the selected visibility
+    $('#id_visibility').change(function(){
+       // set enabledness on all available models
+       $('#availableModels option').each(function(){
+           visibility = $('#id_visibility').val();
+           my_visibility = $('#modelvisibility' + $(this).val()).val();
+           $(this).attr('disabled', ORDER_MAP[visibility] > ORDER_MAP[my_visibility]);
+       });
+    });
+    $('#id_visibility').change();
+    set_visibility();
 });
 

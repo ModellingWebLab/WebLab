@@ -76,6 +76,7 @@ button,
 
 
 .navbar {
+        z-index:150;
 	height: 60px;
 	padding: 0;
 	margin: 0;
@@ -105,6 +106,8 @@ button,
 }
 
 .footer-navbar {
+  position: relative;
+  z-index:150;
   height: 20px;
   padding: 0;
   margin: 0;
@@ -139,7 +142,7 @@ button,
   min-width: 100px;
   position: relative;
   z-index: 99;
-  background-color: #ffffff;
+/*  background-color: #ffffff;*/
 
   ul {
     display: none; /* Hides the drop-down menu */
@@ -816,6 +819,9 @@ li.entityviz-PRIVATE
   display:inline-block;
   vertical-align:middle;
 }
+.StoryGraphRadio em{
+  color: black;
+}
 
 /* markdown rendering code blocks  */
 .markdowrenderview pre{
@@ -834,12 +840,17 @@ li.entityviz-PRIVATE
 }
 
 /* style for graphs using prefix ids */
-.flot-buttons-div input {
+.flot-buttons-div input, .buttons-div input {
   margin-left: 5px; }
 
+.flot-buttons-div, .buttons-div {
+  text-align: left;
+  padding: 5px 0px 5px 0px;
+ }
+
 .flot-buttons-div {
-  float: right;
-  text-align: right; }
+  text-align: right;
+  float: right;}
 
 
 /* model group selector */
@@ -919,6 +930,12 @@ td.storypart-content{
     border: 1px dashed #A9A9A9;
     min-height: 526px;
 }
+
+
+#id_visibility option:disabled, #availableModels option:disabled{
+    color:#E0E0E0;
+}
+
 
 
 /* SimpleMde markdown editor css */
@@ -1570,7 +1587,7 @@ span.CodeMirror-selectedtext {
     background: rgba(255, 0, 0, 0.15);
 }
 
-
+/* jQuery loading spinner */
 /*!
  * jQuery UI CSS Framework 1.10.4
  * http://jqueryui.com
@@ -1581,64 +1598,105 @@ span.CodeMirror-selectedtext {
  *
  * http://api.jqueryui.com/category/theming/
  */ /* Layout helpers ----------------------------------*/ .ui-helper-hidden {
-	display: none;
+        display: none;
 }
+
 .ui-helper-hidden-accessible {
-	border: 0;
-	clip: rect(0 0 0 0);
-	height: 1px;
-	margin: -1px;
-	overflow: hidden;
-	padding: 0;
-	position: absolute;
-	width: 1px;
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
 }
+
 .ui-helper-reset {
-	margin: 0;
-	padding: 0;
-	border: 0;
-	outline: 0;
-	line-height: 1.3;
-	text-decoration: none;
-	font-size: 100%;
-	list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    line-height: 1.3;
+    text-decoration: none;
+    font-size: 100%;
+    list-style: none;
 }
+
 .ui-helper-clearfix:before, .ui-helper-clearfix:after {
-	content: "";
-	display: table;
-	border-collapse: collapse;
+    content: "";
+    display: table;
+    border-collapse: collapse;
 }
+
 .ui-helper-clearfix:after {
-	clear: both;
+    clear: both;
 }
+
 .ui-helper-clearfix {
-	min-height: 0; /* support: IE7 */
+    min-height: 0; /* support: IE7 */
 }
+
 .ui-helper-zfix {
-	width: 100%;
-	height: 100%;
-	top: 0;
-	left: 0;
-	position: absolute;
-	opacity: 0;
-	filter:Alpha(Opacity=0);
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    position: absolute;
+    opacity: 0;
+    filter: Alpha(Opacity=0);
 }
+
 .ui-front {
-	z-index: 100;
+    z-index: 100;
 }
+
 /* Interaction Cues ----------------------------------*/ .ui-state-disabled {
-	cursor: default !important;
+    cursor: default !important;
 }
+
 /* Icons ----------------------------------*/ /* states and images */ .ui-icon {
-	display: block;
-	text-indent: -99999px;
-	overflow: hidden;
-	background-repeat: no-repeat;
+    display: block;
+    text-indent: -99999px;
+    overflow: hidden;
+    background-repeat: no-repeat;
 }
+
 /* Misc visuals ----------------------------------*/ /* Overlays */ .ui-widget-overlay {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
+
+.jquery-spinner-wrap {
+    position: fixed;
+    top: 0px;
+    z-index: 100;
+    width: 100%;
+    height: 100%;
+    display: none;
+    background: rgba(245,245,245,0.5);
+}
+
+.jquery-spinner-circle {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.jquery-spinner-bar {
+    width: 40px;
+    height: 40px;
+    border: 4px #ddd solid;
+    border-top: 4px #263e6a solid;
+    border-radius: 50%;
+    animation: sp-anime 0.8s infinite linear;
+}
+
+@keyframes sp-anime {
+    100% {transform: rotate(360deg);}
+}
+

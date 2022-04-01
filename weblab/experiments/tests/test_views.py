@@ -1063,7 +1063,7 @@ class TestExperimentDeletion:
         response = client.post('/experiments/%d/delete' % experiment.pk)
 
         assert response.status_code == 302
-        assert response.url == '/experiments/'
+        assert response.url.endswith('/experiments/')
 
         assert not Experiment.objects.filter(pk=experiment.pk).exists()
         assert not exp_ver_path.exists()
@@ -1094,7 +1094,7 @@ class TestExperimentDeletion:
         response = client.post('/experiments/%d/versions/%d/delete' % (experiment.pk, experiment_with_result.pk))
 
         assert response.status_code == 302
-        assert response.url == '/experiments/%d/versions/' % experiment.pk
+        assert response.url.endswith('/experiments/%d/versions/' % experiment.pk)
 
         assert not ExperimentVersion.objects.filter(pk=experiment_with_result.pk).exists()
         assert not exp_ver_path.exists()
@@ -1243,6 +1243,7 @@ class TestExperimentComparisonView:
 class TestExperimentComparisonJsonView:
     def test_compare_experiments(self, client, experiment_version, helpers):
         exp = experiment_version.experiment
+        model_group = recipes.modelgroup.make(title='mymodelgroup', visibility='public', models=[exp.model])
         protocol = recipes.protocol.make()
         protocol_commit = helpers.add_version(protocol, visibility='public')
         exp.protocol.repo.tag('v1')
@@ -1271,6 +1272,7 @@ class TestExperimentComparisonJsonView:
         assert versions[0]['protoVersion'] == 'v1'
         assert versions[0]['name'] == exp.name
         assert versions[0]['runNumber'] == 1
+        assert versions[0]['groups'] == [{'id': model_group.id, 'title': 'mymodelgroup'}]
 
     def test_only_compare_visible_experiments(self, client, experiment_version, helpers):
         ver1 = experiment_version
@@ -1329,7 +1331,7 @@ class TestExperimentComparisonJsonView:
         assert file1['filetype'] == 'http://purl.org/NET/mediatypes/text/plain'
         assert not file1['masterFile']
         assert file1['size'] == 27
-        assert file1['url'] == (
+        assert file1['url'].endswith(
             '/experiments/%d/versions/%d/download/stdout.txt' % (exp.pk, experiment_version.pk)
         )
 
@@ -1370,7 +1372,7 @@ class TestExperimentVersionJsonView:
         assert ver['version'] == version.id
         assert ver['files'] == []
         assert ver['numFiles'] == 0
-        assert ver['download_url'] == (
+        assert ver['download_url'].endswith(
             '/experiments/%d/versions/%d/archive' % (version.experiment.pk, version.pk)
         )
 
@@ -1393,7 +1395,7 @@ class TestExperimentVersionJsonView:
         assert file1['filetype'] == 'http://purl.org/NET/mediatypes/text/plain'
         assert not file1['masterFile']
         assert file1['size'] == 27
-        assert file1['url'] == (
+        assert file1['url'].endswith(
             '/experiments/%d/versions/%d/download/stdout.txt' % (version.experiment.pk, version.pk)
         )
 
@@ -1548,7 +1550,7 @@ class TestExperimentSimulateCallbackView:
         )
 
         assert response.status_code == 302
-        assert response.url == '/experiments/%d/versions/%d' % (version.experiment.id, version.id)
+        assert response.url.endswith('/experiments/%d/versions/%d' % (version.experiment.id, version.id))
         assert mock_process.call_count == 1
         assert mock_process.call_args[0][0]['returntype'] == 'success'
         assert mock_process.call_args[0][0]['returnmsg'] == 'experiment was successful'
@@ -1574,7 +1576,7 @@ class TestExperimentSimulateCallbackView:
         )
 
         assert response.status_code == 302
-        assert response.url == '/experiments/%d/versions/%d' % (version.experiment.id, version.id)
+        assert response.url.endswith('/experiments/%d/versions/%d' % (version.experiment.id, version.id))
         assert mock_process.call_count == 1
 
         messages = list(get_messages(response.wsgi_request))

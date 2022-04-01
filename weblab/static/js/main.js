@@ -3,6 +3,7 @@ require('jquery-migrate');
 $.migrateMute = true;
 require('jquery-ui-browserify');
 var utils = require('./lib/utils.js')
+require('./stories.js');
 require('./entitynew.js');
 require('./db.js');
 var entity = require('./entity.js');

@@ -1,6 +1,65 @@
 var utils = require('../../lib/utils.js');
 var common = require('../../expt_common.js');
 
+/* toggle functionality to force groups on/off */
+function groupToggle(){
+    groupClass = $(this).attr('id').replace('selectGroup-', '.')
+    prefix = $(this).attr('id').replace('selectGroup-group-', '').split('-')[0];
+    totalNumChoices = $(`#${prefix}choices > .flotLegendEntity`).length;
+
+    togglerChecked = $(this).is(':checked');
+    groupCheckboxes = $(groupClass);
+
+    // set all checboxes on/off as appropriate
+    for(var i=0; i< groupCheckboxes.length; i++){
+        // click the last one (or second to last if the group is all checboxes)
+        if(!togglerChecked && (i ==0 && groupCheckboxes.length == totalNumChoices)){ // if we are deselecting all items, make sure the first one is aneabled
+            $(groupCheckboxes[i]).prop('checked', true);
+        }else if(i == groupCheckboxes.length -1){ // click last item
+            $(groupCheckboxes[i]).prop('disabled', false);
+            $(groupCheckboxes[i]).prop('checked', !togglerChecked);
+            $(groupCheckboxes[i]).click();
+       }else{ // set the desired enabledness
+           $(groupCheckboxes[i]).prop('checked', togglerChecked);
+       }
+    }
+}
+
+/*  toggle group buttons on/off if every group is set on/off */
+function checkGroups(){
+    prefix = $(this).parent().parent().attr('id').replace('choices', '');
+    groupInputs = $(this).parent().parent().parent().children('input');
+    for(var i=0; i < groupInputs.length; i++){
+        id = $(groupInputs[i]).attr('id');
+        if(id.startsWith('selectGroup-')){
+            groupClass = id.replace('selectGroup-', '.');
+            numInGroup = $(groupClass).length;
+            numSelected = $(`${groupClass}:checked`).length;
+            numSelectedNotDisabled = $(`${groupClass}:checked:not(:disabled)`).length;
+            if (numInGroup == numSelected){
+                $($(groupInputs[i])).prop('checked', true);
+            }else if(numSelectedNotDisabled == 0 || (numSelected == numSelectedNotDisabled && numSelected  == 1)){
+                $($(groupInputs[i])).prop('checked', false);
+            }
+        }else if(id.endsWith('selectToggler')){
+            totalNumChoices = $(`#${prefix}choices >> input`).length;
+            numSelected = $(`#${prefix}choices >> input:checked`).length;
+            if(numSelected == totalNumChoices){
+                $($(groupInputs[i])).prop('checked', true);
+            }else if(numSelected ==0 || (numSelected ==1 && totalNumChoices > 1)){
+                $($(groupInputs[i])).prop('checked', false);
+            }
+        }
+    }
+}
+
+function toggleSelectAll(){
+   checked = $(this).is(':checked');
+   $(this).parent().children('input').each(function(){
+       $(this).prop('checked', checked);
+   });
+}
+
 /* create and append the div for showing the plot choices */
 function createAppendChoicesDiv (thisPlot, parentDiv) {
     var choicesDiv = document.createElement("div");
@@ -48,20 +107,33 @@ function createAppendResetButton(thisPlot, parentDiv) {
 }
 
 /* create and append a select toggler to the div element */
-function createAppendSelectToggler(thisPlot, parentDiv) {
+function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
     var selectTogglerEl = document.createElement('input');
     selectTogglerEl.id = thisPlot.graphIds['selectTogglerId'];
+    selectTogglerEl.setAttribute('checked', 'checked');
     selectTogglerEl.type = 'checkbox';
-    parentDiv.appendChild (selectTogglerEl);
+    parentDiv.appendChild(selectTogglerEl);
+    $(selectTogglerEl).click(toggleSelectAll);
 
     var label = document.createElement('label');
     label.setAttribute('for', thisPlot.graphIds['selectTogglerId']);
-    label.innerHTML = 'Select all';
+    label.innerHTML = 'Toggle all &nbsp&nbsp';
     parentDiv.appendChild(label);
 
-    var selectToggler = $('#' + thisPlot.graphIds['selectTogglerId']);
-    selectToggler.attr({ 'checked': 'checked' });
-    setTogglerTitle(selectToggler);
+    for(var groupId in groups){
+        var selectGroupEl = document.createElement('input');
+        selectGroupEl.id = `selectGroup-${groupId}`;
+        selectGroupEl.setAttribute('checked', 'checked');
+        selectGroupEl.type = 'checkbox';
+        parentDiv.appendChild (selectGroupEl);
+        $(selectGroupEl).click(groupToggle);
+
+        var groupLabel = document.createElement('label');
+        groupLabel.setAttribute('for', `selectGroup-${groupId}`);
+        groupLabel.setAttribute('checked', 'checked');
+        groupLabel.innerHTML = `Toggle ${groups[groupId]} &nbsp&nbsp`;
+        parentDiv.appendChild(groupLabel);
+    }
 }
 
 /* indicator of linestyle type */
@@ -304,7 +376,7 @@ function setListeners(thisPlot, plotProperties, moreThanOneDataset) {
 
 /* provide dataset toggler title */
 function setTogglerTitle(toggler) {
-  toggler.attr('title', toggler.is(':checked') ? 'Select one (cannot select none!)' : 'Select all');
+  toggler.attr('title', toggler.is(':checked') ? 'Select one (cannot select none!)' : 'Toggle all');
 }
 
 /**
@@ -581,6 +653,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
         var styleLinespointsOrPoints = isStyleLinespointsOrPoints(thisFile.linestyle);
 
         var csvDatas = new Array ();
+        var groups = {};
         for (var i = 0; i < thisFile.entities.length; i++)
         {
             csvDatas.push ({
@@ -589,6 +662,9 @@ contentFlotPlotComparer.prototype.showContents = function ()
                 entity: thisFile.entities[i].entityLink,
                 file: thisFile.entities[i].entityFileLink
             });
+            for (var q=0; q < thisFile.entities[i].entityLink.groups.length; q++) {
+                groups[`group-${this.graphIds['prefix']}-${thisFile.entities[i].entityLink.groups[q]['id']}`] = thisFile.entities[i].entityLink.groups[q]['title'];
+            }
         }
 
         // Some of the plots won't come from specified plots, so these are missing.
@@ -597,7 +673,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
 
         var flotPlotDivId = this.graphIds['prefix'] + 'flotplot-' + thisFileSig;
         createAppendFlotPlotDiv(this, thisDiv, flotPlotDivId);
-        createAppendSelectToggler(this, thisDiv);
+        createAppendSelectToggler(this, thisDiv, groups);
         createAppendResetButton(this, thisDiv);
         createAppendChoicesDiv(this, thisDiv);
         createAppendLegendDiv(this, thisDiv);
@@ -644,6 +720,11 @@ contentFlotPlotComparer.prototype.showContents = function ()
                                                      'name': key,
                                                      'checked': 'checked',
                                                      'id': inputId });
+
+                for (var q=0; q < eachCSVData.entity.groups.length; q++) {
+                  $(newInput).addClass(`group-${this.graphIds['prefix']}-${eachCSVData.entity.groups[q]['id']}`);
+                }
+                $(newInput).click(checkGroups);
                 choicesContainer.append ($("<div></div>").addClass ("flotLegendEntity").append(newInput).append(colouredSpan).append('&nbsp;').append(newLabel));
                 //choicesContainer.append(newInput).append(colouredSpan).append('&nbsp;').append(newLabel);
                 curColor++;
@@ -700,7 +781,7 @@ function flotContent (prefix='')
     this.graphIds = { prefix: prefix,
                       choicesDivId: prefix + 'choices',
                       resetButtonDivId: prefix + 'flot-buttons-div',
-                      resetButtonDivClass: 'flot-buttons-div',
+                      resetButtonDivClass: 'buttons-div',
                       colouredSpanIdPrefix: prefix + 'legend-colour-span-',
                       legendDivId: prefix + 'legend',
                       tooltipId: prefix + 'flotTooltip',

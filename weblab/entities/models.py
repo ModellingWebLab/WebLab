@@ -464,7 +464,7 @@ class ModelGroup(UserCreatedModelMixin, VisibilityModelMixin):
 
     permission_str = 'edit_modelgroup'
     title = models.CharField(max_length=255)
-    models = models.ManyToManyField(ModelEntity)
+    models = models.ManyToManyField(ModelEntity, related_name='model_groups')
 
     class Meta:
         ordering = ['title']

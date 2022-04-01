@@ -102,7 +102,7 @@ urlpatterns = [
         views.StoryRenderView.as_view(),
         name='story_render',
     ),
+
 ]
 
 app_name = 'stories'
-

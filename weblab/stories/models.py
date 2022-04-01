@@ -1,13 +1,13 @@
 from django.db import models
 from django.db.models import TextField
-from django.db.utils import IntegrityError
 from django.db.models.signals import m2m_changed
+from django.db.utils import IntegrityError
 from django.dispatch import receiver
-from core.visibility import Visibility
-from core.models import UserCreatedModelMixin, VisibilityModelMixin
 
-from repocache.models import CachedModelVersion, CachedProtocolVersion
+from core.models import UserCreatedModelMixin, VisibilityModelMixin
+from core.visibility import Visibility
 from entities.models import ModelGroup
+from repocache.models import CachedModelVersion, CachedProtocolVersion
 
 
 class Story(UserCreatedModelMixin, VisibilityModelMixin):
@@ -65,7 +65,7 @@ class StoryGraph(StoryItem):
     """
     A graph for a story
     """
-    graphfilename = TextField(blank=False)
+    graphfilename = TextField(blank=True, null=True)
     cachedprotocolversion = models.ForeignKey(CachedProtocolVersion, null=False, blank=False, on_delete=models.CASCADE,
                                               related_name="protocolforgraph")
     cachedmodelversions = models.ManyToManyField(CachedModelVersion)
@@ -74,7 +74,7 @@ class StoryGraph(StoryItem):
     def __str__(self):
         return (self.modelgroup.title if self.modelgroup is not None
                 else self.cachedmodelversions.first().model.name) +\
-            " / " + self.cachedprotocolversion.protocol.name + " / " + self.graphfilename
+            f' / {self.cachedprotocolversion.protocol.name} / {self.graphfilename}'
 
     def set_cachedmodelversions(self, cachedmodelversions):
         self.setting_cachedmodelversions = True

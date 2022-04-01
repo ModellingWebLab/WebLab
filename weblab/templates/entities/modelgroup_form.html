@@ -28,6 +28,9 @@
                 <div class="modelgroup-model-selector-colt"><ul class="errorlist"><li>{% if  form.models.errors  %}{{ form.models.errors }}{% endif %}</li></ul></div>
              </div>
 
+{% for model in form.models.field.queryset %}
+  <input type="hidden" class="modelvisibility" id="modelvisibility{{model.pk}}" value="{{model.visibility}}">
+{% endfor %}
             <div class="modelgroup-model-selector-row">
                 <div class="modelgroup-model-selector-col">
                     <select class="selectList" id="availableModels" size="{{form.models.field.queryset|length }}" {%if form.models.field.disabled%} disabled {% endif %}>
