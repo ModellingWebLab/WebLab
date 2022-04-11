@@ -108,6 +108,9 @@ function createAppendResetButton(thisPlot, parentDiv) {
 
 /* create and append a select toggler to the div element */
 function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
+    var toggleLabel = $("<div class='legendhead'>Toggle groups of models</div>");
+    parentDiv.appendChild(toggleLabel.get(0));
+
     var selectTogglerEl = document.createElement('input');
     selectTogglerEl.id = thisPlot.graphIds['selectTogglerId'];
     selectTogglerEl.setAttribute('checked', 'checked');
@@ -117,7 +120,7 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
 
     var label = document.createElement('label');
     label.setAttribute('for', thisPlot.graphIds['selectTogglerId']);
-    label.innerHTML = 'Toggle all &nbsp&nbsp';
+    label.innerHTML = 'All &nbsp&nbsp';
     parentDiv.appendChild(label);
 
     for(var groupId in groups){
@@ -131,9 +134,12 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
         var groupLabel = document.createElement('label');
         groupLabel.setAttribute('for', `selectGroup-${groupId}`);
         groupLabel.setAttribute('checked', 'checked');
-        groupLabel.innerHTML = `Toggle ${groups[groupId]} &nbsp&nbsp`;
+        groupLabel.innerHTML = `${groups[groupId]} &nbsp&nbsp`;
         parentDiv.appendChild(groupLabel);
     }
+
+    var toggleLabel = $("<div class='legendhead'>Toggle models</div>");
+    parentDiv.appendChild(toggleLabel.get(0));
 }
 
 /* indicator of linestyle type */
