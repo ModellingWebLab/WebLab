@@ -1,65 +1,6 @@
 var utils = require('../../lib/utils.js');
 var common = require('../../expt_common.js');
 
-/* toggle functionality to force groups on/off */
-function groupToggle(){
-    groupClass = $(this).attr('id').replace('selectGroup-', '.')
-    prefix = $(this).attr('id').replace('selectGroup-group-', '').split('-')[0];
-    totalNumChoices = $(`#${prefix}choices > .flotLegendEntity`).length;
-
-    togglerChecked = $(this).is(':checked');
-    groupCheckboxes = $(groupClass);
-
-    // set all checboxes on/off as appropriate
-    for(var i=0; i< groupCheckboxes.length; i++){
-        // click the last one (or second to last if the group is all checboxes)
-        if(!togglerChecked && (i ==0 && groupCheckboxes.length == totalNumChoices)){ // if we are deselecting all items, make sure the first one is aneabled
-            $(groupCheckboxes[i]).prop('checked', true);
-        }else if(i == groupCheckboxes.length -1){ // click last item
-            $(groupCheckboxes[i]).prop('disabled', false);
-            $(groupCheckboxes[i]).prop('checked', !togglerChecked);
-            $(groupCheckboxes[i]).click();
-       }else{ // set the desired enabledness
-           $(groupCheckboxes[i]).prop('checked', togglerChecked);
-       }
-    }
-}
-
-/*  toggle group buttons on/off if every group is set on/off */
-function checkGroups(){
-    prefix = $(this).parent().parent().attr('id').replace('choices', '');
-    groupInputs = $(this).parent().parent().parent().children('input');
-    for(var i=0; i < groupInputs.length; i++){
-        id = $(groupInputs[i]).attr('id');
-        if(id.startsWith('selectGroup-')){
-            groupClass = id.replace('selectGroup-', '.');
-            numInGroup = $(groupClass).length;
-            numSelected = $(`${groupClass}:checked`).length;
-            numSelectedNotDisabled = $(`${groupClass}:checked:not(:disabled)`).length;
-            if (numInGroup == numSelected){
-                $($(groupInputs[i])).prop('checked', true);
-            }else if(numSelectedNotDisabled == 0 || (numSelected == numSelectedNotDisabled && numSelected  == 1)){
-                $($(groupInputs[i])).prop('checked', false);
-            }
-        }else if(id.endsWith('selectToggler')){
-            totalNumChoices = $(`#${prefix}choices >> input`).length;
-            numSelected = $(`#${prefix}choices >> input:checked`).length;
-            if(numSelected == totalNumChoices){
-                $($(groupInputs[i])).prop('checked', true);
-            }else if(numSelected ==0 || (numSelected ==1 && totalNumChoices > 1)){
-                $($(groupInputs[i])).prop('checked', false);
-            }
-        }
-    }
-}
-
-function toggleSelectAll(){
-   checked = $(this).is(':checked');
-   $(this).parent().children('input').each(function(){
-       $(this).prop('checked', checked);
-   });
-}
-
 /* create and append the div for showing the plot choices */
 function createAppendChoicesDiv (thisPlot, parentDiv) {
     var choicesDiv = document.createElement("div");
@@ -116,7 +57,6 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
     selectTogglerEl.setAttribute('checked', 'checked');
     selectTogglerEl.type = 'checkbox';
     parentDiv.appendChild(selectTogglerEl);
-    $(selectTogglerEl).click(toggleSelectAll);
 
     var label = document.createElement('label');
     label.setAttribute('for', thisPlot.graphIds['selectTogglerId']);
@@ -126,14 +66,14 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
     for(var groupId in groups){
         var selectGroupEl = document.createElement('input');
         selectGroupEl.id = `selectGroup-${groupId}`;
+        selectGroupEl.class='selectgroup';
         selectGroupEl.setAttribute('checked', 'checked');
         selectGroupEl.type = 'checkbox';
+        selectGroupEl.className = `${thisPlot.graphIds["prefix"]}grouptoggle`;
         parentDiv.appendChild (selectGroupEl);
-        $(selectGroupEl).click(groupToggle);
 
         var groupLabel = document.createElement('label');
         groupLabel.setAttribute('for', `selectGroup-${groupId}`);
-        groupLabel.setAttribute('checked', 'checked');
         groupLabel.innerHTML = `${groups[groupId]} &nbsp&nbsp`;
         parentDiv.appendChild(groupLabel);
     }
@@ -237,6 +177,20 @@ function retrieveGenericSettings(legendContainer) {
   return genericSettings;
 }
 
+
+//update all & groups toggle
+function updateGroups(prefix){
+    all_selected = $(`#${prefix}choices`).find('input[type=checkbox]:checked').length == $(`#${prefix}choices`).find('input[type=checkbox]').length;
+    $(`#${prefix}selectToggler`).prop('checked', all_selected);
+    $(`.${prefix}grouptoggle`).each(function(){
+        id = $(this).attr('id');
+        groupClass = id.replace('selectGroup-', '.');
+        numInGroup = $(groupClass).length;
+        numSelected = $(`${groupClass}:checked`).length;
+        $(this).prop('checked', numInGroup == numSelected);
+    });
+}
+
 /**
  * Attach the click, select, hover, etc listeners to the plot
  *
@@ -267,6 +221,7 @@ function setListeners(thisPlot, plotProperties, moreThanOneDataset) {
           /* re-plot using existing coordinates */
           plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
         }
+        updateGroups(thisPlot.graphIds['prefix']); //update all & groups
     });
 
     /* listen to user selecting an area of the plot to zoom into */
@@ -339,8 +294,33 @@ function setListeners(thisPlot, plotProperties, moreThanOneDataset) {
             $('#' + thisPlot.graphIds['choicesDivId'] + ' input:checkbox:eq(0)').prop({ 'disabled': true, 'checked': true });
           }
           plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
+          updateGroups(thisPlot.graphIds['prefix']); //update all & groups
       });
     }
+
+    // group toggle
+    $(`.${thisPlot.graphIds['prefix']}grouptoggle`).click(function(){
+        togglerChecked = $(this).is(':checked');
+        groupClass = $(this).attr('id').replace('selectGroup-', '.');
+        numDataSets = $(`#${thisPlot.graphIds['prefix']}choices`).find('input[type=checkbox]').length;
+        if(numDataSets == $(groupClass).length){
+            // this group contains all models
+            allToggler = $(`#${thisPlot.graphIds['prefix']}selectToggler`);
+            allToggler.prop('checked', !togglerChecked);
+            $(`#${thisPlot.graphIds['prefix']}selectToggler`).click();
+        }else{
+            // set all checboxes on/off as appropriate
+            $(groupClass).each(function(){
+                $(this).prop('disabled', false);
+                $(this).prop('checked', togglerChecked);
+            });
+            // update graph
+            plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
+            updateGroups(thisPlot.graphIds['prefix']); // update all & groups
+        }
+    });
+
+
 
     // mouse over for legend
     var legend = $("#" + thisPlot.graphIds['choicesDivId']);
@@ -730,14 +710,8 @@ contentFlotPlotComparer.prototype.showContents = function ()
                 for (var q=0; q < eachCSVData.entity.groups.length; q++) {
                   $(newInput).addClass(`group-${this.graphIds['prefix']}-${eachCSVData.entity.groups[q]['id']}`);
                 }
-                $(newInput).click(checkGroups);
                 choicesContainer.append ($("<div></div>").addClass ("flotLegendEntity").append(newInput).append(colouredSpan).append('&nbsp;').append(newLabel));
-                //choicesContainer.append(newInput).append(colouredSpan).append('&nbsp;').append(newLabel);
                 curColor++;
-                /*if (i!=csvData.length)
-                {
-                    choicesContainer.append('<br/>');
-                }*/
             }
         }
 
