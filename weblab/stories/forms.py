@@ -101,11 +101,11 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
         self.fields['models_or_group'] = forms.CharField(required=False,
-                                                         widget=forms.Select(attrs={'class': 'modelgroupselect'}))
+                                                         widget=forms.Select(attrs={'class': 'modelgroupselect'}, choices= get_modelgroups(self.user)))
         self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
         self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphfiles'}))
 
-        self.fields['models_or_group'].widget.choices = get_modelgroups(self.user)
+#        self.fields['models_or_group'].widget.choices = get_modelgroups(self.user)
         if 'initial' in kwargs:
             disabled = not kwargs['initial'].get('update', True)
             models_or_group = kwargs['initial'].get('models_or_group', '')
@@ -175,21 +175,21 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             mk = self.cleaned_data['models_or_group']
             pk = self.cleaned_data['protocol']
             modelgroup = None
-            if mk.startswith('modelgroup'):
-                mk = int(mk.replace('modelgroup', ''))
-                modelgroup = ModelGroup.objects.get(pk=mk)
-                model_versions = [m.repocache.latest_version for m in modelgroup.models.all()
-                                  if m.repocache.versions.count()]
-            else:
-                assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
-                mk = int(mk.replace('model', ''))
-                model_versions = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
-            storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
-            if not hasattr(storygraph, 'author') or storygraph.author is None:
-                storygraph.author = self.user
-            storygraph.modelgroup = modelgroup
-            storygraph.set_cachedmodelversions(model_versions)
-        storygraph.save()
+#            if mk.startswith('modelgroup'):
+#                mk = int(mk.replace('modelgroup', ''))
+#                modelgroup = ModelGroup.objects.get(pk=mk)
+#                model_versions = [m.repocache.latest_version for m in modelgroup.models.all()
+#                                  if m.repocache.versions.count()]
+#            else:
+#                assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
+#                mk = int(mk.replace('model', ''))
+#                model_versions = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
+#            storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
+#            if not hasattr(storygraph, 'author') or storygraph.author is None:
+#                storygraph.author = self.user
+#            storygraph.modelgroup = modelgroup
+#            storygraph.cachedmodelversions.set(model_versions)
+#        storygraph.save()
         return storygraph
 
     def delete(self, **kwargs):

@@ -81,7 +81,35 @@
                       <br/>
                     </div>
                     <ul class="errorlist"><li>{{ part.models_or_group.errors }}</li></ul>
-                    <label id="{{part.number.value}}-models_or_group-label" for="id_graph-{{part.number.value}}-models_or_group">Select model or model group: </label>{{part.models_or_group}}<br/>
+                    <label id="{{part.number.value}}-models_or_group-label" for="id_graph-{{part.number.value}}-models_or_group">Select model or model group: </label><br/>
+
+      <div class="modelgroup-model-selector">
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col left"><h5>Available models</h5></div>
+                <div class="modelgroup-model-selector-col"><h5>Selected models & groups</h5></div>
+             </div>
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col left"><label>Filter search: </label><input class="searchModel" id="{{part.number.value}}-searchAvailableModel" autocomplete="off"><br/></div>
+                <div class="modelgroup-model-selector-colt"><ul class="errorlist"><li></li></ul></div>
+             </div>
+
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col">
+                    <select class="selectList" class="selectList" id="{{part.number.value}}-availableModels" size="{{part.models_or_group|length}}">
+                        {% for model in part.models_or_group%}{{model}}{% endfor %}                      
+                    </select>
+                </div>
+                <div class="modelgroup-model-selector-col div-table-buttons">
+                   <input class="deselectModelFromGroup" id="{{part.number.value}}-deselectModelFromGroup" type="button" value="◀" style="display: inline-block;" title="move left" alt="move left">
+                   <input class="slectModelForGroup" id="{{part.number.value}}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right">
+                </div>
+                <div class="modelgroup-model-selector-col">
+                    <select required="" name="models" class="selectList" id="{{part.number.value}}-id_models" size="{{part.models_or_group|length}}">
+                    </select>
+                </div>
+           </div>                        
+                        
+
 
                     <ul class="errorlist"><li>{{ part.protocol.errors }}</li></ul>
                     <label id="{{part.number.value}}-protocol" for="id_graph-{{part.number.value}}-protocol">Select protocol: </label>{{part.protocol}}<br/>
