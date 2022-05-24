@@ -1,3 +1,6 @@
+                 'public': 1,
+                 'moderated': 2};
+
 var showdown = require('showdown');
 var notifications = require('./lib/notifications.js');
 var utils = require('./lib/utils.js')
@@ -970,29 +973,13 @@ $(document).ready(function(){
         addModelSearchFileter(`#${my_id}`, `#${my_id.replace('searchAvailableModel', 'availableModels')}`);
     });
 
-    $('.deselectModelFromGroup').click(function(){
-        my_id_prefix = $(this).attr('id').replace('deselectModelFromGroup', '');
-        selected_item = $(`#${my_id_prefix}id_models`).find(":selected");
-        selected_item_val = $(selected_item).attr('value');
-        // if it's a modelgroup make sure it stays in the modelgroup section
-        if(selected_item_val.startsWith('modelgroup')){
-            $(`#${my_id_prefix}availableModels`).find("[value='']").each(function(){
-                if($(this).text().endsWith('model')){
-                    $(selected_item).insertBefore($(this));
-                }
-            });
-        }else{
-            $(`#${my_id_prefix}availableModels`).append(selected_item);
-        }
+    $('#deselectModelFromGroup').click(function(){
+        $('#availableModels').append($('#id_models').find(":selected"));
         set_visibility();
     });
-    $('.slectModelForGroup').click(function(){
-        my_id_prefix = $(this).attr('id').replace('slectModelForGroup', '');
-        selected_item = $(`#${my_id_prefix}availableModels`).find(":selected");
-        if ($(selected_item).attr('value') != ""){
-            $(`#${my_id_prefix}id_models`).append($(`#${my_id_prefix}availableModels`).find(":selected"));
-            set_visibility();
-        }
+    $('#slectModelForGroup').click(function(){
+        $('#id_models').append(selected = $('#availableModels').find(":selected"));
+        set_visibility();
     });
 
     $('.modelGroupSavebutton').click(function(){

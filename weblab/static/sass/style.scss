@@ -1705,3 +1705,16 @@ span.CodeMirror-selectedtext {
   padding-top: 10px;
   padding-bottom: 10px;
 }
+
+/* select colours for combined model & group selector */
+.selectList option[value=""]{
+   font-weight: bold;
+}
+
+.selectList option[value^="model"]{
+   color: #40B0A6;
+}
+
+.selectList option[value^="modelgroup"]{
+   color: #E1BE6A;
+}
