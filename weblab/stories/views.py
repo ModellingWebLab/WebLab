@@ -262,7 +262,6 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
         mk = self.kwargs.get('mk', '')
         return get_protocols(mk, self.request.user)
 
-
 class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
     model = ExperimentVersion
     template_name = 'stories/experiment_versions.html'

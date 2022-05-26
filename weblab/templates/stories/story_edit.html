@@ -95,7 +95,7 @@
 
              <div class="modelgroup-model-selector-row">
                 <div class="modelgroup-model-selector-col">
-                    <select class="selectList" class="selectList" id="id_graph-{{part.number.value}}-availableModels" size="{{part.models_or_group|length}}">
+                    <select class="selectList modelgroupselect" id="id_graph-{{part.number.value}}-availableModels" size="{{part.models_or_group|length}}">
                         {% for model in part.models_or_group%}{{model}}{% endfor %}                      
                     </select>
                 </div>
@@ -104,7 +104,7 @@
                    <input class="slectModelForGroup" id="id_graph-{{part.number.value}}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right">
                 </div>
                 <div class="modelgroup-model-selector-col">
-                    <select required="" name="models" class="selectList" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}">
+                    <select required="" name="models" class="selectList modelgroupselect" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}">
                     </select>
                 </div>
            </div>                        
@@ -112,7 +112,8 @@
 
 
                     <ul class="errorlist"><li>{{ part.protocol.errors }}</li></ul>
-                    <label id="{{part.number.value}}-protocol" for="id_graph-{{part.number.value}}-protocol">Select protocol: </label>{{part.protocol}}<br/>
+                    <label id="{{part.number.value}}-protocol" for="id_graph-{{part.number.value}}-protocol">Select protocol: </label>
+                    <select name="graph-{{part.number.value}}-protocol" class="graphprotocol" id="id_graph-{{part.number.value}}-protocol"><option value="">--------- protocol</option></select><br/>
                     <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
                     <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label>{{part.graphfiles}}<br/><br/>
                     <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox">

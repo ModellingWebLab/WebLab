@@ -260,31 +260,36 @@ $(document).ready(function(){
   });
 
   // update protocols when model changes
-  $(document).on('change', '.modelgroupselect', function(){
-      id = $(this).attr('id').replace('-models_or_group', '');
-      model = $(this).val();
-      protocol = $(`#${id}-protocol`);
-      filename = $(`#${id}-graphfiles`);
-      // empty protocol & file while waiting
-      protocol.html('');
-      filename.html('');
-      url = `${getStoryBasePath()}/${model}/protocols`;
-      $.ajax({url: url,
-              success: function (data) {
-                  protocol.html(data);
-                  protocol.change();
-             }
-      });
-  });
+ $(document).on('modelsChanged', '.modelgroupselect', function(){
+    id_prefix = $(this).attr('id').replace('id_models', '');
+    models_str = '';
+    $(this).children().each(function(){
+        models_str+= $(this).attr('value') + '_';
+    });
+    url = `${getStoryBasePath()}/${models_str}/protocols`;
+    protocol = $(`#${id_prefix}protocol`);
+    filename = $(`#${id_prefix}graphfiles`);
+    $.ajax({url: url,
+            success: function (data) {
+                protocol.html(data);
+                protocol.change();
+            }
+    });
+
+ });
 
   // update graphs when protocol changes
   $(document).on('change', '.graphprotocol', function(){
-      id = $(this).attr('id').replace('-protocol', '');
-      model = $(`#${id}-models_or_group`).val();
+      id_prefix = $(this).attr('id').replace('protocol', '');
+      models_str = ''
+      $(`#${id_prefix}id_models`).children().each(function(){
+          models_str+= $(this).attr('value') + '_';
+      });
+
       protocol = $(this).val();
-      filename = $(`#${id}-graphfiles`);
+      filename = $(`#${id_prefix}graphfiles`);
       filename.html('');
-      url = `${getStoryBasePath()}/${model}/${protocol}/graph`;
+      url = `${getStoryBasePath()}/${models_str}/${protocol}/graph`;
       $.ajax({url: url,
               success: function (data) {
                   filename.html(data);

@@ -984,13 +984,14 @@ $(document).ready(function(){
         }else{
             $(`#${my_id_prefix}availableModels`).append(selected_item);
         }
+        $(`#${my_id_prefix}id_models`).trigger('modelsChanged');
         set_visibility();
     });
     $('.slectModelForGroup').click(function(){
         my_id_prefix = $(this).attr('id').replace('slectModelForGroup', '');
         selected_item = $(`#${my_id_prefix}availableModels`).find(":selected");
         if ($(selected_item).attr('value') != ""){
-            $(`#${my_id_prefix}id_models`).append($(`#${my_id_prefix}availableModels`).find(":selected"));
+            $(`#${my_id_prefix}id_models`).append($(`#${my_id_prefix}availableModels`).find(":selected")).trigger('modelsChanged');
             set_visibility();
         }
     });

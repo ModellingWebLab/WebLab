@@ -25,15 +25,18 @@ def get_versions_for_model_and_protocol(user, mk, pk):
         return []
 
     protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version.pk
-    if mk.startswith('modelgroup'):
-        mk = int(mk.replace('modelgroup', ''))
-        model_version_pks = [m.repocache.latest_version.pk
-                             for m in ModelGroup.objects.get(pk=mk).models.all()
-                             if m.repocache.versions.count()]
-    else:
-        assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
-        mk = int(mk.replace('model', ''))
-        model_version_pks = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
+
+    model_version_pks = set()
+    for model_or_group in filter(None, mk.split('_')):
+        if model_or_group.startswith('modelgroup'):
+            model_or_group = int(model_or_group.replace('modelgroup', ''))
+            model_version_pks |= set(m.repocache.latest_version.pk
+                                 for m in ModelGroup.objects.get(pk=model_or_group).models.all()
+                                 if m.repocache.versions.count())
+        else:
+            assert model_or_group.startswith('model'), "The model of group field value should start with model or modelgroup."+ model_or_group
+            model_or_group = int(model_or_group.replace('model', ''))
+            model_version_pks |= set([ModelEntity.objects.get(pk=model_or_group).repocache.latest_version.pk])
     return get_experiment_versions(user, protocol_version, model_version_pks)
 
 
@@ -65,13 +68,16 @@ def get_modelgroups(user):
 
 def get_protocols(mk, user):
     """ Returns the available protocols for given user and model(group)."""
-    if mk.startswith('modelgroup'):
-        mk = int(mk.replace('modelgroup', ''))
-        models = ModelGroup.objects.get(pk=mk).models.all()
-    elif mk.startswith('model'):
-        mk = int(mk.replace('model', ''))
-        models = ModelEntity.objects.filter(pk=mk)
-    else:
+    models = ModelGroup.objects.none()
+    for model_or_group in mk.split('_'):
+        if model_or_group.startswith('modelgroup'):
+            model_or_group = int(model_or_group.replace('modelgroup', ''))
+            models |= ModelGroup.objects.get(pk=model_or_group).models.all()
+        elif model_or_group.startswith('model'):
+            model_or_group = int(model_or_group.replace('model', ''))
+            models |= ModelEntity.objects.filter(pk=model_or_group)
+
+    if len(models) == 0:
         return []
 
     selected_model_pks = models.values_list('pk', flat=True)

@@ -9,7 +9,7 @@ from core import visibility
 from entities.forms import BaseEntityCollaboratorFormSet, EntityCollaboratorForm
 from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 
-from .graph_filters import get_graph_file_names, get_modelgroups, get_protocols
+from .graph_filters import get_graph_file_names, get_modelgroups #, get_protocols
 from .models import Story, StoryGraph, StoryText
 
 
@@ -114,8 +114,8 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
             self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
             self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
-            self.fields['protocol'].widget.choices = \
-                [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
+#            self.fields['protocol'].widget.choices = \
+#                [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
             graph_coices = list(get_graph_file_names(self.user,
                                                      models_or_group,
                                                      protocol))
@@ -130,9 +130,9 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
         self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
         if not disabled:
-            self.fields['protocol'].widget.choices = \
-                [('', '--------- protocol')] + list(get_protocols(cleaned_data.get('models_or_group', ''),
-                                                                  self.user))
+#            self.fields['protocol'].widget.choices = \
+#                [('', '--------- protocol')] + list(get_protocols(cleaned_data.get('models_or_group', ''),
+#                                                                  self.user))
             graph_coices = list(
                 get_graph_file_names(self.user,
                                      cleaned_data.get('models_or_group', ''),
