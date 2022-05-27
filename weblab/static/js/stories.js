@@ -259,67 +259,64 @@ $(document).ready(function(){
       $(`#${id}-graphfiles`).css('opacity', update ? '1.0' : '0.5');
   });
 
-  // update protocols when model changes
- $(document).on('modelsChanged', '.modelgroupselect', function(){
-    id_prefix = $(this).attr('id').replace('id_models', '');
-    models_str = '';
-    $(this).children().each(function(){
-        models_str+= $(this).attr('value') + '_';
-    });
-    url = `${getStoryBasePath()}/${models_str}/protocols`;
-    protocol = $(`#${id_prefix}protocol`);
-    filename = $(`#${id_prefix}graphfiles`);
-    $.ajax({url: url,
-            success: function (data) {
-                protocol.html(data);
-                protocol.change();
-            }
-    });
+  function get_models_str(id_prefix){
+      models_str = ''
+      $(`#${id_prefix}id_models`).children().each(function(){
+          models_str += $(this).attr('value') + '_';
+      });
+      return models_str;
+  }
 
- });
+  // update protocols when model changes
+  $(document).on('modelsChanged', '.modelgroupselect', function(){
+      id_prefix = $(this).attr('id').replace('id_models', '');
+      url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/protocols`;
+      $(`#${id_prefix}protocol`).prop('disabled', true);
+      $.ajax({url: url,
+              success: function (data) {
+                  $(`#${id_prefix}protocol`).html(data);
+                  $(`#${id_prefix}protocol`).prop('disabled', false);
+                  $(`#${id_prefix}protocol`).change();
+              }
+      });
+  });
 
   // update graphs when protocol changes
   $(document).on('change', '.graphprotocol', function(){
       id_prefix = $(this).attr('id').replace('protocol', '');
-      models_str = ''
-      $(`#${id_prefix}id_models`).children().each(function(){
-          models_str+= $(this).attr('value') + '_';
-      });
-
-      protocol = $(this).val();
-      filename = $(`#${id_prefix}graphfiles`);
-      filename.html('');
-      url = `${getStoryBasePath()}/${models_str}/${protocol}/graph`;
+      $(`#${id_prefix}graphfiles`).prop('disabled', true);
+      url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${$(this).val()}/graph`;
       $.ajax({url: url,
               success: function (data) {
-                  filename.html(data);
-                  filename.change();
+                  $(`#${id_prefix}graphfiles`).html(data);
+                  $(`#${id_prefix}graphfiles`).prop('disabled', false);
+                  $(`#${id_prefix}graphfiles`).change();
              }
       });
   });
 
   // update graph preview when file changes
   $(document).on('change', '.graphfiles', function(){
-      id = $(this).attr('id').replace('-graphfiles', '');
-      model = $(`#${id}-models_or_group`).val();
-      protocol = $(`#${id}-protocol`).val();
+      id_prefix = $(this).attr('id').replace('graphfiles', '');
+      protocol = $(`#${id_prefix}protocol`).val();
       graphfile = $(this).val();
-      experimentVersionsUpdate = $(`#${id}-experimentVersionsUpdate`);
 
       if(graphfile != ''){
         // retreive experiment versions
-        url = `${getStoryBasePath()}/${model}/${protocol}/experimentversions`;
+        url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentversions`;
+        $(`#${id_prefix}experimentVersionsUpdate`).prop('disabled', true);
         $.ajax({url: url,
                 success: function(data){
                     data = data.trim();
-                    experimentVersionsUpdate.val(data);
-                    experimentVersionsUpdate.change();experimentVersionsUpdate
+                    $(`#${id_prefix}experimentVersionsUpdate`).val(data);
+                    $(`#${id_prefix}experimentVersionsUpdate`).prop('disabled', false);
+                    $(`#${id_prefix}experimentVersionsUpdate`).change();
                 }
         });
       }else{
-          if(experimentVersionsUpdate.val().trim() != '/'){
-            experimentVersionsUpdate.val('/');
-            experimentVersionsUpdate.change();
+          if($(`#${id_prefix}experimentVersionsUpdate`).val().trim() != '/'){
+              $(`#${id_prefix}experimentVersionsUpdate`).val('/');
+              $(`#${id_prefix}experimentVersionsUpdate`).change();
           }
       }
   });
