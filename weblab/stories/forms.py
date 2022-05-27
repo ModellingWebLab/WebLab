@@ -114,27 +114,12 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
             self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
             self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
-##            self.fields['protocol'].widget.choices = \
-##                [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
-#            graph_coices = list(get_graph_file_names(self.user,
-#                                                     models_or_group,
-#                                                     protocol))
-#            if not graph_coices:
-#                graph_coices = [('', '--------- graph')]
-#            self.fields['graphfiles'].widget.choices = graph_coices
 
-    def clean_id_models(self):
-        self.fields['models_or_group'].disabled = not self.cleaned_data['update']
-        self.fields['id_models'].disabled = not self.cleaned_data['update']
-        if self.cleaned_data.get('update', False) and not self.cleaned_data['id_models']:
-            raise ValidationError("This field is required.")
-        return self.cleaned_data['id_models']
-
-    def clean(self):
-        cleaned_data = super().clean()
-#        assert False, str(cleaned_data)
+#    def clean(self):
+#        cleaned_data = super().clean()
 #        disabled = not cleaned_data['update']
 #        self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
+#        self.fields['id_modelsp'].widget.attrs['disabled'] = 'disabled' if disabled else False
 #        self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
 #        self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
 #        if not disabled:
@@ -159,6 +144,13 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 #                raise ValidationError("The model of group field value should start with model or modelgroup.")
 #        return self.cleaned_data['models_or_group']
 #
+    def clean_id_models(self):
+        self.fields['models_or_group'].disabled = not self.cleaned_data['update']
+        self.fields['id_models'].disabled = not self.cleaned_data['update']
+        if self.cleaned_data.get('update', False) and not self.cleaned_data['id_models']:
+            raise ValidationError("This field is required.")
+        return re.sub('\[|\]|\'| ', '', self.cleaned_data['id_models']).split(',')
+
     def clean_protocol(self):
         self.fields['protocol'].disabled = not self.cleaned_data['update']
         if self.cleaned_data.get('update', False) and self.cleaned_data['protocol'] == "":
@@ -176,27 +168,32 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         else:
             storygraph = super().save(commit=False)
         storygraph.order = self.cleaned_data['ORDER']
+
         if self.cleaned_data.get('update', False):
+            if not hasattr(storygraph, 'author') or storygraph.author is None:
+                storygraph.author = self.user
             storygraph.story = story
             storygraph.graphfilename = self.cleaned_data['graphfiles']
 
-#            mk = self.cleaned_data['models_or_group']
             pk = self.cleaned_data['protocol']
-#            modelgroup = None
-#            if mk.startswith('modelgroup'):
-#                mk = int(mk.replace('modelgroup', ''))
-#                modelgroup = ModelGroup.objects.get(pk=mk)
-#                model_versions = [m.repocache.latest_version for m in modelgroup.models.all()
-#                                  if m.repocache.versions.count()]
-#            else:
-#                assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
-#                mk = int(mk.replace('model', ''))
-#                model_versions = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
             storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
-            if not hasattr(storygraph, 'author') or storygraph.author is None:
-                storygraph.author = self.user
-#            storygraph.modelgroup = modelgroup
-#            storygraph.cachedmodelversions.set(model_versions)
+
+            modelgroups = set()
+            model_versions = set()
+            for model_or_group in self.cleaned_data['id_models']:
+                if model_or_group.startswith('modelgroup'):
+                    mk = int(model_or_group.replace('modelgroup', ''))
+                    modelgroup = ModelGroup.objects.get(pk=mk)
+                    model_versions |= set(m.repocache.latest_version for m in modelgroup.models.all()
+                                      if m.repocache.versions.count())
+                    modelgroups.add(modelgroup)
+                else:
+                    mk = int(model_or_group.replace('model', ''))
+                    model_versions.add(ModelEntity.objects.get(pk=mk).repocache.latest_version) #.pk)
+
+            storygraph.save()
+            storygraph.modelgroups.set(modelgroups)
+            storygraph.cachedmodelversions.set(model_versions)
         storygraph.save()
         return storygraph
 
