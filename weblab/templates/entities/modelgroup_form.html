@@ -44,7 +44,7 @@
                    <input class="slectModelForGroup" id="slectModelForGroup" type="button" value="&#x25B6;" style="display: inline-block;" title="move right" alt="move right">
                 </div>
                 <div class="modelgroup-model-selector-col">
-                    <select required name="models" class="selectList" id="id_models" size="{{form.models.field.queryset|length }}" {%if form.models.field.disabled%} disabled {% endif %}>
+                    <select required name="models" class="selectList selectedmodels"" id="id_models" size="{{form.models.field.queryset|length }}" {%if form.models.field.disabled%} disabled {% endif %}>
                         {% for model in form.models.field.queryset %}
                             {% if model in object.models.all %}<option value="{{model.pk}}" >{{model.name}} ({{ model.visibility }}, by {{ model.author.full_name }})</option>{% endif %}
                         {% endfor %}

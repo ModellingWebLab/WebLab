@@ -997,8 +997,8 @@ $(document).ready(function(){
     });
 
     $('.modelGroupSavebutton').click(function(){
-        $('#id_models').prop('multiple', true);  //reanable multiple select and select all for submission
-        $('#id_models option').each(function(){
+        $('.selectedmodels').prop('multiple', true);  //reanable multiple select and select all for submission
+        $('.selectedmodels option').each(function(){
             $(this).prop('selected', true);
         });
     });

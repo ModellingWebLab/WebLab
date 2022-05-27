@@ -1317,7 +1317,7 @@ class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         kwargs['in_use'] = set([(graph.story.id, graph.story.title)
-                                for graph in StoryGraph.objects.filter(modelgroup=self.get_object())])
+                                for graph in self.get_object().selected_group_story_graphs.all()])
         return super().get_context_data(**kwargs)
 
 

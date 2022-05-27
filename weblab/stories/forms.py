@@ -87,6 +87,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = kwargs.pop('user', None)
+        visible_model_choices = get_modelgroups(self.user)
 
         self.fields['number'] = forms.IntegerField(required=False)
         self.fields['ORDER'] = forms.IntegerField(required=False)
@@ -101,56 +102,63 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
         self.fields['models_or_group'] = forms.CharField(required=False,
-                                                         widget=forms.Select(attrs={'class': 'modelgroupselect'}, choices= get_modelgroups(self.user)))
+                                                         widget=forms.Select(attrs={'class': 'modelgroupselect'}, choices = visible_model_choices))
+        self.fields['id_models'] = forms.CharField(required=False, widget=forms.SelectMultiple(attrs={'class': 'modelgroupselect'}, choices = visible_model_choices))
+
         self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
         self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphfiles'}))
 
-#        self.fields['models_or_group'].widget.choices = get_modelgroups(self.user)
         if 'initial' in kwargs:
             disabled = not kwargs['initial'].get('update', True)
-            models_or_group = kwargs['initial'].get('models_or_group', '')
             protocol = kwargs['initial'].get('protocol', '')
 
-            self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
             self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
             self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
-#            self.fields['protocol'].widget.choices = \
-#                [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
-            graph_coices = list(get_graph_file_names(self.user,
-                                                     models_or_group,
-                                                     protocol))
-            if not graph_coices:
-                graph_coices = [('', '--------- graph')]
-            self.fields['graphfiles'].widget.choices = graph_coices
+##            self.fields['protocol'].widget.choices = \
+##                [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
+#            graph_coices = list(get_graph_file_names(self.user,
+#                                                     models_or_group,
+#                                                     protocol))
+#            if not graph_coices:
+#                graph_coices = [('', '--------- graph')]
+#            self.fields['graphfiles'].widget.choices = graph_coices
+
+    def clean_id_models(self):
+        self.fields['models_or_group'].disabled = not self.cleaned_data['update']
+        self.fields['id_models'].disabled = not self.cleaned_data['update']
+        if self.cleaned_data.get('update', False) and not self.cleaned_data['id_models']:
+            raise ValidationError("This field is required.")
+        return self.cleaned_data['id_models']
 
     def clean(self):
         cleaned_data = super().clean()
-        disabled = not cleaned_data['update']
-        self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        if not disabled:
-#            self.fields['protocol'].widget.choices = \
-#                [('', '--------- protocol')] + list(get_protocols(cleaned_data.get('models_or_group', ''),
-#                                                                  self.user))
-            graph_coices = list(
-                get_graph_file_names(self.user,
-                                     cleaned_data.get('models_or_group', ''),
-                                     cleaned_data.get('protocol', ''))
-            )
-            if not graph_coices:
-                graph_coices = [('', '--------- graph')]
-            self.fields['graphfiles'].widget.choices = graph_coices
-        return cleaned_data
-
-    def clean_models_or_group(self):
-        if self.cleaned_data.get('update', False):
-            if self.cleaned_data.get('update', False) and self.cleaned_data['models_or_group'] == "":
-                raise ValidationError("This field is required.")
-            if not self.cleaned_data['models_or_group'].startswith('model'):
-                raise ValidationError("The model of group field value should start with model or modelgroup.")
-        return self.cleaned_data['models_or_group']
-
+#        assert False, str(cleaned_data)
+#        disabled = not cleaned_data['update']
+#        self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
+#        self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
+#        self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
+#        if not disabled:
+##            self.fields['protocol'].widget.choices = \
+##                [('', '--------- protocol')] + list(get_protocols(cleaned_data.get('models_or_group', ''),
+##                                                                  self.user))
+#            graph_coices = list(
+#                get_graph_file_names(self.user,
+#                                     cleaned_data.get('models_or_group', ''),
+#                                     cleaned_data.get('protocol', ''))
+#            )
+#            if not graph_coices:
+#                graph_coices = [('', '--------- graph')]
+#            self.fields['graphfiles'].widget.choices = graph_coices
+#        return cleaned_data
+#
+#    def clean_models_or_group(self):
+#        if self.cleaned_data.get('update', False):
+#            if self.cleaned_data.get('update', False) and self.cleaned_data['models_or_group'] == "":
+#                raise ValidationError("This field is required.")
+#            if not self.cleaned_data['models_or_group'].startswith('model'):
+#                raise ValidationError("The model of group field value should start with model or modelgroup.")
+#        return self.cleaned_data['models_or_group']
+#
     def clean_protocol(self):
         self.fields['protocol'].disabled = not self.cleaned_data['update']
         if self.cleaned_data.get('update', False) and self.cleaned_data['protocol'] == "":
@@ -172,9 +180,9 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             storygraph.story = story
             storygraph.graphfilename = self.cleaned_data['graphfiles']
 
-            mk = self.cleaned_data['models_or_group']
+#            mk = self.cleaned_data['models_or_group']
             pk = self.cleaned_data['protocol']
-            modelgroup = None
+#            modelgroup = None
 #            if mk.startswith('modelgroup'):
 #                mk = int(mk.replace('modelgroup', ''))
 #                modelgroup = ModelGroup.objects.get(pk=mk)
@@ -184,12 +192,12 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 #                assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
 #                mk = int(mk.replace('model', ''))
 #                model_versions = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
-#            storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
-#            if not hasattr(storygraph, 'author') or storygraph.author is None:
-#                storygraph.author = self.user
+            storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
+            if not hasattr(storygraph, 'author') or storygraph.author is None:
+                storygraph.author = self.user
 #            storygraph.modelgroup = modelgroup
 #            storygraph.cachedmodelversions.set(model_versions)
-#        storygraph.save()
+        storygraph.save()
         return storygraph
 
     def delete(self, **kwargs):

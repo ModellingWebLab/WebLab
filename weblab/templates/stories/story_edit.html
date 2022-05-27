@@ -80,7 +80,7 @@
                       {{part.graphfilename}}
                       <br/>
                     </div>
-                    <ul class="errorlist"><li>{{ part.models_or_group.errors }}</li></ul>
+                    <ul class="errorlist"><li>{{ part.id_models.errors }}</li></ul>
                     <label id="{{part.number.value}}-models_or_group-label" for="id_graph-{{part.number.value}}-models_or_group">Select model or model group: </label><br/>
 
       <div class="modelgroup-model-selector">
@@ -104,8 +104,7 @@
                    <input class="slectModelForGroup" id="id_graph-{{part.number.value}}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right">
                 </div>
                 <div class="modelgroup-model-selector-col">
-                    <select required="" name="models" class="selectList modelgroupselect" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}">
-                    </select>
+                    <select name="graph-{{part.number.value}}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}"></select>
                 </div>
            </div>                        
                         
@@ -148,7 +147,7 @@
         </tr>
       </tfoot>
   </table>
-  <button id="savebutton">Save Story</button>
+  <button id="savebutton" class="modelGroupSavebutton">Save Story</button>
   </form>
 </div>
 
