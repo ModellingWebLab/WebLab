@@ -249,7 +249,7 @@ class StoryEditView(StoryView, UpdateView):
 
 class StoryFilterModelOrGroupView(LoginRequiredMixin, ListView):
     model = ModelGroup
-    template_name = 'stories/modelorgroup_selection.html'
+    template_name = 'stories/modelgroup_selection.html'
 
     def get_queryset(self):
         return get_modelgroups(self.request.user)

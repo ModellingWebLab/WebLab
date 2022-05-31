@@ -19,7 +19,7 @@ from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
-from entities.models import ModelEntity, ProtocolEntity
+from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 from repocache.models import CACHED_VERSION_TYPE_MAP
 from stories.models import StoryGraph
 
@@ -465,7 +465,7 @@ class ExperimentComparisonJsonView(View):
             'modelVersion': exp.model_version.get_name(),
             'protoVersion': exp.protocol_version.get_name(),
             'runNumber': version.run_number,
-            'groups': [{'id': group.pk, 'title': group.title} for group in version.experiment.model.model_groups.all()]
+            'groups': []
         })
         return details
 
@@ -490,6 +490,15 @@ class ExperimentComparisonJsonView(View):
 
         return JsonResponse(response)
 
+class ExperimentGraphForStoryJsonView(ExperimentComparisonJsonView):
+    """
+    Serve up JSON view of multiple experiment versions for graph in stories
+    """
+    def _version_json(self, version, model_version_in_name, protocol_version_in_name):
+        details = super()._version_json(version, model_version_in_name, protocol_version_in_name)
+        modelgroup_pks = filter(None, self.kwargs.get('group_pks', '')[1:].split('/'))
+        details['groups'] = [{'id': pk, 'title': ModelGroup.objects.get(pk=pk).title} for pk in modelgroup_pks]
+        return details
 
 @method_decorator(staff_member_required, name='dispatch')
 class ExperimentSimulateCallbackView(FormMixin, DetailView):

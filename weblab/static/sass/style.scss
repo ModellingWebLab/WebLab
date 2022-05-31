@@ -1718,3 +1718,19 @@ span.CodeMirror-selectedtext {
 .selectList option[value^="modelgroup"]{
    color: #E1BE6A;
 }
+
+.groupToggleBox {
+  border: 1px dashed #A9A9A9;
+  min-height: 10px;}
+
+.groupToggleBox input[type="checkbox"]
+{
+    display: inline;
+    vertical-align:middle;
+}
+
+.groupToggleBox label
+{
+    display: block;
+}
+

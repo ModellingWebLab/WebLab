@@ -105,6 +105,18 @@ urlpatterns = [
         views.ExperimentComparisonJsonView.as_view(),
         name='compare_json',
     ),
+
+    url(
+        r'^compare(?P<version_pks>(/\d+)*)/graph_for_story(?P<group_pks>(/\d+)*)$',
+        views.ExperimentGraphForStoryJsonView.as_view(),
+        name='stories_graph_json',
+    ),
+
+    url(
+        r'^compare(?P<version_pks>(/\d+)*)/graph_for_story/$',
+        views.ExperimentGraphForStoryJsonView.as_view(),
+        name='stories_graph_json_no_groups',
+    ),
 ]
 
 app_name = 'experiments'

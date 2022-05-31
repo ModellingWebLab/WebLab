@@ -290,16 +290,16 @@ $(document).ready(function(){
       $.ajax({url: url,
               success: function (data) {
                   $(`#${id_prefix}graphfiles`).html(data);
-                  $(`#${id_prefix}graphfiles`).prop('disabled', false);
-                  $(`#${id_prefix}graphfiles`).change();
-                  $(`#${id}groupToggleBox`).html('')
+                  $(`#${id}groupToggleBox`).prop('disabled', true);
                   protocol = $(`#${id_prefix}protocol`).val();
                   if(protocol != ''){
                       toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${protocol}/toggles`;
- alert(toggle_url);
                       $.ajax({url: toggle_url,
                               success: function (data) {
                                   $(`#${id}groupToggleBox`).html(data);
+                                  $(`#${id}groupToggleBox`).prop('disabled', false);
+                                  $(`#${id_prefix}graphfiles`).prop('disabled', false);
+                                  $(`#${id_prefix}graphfiles`).change();
                               }
                       });
                   }
@@ -316,7 +316,6 @@ $(document).ready(function(){
       if(graphfile != ''){
         // retreive experiment versions
         url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentversions`;
-//alert(url);
         $(`#${id_prefix}experimentVersionsUpdate`).prop('disabled', true);
         $.ajax({url: url,
                 success: function(data){
@@ -332,6 +331,12 @@ $(document).ready(function(){
               $(`#${id_prefix}experimentVersionsUpdate`).change();
           }
       }
+  });
+
+  // update graph preview when selected model groups change
+  $(document).on('change', '.groupToggleSelect', function(){
+      id_prefix = 'id_' + $(this).attr('name').replace('grouptoggles', '');
+      $(`#${id_prefix}graphfiles`).change();
   });
 
   //link add, delete and up/down button clicks
@@ -386,7 +391,15 @@ $(document).ready(function(){
             graphPathIds = basePath + graphPathIds.replace('//', '/');
 
             // compse url for entities for preview graph
-            graphPathEntities = `/experiments/compare/${experimentVersions}/info`;
+            graphPathEntities = `/experiments/compare/${experimentVersions}/graph_for_story`;
+
+            // retreive selected groups
+            $(`#${graphId}groupToggleBox`).find('input').each(function(){
+                if(!$(this).is(':checkbox') || $(this).is(":checked")){
+                   graphPathEntities += '/' + $(this).val();
+                }
+            });
+
             graphPathEntities = basePath + graphPathEntities.replace('//', '/');
             $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" class="entityIdsToCompare" value="${graphPathIds}"><div class="entitiesToCompare" id="${graphId}entitiesToCompare" data-comparison-href="${graphPathEntities}">loading...</div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay"></div></div></div>`);
             compare.initCompare(graphId, false);
