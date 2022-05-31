@@ -1,12 +1,12 @@
 from django.db import models
-from django.db.models import TextField
+from django.db.models import TextField, ManyToManyField
 from django.db.models.signals import m2m_changed
 from django.db.utils import IntegrityError
 from django.dispatch import receiver
 
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
 from core.visibility import Visibility
-from entities.models import ModelGroup
+from entities.models import ModelEntity, ModelGroup
 from repocache.models import CachedModelVersion, CachedProtocolVersion
 
 
@@ -68,10 +68,11 @@ class StoryGraph(StoryItem):
     graphfilename = TextField(blank=True, null=True)
     cachedprotocolversion = models.ForeignKey(CachedProtocolVersion, null=False, blank=False, on_delete=models.CASCADE,
                                               related_name="protocolforgraph")
-    cachedmodelversions = models.ManyToManyField(CachedModelVersion)
+    cachedmodelversions = ManyToManyField(CachedModelVersion, blank=True, related_name='selected_group_story_modelversions')
 #    modelgroup = models.ForeignKey(ModelGroup, blank=True, null=True, default=None, on_delete=models.SET_DEFAULT)
-    modelgroups = models.ManyToManyField(ModelGroup, blank=True, related_name='selected_group_story_graphs')
-    grouptoggles = models.ManyToManyField(ModelGroup, blank=True,  related_name='toggle_group_story_graphs')
+    modelgroups =ManyToManyField(ModelGroup, blank=True, related_name='selected_group_story_graphs')
+    models =ManyToManyField(ModelEntity, blank=True, related_name='selected_group_story_models')
+    grouptoggles = ManyToManyField(ModelGroup, blank=True, related_name='toggle_group_story_graphs')
 
 #    def __str__(self):
 #        return (self.modelgroup.title if self.modelgroup is not None

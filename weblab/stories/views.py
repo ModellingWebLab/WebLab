@@ -30,6 +30,7 @@ from .graph_filters import (
     get_protocols,
     get_url,
     get_versions_for_model_and_protocol,
+    get_models_run_for_model_and_protocol
 )
 from .models import Story, StoryGraph, StoryText
 
@@ -270,6 +271,23 @@ class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
         return get_url(get_versions_for_model_and_protocol(self.request.user,
                                                            self.kwargs.get('mk', ''),
                                                            self.kwargs.get('pk', '')))
+
+
+class StoryFilterGroupToggles(LoginRequiredMixin, ListView):
+    model = ExperimentVersion
+    template_name = 'stories/group_toggle_selection.html'
+
+    def get_context_data(self, **kwargs):
+        # retrieve the graph id for rendering checkboxes
+        kwargs['gid'] = self.kwargs.get('gid', '')
+        return super().get_context_data(**self.kwargs)
+
+    def get_queryset(self):
+        graph_id = self.kwargs.get('gid', '')
+#        assert False, str(graph_id)
+        models = get_models_run_for_model_and_protocol(self.request.user, self.kwargs.get('mk', ''), self.kwargs.get('pk', ''))
+        used_groups =  set().union(*(m.model_groups.all() for m in models))
+        return used_groups
 
 
 class StoryFilterGraphView(LoginRequiredMixin, ListView):

@@ -84,6 +84,10 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         model = StoryGraph
         fields = []
 
+    def str_to_id_list(self, ids):
+        """Turn list of ids passed as string back into a list."""
+        return re.sub('\[|\]|\'| ', '', self.cleaned_data['id_models']).split(',')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = kwargs.pop('user', None)
@@ -106,6 +110,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['id_models'] = forms.CharField(required=False, widget=forms.SelectMultiple(attrs={'class': 'modelgroupselect'}, choices = visible_model_choices))
 
         self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
+        self.fields['grouptoggles'] = forms.MultipleChoiceField(required=False, choices=[(m.pk, m.title) for m in ModelGroup.objects.all()], widget=forms.CheckboxSelectMultiple())
         self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphfiles'}))
 
         if 'initial' in kwargs:
@@ -149,7 +154,13 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['id_models'].disabled = not self.cleaned_data['update']
         if self.cleaned_data.get('update', False) and not self.cleaned_data['id_models']:
             raise ValidationError("This field is required.")
-        return re.sub('\[|\]|\'| ', '', self.cleaned_data['id_models']).split(',')
+        return self.str_to_id_list(self.cleaned_data['id_models'])
+
+    def clean_grouptoggles(self):
+        self.fields['grouptoggles'].disabled = not self.cleaned_data['update']
+        return self.cleaned_data['grouptoggles']
+#        assert False, str(self.cleaned_data['grouptoggles'])
+#        return self.str_to_id_list(self.cleaned_data['grouptoggles'])
 
     def clean_protocol(self):
         self.fields['protocol'].disabled = not self.cleaned_data['update']
@@ -179,6 +190,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
 
             modelgroups = set()
+            models = set()
             model_versions = set()
             for model_or_group in self.cleaned_data['id_models']:
                 if model_or_group.startswith('modelgroup'):
@@ -189,10 +201,14 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
                     modelgroups.add(modelgroup)
                 else:
                     mk = int(model_or_group.replace('model', ''))
-                    model_versions.add(ModelEntity.objects.get(pk=mk).repocache.latest_version) #.pk)
+                    model = ModelEntity.objects.get(pk=mk)
+                    models.add(model)
+                    model_versions.add(model.repocache.latest_version)
 
             storygraph.save()
             storygraph.modelgroups.set(modelgroups)
+            storygraph.models.set(models)
+            storygraph.grouptoggles.set(self.cleaned_data['grouptoggles'])
             storygraph.cachedmodelversions.set(model_versions)
         storygraph.save()
         return storygraph

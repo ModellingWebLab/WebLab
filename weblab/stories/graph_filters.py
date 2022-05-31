@@ -18,14 +18,8 @@ def get_url(experiment_versions):
     """Returns formatted experiment versions t use in a url """
     return '/' + '/'.join(str(ver.pk) for ver in experiment_versions)
 
-
-def get_versions_for_model_and_protocol(user, mk, pk):
-    """Retreives the experiment versions relating to a user, model(group) and protocol combination. """
-    if not pk or not mk:
-        return []
-
-    protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version.pk
-
+def get_model_version_pks(mk):
+    """Retreives the pks of model versions encoded in the mk stringe. """
     model_version_pks = set()
     for model_or_group in filter(None, mk.split('_')):
         if model_or_group.startswith('modelgroup'):
@@ -37,7 +31,26 @@ def get_versions_for_model_and_protocol(user, mk, pk):
             assert model_or_group.startswith('model'), "The model of group field value should start with model or modelgroup."+ model_or_group
             model_or_group = int(model_or_group.replace('model', ''))
             model_version_pks |= set([ModelEntity.objects.get(pk=model_or_group).repocache.latest_version.pk])
+    return model_version_pks
+
+def get_versions_for_model_and_protocol(user, mk, pk):
+    """Retreives the experiment versions relating to a user, model(group) and protocol combination. """
+    if not pk or not mk:
+        return []
+
+    protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version.pk
+    model_version_pks = get_model_version_pks(mk)
     return get_experiment_versions(user, protocol_version, model_version_pks)
+
+def get_models_run_for_model_and_protocol(user, mk, pk):
+    if not pk or not mk:
+        return []
+
+    protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version.pk
+    model_version_pks = set()
+    model_version_pks = get_model_version_pks(mk)
+    return [e.model for e in Experiment.objects.filter(model_version__pk__in=model_version_pks, protocol_version=protocol_version) if e.latest_result == Runnable.STATUS_SUCCESS and e.is_visible_to_user(user)]
+
 
 
 def get_graph_file_names(user, mk, pk):

@@ -84,7 +84,6 @@
                     <label id="{{part.number.value}}-models_or_group-label" for="id_graph-{{part.number.value}}-models_or_group">Select model or model group: </label><br/>
 
       <div class="modelgroup-model-selector">
---{part.id_models}}--
              <div class="modelgroup-model-selector-row">
                 <div class="modelgroup-model-selector-col left"><h5>Available models</h5></div>
                 <div class="modelgroup-model-selector-col"><h5>Selected models & groups</h5></div>
@@ -108,12 +107,13 @@
                     <select name="graph-{{part.number.value}}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}"></select>
                 </div>
            </div>                        
-                        
-
-
+                     
                     <ul class="errorlist"><li>{{ part.protocol.errors }}</li></ul>
                     <label id="{{part.number.value}}-protocol" for="id_graph-{{part.number.value}}-protocol">Select protocol: </label>
                     <select name="graph-{{part.number.value}}-protocol" class="graphprotocol" id="id_graph-{{part.number.value}}-protocol"><option value="">--------- protocol</option></select><br/>
+
+                    <ul class="errorlist"><li>{{ part.grouptoggles.errors }}</li></ul>Select which groups can be switched on and off in the graph: 
+                    <div id="{{part.number.value}}groupToggleBox" class="groupToggleBox"></div>
                     <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
                     <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label>{{part.graphfiles}}<br/><br/>
                     <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox">

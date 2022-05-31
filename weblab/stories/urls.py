@@ -98,6 +98,13 @@ urlpatterns = [
 
 
     url(
+        r'^(?P<gid>\w+)/(?P<mk>\w+)/(?P<pk>\d+)/toggles$',
+        views.StoryFilterGroupToggles.as_view(),
+        name='filter_group_toggles',
+    ),
+
+
+    url(
         r'^(?P<pk>\d+)$',
         views.StoryRenderView.as_view(),
         name='story_render',

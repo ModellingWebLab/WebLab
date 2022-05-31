@@ -284,6 +284,7 @@ $(document).ready(function(){
   // update graphs when protocol changes
   $(document).on('change', '.graphprotocol', function(){
       id_prefix = $(this).attr('id').replace('protocol', '');
+      id = id_prefix.replace('id_graph-', '').replace('-', '');
       $(`#${id_prefix}graphfiles`).prop('disabled', true);
       url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${$(this).val()}/graph`;
       $.ajax({url: url,
@@ -291,6 +292,17 @@ $(document).ready(function(){
                   $(`#${id_prefix}graphfiles`).html(data);
                   $(`#${id_prefix}graphfiles`).prop('disabled', false);
                   $(`#${id_prefix}graphfiles`).change();
+                  $(`#${id}groupToggleBox`).html('')
+                  protocol = $(`#${id_prefix}protocol`).val();
+                  if(protocol != ''){
+                      toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${protocol}/toggles`;
+ alert(toggle_url);
+                      $.ajax({url: toggle_url,
+                              success: function (data) {
+                                  $(`#${id}groupToggleBox`).html(data);
+                              }
+                      });
+                  }
              }
       });
   });
@@ -304,6 +316,7 @@ $(document).ready(function(){
       if(graphfile != ''){
         // retreive experiment versions
         url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentversions`;
+//alert(url);
         $(`#${id_prefix}experimentVersionsUpdate`).prop('disabled', true);
         $.ajax({url: url,
                 success: function(data){
