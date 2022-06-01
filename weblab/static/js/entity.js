@@ -970,7 +970,7 @@ $(document).ready(function(){
         addModelSearchFileter(`#${my_id}`, `#${my_id.replace('searchAvailableModel', 'availableModels')}`);
     });
 
-    $('.deselectModelFromGroup').click(function(){
+     $(document).on('click', '.deselectModelFromGroup', function(){
         my_id_prefix = $(this).attr('id').replace('deselectModelFromGroup', '');
         selected_item = $(`#${my_id_prefix}id_models`).find(":selected");
         selected_item_val = $(selected_item).attr('value');
@@ -987,7 +987,8 @@ $(document).ready(function(){
         $(`#${my_id_prefix}id_models`).trigger('modelsChanged');
         set_visibility();
     });
-    $('.slectModelForGroup').click(function(){
+
+    $(document).on('click', '.slectModelForGroup', function(){
         my_id_prefix = $(this).attr('id').replace('slectModelForGroup', '');
         selected_item = $(`#${my_id_prefix}availableModels`).find(":selected");
         if ($(selected_item).attr('value') != ""){

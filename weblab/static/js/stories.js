@@ -157,9 +157,42 @@ function insertGraphForm(){
                   <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name="graph-${currentGraphCount}-update" checked>
                   <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
                 </div>
-                <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><select class="modelgroupselect" name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
-                <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
-                <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/>
+                <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><br/>
+                
+                
+                
+      <div class="modelgroup-model-selector">
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col left"><h5>Available models</h5></div>
+                <div class="modelgroup-model-selector-col"><h5>Selected models & groups</h5></div>
+             </div>
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col left"><label>Filter search: </label><input class="searchModel" id="${currentGraphCount}-searchAvailableModel" autocomplete="off"><br/></div>
+                <div class="modelgroup-model-selector-colt"><ul class="errorlist"><li></li></ul></div>
+             </div>
+
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col">
+                    <select class="selectList modelgroupselect" id="id_graph-${currentGraphCount}-availableModels" size="2">
+                        {% for model in part.models_or_group%}{{model}}{% endfor %}                      
+                    </select>
+                </div>
+                <div class="modelgroup-model-selector-col div-table-buttons">
+                   <input class="deselectModelFromGroup" id="id_graph-${currentGraphCount}-deselectModelFromGroup" type="button" value="◀" style="display: inline-block;" title="move left" alt="move left">
+                   <input class="slectModelForGroup" id="id_graph-${currentGraphCount}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right">
+                </div>
+                <div class="modelgroup-model-selector-col">
+                    <select name="graph-${currentGraphCount}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-${currentGraphCount}-id_models" size="2"></select>
+                </div>
+           </div><br/>
+                
+                <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol" disabled></select><br/>
+
+                    Select which groups can be switched on and off in the graph: 
+                    <div id="${currentGraphCount}groupToggleBox" class="groupToggleBox"></div>                
+                
+                
+                <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles" disabled></select><br/><br/>
                 <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox">Please select a graph...</div>
                 <br/>
               </td>
@@ -170,7 +203,7 @@ function insertGraphForm(){
 
     // Fill dropdowns
     // get graph selection elements
-    modelorgroup = $(`#id_graph-${currentGraphCount}-models_or_group`);
+    modelorgroup = $(`#id_graph-${currentGraphCount}-availableModels`);
     protocol = $(`#id_graph-${currentGraphCount}-protocol`);
     filename = $(`#id_graph-${currentGraphCount}-graphfiles`);
     // fill models or groups
@@ -275,7 +308,9 @@ $(document).ready(function(){
       $.ajax({url: url,
               success: function (data) {
                   $(`#${id_prefix}protocol`).html(data);
-                  $(`#${id_prefix}protocol`).prop('disabled', false);
+                  if($(`#${id_prefix}protocol`).find('option').length > 1){
+                      $(`#${id_prefix}protocol`).prop('disabled', false);
+                  }
                   $(`#${id_prefix}protocol`).change();
               }
       });
@@ -426,4 +461,5 @@ $(document).ready(function(){
 
     });
 });
+
 
