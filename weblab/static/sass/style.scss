@@ -68,6 +68,12 @@ button,
   &:hover, &.selected {
     background-color: lighten($button-bg, 10%);
   }
+
+  &:disabled{
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
 }
 
 .button::-moz-focus-inner {

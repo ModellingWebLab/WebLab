@@ -72,11 +72,11 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
             storytext = StoryText.objects.get(pk=self.initial['pk'])
             storytext.delete()
 
-    def clean_description(self):
-        description = self.cleaned_data['description']
-        if description == "":
-            raise ValidationError('This field is required.')
-        return description
+    #def clean_description(self):
+#        description = self.cleaned_data['description']
+#        if description == "":
+#            raise ValidationError('This field is required.')
+#        return description
 
 
 class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -107,7 +107,8 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
         self.fields['models_or_group'] = forms.CharField(required=False,
                                                          widget=forms.Select(attrs={'class': 'modelgroupselect'}, choices = visible_model_choices))
-        self.fields['id_models'] = forms.CharField(required=False, widget=forms.SelectMultiple(attrs={'class': 'modelgroupselect'}, choices = visible_model_choices))
+        self.fields['id_models'] = forms.CharField(required=False, widget=forms.SelectMultiple(attrs={'class': 'selectList modelgroupselect'}, choices = visible_model_choices))
+
 
         self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
         self.fields['grouptoggles'] = forms.MultipleChoiceField(required=False, choices=[(m.pk, m.title) for m in ModelGroup.objects.all()], widget=forms.CheckboxSelectMultiple())

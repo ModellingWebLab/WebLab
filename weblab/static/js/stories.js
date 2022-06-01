@@ -255,6 +255,23 @@ function updateLoadingSpinner(){
     }
 }
 
+
+function updateSaveButton(){
+    // update save button
+    saveButtonDisabled = false;
+    $('.selectedmodels').each(function(){
+         saveButtonDisabled = saveButtonDisabled || $(this).find('option').count == 0;
+    })
+    $('.graphprotocol').each(function(){
+         saveButtonDisabled = saveButtonDisabled || $(this).val() == '';
+    })
+    $('.graphfiles').each(function(){
+         saveButtonDisabled = saveButtonDisabled || $(this).val() == '';
+    })
+    $('#savebutton').prop('disabled', saveButtonDisabled);
+}
+
+
 // hook up functionality when document has loaded
 $(document).ready(function(){
 
@@ -325,7 +342,7 @@ $(document).ready(function(){
       $.ajax({url: url,
               success: function (data) {
                   $(`#${id_prefix}graphfiles`).html(data);
-                  $(`#${id}groupToggleBox`).prop('disabled', true);
+                  $(`#${id}groupToggleBox`).html('');
                   protocol = $(`#${id_prefix}protocol`).val();
                   if(protocol != ''){
                       toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${protocol}/toggles`;
@@ -337,11 +354,12 @@ $(document).ready(function(){
                                       id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
                                       $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('head');
                                   });
-                                  $(`#${id}groupToggleBox`).prop('disabled', false);
                                   $(`#${id_prefix}graphfiles`).prop('disabled', false);
                                   $(`#${id_prefix}graphfiles`).change();
                               }
                       });
+                  }else{
+                      $(`#${id_prefix}graphfiles`).change();
                   }
              }
       });
@@ -371,6 +389,11 @@ $(document).ready(function(){
               $(`#${id_prefix}experimentVersionsUpdate`).change();
           }
       }
+      updateSaveButton();
+  });
+  // new graph requires disabling save button
+  $(document).on('click', '#add-graph', function(){
+      $('#savebutton').prop('disabled', true);
   });
 
   // update graph preview when selected model groups change
@@ -460,6 +483,7 @@ $(document).ready(function(){
         $('.update_1').change();
 
     });
+
 });
 
 

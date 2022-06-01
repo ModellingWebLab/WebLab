@@ -14,7 +14,7 @@
 
 <div id='newstoryform'>
 
-<form method="POST" action="" novalidate id="storyform">
+<form method="POST" action="" id="storyform">
  {% csrf_token %}
 
   <input type="hidden" id="base_uri" value="{{base_uri}}">
@@ -96,7 +96,9 @@
              <div class="modelgroup-model-selector-row">
                 <div class="modelgroup-model-selector-col">
                     <select class="selectList modelgroupselect" id="id_graph-{{part.number.value}}-availableModels" size="{{part.models_or_group|length}}">
-                        {% for model in part.models_or_group%}{{model}}{% endfor %}                      
+                        {% for model in part.models_or_group%}
+                            {% if not model in part.id_models.all %}{{model}}{% endif %}
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="modelgroup-model-selector-col div-table-buttons">
@@ -104,10 +106,10 @@
                    <input class="slectModelForGroup" id="id_graph-{{part.number.value}}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right">
                 </div>
                 <div class="modelgroup-model-selector-col">
-                    <select name="graph-{{part.number.value}}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}"></select>
+                    <select name="graph-{{part.number.value}}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}" multiple>
+                    </select>
                 </div>
            </div>                        
-                     
                     <ul class="errorlist"><li>{{ part.protocol.errors }}</li></ul>
                     <label id="{{part.number.value}}-protocol" for="id_graph-{{part.number.value}}-protocol">Select protocol: </label>
                     <select name="graph-{{part.number.value}}-protocol" class="graphprotocol" id="id_graph-{{part.number.value}}-protocol" disabled><option value="">--------- protocol</option></select><br/>
@@ -148,7 +150,7 @@
         </tr>
       </tfoot>
   </table>
-  <button id="savebutton" class="modelGroupSavebutton">Save Story</button>
+  <button id="savebutton" class="modelGroupSavebutton" disabled>Save Story</button>
   </form>
 </div>
 
