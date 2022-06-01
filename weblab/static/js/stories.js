@@ -413,6 +413,7 @@ $(document).ready(function(){
 
   $("#storyparts").on("click", ".deletepart", function(){
       remove($(this));
+      updateSaveButton();
   });
 
   $("#storyparts").on("click", ".uppart", function(){
