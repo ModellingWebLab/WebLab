@@ -52,30 +52,31 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
     var toggleLabel = $("<div class='legendhead'>Toggle groups of models</div>");
     parentDiv.appendChild(toggleLabel.get(0));
 
-    var selectTogglerEl = document.createElement('input');
-    selectTogglerEl.id = thisPlot.graphIds['selectTogglerId'];
-    selectTogglerEl.setAttribute('checked', 'checked');
-    selectTogglerEl.type = 'checkbox';
-    parentDiv.appendChild(selectTogglerEl);
-
     var label = document.createElement('label');
     label.setAttribute('for', thisPlot.graphIds['selectTogglerId']);
     label.innerHTML = 'All &nbsp&nbsp';
     parentDiv.appendChild(label);
 
+    var selectTogglerEl = document.createElement('input');
+    selectTogglerEl.id = thisPlot.graphIds['selectTogglerId'];
+    selectTogglerEl.setAttribute('checked', 'checked');
+    selectTogglerEl.type = 'checkbox';
+    label.insertBefore(selectTogglerEl, label.firstChild);
+
     for(var groupId in groups){
+        var groupLabel = document.createElement('label');
+        groupLabel.setAttribute('id', `label_selectGroup-${groupId}`);
+        groupLabel.setAttribute('for', `selectGroup-${groupId}`);
+        groupLabel.innerHTML = `${groups[groupId]} &nbsp&nbsp`;
+        parentDiv.appendChild(groupLabel);
+
         var selectGroupEl = document.createElement('input');
         selectGroupEl.id = `selectGroup-${groupId}`;
         selectGroupEl.class='selectgroup';
         selectGroupEl.setAttribute('checked', 'checked');
         selectGroupEl.type = 'checkbox';
         selectGroupEl.className = `${thisPlot.graphIds["prefix"]}grouptoggle`;
-        parentDiv.appendChild (selectGroupEl);
-
-        var groupLabel = document.createElement('label');
-        groupLabel.setAttribute('for', `selectGroup-${groupId}`);
-        groupLabel.innerHTML = `${groups[groupId]} &nbsp&nbsp`;
-        parentDiv.appendChild(groupLabel);
+        groupLabel.insertBefore(selectGroupEl, groupLabel.firstChild);
     }
 
     var toggleLabel = $("<div class='legendhead'>Toggle models</div>");

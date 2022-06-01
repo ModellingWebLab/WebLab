@@ -297,6 +297,11 @@ $(document).ready(function(){
                       $.ajax({url: toggle_url,
                               success: function (data) {
                                   $(`#${id}groupToggleBox`).html(data);
+                                  // show all toggles
+                                  $(`#${id}groupToggleBox`).find('input').each(function(){
+                                      id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
+                                      $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('head');
+                                  });
                                   $(`#${id}groupToggleBox`).prop('disabled', false);
                                   $(`#${id_prefix}graphfiles`).prop('disabled', false);
                                   $(`#${id_prefix}graphfiles`).change();
@@ -334,9 +339,14 @@ $(document).ready(function(){
   });
 
   // update graph preview when selected model groups change
+
   $(document).on('change', '.groupToggleSelect', function(){
-      id_prefix = 'id_' + $(this).attr('name').replace('grouptoggles', '');
-      $(`#${id_prefix}graphfiles`).change();
+      id_prefix = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
+      if($(`#label_selectGroup-group${id_prefix}${$(this).val()}`).css('visibility') == 'hidden'){
+          $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('head');
+      }else{
+          $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: hidden; display: none;}</style>`).appendTo('head');
+      }
   });
 
   //link add, delete and up/down button clicks
@@ -395,9 +405,7 @@ $(document).ready(function(){
 
             // retreive selected groups
             $(`#${graphId}groupToggleBox`).find('input').each(function(){
-                if(!$(this).is(':checkbox') || $(this).is(":checked")){
-                   graphPathEntities += '/' + $(this).val();
-                }
+                graphPathEntities += '/' + $(this).val();
             });
 
             graphPathEntities = basePath + graphPathEntities.replace('//', '/');

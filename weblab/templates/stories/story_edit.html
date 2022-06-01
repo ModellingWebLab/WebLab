@@ -110,12 +110,12 @@
                      
                     <ul class="errorlist"><li>{{ part.protocol.errors }}</li></ul>
                     <label id="{{part.number.value}}-protocol" for="id_graph-{{part.number.value}}-protocol">Select protocol: </label>
-                    <select name="graph-{{part.number.value}}-protocol" class="graphprotocol" id="id_graph-{{part.number.value}}-protocol"><option value="">--------- protocol</option></select><br/>
+                    <select name="graph-{{part.number.value}}-protocol" class="graphprotocol" id="id_graph-{{part.number.value}}-protocol" disabled><option value="">--------- protocol</option></select><br/>
 
                     <ul class="errorlist"><li>{{ part.grouptoggles.errors }}</li></ul>Select which groups can be switched on and off in the graph: 
                     <div id="{{part.number.value}}groupToggleBox" class="groupToggleBox"></div>
                     <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
-                    <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label>{{part.graphfiles}}<br/><br/>
+                    <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label><select name="graph-{{part.number.value}}-graphfiles" class="graphfiles" id="id_graph-{{part.number.value}}-graphfiles" disabled="" disabled><option value="">--------- graph</option></select><br/><br>
                     <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox">
                       <div class="graphPreviewDialog">{% if  part.update.value and not part.graphfiles.value %}Please select a graph...{% else %}<input type="hidden" id="{{part.number.value}}entityIdsToCompare" class="entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experimentVersions.value}}/show/{%if part.update.value %}{{ part.graphfiles.value  }}{% else %}{{ part.graphfilename.value }}{%endif%}/{{form.graphvisualizer.value}}">
                         <div class="entitiesToCompare" id="{{part.number.value}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{%if part.update.value %}{{ part.experimentVersionsUpdate.value  }}{% else %}{{part.experimentVersions.value}}{% endif %}/info">loading...</div>
