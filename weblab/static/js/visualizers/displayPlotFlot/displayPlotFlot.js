@@ -49,7 +49,7 @@ function createAppendResetButton(thisPlot, parentDiv) {
 
 /* create and append a select toggler to the div element */
 function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
-    var toggleLabel = $("<div class='legendhead'>Toggle groups of models</div>");
+    var toggleLabel = $("<div class='legendhead'>Toggle options</div>");
     parentDiv.appendChild(toggleLabel.get(0));
 
     var label = document.createElement('label');
@@ -79,7 +79,7 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
         groupLabel.insertBefore(selectGroupEl, groupLabel.firstChild);
     }
 
-    var toggleLabel = $("<div class='legendhead'>Toggle models</div>");
+    var toggleLabel = $("<div class='legendhead'>Legend</div>");
     parentDiv.appendChild(toggleLabel.get(0));
 }
 
@@ -491,8 +491,9 @@ contentFlotPlot.prototype.drawPlot = function ()
 
         var flotPlotDivId = this.graphIds['prefix'] + 'flotplot-' + thisFileId.replace(/\W/g, '');
         createAppendFlotPlotDiv(this, thisDiv, flotPlotDivId);
-        (datasetNumber > 1) && createAppendSelectToggler(this, thisDiv);
+        //(datasetNumber > 1) && createAppendSelectToggler(this, thisDiv);
         createAppendResetButton(this, thisDiv);
+        (datasetNumber > 1) && createAppendSelectToggler(this, thisDiv);
         createAppendChoicesDiv(this, thisDiv);
         createAppendLegendDiv(this, thisDiv);
 
@@ -660,8 +661,9 @@ contentFlotPlotComparer.prototype.showContents = function ()
 
         var flotPlotDivId = this.graphIds['prefix'] + 'flotplot-' + thisFileSig;
         createAppendFlotPlotDiv(this, thisDiv, flotPlotDivId);
-        createAppendSelectToggler(this, thisDiv, groups);
+        //createAppendSelectToggler(this, thisDiv, groups);
         createAppendResetButton(this, thisDiv);
+        createAppendSelectToggler(this, thisDiv, groups);
         createAppendChoicesDiv(this, thisDiv);
         createAppendLegendDiv(this, thisDiv);
 

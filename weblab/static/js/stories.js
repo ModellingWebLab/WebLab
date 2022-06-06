@@ -269,6 +269,9 @@ function updateSaveButton(){
          saveButtonDisabled = saveButtonDisabled || $(this).val() == '';
     })
     $('#savebutton').prop('disabled', saveButtonDisabled);
+
+    $('#gpahSubmitWarning').removeClass();
+    $('#gpahSubmitWarning').addClass(saveButtonDisabled ? 'shownWarning' :'hiddenWarning');
 }
 
 

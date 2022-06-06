@@ -1740,3 +1740,13 @@ span.CodeMirror-selectedtext {
     display: block;
 }
 
+.hiddenWarning{
+    visibility: hidden;
+}
+
+.shownWarning{
+    visibility: visible;
+    color: #FFA500;
+    opacity: 0.4;
+}
+

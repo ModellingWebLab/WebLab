@@ -89,7 +89,7 @@
                 <div class="modelgroup-model-selector-col"><h5>Selected models & groups</h5></div>
              </div>
              <div class="modelgroup-model-selector-row">
-                <div class="modelgroup-model-selector-col left"><label>Filter search: </label><input class="searchModel" id="{{part.number.value}}-searchAvailableModel" autocomplete="off"><br/></div>
+                <div class="modelgroup-model-selector-col left"><label>Filter search: </label><input class="searchModel" id="id_graph-{{part.number.value}}-searchAvailableModel" autocomplete="off"><br/></div>
                 <div class="modelgroup-model-selector-colt"><ul class="errorlist"><li></li></ul></div>
              </div>
 
@@ -150,7 +150,7 @@
         </tr>
       </tfoot>
   </table>
-  <button id="savebutton" class="modelGroupSavebutton" disabled>Save Story</button>
+  <button id="savebutton" class="modelGroupSavebutton" disabled>Save Story</button> <span id="gpahSubmitWarning"  class="shownWarning">Some graphs have not been fully specified</span>
   </form>
 </div>
 
