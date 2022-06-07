@@ -284,7 +284,6 @@ class StoryFilterGroupToggles(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         graph_id = self.kwargs.get('gid', '')
-#        assert False, str(graph_id)
         models = get_models_run_for_model_and_protocol(self.request.user, self.kwargs.get('mk', ''), self.kwargs.get('pk', ''))
         used_groups =  set().union(*(m.model_groups.all() for m in models))
         return used_groups
@@ -314,6 +313,7 @@ class StoryRenderView(UserPassesTestMixin, DetailView):
                                       key=lambda f: f.order)
         for part in kwargs['storyparts']:
             if isinstance(part, StoryGraph):
+                part.grouptoggle_ids = '/' + '/'.join((str(t.pk) for t in part.grouptoggles.all()))
                 part.experiment_versions = get_url(
                     get_experiment_versions(self.request.user,
                                             part.cachedprotocolversion,
