@@ -133,7 +133,7 @@ function getStoryBasePath(){
     return url.replace(/stories.*/i, 'stories');
 }
 
-//checkbox toggels dropdown enabled
+//insert new graph form
 function insertGraphForm(){
     currentTextCount = parseInt($('#id_text-TOTAL_FORMS').val());
     currentGraphCount = parseInt($('#id_graph-TOTAL_FORMS').val())
@@ -158,9 +158,7 @@ function insertGraphForm(){
                   <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
                 </div>
                 <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><br/>
-                
-                
-                
+
       <div class="modelgroup-model-selector">
              <div class="modelgroup-model-selector-row">
                 <div class="modelgroup-model-selector-col left"><h5>Available models</h5></div>
@@ -259,14 +257,27 @@ function updateLoadingSpinner(){
 function updateSaveButton(){
     // update save button
     saveButtonDisabled = false;
+
     $('.selectedmodels').each(function(){
-         saveButtonDisabled = saveButtonDisabled || $(this).find('option').count == 0;
+        id = $(this).attr('id').replace('id_graph-', '').replace('-id_models', '');
+        being_updated = $(`#id_graph-${id}-update_0`).is(':checked');
+        if(being_updated){
+            saveButtonDisabled = saveButtonDisabled || $(this).find('option').count == 0;
+        }
     })
     $('.graphprotocol').each(function(){
-         saveButtonDisabled = saveButtonDisabled || $(this).val() == '';
+        id = $(this).attr('id').replace('id_graph-', '').replace('-protocol', '');
+        being_updated = $(`#id_graph-${id}-update_0`).is(':checked');
+        if(being_updated){
+            saveButtonDisabled = saveButtonDisabled || $(this).val() == '';
+        }
     })
     $('.graphfiles').each(function(){
-         saveButtonDisabled = saveButtonDisabled || $(this).val() == '';
+        id = $(this).attr('id').replace('id_graph-', '').replace('-graphfiles', '');
+        being_updated = $(`#id_graph-${id}-update_0`).is(':checked');
+        if(being_updated){
+            saveButtonDisabled = saveButtonDisabled || $(this).val() == '';
+        }
     })
     $('#savebutton').prop('disabled', saveButtonDisabled);
 
@@ -297,6 +308,7 @@ $(document).ready(function(){
         renderMde($(this).find('textarea').attr('id'));
     }
   });
+
   //checkbox toggels dropdown enabled
   $(document).on('click', '.preview-graph-control', function graphMenuVisibility(){
       id = $(this).attr('id');
@@ -307,9 +319,15 @@ $(document).ready(function(){
       $(`#id_graph-${id}-models_or_group`).prop("disabled", !update);
       $(`#id_graph-${id}-protocol`).prop("disabled", !update);
       $(`#id_graph-${id}-graphfiles`).prop("disabled", !update);
-      $(`#${id}-models_or_group-label`).css('opacity', update ? '1.0' : '0.5');
-      $(`#${id}-protocol`).css('opacity', update ? '1.0' : '0.5');
-      $(`#${id}-graphfiles`).css('opacity', update ? '1.0' : '0.5');
+      $(`#id_graph-${id}-deselectModelFromGroup`).prop("disabled", !update);
+      $(`#id_graph-${id}-slectModelForGroup`).prop("disabled", !update);
+      $(`#id_graph-${id}-availableModels`).prop("disabled", !update);
+      $(`#id_graph-${id}-id_models`).prop("disabled", !update);
+
+      $(`#${id}groupToggleBox`).find('input').each(function(){
+          $(this).prop( "disabled", !update);
+      });
+      updateSaveButton()
   });
 
   function get_models_str(id_prefix){

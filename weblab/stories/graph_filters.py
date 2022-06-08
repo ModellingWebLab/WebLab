@@ -21,7 +21,9 @@ def get_url(experiment_versions):
 def get_model_version_pks(mk):
     """Retreives the pks of model versions encoded in the mk stringe. """
     model_version_pks = set()
-    for model_or_group in filter(None, mk.split('_')):
+    if isinstance(mk, str):
+        mk = mk.split('_')
+    for model_or_group in filter(None, mk):
         if model_or_group.startswith('modelgroup'):
             model_or_group = int(model_or_group.replace('modelgroup', ''))
             model_version_pks |= set(m.repocache.latest_version.pk
@@ -78,11 +80,19 @@ def get_modelgroups(user):
             for model in ModelEntity.objects.visible_to_user(user)
             if model.repocache.versions.count()]
 
+def get_used_groups(user, model_key, protocol_key):
+    """ Returns the model groups that are in use by a given model, protocol combination."""
+    models = get_models_run_for_model_and_protocol(user, model_key, protocol_key)
+    return set().union(*(m.model_groups.all() for m in models))
+
 
 def get_protocols(mk, user):
     """ Returns the available protocols for given user and model(group)."""
     models = ModelGroup.objects.none()
-    for model_or_group in mk.split('_'):
+    if isinstance(mk, str):
+        mk = mk.split('_')
+
+    for model_or_group in mk:
         if model_or_group.startswith('modelgroup'):
             model_or_group = int(model_or_group.replace('modelgroup', ''))
             models |= ModelGroup.objects.get(pk=model_or_group).models.all()

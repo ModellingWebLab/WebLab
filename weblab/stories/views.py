@@ -30,7 +30,8 @@ from .graph_filters import (
     get_protocols,
     get_url,
     get_versions_for_model_and_protocol,
-    get_models_run_for_model_and_protocol
+    get_models_run_for_model_and_protocol,
+    get_used_groups,
 )
 from .models import Story, StoryGraph, StoryText
 
@@ -229,11 +230,15 @@ class StoryEditView(StoryView, UpdateView):
             experimentVersions = get_url(get_experiment_versions(s.author,
                                                                  s.cachedprotocolversion,
                                                                  [v.pk for v in s.cachedmodelversions.all()]))
+            models_or_group_list = [f'modelgroup{str(g.pk)}' for g in s.modelgroups.all()] + [f'model{str(g.pk)}' for g in s.models.all()]
+
             initial.append(
                 {'number': i,
-                 'models_or_group': 'modelgroup' + str(s.modelgroup.pk)
-                                    if s.modelgroup is not None
-                                    else 'model' + str(s.cachedmodelversions.first().model.pk),
+                 'models': s.models.all(),
+                 'models_or_group': models_or_group_list,
+                 'grouptoggles': [g.pk for g in s.grouptoggles.all()],
+
+#[g.pk for g in get_used_groups(self.request.user, models_or_group_list, s.cachedprotocolversion.protocol.pk)],
                  'protocol': s.cachedprotocolversion.protocol.pk,
                  'graphfilename': s.graphfilename,
                  'graphfiles': s.graphfilename,
@@ -244,6 +249,7 @@ class StoryEditView(StoryView, UpdateView):
                  'update': False,
                  'pk': s.pk}
             )
+#        assert False, str([(g.pk, g.title) for g in s.grouptoggles.all()])
         return super().get_formset_graph(initial=initial)
 
 
@@ -283,10 +289,7 @@ class StoryFilterGroupToggles(LoginRequiredMixin, ListView):
         return super().get_context_data(**self.kwargs)
 
     def get_queryset(self):
-        graph_id = self.kwargs.get('gid', '')
-        models = get_models_run_for_model_and_protocol(self.request.user, self.kwargs.get('mk', ''), self.kwargs.get('pk', ''))
-        used_groups =  set().union(*(m.model_groups.all() for m in models))
-        return used_groups
+        return get_used_groups(self.request.user, self.kwargs.get('mk', ''), self.kwargs.get('pk', ''))
 
 
 class StoryFilterGraphView(LoginRequiredMixin, ListView):

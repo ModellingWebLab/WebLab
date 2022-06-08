@@ -89,35 +89,51 @@
                 <div class="modelgroup-model-selector-col"><h5>Selected models & groups</h5></div>
              </div>
              <div class="modelgroup-model-selector-row">
-                <div class="modelgroup-model-selector-col left"><label>Filter search: </label><input class="searchModel" id="id_graph-{{part.number.value}}-searchAvailableModel" autocomplete="off"><br/></div>
+                <div class="modelgroup-model-selector-col left"><label>Filter search: </label><input class="searchModel" id="id_graph-{{part.number.value}}-searchAvailableModel" autocomplete="off"  {% if object.id %}disabled{% endif %}><br/></div>
                 <div class="modelgroup-model-selector-colt"><ul class="errorlist"><li></li></ul></div>
              </div>
 
              <div class="modelgroup-model-selector-row">
                 <div class="modelgroup-model-selector-col">
-                    <select class="selectList modelgroupselect" id="id_graph-{{part.number.value}}-availableModels" size="{{part.models_or_group|length}}">
-                        {% for model in part.models_or_group%}
-                            {% if not model in part.id_models.all %}{{model}}{% endif %}
+                    <select class="selectList modelgroupselect" id="id_graph-{{part.number.value}}-availableModels" size="{{part.models_or_group|length}}" {% if object.id %}disabled{% endif %}>
+                        {% for mg in part.models_or_group %}
+                            {% if not mg.data.selected %}{{mg}}{% endif %}
                         {% endfor %}
                     </select>
                 </div>
                 <div class="modelgroup-model-selector-col div-table-buttons">
-                   <input class="deselectModelFromGroup" id="id_graph-{{part.number.value}}-deselectModelFromGroup" type="button" value="◀" style="display: inline-block;" title="move left" alt="move left">
-                   <input class="slectModelForGroup" id="id_graph-{{part.number.value}}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right">
+                   <input class="deselectModelFromGroup" id="id_graph-{{part.number.value}}-deselectModelFromGroup" type="button" value="◀" style="display: inline-block;" title="move left" alt="move left" {% if object.id %}disabled{% endif %}>
+                   <input class="slectModelForGroup" id="id_graph-{{part.number.value}}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right" {% if object.id %}disabled{% endif %}>
                 </div>
                 <div class="modelgroup-model-selector-col">
-                    <select name="graph-{{part.number.value}}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}" multiple>
+                    <select name="graph-{{part.number.value}}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}" multiple {% if object.id %}disabled{% endif %}>
+                        {% for mg in part.models_or_group %}
+                            {% if mg.data.selected %}{{mg}}{% endif %}
+                        {% endfor %}
                     </select>
                 </div>
            </div>                        
                     <ul class="errorlist"><li>{{ part.protocol.errors }}</li></ul>
                     <label id="{{part.number.value}}-protocol" for="id_graph-{{part.number.value}}-protocol">Select protocol: </label>
-                    <select name="graph-{{part.number.value}}-protocol" class="graphprotocol" id="id_graph-{{part.number.value}}-protocol" disabled><option value="">--------- protocol</option></select><br/>
+                    <select name="graph-{{part.number.value}}-protocol" class="graphprotocol" id="id_graph-{{part.number.value}}-protocol" disabled>
+                        {% for prot in part.protocol %}
+                            {{prot}}
+                        {% endfor %}
+                    </select><br/>
 
                     <ul class="errorlist"><li>{{ part.grouptoggles.errors }}</li></ul>Select which groups can be switched on and off in the graph: 
-                    <div id="{{part.number.value}}groupToggleBox" class="groupToggleBox"></div>
+                    <div id="{{part.number.value}}groupToggleBox" class="groupToggleBox">
+                        {% for toggle in part.grouptoggles %}
+                            <label for="{{ toggle.data.id  }}"><input class="groupToggleSelect" type="checkbox" name="{{ toggle.data.name }}" value="{{ toggle.data.value  }}" id="toggle.data.id" {%if toggle.data.attrs.checked %}checked{% endif %} disabled>{{ toggle.data.label }}</label>
+                        {% endfor %}
+                    </div>
                     <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
-                    <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label><select name="graph-{{part.number.value}}-graphfiles" class="graphfiles" id="id_graph-{{part.number.value}}-graphfiles" disabled="" disabled><option value="">--------- graph</option></select><br/><br>
+                    <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label>
+                    <select name="graph-{{part.number.value}}-graphfiles" class="graphfiles" id="id_graph-{{part.number.value}}-graphfiles" disabled>
+                        {% for graph in part.graphfiles %}
+                            {{graph}}
+                        {% endfor %}
+                    </select><br/><br/>
                     <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox">
                       <div class="graphPreviewDialog">{% if  part.update.value and not part.graphfiles.value %}Please select a graph...{% else %}<input type="hidden" id="{{part.number.value}}entityIdsToCompare" class="entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experimentVersions.value}}/show/{%if part.update.value %}{{ part.graphfiles.value  }}{% else %}{{ part.graphfilename.value }}{%endif%}/{{form.graphvisualizer.value}}">
                         <div class="entitiesToCompare" id="{{part.number.value}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{%if part.update.value %}{{ part.experimentVersionsUpdate.value  }}{% else %}{{part.experimentVersions.value}}{% endif %}/info">loading...</div>
@@ -150,7 +166,7 @@
         </tr>
       </tfoot>
   </table>
-  <button id="savebutton" class="modelGroupSavebutton" disabled>Save Story</button> <span id="gpahSubmitWarning"  class="shownWarning">Some graphs have not been fully specified</span>
+  <button id="savebutton" class="modelGroupSavebutton" {% if not object.id %}disabled{% endif %}>Save Story</button> <span id="gpahSubmitWarning" class="{%if object.id %}hiddenWarning{% else %}shownWarning{% endif %}">Some graphs have not been fully specified</span>
   </form>
 </div>
 
