@@ -60,7 +60,8 @@
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
                       <img class="deletepart" alt="remove story part" title="remove story part"/>
                       <input class="order" type="hidden" name="graph-{{part.number.value}}-ORDER" id="id_graph-{{part.number.value}}-ORDER" value="{{forloop.counter0}}">
-                      <input type="hidden" name="graph-{{part.number.value}}-currentGraph" class="currentGraph" id="id_graph-{{part.number.value}}-currentGraph" value="{{part.currentGraph.value}}">
+                      <input type="hidden" name="graph-{{part.number.value}}-currentGraph" class="currentGraph" id="id_graph-{{part.number.value}}-currentGraph" value="{% for graph in part.graphfiles %}{% if graph.data.selected %}{{graph.data.value}}{% endif %}{% endfor %}">
+
                       <input class="number" type="hidden" name="graph-{{part.number.value}}-number" id="id_graph-{{part.number.value}}-number" value="{{part.number.value}}">
                     </div>
                   </td>
@@ -121,10 +122,10 @@
                         {% endfor %}
                     </select><br/>
 
-                    <ul class="errorlist"><li>{{ part.grouptoggles.errors }}</li></ul>Select which groups can be switched on and off in the graph: 
+                    <ul class="errorlist"><li>{{ part.grouptoggles.errors }}</li></ul>Select which groups can be switched on and off in the graph:
                     <div id="{{part.number.value}}groupToggleBox" class="groupToggleBox">
                         {% for toggle in part.grouptoggles %}
-                            <label for="{{ toggle.data.id  }}"><input class="groupToggleSelect" type="checkbox" name="{{ toggle.data.name }}" value="{{ toggle.data.value  }}" id="toggle.data.id" {%if toggle.data.attrs.checked %}checked{% endif %} disabled>{{ toggle.data.label }}</label>
+                            <label for="{{ toggle.data.id  }}"><input type="checkbox" name="graph-{{ part.number.value}}-grouptoggles" value="{{ toggle.data.value  }}" class="grouptoggles" id="id_graph-{{ part.number.value}}-grouptoggles_{{forloop.counter0}}" {%if toggle.data.attrs.checked %}checked{% endif %} disabled>{{ toggle.data.label }}</label>
                         {% endfor %}
                     </div>
                     <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
@@ -134,9 +135,11 @@
                             {{graph}}
                         {% endfor %}
                     </select><br/><br/>
+
                     <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox">
                       <div class="graphPreviewDialog">{% if  part.update.value and not part.graphfiles.value %}Please select a graph...{% else %}<input type="hidden" id="{{part.number.value}}entityIdsToCompare" class="entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experimentVersions.value}}/show/{%if part.update.value %}{{ part.graphfiles.value  }}{% else %}{{ part.graphfilename.value }}{%endif%}/{{form.graphvisualizer.value}}">
-                        <div class="entitiesToCompare" id="{{part.number.value}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{%if part.update.value %}{{ part.experimentVersionsUpdate.value  }}{% else %}{{part.experimentVersions.value}}{% endif %}/info">loading...</div>
+                        <div class="entitiesToCompare" id="{{part.number.value}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{%if part.update.value %}{{ part.experimentVersionsUpdate.value  }}{% else %}{{part.experimentVersions.value}}{% endif %}/graph_for_story{% for toggle in part.grouptoggles %}{% if toggle.data.selected %}/{{toggle.data.value}}{% endif %}{% endfor %}
+">loading...</div>
                           <div id="{{part.number.value}}filedetails" class="filedetails">
                           <div id="{{part.number.value}}filedisplay"></div>
                         </div>{% endif %}

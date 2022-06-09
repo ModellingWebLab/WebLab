@@ -237,8 +237,6 @@ class StoryEditView(StoryView, UpdateView):
                  'models': s.models.all(),
                  'models_or_group': models_or_group_list,
                  'grouptoggles': [g.pk for g in s.grouptoggles.all()],
-
-#[g.pk for g in get_used_groups(self.request.user, models_or_group_list, s.cachedprotocolversion.protocol.pk)],
                  'protocol': s.cachedprotocolversion.protocol.pk,
                  'graphfilename': s.graphfilename,
                  'graphfiles': s.graphfilename,
@@ -249,7 +247,6 @@ class StoryEditView(StoryView, UpdateView):
                  'update': False,
                  'pk': s.pk}
             )
-#        assert False, str([(g.pk, g.title) for g in s.grouptoggles.all()])
         return super().get_formset_graph(initial=initial)
 
 
