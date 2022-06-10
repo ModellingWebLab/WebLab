@@ -230,12 +230,11 @@ class StoryEditView(StoryView, UpdateView):
             experimentVersions = get_url(get_experiment_versions(s.author,
                                                                  s.cachedprotocolversion,
                                                                  [v.pk for v in s.cachedmodelversions.all()]))
-            models_or_group_list = [f'modelgroup{str(g.pk)}' for g in s.modelgroups.all()] + [f'model{str(g.pk)}' for g in s.models.all()]
 
             initial.append(
                 {'number': i,
                  'models': s.models.all(),
-                 'models_or_group': models_or_group_list,
+                 'id_models': [f'modelgroup{str(g.pk)}' for g in s.modelgroups.all()] + [f'model{str(g.pk)}' for g in s.models.all()],
                  'grouptoggles': [g.pk for g in s.grouptoggles.all()],
                  'protocol': s.cachedprotocolversion.protocol.pk,
                  'graphfilename': s.graphfilename,

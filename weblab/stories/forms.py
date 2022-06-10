@@ -81,6 +81,16 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         """Turn list of ids passed as string back into a list."""
         return re.sub('\[|\]|\'| ', '', self.cleaned_data['id_models']).split(',')
 
+    def setup_choices(self, args_dict):
+        id_models = args_dict.get('id_models', '')
+        protocol = args_dict.get('protocol', '')
+        self.fields['protocol'].widget.choices = [('', '--------- protocol')] + list(get_protocols(id_models, self.user))
+        self.fields['grouptoggles'].choices = [(g.pk, g.title) for g in get_used_groups(self.user, id_models, args_dict.get('protocol', ''))]
+        self.fields['graphfiles'].widget.choices = list(get_graph_file_names(self.user,
+                                                        id_models,
+                                                        protocol))
+
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = kwargs.pop('user', None)
@@ -100,34 +110,39 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
         self.fields['models_or_group'] = forms.CharField(required=False,
                                                          widget=forms.SelectMultiple(attrs={'class': 'modelgroupselect'}, choices = visible_model_choices))
-        self.fields['id_models'] = forms.CharField(required=False, widget=forms.SelectMultiple(attrs={'class': 'selectList modelgroupselect'}, choices = visible_model_choices))
+        self.fields['id_models'] = forms.CharField(required=True, widget=forms.SelectMultiple(attrs={'class': 'selectList modelgroupselect'}, choices = visible_model_choices))
 
 
-        self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
+        self.fields['protocol'] = forms.CharField(required=True, widget=forms.Select(attrs={'class': 'graphprotocol'}))
 
         self.fields['grouptoggles'] = forms.MultipleChoiceField(choices=[(g.id, g.title) for g in ModelGroup.objects.all()], widget=forms.CheckboxSelectMultiple())
-        self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphfiles'}))
+        self.fields['graphfiles'] = forms.CharField(required=True, widget=forms.Select(attrs={'class': 'graphfiles'}))
 
         if 'initial' in kwargs and 'currentGraph' in kwargs['initial'] and kwargs['initial']['currentGraph']:
-            models_or_group = kwargs['initial'].get('models_or_group', '')
-            protocol = kwargs['initial'].get('protocol', '')
-
-            self.fields['protocol'].widget.choices = \
-                [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
-
-            self.fields['grouptoggles'].choices = [(g.pk, g.title) for g in get_used_groups(self.user, models_or_group, kwargs['initial'].get('protocol', ''))]
-
-            graph_coices = list(get_graph_file_names(self.user,
-                                                     models_or_group,
-                                                     protocol))
-            self.fields['graphfiles'].widget.choices = graph_coices
+            self.has_initial = True
+            self.setup_choices(kwargs['initial'])
         else:
+            self.has_initial = False
             self.fields['protocol'].widget.choices = [('', '--------- protocol')]
             self.fields['grouptoggles'].choices = [(g.id, g.title) for g in ModelGroup.objects.all()]
 
+    def clean(self):
+        cleaned_data = super().clean()
+        if not self.has_initial:
+            self.setup_choices(cleaned_data)
+#            models_or_group = cleaned_data['id_models']
+#            protocol = cleaned_data['protocol']
+#            self.fields['protocol'].widget.choices = \
+#                [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
+#
+#            self.fields['grouptoggles'].choices = [(g.pk, g.title) for g in get_used_groups(self.user, models_or_group, protocol)]
+#            self.fields['graphfiles'].widget.choices = list(get_graph_file_names(self.user,
+#                                                            models_or_group,
+#                                                            protocol))
+#            assert False, str(graph_coices)
 
-#    def clean(self):
-#        cleaned_data = super().clean()
+
+#        assert False, str(cleaned_data)
 #        disabled = not cleaned_data['update']
 #        self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
 #        self.fields['id_modelsp'].widget.attrs['disabled'] = 'disabled' if disabled else False

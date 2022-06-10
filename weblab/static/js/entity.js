@@ -974,16 +974,19 @@ $(document).ready(function(){
         my_id_prefix = $(this).attr('id').replace('deselectModelFromGroup', '');
         selected_item = $(`#${my_id_prefix}id_models`).find(":selected");
         selected_item_val = $(selected_item).attr('value');
-        // if it's a modelgroup make sure it stays in the modelgroup section
-        if(selected_item_val.startsWith('modelgroup')){
-            $(`#${my_id_prefix}availableModels`).find("[value='']").each(function(){
-                if($(this).text().endsWith('model')){
-                    $(selected_item).insertBefore($(this));
-                }
-            });
-        }else{
-            $(`#${my_id_prefix}availableModels`).append(selected_item);
-        }
+        selected_item.each(function(){
+            // if it's a modelgroup make sure it stays in the modelgroup section
+            if($(this).attr('value').startsWith('modelgroup')){
+                selected_item = this;
+                $(`#${my_id_prefix}availableModels`).find("[value='']").each(function(){
+                    if($(this).text().endsWith('model')){
+                        $(selected_item).insertBefore($(this));
+                    }
+                });
+            }else{
+                $(`#${my_id_prefix}availableModels`).append($(this));
+            }
+        });
         $(`#${my_id_prefix}id_models`).trigger('modelsChanged');
         set_visibility();
     });
@@ -991,10 +994,13 @@ $(document).ready(function(){
     $(document).on('click', '.slectModelForGroup', function(){
         my_id_prefix = $(this).attr('id').replace('slectModelForGroup', '');
         selected_item = $(`#${my_id_prefix}availableModels`).find(":selected");
-        if ($(selected_item).attr('value') != ""){
-            $(`#${my_id_prefix}id_models`).append($(`#${my_id_prefix}availableModels`).find(":selected")).trigger('modelsChanged');
-            set_visibility();
-        }
+        selected_item.each(function(){
+            if($(this).attr("value") != ""){
+                $(`#${my_id_prefix}id_models`).append($(this));
+            }
+        });
+        $(`#${my_id_prefix}id_models`).trigger('modelsChanged');
+        set_visibility();
     });
 
     $('.modelGroupSavebutton').click(function(){

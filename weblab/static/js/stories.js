@@ -157,7 +157,7 @@ function insertGraphForm(){
                   <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name="graph-${currentGraphCount}-update" checked>
                   <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
                 </div>
-                <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><br/>
+                <label id="${currentGraphCount}-id_models" for="id_graph-${currentGraphCount}-id_models">Select model or model group: </label><br/>
 
       <div class="modelgroup-model-selector">
              <div class="modelgroup-model-selector-row">
@@ -171,8 +171,7 @@ function insertGraphForm(){
 
              <div class="modelgroup-model-selector-row">
                 <div class="modelgroup-model-selector-col">
-                    <select class="selectList modelgroupselect" id="id_graph-${currentGraphCount}-availableModels" size="2">
-                        {% for model in part.models_or_group%}{{model}}{% endfor %}                      
+                    <select class="selectList modelgroupselect" id="id_graph-${currentGraphCount}-availableModels" size="2" multiple>
                     </select>
                 </div>
                 <div class="modelgroup-model-selector-col div-table-buttons">
@@ -180,7 +179,7 @@ function insertGraphForm(){
                    <input class="slectModelForGroup" id="id_graph-${currentGraphCount}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right">
                 </div>
                 <div class="modelgroup-model-selector-col">
-                    <select name="graph-${currentGraphCount}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-${currentGraphCount}-id_models" size="2"></select>
+                    <select name="graph-${currentGraphCount}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-${currentGraphCount}-id_models" size="2" multiple></select>
                 </div>
            </div><br/>
                 
@@ -254,38 +253,6 @@ function updateLoadingSpinner(){
 }
 
 
-function updateSaveButton(){
-    // update save button
-    saveButtonDisabled = false;
-
-    $('.selectedmodels').each(function(){
-        id = $(this).attr('id').replace('id_graph-', '').replace('-id_models', '');
-        being_updated = $(`#id_graph-${id}-update_0`).is(':checked');
-        if(being_updated){
-            saveButtonDisabled = saveButtonDisabled || $(this).find('option').count == 0;
-        }
-    })
-    $('.graphprotocol').each(function(){
-        id = $(this).attr('id').replace('id_graph-', '').replace('-protocol', '');
-        being_updated = $(`#id_graph-${id}-update_0`).is(':checked');
-        if(being_updated){
-            saveButtonDisabled = saveButtonDisabled || $(this).val() == '';
-        }
-    })
-    $('.graphfiles').each(function(){
-        id = $(this).attr('id').replace('id_graph-', '').replace('-graphfiles', '');
-        being_updated = $(`#id_graph-${id}-update_0`).is(':checked');
-        if(being_updated){
-            saveButtonDisabled = saveButtonDisabled || $(this).val() == '';
-        }
-    })
-    $('#savebutton').prop('disabled', saveButtonDisabled);
-
-    $('#gpahSubmitWarning').removeClass();
-    $('#gpahSubmitWarning').addClass(saveButtonDisabled ? 'shownWarning' :'hiddenWarning');
-}
-
-
 // hook up functionality when document has loaded
 $(document).ready(function(){
 
@@ -316,18 +283,11 @@ $(document).ready(function(){
       id = id.replace('-update_0', '');
       id = id.replace('-update_1', '');
       update = $(`#id_graph-${id}-update_0`).is(':checked');
-      $(`#id_graph-${id}-models_or_group`).prop("disabled", !update);
-      $(`#id_graph-${id}-protocol`).prop("disabled", !update);
-      $(`#id_graph-${id}-graphfiles`).prop("disabled", !update);
-      $(`#id_graph-${id}-deselectModelFromGroup`).prop("disabled", !update);
-      $(`#id_graph-${id}-slectModelForGroup`).prop("disabled", !update);
-      $(`#id_graph-${id}-availableModels`).prop("disabled", !update);
-      $(`#id_graph-${id}-id_models`).prop("disabled", !update);
-
-      $(`#${id}groupToggleBox`).find('input').each(function(){
-          $(this).prop( "disabled", !update);
-      });
-      updateSaveButton()
+      if(update){
+          $(`#id_graph-${id}-graph-selecttion-controls`).css({"visibility": "visible", "display": "block"});
+      }else{
+          $(`#id_graph-${id}-graph-selecttion-controls`).css({"visibility": "hidden", "display": "none"});
+      }
   });
 
   function get_models_str(id_prefix){
@@ -410,18 +370,13 @@ $(document).ready(function(){
               $(`#${id_prefix}experimentVersionsUpdate`).change();
           }
       }
-      updateSaveButton();
-  });
-  // new graph requires disabling save button
-  $(document).on('click', '#add-graph', function(){
-      $('#savebutton').prop('disabled', true);
   });
 
   // update graph preview when selected model groups change
 
   $(document).on('change', '.groupToggleSelect', function(){
       id_prefix = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
-      if($(`#label_selectGroup-group${id_prefix}${$(this).val()}`).css('visibility') == 'hidden'){
+      if($(this).is(':checked')){
           $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('head');
       }else{
           $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: hidden; display: none;}</style>`).appendTo('head');
@@ -434,7 +389,6 @@ $(document).ready(function(){
 
   $("#storyparts").on("click", ".deletepart", function(){
       remove($(this));
-      updateSaveButton();
   });
 
   $("#storyparts").on("click", ".uppart", function(){
@@ -465,14 +419,29 @@ $(document).ready(function(){
         $(`#${graphId}graphPreviewBox`).removeClass('displayPlotFlot-preview');
         $(`#${graphId}graphPreviewBox`).removeClass('displayPlotHC-preview');
         $(`#${graphId}graphPreviewBox`).addClass(`${$('#id_graphvisualizer').val()}-preview`);
+        groupToggles = '';
         if ($(`#id_graph-${graphId}-update_1`).is(':checked')) {
             experimentVersions = $(`#id_graph-${graphId}-experimentVersions`).val();
-            currentGraph = $(`#id_graph-${graphId}-currentGraph`).val();
-            currentGraphParts = currentGraph.split(' / ');
-            graphFile = currentGraphParts[currentGraphParts.length - 1];
+            graphFile = $(`#id_graph-${graphId}-currentGraph`).val();
+            groupToggles = $(`#id_graph-${graphId}-currentGroupToggles`).val();
+
+            //make sure all group toggles in original graph are visible
+            group_toggle_list = groupToggles.split('/');
+            for (i = 0; i < group_toggle_list.length; i++) {
+                $(`<style>#label_selectGroup-group-${graphId}-${i + 1} { visibility: visible; display: block;}</style>`).appendTo('head');
+            }
+
         } else {
             experimentVersions = $(`#id_graph-${graphId}-experimentVersionsUpdate`).val();
             graphFile = $(`#id_graph-${graphId}-graphfiles`).val();
+            // retreive selected groups
+            $(`#${graphId}groupToggleBox`).find('input').each(function(){
+                groupToggles += '/' + $(this).val();
+                //make sure vasability for toggles matches their selectedness
+                $(this).change();
+            });
+            //make sure vasability for toggles matches their selectedness
+
         }
         if (experimentVersions != '/') {
             basePath = $('#base_uri').val(); // may be running in subfolder, so the base path (without /stories) is passed form django
@@ -481,12 +450,7 @@ $(document).ready(function(){
             graphPathIds = basePath + graphPathIds.replace('//', '/');
 
             // compse url for entities for preview graph
-            graphPathEntities = `/experiments/compare/${experimentVersions}/graph_for_story`;
-
-            // retreive selected groups
-            $(`#${graphId}groupToggleBox`).find('input').each(function(){
-                graphPathEntities += '/' + $(this).val();
-            });
+            graphPathEntities = `/experiments/compare/${experimentVersions}/graph_for_story${groupToggles}`;
 
             graphPathEntities = basePath + graphPathEntities.replace('//', '/');
             $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" class="entityIdsToCompare" value="${graphPathIds}"><div class="entitiesToCompare" id="${graphId}entitiesToCompare" data-comparison-href="${graphPathEntities}">loading...</div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay"></div></div></div>`);
