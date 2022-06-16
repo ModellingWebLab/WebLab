@@ -497,7 +497,10 @@ class ExperimentGraphForStoryJsonView(ExperimentComparisonJsonView):
     def _version_json(self, version, model_version_in_name, protocol_version_in_name):
         details = super()._version_json(version, model_version_in_name, protocol_version_in_name)
         modelgroup_pks = filter(None, self.kwargs.get('group_pks', '')[1:].split('/'))
-        details['groups'] = [{'id': pk, 'title': ModelGroup.objects.get(pk=pk).title} for pk in modelgroup_pks]
+        details.update({
+            'groups': list(version.experiment.model.model_groups.all().intersection(ModelGroup.objects.filter(pk__in=modelgroup_pks)).values('id', 'title'))
+        })
+
         return details
 
 @method_decorator(staff_member_required, name='dispatch')
