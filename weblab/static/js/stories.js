@@ -470,6 +470,57 @@ $(document).ready(function(){
 
     });
 
+    // if the selected model has a value fill it and use ajax to backfil the rest of the form so we can edit it.
+    $('.selectedmodels').each(function(){
+        if($(this).find('option').length){
+            id_prefix = $(this).attr('id').replace('id_models', '');
+            id = id_prefix.replace('id_graph-', '').replace('-', '');
+            url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/protocols`;
+            protocol_selected =  $(`#${id_prefix}protocol`).val();
+            graph_file_selected = $(`#${id_prefix}graphfiles`).val();
+            $(`#${id_prefix}protocol`).prop('disabled', true);
+            $(`#${id_prefix}graphfiles`).prop('disabled', true);
+            $.ajax({url: url,
+                    success: function (data) {
+                        $(`#${id_prefix}protocol`).html(data);
+                        $(`#${id_prefix}protocol`).val(protocol_selected);
+                        $(`#${id_prefix}protocol`).prop('disabled', false);
+
+                        graph_file_url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol_selected}/graph`;
+                        $.ajax({url: graph_file_url,
+                                success: function (data) {
+                                    $(`#${id_prefix}graphfiles`).html(data);
+                                    $(`#${id_prefix}graphfiles`).val(graph_file_selected);
+                                    $(`#${id_prefix}graphfiles`).prop('disabled', false);
+                                    toggle_values = [];
+                                    $(`#${id}groupToggleBox`).find('input').each(function(){
+                                        toggle_values.push($(this).val());
+                                    });
+
+                                    if(protocol_selected != ''){
+                                        $(`#${id}groupToggleBox`).html('');
+                                        toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${protocol_selected}/toggles`;
+                                        $.ajax({url: toggle_url,
+                                                success: function (data) {
+                                                    $(`#${id}groupToggleBox`).html(data);
+                                                    // show all toggles
+                                                    $(`#${id}groupToggleBox`).find('input').each(function(){
+                                                        id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
+                                                        $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('head');
+                                                    });
+                                                    $(`#${id}groupToggleBox`).find('input').each(function(){
+                                                        $(this).prop('checked', toggle_values.includes($(this).val()));
+                                                    });
+                                                }
+                                        });
+                                    }
+                               }
+                        });
+                    }
+
+            });
+        }
+    });
 });
 
 

@@ -28,7 +28,7 @@ def get_model_version_pks(mk):
             model_or_group = int(model_or_group.replace('modelgroup', ''))
             model_version_pks |= set(m.repocache.latest_version.pk
                                  for m in ModelGroup.objects.get(pk=model_or_group).models.all()
-                                 if m.repocache.versions.count())
+                                 if m.repocache.versions.exists())
         else:
             assert model_or_group.startswith('model'), "The model of group field value should start with model or modelgroup."+ model_or_group
             model_or_group = int(model_or_group.replace('model', ''))
@@ -78,7 +78,7 @@ def get_modelgroups(user):
            [('', '--------- model')] +\
            [('model' + str(model.pk), model.name)
             for model in ModelEntity.objects.visible_to_user(user)
-            if model.repocache.versions.count()]
+            if model.repocache.versions.exists()]
 
 def get_used_groups(user, model_key, protocol_key):
     """ Returns the model groups that are in use by a given model, protocol combination."""

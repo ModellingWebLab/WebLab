@@ -166,7 +166,8 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
 
     def get_formset_graph(self, initial=[{'ORDER': 1, 'number': 0, 'currentGraph': '', 'experimentVersions': ''}]):
         if not hasattr(self, 'formsetgraph') or self.formsetgraph is None:
-            form_kwargs = {'user': self.request.user}
+            form_kwargs = {'user': self.request.user, 'visible_model_choices': get_modelgroups(self.request.user)}
+
             if self.request.method == 'POST':
                 self.formsetgraph = self.formset_graph_class(
                     self.request.POST,
@@ -185,7 +186,7 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
         kwargs['formset'] = self.get_formset()
         kwargs['formsetgraph'] = self.get_formset_graph()
         kwargs['storyparts'] = sorted(list(kwargs['formset']) + list(kwargs['formsetgraph']),
-                                      key=lambda f: f['ORDER'].value())
+                                      key=lambda f: int(f['ORDER'].value()) if not f['DELETE'].value() else -1)
         return super().get_context_data(**kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -230,12 +231,11 @@ class StoryEditView(StoryView, UpdateView):
             experimentVersions = get_url(get_experiment_versions(s.author,
                                                                  s.cachedprotocolversion,
                                                                  [v.pk for v in s.cachedmodelversions.all()]))
-
             initial.append(
                 {'number': i,
                  'models': s.models.all(),
                  'id_models': [f'modelgroup{str(g.pk)}' for g in s.modelgroups.all()] + [f'model{str(g.pk)}' for g in s.models.all()],
-                 'grouptoggles': [g.pk for g in s.grouptoggles.all()],
+                 'grouptoggles': list(s.grouptoggles.all().values_list('pk', flat=True)),
                  'protocol': s.cachedprotocolversion.protocol.pk,
                  'graphfilename': s.graphfilename,
                  'graphfiles': s.graphfilename,

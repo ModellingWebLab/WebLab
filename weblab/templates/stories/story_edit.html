@@ -117,25 +117,24 @@
            </div>                        
                     <ul class="errorlist"><li>{{ part.protocol.errors }}</li></ul>
                     <label id="{{part.number.value}}-protocol" for="id_graph-{{part.number.value}}-protocol">Select protocol: </label>
-                    <select name="graph-{{part.number.value}}-protocol" class="graphprotocol" id="id_graph-{{part.number.value}}-protocol" {% if  part.protocol|length == 1 %}disabled{% endif %}>
+                    <select name="graph-{{part.number.value}}-protocol" class="graphprotocol" id="id_graph-{{part.number.value}}-protocol">
+                         <option value="">--------- protocol</option>
                         {% for prot in part.protocol %}
-                            {{prot}}
+                            {% if prot.data.value != None %} <option selected value="{{prot.data.value}}">{{prot.data.value}}</option> {% endif %}
                         {% endfor %}
                     </select><br/>
 
                     <ul class="errorlist"><li>{{ part.grouptoggles.errors }}</li></ul>Select which groups can be switched on and off in the graph:
                     <div id="{{part.number.value}}groupToggleBox" class="groupToggleBox">
-                        {% if object.id or part.protocol|length != 1%}
-                            {% for toggle in part.grouptoggles %}
-                                <label for="{{ toggle.data.id  }}"><input type="checkbox" name="graph-{{ part.number.value}}-grouptoggles" value="{{ toggle.data.value  }}" class="groupToggleSelect" id="id_graph-{{ part.number.value}}-grouptoggles_{{forloop.counter0}}" {%if toggle.data.attrs.checked %}checked{% endif %}>{{ toggle.data.label }}</label>
-                            {% endfor %}
-                        {% endif %}
+                        {% for toggle in part.grouptoggles %}
+                            {% if toggle.data.selected %}<label for="{{ toggle.data.id  }}"><input type="checkbox" name="graph-{{ part.number.value}}-grouptoggles" value="{{ toggle.data.value  }}" class="groupToggleSelect" id="id_graph-{{ part.number.value}}-grouptoggles_{{forloop.counter0}}" checked>{{ toggle.data.label }}</label>{% endif %}
+                        {% endfor %}
                     </div>
                     <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
                     <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label>
-                    <select name="graph-{{part.number.value}}-graphfiles" class="graphfiles" id="id_graph-{{part.number.value}}-graphfiles" {% if  part.graphfiles|length == 0 %}disabled{% endif %}>
-                        {% for graph in part.graphfiles %}
-                            {{graph}}
+                    <select name="graph-{{part.number.value}}-graphfiles" class="graphfiles" id="id_graph-{{part.number.value}}-graphfiles">
+                        {% for file in part.graphfiles %}
+                            {% if file.data.value != None %} <option selected value="{{file.data.value}}">{{file.data.value}}</option> {% endif %}
                         {% endfor %}
                     </select><br/><br/>
                    </div>
