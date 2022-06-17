@@ -474,21 +474,26 @@ $(document).ready(function(){
     $('.selectedmodels').each(function(){
         if($(this).find('option').length){
             id_prefix = $(this).attr('id').replace('id_models', '');
-            id = id_prefix.replace('id_graph-', '').replace('-', '');
+//            id = id_prefix.replace('id_graph-', '').replace('-', '');
             url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/protocols`;
             protocol_selected =  $(`#${id_prefix}protocol`).val();
             graph_file_selected = $(`#${id_prefix}graphfiles`).val();
             $(`#${id_prefix}protocol`).prop('disabled', true);
             $(`#${id_prefix}graphfiles`).prop('disabled', true);
             $.ajax({url: url,
+                    context: this,
                     success: function (data) {
+                        id_prefix = $(this).attr('id').replace('id_models', '');
                         $(`#${id_prefix}protocol`).html(data);
                         $(`#${id_prefix}protocol`).val(protocol_selected);
                         $(`#${id_prefix}protocol`).prop('disabled', false);
 
                         graph_file_url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol_selected}/graph`;
                         $.ajax({url: graph_file_url,
+                                context: this,
                                 success: function (data) {
+                                    id_prefix = $(this).attr('id').replace('id_models', '');
+                                    id = id_prefix.replace('id_graph-', '').replace('-', '');
                                     $(`#${id_prefix}graphfiles`).html(data);
                                     $(`#${id_prefix}graphfiles`).val(graph_file_selected);
                                     $(`#${id_prefix}graphfiles`).prop('disabled', false);
@@ -501,7 +506,10 @@ $(document).ready(function(){
                                         $(`#${id}groupToggleBox`).html('');
                                         toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${protocol_selected}/toggles`;
                                         $.ajax({url: toggle_url,
+                                                context: this,
                                                 success: function (data) {
+                                                    id_prefix = $(this).attr('id').replace('id_models', '');
+                                                    id = id_prefix.replace('id_graph-', '').replace('-', '');
                                                     $(`#${id}groupToggleBox`).html(data);
                                                     // show all toggles
                                                     $(`#${id}groupToggleBox`).find('input').each(function(){
@@ -521,6 +529,6 @@ $(document).ready(function(){
             });
         }
     });
-});
 
+});
 
