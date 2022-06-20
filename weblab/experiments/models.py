@@ -133,6 +133,8 @@ class Experiment(ExperimentMixin, UserCreatedModelMixin, models.Model):
         return get_joint_visibility(self.model_version.visibility, self.protocol_version.visibility)
 
 
+
+
 class Runnable(UserCreatedModelMixin, FileCollectionMixin, models.Model):
     """ Runnable base class
     Represents experiments and fitting specs that have the facility to
