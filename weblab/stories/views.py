@@ -166,7 +166,7 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
 
     def get_formset_graph(self, initial=[{'ORDER': 1, 'number': 0, 'currentGraph': '', 'experimentVersions': ''}]):
         if not hasattr(self, 'formsetgraph') or self.formsetgraph is None:
-            form_kwargs = {'user': self.request.user, 'visible_model_choices': get_modelgroups(self.request.user)}
+            form_kwargs = {'user': self.request.user, 'visible_model_choices': get_modelgroups(self.request.user), 'toggle_choices': list(ModelGroup.objects.all().values_list('pk', 'title')) }
 
             if self.request.method == 'POST':
                 self.formsetgraph = self.formset_graph_class(
@@ -239,7 +239,7 @@ class StoryEditView(StoryView, UpdateView):
                  'protocol': s.cachedprotocolversion.protocol.pk,
                  'graphfilename': s.graphfilename,
                  'graphfiles': s.graphfilename,
-                 'currentGraph': str(s),
+                 'currentGraph': s.graphfilename,
                  'experimentVersionsUpdate': experimentVersions,
                  'experimentVersions': experimentVersions,
                  'ORDER': s.order,
@@ -312,7 +312,9 @@ class StoryRenderView(UserPassesTestMixin, DetailView):
                                       key=lambda f: f.order)
         for part in kwargs['storyparts']:
             if isinstance(part, StoryGraph):
-                part.grouptoggle_ids = '/' + '/'.join((str(t.pk) for t in part.grouptoggles.all()))
+                part.grouptoggle_ids = '/'.join((str(t.pk) for t in part.grouptoggles.all()))
+                if part.grouptoggle_ids:
+                    part.grouptoggle_ids = '/' + part.grouptoggle_ids
                 part.experiment_versions = get_url(
                     get_experiment_versions(self.request.user,
                                             part.cachedprotocolversion,

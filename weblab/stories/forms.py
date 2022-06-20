@@ -88,6 +88,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         visible_model_choices = kwargs.pop('visible_model_choices', [])
+        self.toggle_choices = kwargs.pop('toggle_choices', [])
 
         super().__init__(*args, **kwargs)
         self.user = kwargs.pop('user', None)
@@ -114,7 +115,8 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['grouptoggles'] = MultipleChoiceFieldModelGroup(required=False, widget=forms.CheckboxSelectMultiple())
         # if we are editing, set the current values as options (so they'll show in the template for the js)
         if 'initial' in kwargs and 'grouptoggles' in kwargs['initial']:
-            self.fields['grouptoggles'].choices = [(t, t) for t in kwargs['initial']['grouptoggles']]
+            self.fields['grouptoggles'].choices = self.toggle_choices
+#            self.fields['grouptoggles'].choices = [(t, t) for t in kwargs['initial']['grouptoggles']]
 
         self.fields['graphfiles'] = forms.CharField(required=True)
 
@@ -123,7 +125,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def clean_grouptoggles(self):
         # make sure the selected toggles show up when rendering from errors
-        self.fields['grouptoggles'].choices = [(t, t) for t in self.cleaned_data['grouptoggles']]
+        self.fields['grouptoggles'].choices = self.toggle_choices
         return self.cleaned_data['grouptoggles']
 
     def save(self, story=None, **kwargs):

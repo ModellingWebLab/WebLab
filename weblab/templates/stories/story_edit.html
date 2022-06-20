@@ -60,8 +60,10 @@
                       <input class="downpart" type="button" value="▼" style="font-size:15px;margin:0;padding:0;width:20px;" title="move down" alt="move down">
                       <img class="deletepart" alt="remove story part" title="remove story part"/>
                       <input class="order" type="hidden" name="graph-{{part.number.value}}-ORDER" id="id_graph-{{part.number.value}}-ORDER" value="{{forloop.counter0}}">
-                      <input type="hidden" name="graph-{{part.number.value}}-currentGraph" class="currentGraph" id="id_graph-{{part.number.value}}-currentGraph" value="{% for graph in part.graphfiles %}{% if graph.data.selected %}{{graph.data.value}}{% endif %}{% endfor %}">
+                      <input type="hidden" name="graph-{{part.number.value}}-currentGraph" class="currentGraph" id="id_graph-{{part.number.value}}-currentGraph" value="{{part.graphfiles.value}}">
                       <input type="hidden" name="graph-{{part.number.value}}-currentGroupToggles" class="currentGroupToggles" id="id_graph-{{part.number.value}}-currentGroupToggles" value="{% for toggle in part.grouptoggles %}{% if toggle.data.selected %}/{{toggle.data.value}}{% endif %}{% endfor %}">
+                      <input type="hidden" name="graph-{{part.number.value}}-currentGroupToggles-off" class="currentGroupTogglesOff" id="id_graph-{{part.number.value}}-currentGroupToggles-off" value="{% for toggle in part.grouptoggles %}{% if not toggle.data.selected %}/{{toggle.data.value}}{% endif %}{% endfor %}">
+
 
                       <input class="number" type="hidden" name="graph-{{part.number.value}}-number" id="id_graph-{{part.number.value}}-number" value="{{part.number.value}}">
                     </div>
@@ -69,20 +71,21 @@
                   <td class="storypart-content">
                     <ul class="errorlist"><li>{{ part.non_field_errors }}</li></ul>
                     <div class="StoryGraphRadio" {% if part.currentGraph.value == '' or part.currentGraph.value == '/'%} style="display:none"{% endif %}>
-                      <input type="radio" name="graph-{{part.number.value}}-update" value="" id="id_graph-{{part.number.value}}-update_1" class="update_1 preview-graph-control" name="graph-{{part.number.value}}-update" {% if not part.update.value %} checked {%endif%}>
+                      <input type="radio" name="graph-{{part.number.value}}-update" value="" id="id_graph-{{part.number.value}}-update_1" class="update_1 preview-visibility" name="graph-{{part.number.value}}-update" {% if not part.update.value %} checked {%endif%}>
                        <label for="id_graph-{{part.number.value}}-update_1"><small><em>{{part.currentGraph.value}}</em></small></label>
                           {{part.experimentVersions}}
                        <br/>
                     </div>
 
                     <div class="StoryGraphRadio" {% if part.currentGraph.value == '' or part.currentGraph.value == '/'%} style="display:none"{% endif %}>
-                      <input type="radio" name="graph-{{part.number.value}}-update" value="True" id="id_graph-{{part.number.value}}-update_0" class="update_0 preview-graph-control" name="graph-{{part.number.value}}-update" {% if part.update.value %} checked {%endif%}>
+                      <input type="radio" name="graph-{{part.number.value}}-update" value="True" id="id_graph-{{part.number.value}}-update_0" class="update_0 preview-visibility" name="graph-{{part.number.value}}-update" {% if part.update.value %} checked {%endif%}>
                       <label for="id_graph-{{part.number.value}}-update"><em>Update graph</em></label>
                       {{part.experimentVersionsUpdate}}
                       {{part.graphfilename}}
                       <br/>
                     </div>
-                  <span class="graph-selecttion-controls" id="id_graph-{{part.number.value}}-graph-selecttion-controls" style="{% if object.id %}visibility: hidden; display: none;{% else %}visibility: visible; display: block;{% endif %}">
+
+                  <span class="graph-selecttion-controls" id="id_graph-{{part.number.value}}-graph-selecttion-controls" style="{% if object.id and not part.update.value %}visibility: hidden; display: none;{% else %}visibility: visible; display: block;{% endif %}">
                     <label id="{{part.number.value}}-id_models-label" for="id_graph-{{part.number.value}}-id_models">Select model or model group: </label><br/>
 
              <div class="modelgroup-model-selector">
@@ -127,7 +130,7 @@
                     <ul class="errorlist"><li>{{ part.grouptoggles.errors }}</li></ul>Select which groups can be switched on and off in the graph:
                     <div id="{{part.number.value}}groupToggleBox" class="groupToggleBox">
                         {% for toggle in part.grouptoggles %}
-                            {% if toggle.data.selected %}<label for="{{ toggle.data.id  }}"><input type="checkbox" name="graph-{{ part.number.value}}-grouptoggles" value="{{ toggle.data.value  }}" class="groupToggleSelect" id="id_graph-{{ part.number.value}}-grouptoggles_{{forloop.counter0}}" checked>{{ toggle.data.label }}</label>{% endif %}
+                            <label for="{{ toggle.data.id  }}"><input type="checkbox" name="graph-{{ part.number.value}}-grouptoggles" value="{{ toggle.data.value  }}" class="groupToggleSelect" id="id_graph-{{ part.number.value}}-grouptoggles_{{forloop.counter0}}" {% if toggle.data.selected %}checked{% endif %}>{{ toggle.data.label }}</label>
                         {% endfor %}
                     </div>
                     <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
@@ -142,8 +145,11 @@
                    <div>
                     <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox">
                       <div class="graphPreviewDialog">{% if  part.update.value and not part.graphfiles.value %}Please select a graph...{% else %}<input type="hidden" id="{{part.number.value}}entityIdsToCompare" class="entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experimentVersions.value}}/show/{%if part.update.value %}{{ part.graphfiles.value  }}{% else %}{{ part.graphfilename.value }}{%endif%}/{{form.graphvisualizer.value}}">
-                        <div class="entitiesToCompare" id="{{part.number.value}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{%if part.update.value %}{{ part.experimentVersionsUpdate.value  }}{% else %}{{part.experimentVersions.value}}{% endif %}/graph_for_story{% for toggle in part.grouptoggles %}{% if toggle.data.selected %}/{{toggle.data.value}}{% endif %}{% endfor %}
+                        <div class="entitiesToCompare" id="{{part.number.value}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{%if part.update.value %}{{ part.experimentVersionsUpdate.value  }}{% else %}{{part.experimentVersions.value}}{% endif %}/graph_for_story{% for toggle in part.grouptoggles %}/{{toggle.data.value}}{% endfor %}
 ">loading...</div>
+                          {%for toggle in part.grouptoggles %}{% if not toggle.data.selected %}<style>#label_selectGroup-group-{{ part.number.value}}-{{toggle.data.value}} { visibility: hidden; display: none;}</style>{% endif %}{% endfor %}
+
+
                           <div id="{{part.number.value}}filedetails" class="filedetails">
                           <div id="{{part.number.value}}filedisplay"></div>
                         </div>{% endif %}

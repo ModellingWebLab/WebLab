@@ -276,20 +276,6 @@ $(document).ready(function(){
     }
   });
 
-  //checkbox toggels dropdown enabled
-  $(document).on('click', '.preview-graph-control', function graphMenuVisibility(){
-      id = $(this).attr('id');
-      id = id.replace('id_graph-', '');
-      id = id.replace('-update_0', '');
-      id = id.replace('-update_1', '');
-      update = $(`#id_graph-${id}-update_0`).is(':checked');
-      if(update){
-          $(`#id_graph-${id}-graph-selecttion-controls`).css({"visibility": "visible", "display": "block"});
-      }else{
-          $(`#id_graph-${id}-graph-selecttion-controls`).css({"visibility": "hidden", "display": "none"});
-      }
-  });
-
   function get_models_str(id_prefix){
       models_str = ''
       $(`#${id_prefix}id_models`).children().each(function(){
@@ -333,7 +319,8 @@ $(document).ready(function(){
                                   // show all toggles
                                   $(`#${id}groupToggleBox`).find('input').each(function(){
                                       id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
-                                      $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('head');
+                                      $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('body');
+
                                   });
                                   $(`#${id_prefix}graphfiles`).prop('disabled', false);
                                   $(`#${id_prefix}graphfiles`).change();
@@ -355,12 +342,10 @@ $(document).ready(function(){
       if(graphfile != ''){
         // retreive experiment versions
         url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentversions`;
-        $(`#${id_prefix}experimentVersionsUpdate`).prop('disabled', true);
         $.ajax({url: url,
                 success: function(data){
                     data = data.trim();
                     $(`#${id_prefix}experimentVersionsUpdate`).val(data);
-                    $(`#${id_prefix}experimentVersionsUpdate`).prop('disabled', false);
                     $(`#${id_prefix}experimentVersionsUpdate`).change();
                 }
         });
@@ -373,13 +358,12 @@ $(document).ready(function(){
   });
 
   // update graph preview when selected model groups change
-
   $(document).on('change', '.groupToggleSelect', function(){
       id_prefix = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
       if($(this).is(':checked')){
-          $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('head');
+          $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('body');
       }else{
-          $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: hidden; display: none;}</style>`).appendTo('head');
+          $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: hidden; display: none;}</style>`).appendTo('body');
       }
   });
 
@@ -408,13 +392,94 @@ $(document).ready(function(){
         $(this).html(marked(source));
     });
 
+
+// backfil graph control
+function backfilGraphControl(){
+    url = `${getStoryBasePath()}/${get_models_str(this.id_prefix)}/protocols`;
+    protocol_selected =  $(`#${this.id_prefix}protocol`).val();
+    graph_file_selected = $(`#${this.id_prefix}graphfiles`).val();
+    $(`#${this.id_prefix}protocol`).prop('disabled', true);
+    $(`#${this.id_prefix}graphfiles`).prop('disabled', true);
+    $.ajax({url: url,
+            context: this,
+            success: function (data) {
+                $(`#${this.id_prefix}protocol`).html(data);
+                $(`#${this.id_prefix}protocol`).val(protocol_selected);
+                $(`#${this.id_prefix}protocol`).prop('disabled', false);
+
+                graph_file_url = `${getStoryBasePath()}/${get_models_str(this.id_prefix)}/${protocol_selected}/graph`;
+                $.ajax({url: graph_file_url,
+                        context: this,
+                        success: function (data) {
+                            $(`#${this.id_prefix}graphfiles`).html(data);
+                            $(`#${this.id_prefix}graphfiles`).val(graph_file_selected);
+                            $(`#${this.id_prefix}graphfiles`).prop('disabled', false);
+                            toggle_values = [];
+                            $(`#${this.id}groupToggleBox`).find('input').each(function(){
+                                if($(this).is(":checked")){
+                                    toggle_values.push($(this).val());
+                                }
+                            });
+
+                            if(protocol_selected != ''){
+                                $(`#${this.id}groupToggleBox`).html('');
+                                toggle_url = `${getStoryBasePath()}/${this.id}/${get_models_str(this.id_prefix)}/${protocol_selected}/toggles`;
+                                $.ajax({url: toggle_url,
+                                        context: this,
+                                        success: function (data) {
+                                            $(`#${this.id}groupToggleBox`).html(data);
+                                            // show all toggles
+                                            $(`#${this.id}groupToggleBox`).find('input').each(function(){
+                                                id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
+                                                $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('body');
+                                            });
+                                            $(`#${this.id}groupToggleBox`).find('input').each(function(){
+                                                $(this).prop('checked', toggle_values.includes($(this).val()));
+                                            });
+                                            // link visibility change when update radio changes
+                                            $(`#${this.id_prefix}update_0`).change(toggleEditVisibility.bind(this));
+                                            $(`#${this.id_prefix}update_1`).change(toggleEditVisibility.bind(this));
+                                            toggleEditVisibility.bind(this)();
+                                        }
+                                });
+                            }
+                       }
+                });
+        }
+    });
+}
+
+function toggleEditVisibility(){
+    if($(`#id_graph-${this.id}-update_0`).is(':checked')){
+        //make sure visability for toggles matches their selectedness
+        $(`#${this.id}groupToggleBox`).find('input').each(function(){
+            $(this).change();
+        });
+
+        $(`#id_graph-${this.id}-graph-selecttion-controls`).css({"visibility": "visible", "display": "block"});
+    }else{
+        //make sure all group toggles in original graph are visible
+        groupToggles = $(`#id_graph-${this.id}-currentGroupToggles`).val();
+        group_toggle_list = groupToggles.split('/');
+        for (i = 0; i < group_toggle_list.length; i++) {
+            $(`<style>#label_selectGroup-group-${this.id}-${group_toggle_list[i]} { visibility: visible; display: block;}</style>`).appendTo('body');
+        }
+        groupToggles = $(`#id_graph-${this.id}-currentGroupToggles-off`).val();
+        group_toggle_list = groupToggles.split('/');
+        for (i = 0; i < group_toggle_list.length; i++) {
+            $(`<style>#label_selectGroup-group-${this.id}-${group_toggle_list[i]} { visibility: hidden; display: none;}</style>`).appendTo('body');
+        }
+        $(`#id_graph-${this.id}-graph-selecttion-controls`).css({"visibility": "hidden", "display": "none"});
+    }
+    $(`#id_graph-${this.id}-experimentVersionsUpdate`).change();
+}
+
   /* Graph Preview functionality */
   // update graph preview if any of the controls change
+  // back fill graph controls
   $(body).on('change', '.preview-graph-control', function() {
-        // get prefix graph Id
-        var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
+       var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
         graphId = match[1];
-
         //set relevant css class for preview box size
         $(`#${graphId}graphPreviewBox`).removeClass('displayPlotFlot-preview');
         $(`#${graphId}graphPreviewBox`).removeClass('displayPlotHC-preview');
@@ -424,25 +489,17 @@ $(document).ready(function(){
             experimentVersions = $(`#id_graph-${graphId}-experimentVersions`).val();
             graphFile = $(`#id_graph-${graphId}-currentGraph`).val();
             groupToggles = $(`#id_graph-${graphId}-currentGroupToggles`).val();
-
-            //make sure all group toggles in original graph are visible
-            group_toggle_list = groupToggles.split('/');
-            for (i = 0; i < group_toggle_list.length; i++) {
-                $(`<style>#label_selectGroup-group-${graphId}-${i + 1} { visibility: visible; display: block;}</style>`).appendTo('head');
-            }
-
         } else {
             experimentVersions = $(`#id_graph-${graphId}-experimentVersionsUpdate`).val();
             graphFile = $(`#id_graph-${graphId}-graphfiles`).val();
             // retreive selected groups
             $(`#${graphId}groupToggleBox`).find('input').each(function(){
                 groupToggles += '/' + $(this).val();
-                //make sure vasability for toggles matches their selectedness
-                $(this).change();
             });
             //make sure vasability for toggles matches their selectedness
 
         }
+
         if (experimentVersions != '/') {
             basePath = $('#base_uri').val(); // may be running in subfolder, so the base path (without /stories) is passed form django
             // compse url for ids for preview graph
@@ -473,60 +530,15 @@ $(document).ready(function(){
     // if the selected model has a value fill it and use ajax to backfil the rest of the form so we can edit it.
     $('.selectedmodels').each(function(){
         if($(this).find('option').length){
-            id_prefix = $(this).attr('id').replace('id_models', '');
-//            id = id_prefix.replace('id_graph-', '').replace('-', '');
-            url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/protocols`;
-            protocol_selected =  $(`#${id_prefix}protocol`).val();
-            graph_file_selected = $(`#${id_prefix}graphfiles`).val();
-            $(`#${id_prefix}protocol`).prop('disabled', true);
-            $(`#${id_prefix}graphfiles`).prop('disabled', true);
-            $.ajax({url: url,
-                    context: this,
-                    success: function (data) {
-                        id_prefix = $(this).attr('id').replace('id_models', '');
-                        $(`#${id_prefix}protocol`).html(data);
-                        $(`#${id_prefix}protocol`).val(protocol_selected);
-                        $(`#${id_prefix}protocol`).prop('disabled', false);
-
-                        graph_file_url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol_selected}/graph`;
-                        $.ajax({url: graph_file_url,
-                                context: this,
-                                success: function (data) {
-                                    id_prefix = $(this).attr('id').replace('id_models', '');
-                                    id = id_prefix.replace('id_graph-', '').replace('-', '');
-                                    $(`#${id_prefix}graphfiles`).html(data);
-                                    $(`#${id_prefix}graphfiles`).val(graph_file_selected);
-                                    $(`#${id_prefix}graphfiles`).prop('disabled', false);
-                                    toggle_values = [];
-                                    $(`#${id}groupToggleBox`).find('input').each(function(){
-                                        toggle_values.push($(this).val());
-                                    });
-
-                                    if(protocol_selected != ''){
-                                        $(`#${id}groupToggleBox`).html('');
-                                        toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${protocol_selected}/toggles`;
-                                        $.ajax({url: toggle_url,
-                                                context: this,
-                                                success: function (data) {
-                                                    id_prefix = $(this).attr('id').replace('id_models', '');
-                                                    id = id_prefix.replace('id_graph-', '').replace('-', '');
-                                                    $(`#${id}groupToggleBox`).html(data);
-                                                    // show all toggles
-                                                    $(`#${id}groupToggleBox`).find('input').each(function(){
-                                                        id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
-                                                        $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('head');
-                                                    });
-                                                    $(`#${id}groupToggleBox`).find('input').each(function(){
-                                                        $(this).prop('checked', toggle_values.includes($(this).val()));
-                                                    });
-                                                }
-                                        });
-                                    }
-                               }
-                        });
-                    }
-
-            });
+            context = {id_prefix: $(this).attr('id').replace('id_models', ''),
+                       id: $(this).attr('id').replace('id_models', '').replace('id_graph-', '').replace('-', '')};
+                       if($(`#${context.id_prefix}update_0`).is('checked')){
+                           backfilGraphControl.bind(context)();
+                           $(`#${context.id_prefix}-0-update_0`).change(toggleEditVisibility.bind(context));
+                           $(`#${context.id_prefix}-0-update_1`).change(toggleEditVisibility.bind(context));
+                       }else{
+                           $(`#${context.id_prefix}update_0`).one('change', backfilGraphControl.bind(context));
+                       }
         }
     });
 
