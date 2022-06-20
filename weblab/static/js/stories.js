@@ -260,60 +260,56 @@ function get_models_str(id_prefix){
     return models_str;
 }
 
-// backfil graph control
-function backfilGraphControl(){
-    url = `${getStoryBasePath()}/${get_models_str(this.id_prefix)}/protocols`;
+function backFillProtocol(){
+    return $.ajax({url: `${getStoryBasePath()}/${get_models_str(this.id_prefix)}/protocols`,
+                   context: this,
+                   success: function (data) {
+                       $(`#${this.id_prefix}protocol`).html(data);
+                       $(`#${this.id_prefix}protocol`).val(this.protocol_selected);
+                   }
+           });
+}
+
+function backFillGraphFile(){
+    return $.ajax({url: `${getStoryBasePath()}/${get_models_str(this.id_prefix)}/${this.protocol_selected}/graph`,
+                   context: this,
+                   success: function (data) {
+                       $(`#${this.id_prefix}graphfiles`).html(data);
+                       $(`#${this.id_prefix}graphfiles`).val(this.graph_file_selected);
+                   }
+    });
+}
+
+function backFillGroupToggles(){
     protocol_selected =  $(`#${this.id_prefix}protocol`).val();
-    graph_file_selected = $(`#${this.id_prefix}graphfiles`).val();
-    $(`#${this.id_prefix}protocol`).prop('disabled', true);
-    $(`#${this.id_prefix}graphfiles`).prop('disabled', true);
-    $.ajax({url: url,
-            context: this,
-            success: function (data) {
-                $(`#${this.id_prefix}protocol`).html(data);
-                $(`#${this.id_prefix}protocol`).val(protocol_selected);
-                $(`#${this.id_prefix}protocol`).prop('disabled', false);
-
-                graph_file_url = `${getStoryBasePath()}/${get_models_str(this.id_prefix)}/${protocol_selected}/graph`;
-                $.ajax({url: graph_file_url,
-                        context: this,
-                        success: function (data) {
-                            $(`#${this.id_prefix}graphfiles`).html(data);
-                            $(`#${this.id_prefix}graphfiles`).val(graph_file_selected);
-                            $(`#${this.id_prefix}graphfiles`).prop('disabled', false);
-                            toggle_values = [];
-                            $(`#${this.id}groupToggleBox`).find('input').each(function(){
-                                if($(this).is(":checked")){
-                                    toggle_values.push($(this).val());
-                                }
-                            });
-
-                            if(protocol_selected != ''){
-                                $(`#${this.id}groupToggleBox`).html('');
-                                toggle_url = `${getStoryBasePath()}/${this.id}/${get_models_str(this.id_prefix)}/${protocol_selected}/toggles`;
-                                $.ajax({url: toggle_url,
-                                        context: this,
-                                        success: function (data) {
-                                            $(`#${this.id}groupToggleBox`).html(data);
-                                            // show all toggles
-                                            $(`#${this.id}groupToggleBox`).find('input').each(function(){
-                                                id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
-                                                $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('body');
-                                            });
-                                            $(`#${this.id}groupToggleBox`).find('input').each(function(){
-                                                $(this).prop('checked', toggle_values.includes($(this).val()));
-                                            });
-                                            // link visibility change when update radio changes
-                                            $(`#${this.id_prefix}update_0`).change(toggleEditVisibility.bind(this));
-                                            $(`#${this.id_prefix}update_1`).change(toggleEditVisibility.bind(this));
-                                            toggleEditVisibility.bind(this)();
-                                        }
-                                });
-                            }
-                       }
-                });
+    toggle_values = [];
+    $(`#${this.id}groupToggleBox`).find('input').each(function(){
+        if($(this).is(":checked")){
+            toggle_values.push($(this).val());
         }
     });
+    $.ajax({url: `${getStoryBasePath()}/${this.id}/${get_models_str(this.id_prefix)}/${protocol_selected}/toggles`,
+            context: this,
+            success: function (data) {
+                $(`#${this.id}groupToggleBox`).html(data);
+                $(`#${this.id}groupToggleBox`).find('input').each(function(){
+                    $(this).prop('checked', toggle_values.includes($(this).val()));
+                    $(this).change(); // show toggles as appropriate
+                });
+            }
+    });
+}
+
+// backfil graph control
+function backfilGraphControl(){
+    this.protocol_selected =  $(`#${this.id_prefix}protocol`).val();
+    this.graph_file_selected = $(`#${this.id_prefix}graphfiles`).val();
+    $.when(backFillProtocol.bind(this)(), backFillGraphFile.bind(this)(), backFillGroupToggles.bind(this)()).done(function(){
+        // link visibility change when update radio changes
+        $(`#${this.id_prefix}update_0`).change(toggleEditVisibility.bind(this));
+        $(`#${this.id_prefix}update_1`).change(toggleEditVisibility.bind(this));
+        toggleEditVisibility.bind(this)();
+    }.bind(this));
 }
 
 function toggleEditVisibility(){
@@ -542,5 +538,6 @@ $(document).ready(function(){
     });
 
 });
+
 
 
