@@ -8,7 +8,6 @@ from core import visibility
 from entities.forms import BaseEntityCollaboratorFormSet, EntityCollaboratorForm
 from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 
-from .graph_filters import get_graph_file_names, get_protocols, get_used_groups
 from .models import Story, StoryGraph, StoryText
 
 
@@ -72,10 +71,10 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
             storytext.delete()
 
 
-
 class MultipleChoiceFieldModelGroup(forms.MultipleChoiceField):
     def valid_value(self, *args, **kwargs):
         return True  # Accept choices updated via JS
+
 
 class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
     class Meta:
@@ -84,7 +83,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def str_to_id_list(self, ids):
         """Turn list of ids passed as string back into a list."""
-        return re.sub('\[|\]|\'| ', '', self.cleaned_data['id_models']).split(',')
+        return re.sub(r"[|]|'| ", '', self.cleaned_data['id_models']).split(',')
 
     def __init__(self, *args, **kwargs):
         visible_model_choices = kwargs.pop('visible_model_choices', [])
@@ -106,17 +105,19 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
         self.fields['models_or_group'] = forms.CharField(required=False,
-                                                         widget=forms.SelectMultiple(attrs={'class': 'modelgroupselect'}, choices=visible_model_choices))
-        self.fields['id_models'] = forms.CharField(required=True, widget=forms.SelectMultiple(attrs={'class': 'selectList modelgroupselect'}, choices=visible_model_choices))
-
-
+                                                         widget=forms.SelectMultiple(attrs={'class':
+                                                                                            'modelgroupselect'},
+                                                                                     choices=visible_model_choices))
+        self.fields['id_models'] = forms.CharField(required=True,
+                                                   widget=forms.SelectMultiple(attrs={'class':
+                                                                                      'selectList modelgroupselect'},
+                                                                               choices=visible_model_choices))
         self.fields['protocol'] = forms.CharField(required=True)
-
-        self.fields['grouptoggles'] = MultipleChoiceFieldModelGroup(required=False, widget=forms.CheckboxSelectMultiple())
+        self.fields['grouptoggles'] = MultipleChoiceFieldModelGroup(required=False,
+                                                                    widget=forms.CheckboxSelectMultiple())
         # if we are editing, set the current values as options (so they'll show in the template for the js)
         if 'initial' in kwargs and 'grouptoggles' in kwargs['initial']:
             self.fields['grouptoggles'].choices = self.toggle_choices
-#            self.fields['grouptoggles'].choices = [(t, t) for t in kwargs['initial']['grouptoggles']]
 
         self.fields['graphfiles'] = forms.CharField(required=True)
 
@@ -152,7 +153,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
                     mk = int(model_or_group.replace('modelgroup', ''))
                     modelgroup = ModelGroup.objects.get(pk=mk)
                     model_versions |= set(m.repocache.latest_version for m in modelgroup.models.all()
-                                      if m.repocache.versions.exists())
+                                          if m.repocache.versions.exists())
                     modelgroups.add(modelgroup)
                 else:
                     mk = int(model_or_group.replace('model', ''))

@@ -143,8 +143,9 @@
                    </div>
                    </span>
                    <div>
-                    <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox">
-                      <div class="graphPreviewDialog">{% if  part.update.value and not part.graphfiles.value %}Please select a graph...{% else %}<input type="hidden" id="{{part.number.value}}entityIdsToCompare" class="entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experimentVersions.value}}/show/{%if part.update.value %}{{ part.graphfiles.value  }}{% else %}{{ part.graphfilename.value }}{%endif%}/{{form.graphvisualizer.value}}">
+                    <div id="{{part.number.value}}graphPreviewBox" class="graphPreviewBox"><br/>
+<button type="button" id="{{ part.number.value}}showpreview" onclick="$('#id_graph-{{ part.number.value}}-experimentVersionsUpdate').change();">Show graph preview!</button>
+<!--                      <div class="graphPreviewDialog">{% if  part.update.value and not part.graphfiles.value %}Please select a graph...{% else %}<input type="hidden" id="{{part.number.value}}entityIdsToCompare" class="entityIdsToCompare" value="{{base_uri}}/experiments/compare{{part.experimentVersions.value}}/show/{%if part.update.value %}{{ part.graphfiles.value  }}{% else %}{{ part.graphfilename.value }}{%endif%}/{{form.graphvisualizer.value}}">
                         <div class="entitiesToCompare" id="{{part.number.value}}entitiesToCompare" data-comparison-href="{{base_uri}}/experiments/compare/{%if part.update.value %}{{ part.experimentVersionsUpdate.value  }}{% else %}{{part.experimentVersions.value}}{% endif %}/graph_for_story{% for toggle in part.grouptoggles %}/{{toggle.data.value}}{% endfor %}
 ">loading...</div>
                           {%for toggle in part.grouptoggles %}{% if not toggle.data.selected %}<style>#label_selectGroup-group-{{ part.number.value}}-{{toggle.data.value}} { visibility: hidden; display: none;}</style>{% endif %}{% endfor %}
@@ -153,7 +154,7 @@
                           <div id="{{part.number.value}}filedetails" class="filedetails">
                           <div id="{{part.number.value}}filedisplay"></div>
                         </div>{% endif %}
-                      </div>
+                      </div>-->
                     </div>
                     <br/>
                   </td>

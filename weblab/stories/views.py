@@ -30,7 +30,6 @@ from .graph_filters import (
     get_protocols,
     get_url,
     get_versions_for_model_and_protocol,
-    get_models_run_for_model_and_protocol,
     get_used_groups,
 )
 from .models import Story, StoryGraph, StoryText
@@ -166,7 +165,9 @@ class StoryView(LoginRequiredMixin, UserPassesTestMixin, UserFormKwargsMixin):
 
     def get_formset_graph(self, initial=[{'ORDER': 1, 'number': 0, 'currentGraph': '', 'experimentVersions': ''}]):
         if not hasattr(self, 'formsetgraph') or self.formsetgraph is None:
-            form_kwargs = {'user': self.request.user, 'visible_model_choices': get_modelgroups(self.request.user), 'toggle_choices': list(ModelGroup.objects.all().values_list('pk', 'title')) }
+            form_kwargs = {'user': self.request.user,
+                           'visible_model_choices': get_modelgroups(self.request.user),
+                           'toggle_choices': list(ModelGroup.objects.all().values_list('pk', 'title'))}
 
             if self.request.method == 'POST':
                 self.formsetgraph = self.formset_graph_class(
@@ -234,7 +235,8 @@ class StoryEditView(StoryView, UpdateView):
             initial.append(
                 {'number': i,
                  'models': s.models.all(),
-                 'id_models': [f'modelgroup{str(g.pk)}' for g in s.modelgroups.all()] + [f'model{str(g.pk)}' for g in s.models.all()],
+                 'id_models': [f'modelgroup{str(g.pk)}' for g in s.modelgroups.all()] +
+                              [f'model{str(g.pk)}' for g in s.models.all()],
                  'grouptoggles': list(s.grouptoggles.all().values_list('pk', flat=True)),
                  'protocol': s.cachedprotocolversion.protocol.pk,
                  'graphfilename': s.graphfilename,
@@ -264,6 +266,7 @@ class StoryFilterProtocolView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         mk = self.kwargs.get('mk', '')
         return get_protocols(mk, self.request.user)
+
 
 class StoryFilterExperimentVersions(LoginRequiredMixin, ListView):
     model = ExperimentVersion

@@ -490,6 +490,7 @@ class ExperimentComparisonJsonView(View):
 
         return JsonResponse(response)
 
+
 class ExperimentGraphForStoryJsonView(ExperimentComparisonJsonView):
     """
     Serve up JSON view of multiple experiment versions for graph in stories
@@ -498,10 +499,12 @@ class ExperimentGraphForStoryJsonView(ExperimentComparisonJsonView):
         details = super()._version_json(version, model_version_in_name, protocol_version_in_name)
         modelgroup_pks = filter(None, self.kwargs.get('group_pks', '')[1:].split('/'))
         details.update({
-            'groups': list(version.experiment.model.model_groups.all().intersection(ModelGroup.objects.filter(pk__in=modelgroup_pks)).values('id', 'title'))
+            'groups': list(version.experiment.model.model_groups.all().
+                           intersection(ModelGroup.objects.filter(pk__in=modelgroup_pks)).values('id', 'title'))
         })
 
         return details
+
 
 @method_decorator(staff_member_required, name='dispatch')
 class ExperimentSimulateCallbackView(FormMixin, DetailView):
