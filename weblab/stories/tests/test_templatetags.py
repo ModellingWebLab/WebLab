@@ -31,4 +31,3 @@ def test_can_manage_story(story, other_user, admin_user):
 
     context = {'user': admin_user}
     assert story_tags.can_manage_story(context, story)
-

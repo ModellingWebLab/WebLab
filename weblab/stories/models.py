@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import TextField, ManyToManyField
+from django.db.models import ManyToManyField, TextField
 
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
 from core.visibility import Visibility

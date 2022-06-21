@@ -585,4 +585,3 @@ class ExperimentVersionArchiveView(dataset_views.DatasetArchiveView):
     def get_archive_name(self, version):
         """For historical reasons this is different from the archive_name."""
         return get_valid_filename('%s.zip' % version.experiment.name)
-

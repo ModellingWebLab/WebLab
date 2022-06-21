@@ -38,7 +38,7 @@ def test_get_experiment_versions_url(experiment_with_result_public):
     user = experiment_with_result_public.author
     cachedprotocolversion = experiment_with_result_public.experiment.protocol_version
     cachedmodelversion_pks = [experiment_with_result_public.experiment.model_version.pk]
-    experiment_versions = get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks)
+    experiment_versions = tuple(get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks))
     assert [v.pk for v in experiment_versions] == [experiment_with_result_public.pk]
     assert str(get_url(experiment_versions)) == '/' + str(experiment_with_result_public.pk)
 
@@ -442,7 +442,7 @@ class TestStoryCreateView:
                 'text-0-ORDER': '0',
                 'graph-0-ORDER': '1',
                 'graph-0-update': 'True',
-                'graph-0-models_or_group': 'model%s' % experiment.model.pk,
+                'graph-0-id_models': ['model%s' % experiment.model.pk],
                 'graph-0-protocol': '%s' % experiment.protocol.pk,
                 'graph-0-graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv'}
 
@@ -484,7 +484,7 @@ class TestStoryCreateView:
                 'text-0-ORDER': '0',
                 'graph-0-ORDER': '1',
                 'graph-0-update': 'True',
-                'graph-0-models_or_group': 'modelgroup%s' % modelgroup.pk,
+                'graph-0-id_models': ['modelgroup%s' % modelgroup.pk],
                 'graph-0-protocol': '%s' % experiment.protocol.pk,
                 'graph-0-graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv'}
 
@@ -502,42 +502,18 @@ class TestStoryCreateView:
             sorted([m.repocache.latest_version for m in models], key=str)
         assert StoryGraph.objects.first().graphfilename == data['graph-0-graphfiles']
 
-    def test_create_story_invalid_text(self, logged_in_admin, client):
-        assert Story.objects.count() == 0
-        assert StoryText.objects.count() == 0
-
-        data = {'title': 'new title',
-                'visibility': 'private',
-                'graphvisualizer': 'displayPlotFlot',
-                'text-TOTAL_FORMS': 1,
-                'text-INITIAL_FORMS': 1,
-                'text-MIN_NUM_FORMS': 0,
-                'text-MAX_NUM_FORMS': 1000,
-                'graph-TOTAL_FORMS': 0,
-                'graph-INITIAL_FORMS': 0,
-                'graph-MIN_NUM_FORMS': 0,
-                'graph-MAX_NUM_FORMS': 1000,
-                'text-0-ORDER': 0,
-                'text-0-description': '',
-                'text-0-ORDER': 0,
-                'text-0-number': 0}
-
-        response = client.post('/stories/new', data=data)
-        assert response.status_code == 200
-        assert Story.objects.count() == 0
-        assert StoryText.objects.count() == 0
-
     def test_edit_storygraph_initial(self, logged_in_user, client, helpers, models, experiment_versions):
         story = recipes.story.make(author=logged_in_user, title='story1', id=10001)
         models = models[-2:]
         modelgroup = recipes.modelgroup.make(models=models, author=logged_in_user, id=20001)
         experiment = experiment_versions[-1].experiment
 
-        storygraph = recipes.story_graph.make(id=30001, author=logged_in_user, story=story, modelgroup=modelgroup,
-                                              cachedprotocolversion=experiment.protocol_version, order=0,
-                                              graphfilename='outputs_Relative_resting_potential_gnuplot_data.csv')
         model_group_mv = [m.repocache.latest_version for m in modelgroup.models.all() if m.repocache.versions.count()]
-        storygraph.set_cachedmodelversions(model_group_mv)
+        storygraph = recipes.story_graph.make(id=30001, author=logged_in_user, story=story, modelgroups=[modelgroup],
+                                              cachedprotocolversion=experiment.protocol_version, order=0,
+                                              cachedmodelversions=model_group_mv,
+                                              grouptoggles=[modelgroup],
+                                              graphfilename='outputs_Relative_resting_potential_gnuplot_data.csv')
 
         data = {'title': 'new test to check error where form save wrong protocol version',
                 'visibility': 'public',
@@ -553,41 +529,45 @@ class TestStoryCreateView:
                 'text-0-description': 'test text',
                 'graph-0-ORDER': '0',
                 'graph-0-update': 'True',
-                'graph-0-models_or_group': 'modelgroup%s' % modelgroup.pk,
+                'graph-0-id_models': ['modelgroup%s' % modelgroup.pk],
+                'graph-0-grouptoggles': [modelgroup.pk],
                 'graph-0-protocol': '%s' % experiment.protocol.pk,
                 'graph-0-graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv'}
 
         response = client.get('/stories/%s/edit' % story.pk, data=data)
         assert response.context['formsetgraph'].initial == [
             {'number': 0,
-             'models_or_group': 'modelgroup%s' % modelgroup.pk,
+             'id_models': ['modelgroup%s' % modelgroup.pk],
              'protocol': experiment.protocol.pk,
              'graphfilename': 'outputs_Relative_resting_potential_gnuplot_data.csv',
              'graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv',
-             'currentGraph': str(storygraph),
+             'currentGraph': 'outputs_Relative_resting_potential_gnuplot_data.csv',
              'experimentVersionsUpdate': f'/{experiment.latest_version.pk}',
              'experimentVersions': f'/{experiment.latest_version.pk}',
              'update': False,
              'ORDER': 0,
+             'grouptoggles': [modelgroup.pk],
              'pk': 30001}
         ]
 
         # check without modelgroup
-        storygraph.modelgroup = None
-        storygraph.set_cachedmodelversions([experiment.model_version])
+        storygraph.modelgroups.clear()
+        storygraph.models.set(models)
+        storygraph.cachedmodelversions.set([experiment.model_version])
         storygraph.save()
         response = client.get('/stories/%s/edit' % story.pk, data=data)
         assert response.context['formsetgraph'].initial == [
             {'number': 0,
-             'models_or_group': 'model%s' % experiment.model.pk,
+             'id_models': [f'model{m.pk}' for m in models],
              'protocol': experiment.protocol.pk,
              'graphfilename': 'outputs_Relative_resting_potential_gnuplot_data.csv',
              'graphfiles': 'outputs_Relative_resting_potential_gnuplot_data.csv',
-             'currentGraph': str(storygraph),
+             'currentGraph': 'outputs_Relative_resting_potential_gnuplot_data.csv',
              'experimentVersionsUpdate': f'/{experiment.latest_version.pk}',
              'experimentVersions': f'/{experiment.latest_version.pk}',
              'update': False,
              'ORDER': 0,
+             'grouptoggles': [modelgroup.pk],
              'pk': 30001}
         ]
 
@@ -941,6 +921,7 @@ class TestStoryFilterGraphView:
 
     def test_get_graph(self, client, logged_in_user, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
+
         response = client.get('/stories/model%d/%d/graph' %
                               (experiment.model.pk, experiment.protocol.pk))
         assert response.status_code == 200
@@ -1012,6 +993,7 @@ class TestStoryRenderView:
         recipes.story_graph.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
                                  cachedprotocolversion=experiment.protocol_version,
                                  cachedmodelversions=[experiment.model_version],
+                                 models=[experiment.model],
                                  graphfilename='outputs_RestingPotential.csv')
         response = client.get('/stories/%d' % story_for_render_no_parts.pk)
         assert response.status_code == 200, str(response)
@@ -1029,9 +1011,11 @@ class TestStoryRenderView:
         recipes.story_graph.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
                                  cachedprotocolversion=experiment.protocol_version,
                                  cachedmodelversions=[experiment.model_version],
+                                 models=[experiment.model],
                                  graphfilename='outputs_RestingPotential.csv')
         recipes.story_graph.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
                                  cachedprotocolversion=experiment.protocol_version,
+                                 models=[experiment.model],
                                  cachedmodelversions=[experiment.model_version], graphfilename='outputs_APD90.csv')
         response = client.get('/stories/%d' % story_for_render_no_parts.pk)
         assert response.status_code == 200, str(response)

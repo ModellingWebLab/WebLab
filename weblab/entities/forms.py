@@ -1,4 +1,5 @@
 import re
+
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
@@ -8,7 +9,12 @@ from django.forms import formset_factory
 from accounts.models import User
 from core import visibility
 
-from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup
+from .models import (
+    EntityFile,
+    ModelEntity,
+    ModelGroup,
+    ProtocolEntity,
+)
 
 
 class EntityForm(UserKwargModelFormMixin, forms.ModelForm):

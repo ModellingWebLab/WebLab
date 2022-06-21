@@ -1,4 +1,5 @@
 import re
+
 from braces.forms import UserKwargModelFormMixin
 from django import forms
 from django.core.exceptions import ValidationError
@@ -83,7 +84,7 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
 
     def str_to_id_list(self, ids):
         """Turn list of ids passed as string back into a list."""
-        return re.sub(r"[|]|'| ", '', self.cleaned_data['id_models']).split(',')
+        return re.sub(r'\[|\]|\'| ', '', self.cleaned_data['id_models']).split(',')
 
     def __init__(self, *args, **kwargs):
         visible_model_choices = kwargs.pop('visible_model_choices', [])

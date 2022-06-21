@@ -38,28 +38,30 @@ def test_model_urls(model_with_version):
     model_version = model.repocache.latest_version
     context = {'current_namespace': 'entities'}
 
-    assert entity_tags.ns_url(context, 'new', 'model') == '/entities/models/new'
-    assert entity_tags.entity_url(context, 'detail', model) == '/entities/models/%d' % model.pk
-    assert entity_tags.entity_url(context, 'delete', model) == '/entities/models/%d/delete' % model.pk
-    assert entity_tags.entity_url(context, 'version_list', model) == '/entities/models/%d/versions/' % model.pk
-    assert entity_tags.entity_url(context, 'newversion', model) == '/entities/models/%d/versions/new' % model.pk
-    assert (entity_tags.entity_version_url(context, 'version', model, model_version) ==
-            '/entities/models/%d/versions/%s' % (model.pk, model_version.sha))
-    assert (entity_tags.entity_version_url(context, 'version_json', model, model_version) ==
-            '/entities/models/%d/versions/%s/files.json' % (model.pk, model_version.sha))
-    assert (entity_tags.url_compare_experiments(model, model_version) ==
-            '/entities/models/%d/versions/%s/compare' % (model.pk, model_version.sha))
+    assert entity_tags.ns_url(context, 'new', 'model').endswith('/entities/models/new')
+    assert entity_tags.entity_url(context, 'detail', model).endswith('/entities/models/%d' % model.pk)
+    assert entity_tags.entity_url(context, 'delete', model).endswith('/entities/models/%d/delete' % model.pk)
+    assert entity_tags.entity_url(context, 'version_list', model).endswith('/entities/models/%d/versions/' % model.pk)
+    assert entity_tags.entity_url(context, 'newversion', model).endswith('/entities/models/%d/versions/new' % model.pk)
+    assert (entity_tags.entity_version_url(context, 'version', model, model_version).endswith(
+            '/entities/models/%d/versions/%s' % (model.pk, model_version.sha)))
+    assert (entity_tags.entity_version_url(context, 'version_json', model, model_version).endswith(
+            '/entities/models/%d/versions/%s/files.json' % (model.pk, model_version.sha)))
+    assert (entity_tags.url_compare_experiments(model, model_version).endswith(
+            '/entities/models/%d/versions/%s/compare' % (model.pk, model_version.sha)))
 
-    assert (entity_tags.entity_version_url(context, 'change_visibility', model, model_version) ==
-            '/entities/models/%d/versions/%s/visibility' % (model.pk, model_version.sha))
-    assert (entity_tags.tag_version_url(context, model, model_version) ==
-            '/entities/tag/%d/%s' % (model.pk, model_version.sha))
+    assert (entity_tags.entity_version_url(context, 'change_visibility', model, model_version).endswith(
+            '/entities/models/%d/versions/%s/visibility' % (model.pk, model_version.sha)))
+    assert (entity_tags.tag_version_url(context, model, model_version).endswith(
+            '/entities/tag/%d/%s' % (model.pk, model_version.sha)))
 
-    assert entity_tags.url_entity_comparison_base(context, 'model') == '/entities/models/compare'
-    assert entity_tags.url_entity_diff_base(context, 'model') == '/entities/models/diff'
+    assert entity_tags.url_entity_comparison_base(context, 'model').endswith('/entities/models/compare')
+    assert entity_tags.url_entity_diff_base(context, 'model').endswith('/entities/models/diff')
 
-    assert (entity_tags.entity_comparison_json_url(context, ['%d:%s' % (model.pk, model_version.sha)], 'model') ==
-            '/entities/models/compare/%d:%s/info' % (model.pk, model_version.sha))
+    assert (entity_tags.entity_comparison_json_url(context,
+                                                   ['%d:%s' % (model.pk, model_version.sha)],
+                                                   'model').endswith(
+            '/entities/models/compare/%d:%s/info' % (model.pk, model_version.sha)))
 
 
 @pytest.mark.django_db
@@ -68,31 +70,32 @@ def test_protocol_urls(protocol_with_version):
     protocol_version = protocol.repocache.latest_version
     context = {'current_namespace': 'entities'}
 
-    assert entity_tags.ns_url(context, 'new', 'protocol') == '/entities/protocols/new'
-    assert entity_tags.entity_url(context, 'detail', protocol) == '/entities/protocols/%d' % protocol.pk
-    assert entity_tags.entity_url(context, 'delete', protocol) == '/entities/protocols/%d/delete' % protocol.pk
-    assert entity_tags.entity_url(context, 'version_list', protocol) == '/entities/protocols/%d/versions/' % protocol.pk
-    assert (entity_tags.entity_url(context, 'newversion', protocol) ==
-            '/entities/protocols/%d/versions/new' % protocol.pk)
-    assert (entity_tags.entity_version_url(context, 'version', protocol, protocol_version) ==
-            '/entities/protocols/%d/versions/%s' % (protocol.pk, protocol_version.sha))
-    assert (entity_tags.entity_version_url(context, 'version_json', protocol, protocol_version) ==
+    assert entity_tags.ns_url(context, 'new', 'protocol').endswith('/entities/protocols/new')
+    assert entity_tags.entity_url(context, 'detail', protocol).endswith('/entities/protocols/%d' % protocol.pk)
+    assert entity_tags.entity_url(context, 'delete', protocol).endswith('/entities/protocols/%d/delete' % protocol.pk)
+    assert entity_tags.entity_url(context, 'version_list', protocol).\
+        endswith('/entities/protocols/%d/versions/' % protocol.pk)
+    assert (entity_tags.entity_url(context, 'newversion', protocol).endswith(
+            '/entities/protocols/%d/versions/new' % protocol.pk))
+    assert (entity_tags.entity_version_url(context, 'version', protocol, protocol_version).endswith(
+            '/entities/protocols/%d/versions/%s' % (protocol.pk, protocol_version.sha)))
+    assert (entity_tags.entity_version_url(context, 'version_json', protocol, protocol_version).endswith(
             '/entities/protocols/%d/versions/%s/files.json' %
-            (protocol.pk, protocol_version.sha))
-    assert (entity_tags.url_compare_experiments(protocol, protocol_version) ==
-            '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, protocol_version.sha))
-    assert (entity_tags.entity_version_url(context, 'change_visibility', protocol, protocol_version) ==
-            '/entities/protocols/%d/versions/%s/visibility' % (protocol.pk, protocol_version.sha))
-    assert (entity_tags.tag_version_url(context, protocol, protocol_version) ==
-            '/entities/tag/%d/%s' % (protocol.pk, protocol_version.sha))
+            (protocol.pk, protocol_version.sha)))
+    assert (entity_tags.url_compare_experiments(protocol, protocol_version).endswith(
+            '/entities/protocols/%d/versions/%s/compare' % (protocol.pk, protocol_version.sha)))
+    assert (entity_tags.entity_version_url(context, 'change_visibility', protocol, protocol_version).endswith(
+            '/entities/protocols/%d/versions/%s/visibility' % (protocol.pk, protocol_version.sha)))
+    assert (entity_tags.tag_version_url(context, protocol, protocol_version).endswith(
+            '/entities/tag/%d/%s' % (protocol.pk, protocol_version.sha)))
 
-    assert entity_tags.url_entity_comparison_base(context, 'protocol') == '/entities/protocols/compare'
-    assert entity_tags.url_entity_diff_base(context, 'protocol') == '/entities/protocols/diff'
+    assert entity_tags.url_entity_comparison_base(context, 'protocol').endswith('/entities/protocols/compare')
+    assert entity_tags.url_entity_diff_base(context, 'protocol').endswith('/entities/protocols/diff')
 
     assert (entity_tags.entity_comparison_json_url(context,
                                                    ['%d:%s' % (protocol.pk, protocol_version.sha)],
-                                                   'protocol') ==
-            '/entities/protocols/compare/%d:%s/info' % (protocol.pk, protocol_version.sha))
+                                                   'protocol').endswith(
+            '/entities/protocols/compare/%d:%s/info' % (protocol.pk, protocol_version.sha)))
 
 
 @pytest.mark.django_db
@@ -145,13 +148,13 @@ def test_url_friendly_label(model_with_version, helpers):
 def test_url_runexperiments(model_with_version, protocol_with_version):
     model = model_with_version
     model_commit = model.repocache.latest_version
-    assert (entity_tags.url_run_experiments(model, model_commit) ==
-            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, model_commit.sha))
+    assert (entity_tags.url_run_experiments(model, model_commit).endswith(
+            '/entities/models/%d/versions/%s/runexperiments' % (model.pk, model_commit.sha)))
 
     protocol = protocol_with_version
     protocol_commit = protocol.repocache.latest_version
-    assert (entity_tags.url_run_experiments(protocol, protocol_commit) ==
-            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, protocol_commit.sha))
+    assert (entity_tags.url_run_experiments(protocol, protocol_commit).endswith(
+            '/entities/protocols/%d/versions/%s/runexperiments' % (protocol.pk, protocol_commit.sha)))
 
 
 @pytest.mark.django_db

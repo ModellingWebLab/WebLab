@@ -218,4 +218,3 @@ class TestModelGroupForm:
         form = ModelGroupForm(user=user, data=form_data, instance=modelgroup)
         assert not form.is_valid()
         assert len(ModelGroup.objects.all()) == 2
-

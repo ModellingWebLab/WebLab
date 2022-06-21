@@ -12,10 +12,8 @@ def get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks)
     # experiment is visible if model & protocol are visible
     return (e.latest_version for e in
             Experiment.objects.filter(model_version__pk__in=cachedmodelversion_pks,
-                                      protocol_version=cachedprotocolversion,
-                                      model__in=ModelEntity.objects.visible_to_user(user),
-                                      protocol__in=ProtocolEntity.objects.visible_to_user(user))
-            if e.latest_result == Runnable.STATUS_SUCCESS)
+                                      protocol_version=cachedprotocolversion)
+            if e.latest_result == Runnable.STATUS_SUCCESS and e.is_visible_to_user(user))
 
 
 def get_url(experiment_versions):
@@ -44,7 +42,7 @@ def get_versions_for_model_and_protocol(user, mk, pk):
     if not pk or not mk:
         return ()
 
-    protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version.pk
+    protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
     model_version_pks = get_model_version_pks(mk)
     return get_experiment_versions(user, protocol_version, model_version_pks)
 
@@ -109,7 +107,7 @@ def get_protocols(mk, user):
             models |= ModelEntity.objects.filter(pk=model_or_group)
 
     if not models.exists():
-        return []
+        return ()
 
     selected_model_pks = models.values_list('pk', flat=True)
     latest_model_versions_visible_pk = CachedModelVersion.objects.visible_to_user(user) \

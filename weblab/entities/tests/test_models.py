@@ -4,7 +4,12 @@ import pytest
 from django.db.utils import IntegrityError
 
 from core import recipes
-from entities.models import Entity, ModelEntity, ProtocolEntity, ModelGroup
+from entities.models import (
+    Entity,
+    ModelEntity,
+    ModelGroup,
+    ProtocolEntity,
+)
 from repocache.exceptions import RepoCacheMiss
 from repocache.models import CachedModel
 from repocache.populate import populate_entity_cache

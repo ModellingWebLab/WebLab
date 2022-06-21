@@ -27,8 +27,8 @@ from django.views.generic.list import ListView
 from accounts.forms import OwnershipTransferForm
 from core.combine import ManifestWriter
 from core.visibility import VisibilityMixin
-from entities.views import EditCollaboratorsAbstractView
 from entities.forms import EntityChangeVisibilityForm
+from entities.views import EditCollaboratorsAbstractView
 from fitting.models import FittingResult
 from repocache.models import ProtocolIoputs
 
@@ -550,4 +550,3 @@ class ChangeVisibilityView(UserPassesTestMixin, DetailView):
             }
 
         return JsonResponse(response)
-

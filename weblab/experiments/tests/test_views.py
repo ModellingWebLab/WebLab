@@ -1243,7 +1243,6 @@ class TestExperimentComparisonView:
 class TestExperimentComparisonJsonView:
     def test_compare_experiments(self, client, experiment_version, helpers):
         exp = experiment_version.experiment
-        model_group = recipes.modelgroup.make(title='mymodelgroup', visibility='public', models=[exp.model])
         protocol = recipes.protocol.make()
         protocol_commit = helpers.add_version(protocol, visibility='public')
         exp.protocol.repo.tag('v1')
@@ -1259,6 +1258,71 @@ class TestExperimentComparisonJsonView:
 
         response = client.get(
             ('/experiments/compare/%d/%d/info' % (experiment_version.id, version2.id))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert versions[0]['versionId'] == experiment_version.id
+        assert versions[1]['versionId'] == version2.id
+        assert versions[0]['modelName'] == exp.model.name
+        assert versions[0]['modelVersion'] == exp.model_version.sha
+        assert versions[0]['protoName'] == exp.protocol.name
+        assert versions[0]['protoVersion'] == 'v1'
+        assert versions[0]['name'] == exp.name
+        assert versions[0]['runNumber'] == 1
+        assert versions[0]['groups'] == []
+
+    def test_compare_experiments_for_graph(self, client, experiment_version, helpers):
+        exp = experiment_version.experiment
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol, visibility='public')
+        exp.protocol.repo.tag('v1')
+        populate_entity_cache(exp.protocol)
+
+        version2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=protocol,
+            experiment__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
+        )
+
+        response = client.get(
+            ('/experiments/compare/%d/%d/graph_for_story' % (experiment_version.id, version2.id))
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.content.decode())
+        versions = data['getEntityInfos']['entities']
+        assert versions[0]['versionId'] == experiment_version.id
+        assert versions[1]['versionId'] == version2.id
+        assert versions[0]['modelName'] == exp.model.name
+        assert versions[0]['modelVersion'] == exp.model_version.sha
+        assert versions[0]['protoName'] == exp.protocol.name
+        assert versions[0]['protoVersion'] == 'v1'
+        assert versions[0]['name'] == exp.name
+        assert versions[0]['runNumber'] == 1
+        assert versions[0]['groups'] == []
+
+    def test_compare_experiments_for_graph2(self, client, experiment_version, helpers):
+        exp = experiment_version.experiment
+        model_group = recipes.modelgroup.make(title='mymodelgroup', visibility='public', models=[exp.model])
+        protocol = recipes.protocol.make()
+        protocol_commit = helpers.add_version(protocol, visibility='public')
+        exp.protocol.repo.tag('v1')
+        populate_entity_cache(exp.protocol)
+
+        version2 = recipes.experiment_version.make(
+            status='SUCCESS',
+            experiment__model=exp.model,
+            experiment__model_version=exp.model_version,
+            experiment__protocol=protocol,
+            experiment__protocol_version=protocol.repocache.get_version(protocol_commit.sha),
+        )
+
+        response = client.get(
+            ('/experiments/compare/%d/%d/graph_for_story/%d' % (experiment_version.id, version2.id, model_group.pk))
         )
 
         assert response.status_code == 200

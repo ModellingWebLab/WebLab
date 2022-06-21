@@ -29,8 +29,8 @@ from .graph_filters import (
     get_modelgroups,
     get_protocols,
     get_url,
-    get_versions_for_model_and_protocol,
     get_used_groups,
+    get_versions_for_model_and_protocol,
 )
 from .models import Story, StoryGraph, StoryText
 
@@ -104,13 +104,13 @@ class StoryTransferView(LoginRequiredMixin, UserPassesTestMixin,
             graphs = StoryGraph.objects.filter(story=story)
             model_versions = [mv for sublist in [graph.cachedmodelversions.all() for graph in graphs] for mv in sublist]
 
-            visible_model_groups = [m for m in ModelGroup.objects.all() if m.visible_to_user(user)]
+            visible_model_group_pks = [m.pk for m in ModelGroup.objects.all() if m.visible_to_user(user)]
 
             if Story.objects.filter(title=story.title, author=user).exists():
                 form.add_error(None, "User %s already has a story called %s" % (user.full_name, story.title))
                 return self.form_invalid(form)
 
-            if any(graph.modelgroup is not None and graph.modelgroup not in visible_model_groups for graph in graphs):
+            if any(graph.modelgroups.all().exclude(pk__in=visible_model_group_pks).exists() for graph in graphs):
                 form.add_error(None, "User %s does not have access to all graph's model groups" % (user.full_name))
                 return self.form_invalid(form)
 
@@ -234,7 +234,6 @@ class StoryEditView(StoryView, UpdateView):
                                                                  [v.pk for v in s.cachedmodelversions.all()]))
             initial.append(
                 {'number': i,
-                 'models': s.models.all(),
                  'id_models': [f'modelgroup{str(g.pk)}' for g in s.modelgroups.all()] +
                               [f'model{str(g.pk)}' for g in s.models.all()],
                  'grouptoggles': list(s.grouptoggles.all().values_list('pk', flat=True)),
