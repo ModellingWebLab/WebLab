@@ -244,9 +244,8 @@ class TestStoryGraphFormSet:
 
     def test_create_storyGraph(self, experiment, story, model_with_version, protocol_with_version):
         story_graph_count = StoryGraph.objects.count()
-        modelgroup, modelgroup2, modelgroup3 = recipes.modelgroup.make(models=[model_with_version], visibility='public', _quantity=3)
-#        modelgroup2 = recipes.modelgroup.make(models=model_with_version, visibility='public')
-#        modelgroup3 = recipes.modelgroup.make(models=model_with_version, visibility='public')
+        modelgroup, modelgroup2, modelgroup3 = recipes.modelgroup.make(models=[model_with_version],
+                                                                       visibility='public', _quantity=3)
 
         data = {'ORDER': '0',
                 'number': 0,

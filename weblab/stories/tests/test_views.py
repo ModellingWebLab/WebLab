@@ -946,22 +946,18 @@ class TestStoryFilterGroupToggles:
 
     def test_no_access_to_groups(self, logged_in_user, other_user, experiment_with_result, client):
         experiment = experiment_with_result.experiment
-        modelgroup = recipes.modelgroup.make(author=other_user, visibility='private',
-                                             models=[experiment.model])
+        recipes.modelgroup.make(author=other_user, visibility='private', models=[experiment.model])
         response = client.get(f'/stories/0/model{experiment.model.pk}/{experiment.protocol.pk}/toggles')
         assert response.status_code == 200
         assert response.content.decode("utf-8").strip() == ''
 
     def test_access_to_groups(self, logged_in_user, other_user, experiment_with_result_public, client):
         experiment = experiment_with_result_public.experiment
-        modelgroup = recipes.modelgroup.make(author=logged_in_user, visibility='public',
-                                             models=[experiment.model])
+        recipes.modelgroup.make(author=logged_in_user, visibility='public', models=[experiment.model])
         response = client.get(f'/stories/0/model{experiment.model.pk}/{experiment.protocol.pk}/toggles')
-        from stories.graph_filters import get_used_groups, get_models_run_for_model_and_protocol, get_model_version_pks
-        models = get_models_run_for_model_and_protocol(logged_in_user, f'model{experiment.model.pk}',  experiment.protocol.pk)
-
         assert response.status_code == 200
         assert 'my model group1' in response.content.decode("utf-8").strip()
+
 
 @pytest.mark.django_db
 class TestStoryFilterGraphView:
