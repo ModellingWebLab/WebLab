@@ -1,3 +1,4 @@
+    get_experiment_versions,
 import shutil
 from pathlib import Path
 
@@ -38,7 +39,7 @@ def test_get_experiment_versions_url(experiment_with_result_public):
     user = experiment_with_result_public.author
     cachedprotocolversion = experiment_with_result_public.experiment.protocol_version
     cachedmodelversion_pks = [experiment_with_result_public.experiment.model_version.pk]
-    experiment_versions = tuple(get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks))
+    experiment_versions = get_experiment_versions(user, cachedprotocolversion, cachedmodelversion_pks)
     assert [v.pk for v in experiment_versions] == [experiment_with_result_public.pk]
     assert str(get_url(experiment_versions)) == '/' + str(experiment_with_result_public.pk)
 
@@ -224,7 +225,7 @@ class TestStoryTransferView:
         graph = StoryGraph.objects.filter(story=story).first()
         modelgroup = recipes.modelgroup.make(author=logged_in_user, visibility='private',
                                              models=[graph.cachedmodelversions.first().model])
-        graph.modelgroups.add(modelgroup)
+        graph.modelgroup = modelgroup
         graph.save()
 
         story_count = Story.objects.count()
@@ -420,47 +421,14 @@ class TestStoryCreateView:
         assert StoryText.objects.count() == story_text_count
         assert StoryGraph.objects.count() == story_graph_count
 
-    def test_create_story_with_invalid_graph_model(self, logged_in_user, client, helpers, experiment_versions):
-        assert Story.objects.count() == 0
-        assert StoryText.objects.count() == 0
-        assert StoryGraph.objects.count() == 0
-        helpers.add_permission(logged_in_user, 'create_model')
-
-        experiment = experiment_versions[-1].experiment
-        experiment = experiment_versions[-1].experiment
-        data = {'title': 'new test to check error where form missing graph file',
-                'visibility': 'public',
-                'graphvisualizer': 'displayPlotFlot',
-                'text-TOTAL_FORMS': '1',
-                'text-INITIAL_FORMS': '1',
-                'text-MIN_NUM_FORMS': '0',
-                'text-MAX_NUM_FORMS': '1000',
-                'graph-TOTAL_FORMS': '  1',
-                'graph-INITIAL_FORMS': '1',
-                'graph-MIN_NUM_FORMS': '0',
-                'graph-MAX_NUM_FORMS': '1000',
-                'text-0-description': 'test text',
-                'text-0-ORDER': '0',
-                'graph-0-ORDER': '1',
-                'graph-0-update': 'True',
-                'graph-0-id_models': ['model%s' % experiment.model.pk],
-                'graph-0-protocol': '%s' % experiment.protocol.pk,
-                'graph-0-graphfiles': ''}
-
-        response = client.post('/stories/new', data=data)
-        assert response.status_code == 200
-        assert Story.objects.count() == 0
-        assert StoryText.objects.count() == 0
-        assert StoryGraph.objects.count() == 0
-
     def test_create_story_with_graph_model(self, logged_in_user, client, helpers, experiment_versions):
-        assert Story.objects.count() == 0
-        assert StoryText.objects.count() == 0
-        assert StoryGraph.objects.count() == 0
+        Story.objects.count() == 0
+        StoryText.objects.count() == 0
+        StoryGraph.objects.count() == 0
         helpers.add_permission(logged_in_user, 'create_model')
 
         experiment = experiment_versions[-1].experiment
-        data = {'title': 'new test',
+        data = {'title': 'new test to check error where form save wrong protocol version',
                 'visibility': 'public',
                 'graphvisualizer': 'displayPlotFlot',
                 'text-TOTAL_FORMS': '1',
@@ -931,39 +899,6 @@ class TestStoryFilterExperimentVersions:
 
 
 @pytest.mark.django_db
-class TestStoryFilterGroupToggles:
-    def test_requires_login(self, experiment_with_result, client):
-        experiment = experiment_with_result.experiment
-        response = client.get(f'/stories/0/model{experiment.model.pk}/{experiment.protocol.pk}/toggles')
-        assert response.status_code == 302
-        assert '/login/' in response.url
-
-    def test_no_groups(self, logged_in_user, experiment_with_result, client):
-        experiment = experiment_with_result.experiment
-        response = client.get(f'/stories/0/model{experiment.model.pk}/{experiment.protocol.pk}/toggles')
-        assert response.status_code == 200
-        assert response.content.decode("utf-8").strip() == ''
-
-    def test_no_access_to_groups(self, logged_in_user, other_user, experiment_with_result, client):
-        experiment = experiment_with_result.experiment
-        modelgroup = recipes.modelgroup.make(author=other_user, visibility='private',
-                                             models=[experiment.model])
-        response = client.get(f'/stories/0/model{experiment.model.pk}/{experiment.protocol.pk}/toggles')
-        assert response.status_code == 200
-        assert response.content.decode("utf-8").strip() == ''
-
-    def test_access_to_groups(self, logged_in_user, other_user, experiment_with_result_public, client):
-        experiment = experiment_with_result_public.experiment
-        modelgroup = recipes.modelgroup.make(author=logged_in_user, visibility='public',
-                                             models=[experiment.model])
-        response = client.get(f'/stories/0/model{experiment.model.pk}/{experiment.protocol.pk}/toggles')
-        from stories.graph_filters import get_used_groups, get_models_run_for_model_and_protocol, get_model_version_pks
-        models = get_models_run_for_model_and_protocol(logged_in_user, f'model{experiment.model.pk}',  experiment.protocol.pk)
-
-        assert response.status_code == 200
-        assert 'my model group1' in response.content.decode("utf-8").strip()
-
-@pytest.mark.django_db
 class TestStoryFilterGraphView:
     def test_requires_login(self, experiment_with_result, client):
         experiment = experiment_with_result.experiment
@@ -1067,25 +1002,6 @@ class TestStoryRenderView:
         assert '<div class="markdowrenderview">' not in str(response.content)
         assert '<div class="entitiesToCompare"' in str(response.content)
         assert 'outputs_RestingPotential.csv' in str(response.content)
-        assert '/graph_for_story"' in str(response.content)
-
-    def test_render_story_graph_group_toggles(self, client, story_for_render_no_parts, experiment_with_result_public):
-        experiment = experiment_with_result_public.experiment
-        modelgroup = recipes.modelgroup.make(visibility='public',
-                                             models=[experiment.model])
-        recipes.story_graph.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
-                                 cachedprotocolversion=experiment.protocol_version,
-                                 cachedmodelversions=[experiment.model_version],
-                                 models=[experiment.model],
-                                 grouptoggles=[modelgroup],
-                                 graphfilename='outputs_RestingPotential.csv')
-        response = client.get('/stories/%d' % story_for_render_no_parts.pk)
-        assert response.status_code == 200, str(response)
-        assert '<h1>Story: story for render</h1>' in str(response.content)
-        assert '<div class="markdowrenderview">' not in str(response.content)
-        assert '<div class="entitiesToCompare"' in str(response.content)
-        assert 'outputs_RestingPotential.csv' in str(response.content)
-        assert f'/graph_for_story/{modelgroup.pk}"' in str(response.content)
 
     def test_render_story_multiple_parts(self, client, story_for_render_no_parts, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment

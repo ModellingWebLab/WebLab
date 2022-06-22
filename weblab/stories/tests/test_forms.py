@@ -244,12 +244,16 @@ class TestStoryGraphFormSet:
 
     def test_create_storyGraph(self, experiment, story, model_with_version, protocol_with_version):
         story_graph_count = StoryGraph.objects.count()
+        modelgroup, modelgroup2, modelgroup3 = recipes.modelgroup.make(models=[model_with_version], visibility='public', _quantity=3)
+#        modelgroup2 = recipes.modelgroup.make(models=model_with_version, visibility='public')
+#        modelgroup3 = recipes.modelgroup.make(models=model_with_version, visibility='public')
 
         data = {'ORDER': '0',
                 'number': 0,
                 'currentGraph': '', 'update': 'True', 'id_models':
-                ['model' + str(experiment.model.pk)],
+                ['model' + str(experiment.model.pk), f'modelgroup{modelgroup.pk}'],
                 'protocol': str(experiment.protocol.pk),
+                'grouptoggles': [modelgroup2.pk, modelgroup3.pk],
                 'graphfilename': 'outputs_APD90_gnuplot_data.csv',
                 'graphfiles': 'outputs_APD90_gnuplot_data.csv'}
 
@@ -264,7 +268,9 @@ class TestStoryGraphFormSet:
         assert story_graph.order == 0
         assert list(story_graph.cachedmodelversions.all()) == [experiment.model_version]
         assert story_graph.cachedprotocolversion == experiment.protocol_version
-        assert list(story_graph.modelgroups.all()) == []
+        assert list(story_graph.models.all()) == [experiment.model]
+        assert set(story_graph.grouptoggles.all()) == set([modelgroup2, modelgroup3])
+        assert list(story_graph.modelgroups.all()) == [modelgroup]
         assert story_graph.graphfilename == 'outputs_APD90_gnuplot_data.csv'
 
     def test_load_storyGraph(self, experiment, story):
