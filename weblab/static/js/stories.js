@@ -3,53 +3,6 @@
 var $ = require('jquery');
 var compare = require('./compare.js')
 
-//spinner to indicate page is loading
-/*var loadingSpinner = null;
-class jQuerySpinner {
-  constructor(options) {
-    const opt = Object.assign({
-      duration: 300,
-      created: true
-                }, options);
-                this.parentId_ = opt.parentId;
-                this.appendId_ = '_spinner_wrap';
-                this.overlayId_ = `${this.parentId_}${this.appendId_}`;
-    this.duration_ = opt.duration;
-    if (opt.created) {
-      this.createElement();
-    }
-  }
-
-  createElement() {
-      try {
-          const $el = $(`#${this.parentId_}`);
-          const str = `<div id="${this.overlayId_}" class="jquery-spinner-wrap"><div class="jquery-spinner-circle"><span class="jquery-spinner-bar"></span></div></div>`;
-          const html = $.parseHTML(str);
-          $el.append(html);
-      } catch (err) {
-          console.error(err);
-      }
-  }
-
-  removeElement() {
-    try {
-      const $el = $(`#${this.overlayId_}`);
-      $el.remove();
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  show() {
-    $(`#${this.overlayId_}`).fadeIn(this.duration_);
-  }
-
-  hide() {
-    $(`#${this.overlayId_}`).fadeOut(this.duration_);
-  }
-}*/
-
-
 // Code to facilitate stories with text and graph parts
 const SimpleMDE = require('./lib/simplemde.js');
 
@@ -232,26 +185,6 @@ function insertGraphForm(){
     $("#id_graph-TOTAL_FORMS").val(currentGraphCount);  // update number of forms
 }
 
-/*function updateLoadingSpinner(){
-    num_not_loading = 0;
-    $('.graphPreviewBox').each(function(){
-        txt = $(this).text().trim();
-        if(txt == 'Please select a graph...' || txt == 'failed to load the contents'){
-            num_not_loading ++;
-        }
-    });
-
-    if ((num_not_loading +  ($('.graphPreviewBox').find('canvas').length /2) + $('.graphPreviewBox').find('svg').length) <  $('.graphPreviewBox').length){
-        if(loadingSpinner == null){
-            loadingSpinner = new jQuerySpinner({parentId: 'fullwidthpage'});
-        }
-        loadingSpinner.show();
-        setTimeout(updateLoadingSpinner, 1000);
-    }else if(loadingSpinner != null){
-        loadingSpinner.hide();
-    }
-}*/
-
 function get_models_str(id_prefix){
     models_str = ''
     $(`#${id_prefix}id_models`).children().each(function(){
@@ -339,9 +272,17 @@ function toggleEditVisibility(){
 
 // hook up functionality when document has loaded
 $(document).ready(function(){
-
-//    // start loading spinner if needed
-//    updateLoadingSpinner();
+    //busy cursor if appropriate
+    var numGraphs = $('.graphPreviewBox').length - $('.graphPreviewButton').length;
+    if(numGraphs >0){
+        $('#fullwidthpage').css('cursor', 'wait');
+    }
+    $('body').on('graphDrawn', function(){
+        numGraphs--;
+        if(numGraphs <=0){
+            $('#fullwidthpage').css('cursor', 'default');
+        }
+    });
 
     // disable graph legend when submitting
     $('#newstoryform').submit(function(e) {
@@ -515,11 +456,12 @@ $(document).ready(function(){
     // update all graph previews if graph type changes
     $('#id_graphvisualizer').change(function() {
         $('.graphPreviewBox').each(function(){
-            $(this).html('Switching graph visualizer...');
+            if($(this).find('.graphPreviewButton').length == 0){
+                $(this).html('Switching graph visualizer...');
+                id = $(this).attr('id').replace('graphPreviewBox', '')
+                $(`#id_graph-${id}-update_0`).change();
+            }
         });
-//        updateLoadingSpinner();
-        $('.update_1').change();
-
     });
 
     // if the selected model has a value fill it and use ajax to backfil the rest of the form so we can edit it.

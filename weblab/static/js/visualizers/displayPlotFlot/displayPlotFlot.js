@@ -418,7 +418,7 @@ function contentFlotPlot (graphIds, file, div)
     this.file = file;
     this.div = div;
     this.setUp = false;
-    div.appendChild (document.createTextNode ("loading..."));
+    div.appendChild (document.createTextNode ("loading....."));
     div.setAttribute ("class", "flotDiv");
 };
 
@@ -565,7 +565,7 @@ function contentFlotPlotComparer (graphIds, file, div)
     this.file = file;
     this.div = div;
     this.setUp = false;
-    div.appendChild (document.createTextNode ("loading..."));
+    div.appendChild (document.createTextNode ("loading....."));
     div.setAttribute ("class", "flotDiv");
     this.gotFileContents = 0;
     this.gotKeyContents = 0;
@@ -736,6 +736,8 @@ contentFlotPlotComparer.prototype.showContents = function ()
         // Save data for export if user requests it
         common.allowPlotExport(thisFile.name, transformForExport(datasets), {'x': x_label, 'y': y_label});
     }
+
+    $('body').trigger('graphDrawn');
 };
 
 contentFlotPlotComparer.prototype.show = function ()

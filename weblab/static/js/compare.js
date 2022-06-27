@@ -398,6 +398,7 @@ function parseEntities(entityObj, prefix) {
 
     // Create a drop-down box that allows display of/navigate to experiments being compared
     var entitiesToCompare = document.getElementById(prefix + "entitiesToCompare");
+
     $(entitiesToCompare).empty();
     if (graphGlobal[prefix]['doc'].outputFileHeadline) {
         graphGlobal[prefix]['doc'].outputFileHeadline.innerHTML = "Output files from all compared " + graphGlobal[prefix]['entityType'] + "s";
@@ -681,7 +682,7 @@ function initCompare(prefix, scroll = true) {
         scroll: scroll,
     }
 
-    graphGlobal[prefix]['doc'].fileDetails.style.display = "none";
+//    graphGlobal[prefix]['doc'].fileDetails.style.display = "none";
 
     // Prevent redirection to the default plot when we close it
     if (graphGlobal[prefix]['doc'].displayClose) {
