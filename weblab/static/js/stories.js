@@ -334,8 +334,12 @@ $(document).ready(function(){
       $(`#${id_prefix}protocol`).prop('disabled', true);
       $.ajax({url: url,
               success: function (data) {
+                  current_protocol = $(`#${id_prefix}protocol`).val();
                   $(`#${id_prefix}protocol`).html(data);
                   if($(`#${id_prefix}protocol`).find('option').length > 1){
+                      if(current_protocol != '' && $(`#${id_prefix}protocol option[value=${current_protocol}]`).val() !== undefined){
+                          $(`#${id_prefix}protocol`).val(current_protocol);
+                      }
                       $(`#${id_prefix}protocol`).prop('disabled', false);
                   }
                   $(`#${id_prefix}protocol`).change();
@@ -348,30 +352,42 @@ $(document).ready(function(){
       id_prefix = $(this).attr('id').replace('protocol', '');
       id = id_prefix.replace('id_graph-', '').replace('-', '');
       $(`#${id_prefix}graphfiles`).prop('disabled', true);
+
+      un_checked_toggles = [];
+      $(`#${id}groupToggleBox`).find('input').each(function(){
+          if(!$(this).is(':checked')){
+              un_checked_toggles.push($(this).val());
+          }
+      });
+
+      //toggles
+      $(`#${id}groupToggleBox`).html('');
+      if($(this).val() != ''){ // protocol != ''
+          toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${$(this).val()}/toggles`;
+          $.ajax({url: toggle_url,
+              success: function (data) {
+                  $(`#${id}groupToggleBox`).html(data);
+                  // show all toggles
+                  $(`#${id}groupToggleBox`).find('input').each(function(){
+                      id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
+                      $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('body');
+                      $(this).prop("checked", !un_checked_toggles.includes($(this).val()));
+                  });
+              }
+          });
+      }
+
+      //gra[h files
+      current_file = $(`#${id_prefix}graphfiles`).val();
       url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${$(this).val()}/graph`;
       $.ajax({url: url,
               success: function (data) {
                   $(`#${id_prefix}graphfiles`).html(data);
-                  $(`#${id}groupToggleBox`).html('');
-                  protocol = $(`#${id_prefix}protocol`).val();
-                  if(protocol != ''){
-                      toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${protocol}/toggles`;
-                      $.ajax({url: toggle_url,
-                              success: function (data) {
-                                  $(`#${id}groupToggleBox`).html(data);
-                                  // show all toggles
-                                  $(`#${id}groupToggleBox`).find('input').each(function(){
-                                      id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
-                                      $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('body');
-
-                                  });
-                                  $(`#${id_prefix}graphfiles`).prop('disabled', false);
-                                  $(`#${id_prefix}graphfiles`).change();
-                              }
-                      });
-                  }else{
-                      $(`#${id_prefix}graphfiles`).change();
+                  if(current_file != '' &&  $(`#${id_prefix}graphfiles option[value='${current_file}']`).val() !== undefined){
+                      $(`#${id_prefix}graphfiles`).val(current_file);
                   }
+                  $(`#${id_prefix}graphfiles`).prop('disabled', false);
+                  $(`#${id_prefix}graphfiles`).change();
              }
       });
   });
