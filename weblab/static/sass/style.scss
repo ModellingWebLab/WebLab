@@ -1729,13 +1729,11 @@ span.CodeMirror-selectedtext {
   border: 1px dashed #A9A9A9;
   min-height: 10px;}
 
-.groupToggleBox input[type="checkbox"], .flotDiv input[type="checkbox"]
-{
-    display: inline;
+.groupToggleBox input[type="checkbox"], .flotDiv input[type="checkbox"], .flotLegendEntity label{
+    display: inline !important;
     vertical-align:middle;
 }
 
-.groupToggleBox label, .flotDiv label
-{
+.groupToggleBox label, .flotDiv label{
     display: block;
 }
