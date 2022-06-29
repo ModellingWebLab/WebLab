@@ -127,7 +127,7 @@
                         {% endfor %}
                     </select><br/>
 
-                    <ul class="errorlist"><li>{{ part.grouptoggles.errors }}</li></ul>Select which groups can be switched on and off in the graph:
+                    <ul class="errorlist"><li>{{ part.grouptoggles.errors }}</li></ul><label id="id_graph-{{ part.number.value}}-togglelabel">Select which groups can be switched on and off in the graph:</label>
                     <div id="{{part.number.value}}groupToggleBox" class="groupToggleBox">
                         {% for toggle in part.grouptoggles %}
                             <label for="{{ toggle.data.id  }}"><input type="checkbox" name="graph-{{ part.number.value}}-grouptoggles" value="{{ toggle.data.value  }}" class="groupToggleSelect" id="id_graph-{{ part.number.value}}-grouptoggles_{{forloop.counter0}}" {% if toggle.data.selected %}checked{% endif %}>{{ toggle.data.label }}</label>

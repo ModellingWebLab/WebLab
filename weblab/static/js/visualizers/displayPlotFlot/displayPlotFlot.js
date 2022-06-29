@@ -48,7 +48,7 @@ function createAppendResetButton(thisPlot, parentDiv) {
 }
 
 /* create and append a select toggler to the div element */
-function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
+function createAppendSelectToggler(thisPlot, parentDiv, groups={}, skip_groups=false) {
     var toggleLabel = $("<div class='legendhead'>Toggle options</div>");
     parentDiv.appendChild(toggleLabel.get(0));
 
@@ -62,21 +62,22 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}) {
     selectTogglerEl.setAttribute('checked', 'checked');
     selectTogglerEl.type = 'checkbox';
     label.insertBefore(selectTogglerEl, label.firstChild);
+    if(!skip_groups){
+        for(var groupId in groups){
+            var groupLabel = document.createElement('label');
+            groupLabel.setAttribute('id', `label_selectGroup-${groupId}`);
+            groupLabel.setAttribute('for', `selectGroup-${groupId}`);
+            groupLabel.innerHTML = `${groups[groupId]} &nbsp&nbsp`;
+            parentDiv.appendChild(groupLabel);
 
-    for(var groupId in groups){
-        var groupLabel = document.createElement('label');
-        groupLabel.setAttribute('id', `label_selectGroup-${groupId}`);
-        groupLabel.setAttribute('for', `selectGroup-${groupId}`);
-        groupLabel.innerHTML = `${groups[groupId]} &nbsp&nbsp`;
-        parentDiv.appendChild(groupLabel);
-
-        var selectGroupEl = document.createElement('input');
-        selectGroupEl.id = `selectGroup-${groupId}`;
-        selectGroupEl.class='selectgroup';
-        selectGroupEl.setAttribute('checked', 'checked');
-        selectGroupEl.type = 'checkbox';
-        selectGroupEl.className = `${thisPlot.graphIds["prefix"]}grouptoggle`;
-        groupLabel.insertBefore(selectGroupEl, groupLabel.firstChild);
+            var selectGroupEl = document.createElement('input');
+            selectGroupEl.id = `selectGroup-${groupId}`;
+            selectGroupEl.class='selectgroup';
+            selectGroupEl.setAttribute('checked', 'checked');
+            selectGroupEl.type = 'checkbox';
+            selectGroupEl.className = `${thisPlot.graphIds["prefix"]}grouptoggle`;
+            groupLabel.insertBefore(selectGroupEl, groupLabel.firstChild);
+        }
     }
 
     var toggleLabel = $("<div class='legendhead'>Legend</div>");
@@ -491,7 +492,6 @@ contentFlotPlot.prototype.drawPlot = function ()
 
         var flotPlotDivId = this.graphIds['prefix'] + 'flotplot-' + thisFileId.replace(/\W/g, '');
         createAppendFlotPlotDiv(this, thisDiv, flotPlotDivId);
-        //(datasetNumber > 1) && createAppendSelectToggler(this, thisDiv);
         createAppendResetButton(this, thisDiv);
         (datasetNumber > 1) && createAppendSelectToggler(this, thisDiv);
         createAppendChoicesDiv(this, thisDiv);
@@ -661,15 +661,17 @@ contentFlotPlotComparer.prototype.showContents = function ()
 
         var flotPlotDivId = this.graphIds['prefix'] + 'flotplot-' + thisFileSig;
         createAppendFlotPlotDiv(this, thisDiv, flotPlotDivId);
-        //createAppendSelectToggler(this, thisDiv, groups);
         createAppendResetButton(this, thisDiv);
-        createAppendSelectToggler(this, thisDiv, groups);
+
+        has_multiple_runs = csvDatas.length > 1 || (csvDatas.length==1 && csvDatas[0].data.length>2)
+        if(has_multiple_runs){
+            createAppendSelectToggler(this, thisDiv, groups, thisFile.entities.length==1); // only show groups if we have more than 1 model
+        }
         createAppendChoicesDiv(this, thisDiv);
         createAppendLegendDiv(this, thisDiv);
 
         // insert checkboxes
         var choicesContainer = $('#' + this.graphIds['choicesDivId']);
-
         var datasets = {};
         var curColor = 0;
 

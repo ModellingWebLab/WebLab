@@ -221,16 +221,20 @@ function backFillGroupToggles(){
             toggle_values.push($(this).val());
         }
     });
-    $.ajax({url: `${getStoryBasePath()}/${this.id}/${get_models_str(this.id_prefix)}/${protocol_selected}/toggles`,
-            context: this,
-            success: function (data) {
-                $(`#${this.id}groupToggleBox`).html(data);
-                $(`#${this.id}groupToggleBox`).find('input').each(function(){
-                    $(this).prop('checked', toggle_values.includes($(this).val()));
-                    $(this).change(); // show toggles as appropriate
-                });
-            }
-    });
+    $(`#${this.id_prefix}togglelabel`).css('opacity', $(`#${this.id_prefix}id_models`).find('option').length < 2 ? '0.5' : '');
+    $(`#${this.id}groupToggleBox`).html('');
+    if($(`#${this.id_prefix}id_models`).find('option').length > 1){
+        $.ajax({url: `${getStoryBasePath()}/${this.id}/${get_models_str(this.id_prefix)}/${protocol_selected}/toggles`,
+                context: this,
+                success: function (data) {
+                    $(`#${this.id}groupToggleBox`).html(data);
+                    $(`#${this.id}groupToggleBox`).find('input').each(function(){
+                        $(this).prop('checked', toggle_values.includes($(this).val()));
+                        $(this).change(); // show toggles as appropriate
+                    });
+                }
+        });
+    }
 }
 
 // backfil graph control
@@ -340,8 +344,8 @@ $(document).ready(function(){
                       if(current_protocol != '' && $(`#${id_prefix}protocol option[value=${current_protocol}]`).val() !== undefined){
                           $(`#${id_prefix}protocol`).val(current_protocol);
                       }
-                      $(`#${id_prefix}protocol`).prop('disabled', false);
                   }
+                  $(`#${id_prefix}protocol`).prop('disabled', false);
                   $(`#${id_prefix}protocol`).change();
               }
       });
@@ -353,20 +357,22 @@ $(document).ready(function(){
       id = id_prefix.replace('id_graph-', '').replace('-', '');
       $(`#${id_prefix}graphfiles`).prop('disabled', true);
 
-      un_checked_toggles = [];
-      $(`#${id}groupToggleBox`).find('input').each(function(){
-          if(!$(this).is(':checked')){
-              un_checked_toggles.push($(this).val());
-          }
-      });
-
-      //toggles
+      // toggles
       $(`#${id}groupToggleBox`).html('');
-      if($(this).val() != ''){ // protocol != ''
+      $(`#${id_prefix}togglelabel`).css('opacity', $(`#${id_prefix}id_models`).find('option').length < 2 ? '0.5' : '');
+      if ($(`#${id_prefix}id_models`).find('option').length > 1 && $(this).val() != ''){ // if we have multiple models and a protocol selected
+          un_checked_toggles = [];
+          $(`#${id}groupToggleBox`).find('input').each(function(){
+              if(!$(this).is(':checked')){
+                  un_checked_toggles.push($(this).val());
+              }
+          });
+
           toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${$(this).val()}/toggles`;
           $.ajax({url: toggle_url,
               success: function (data) {
                   $(`#${id}groupToggleBox`).html(data);
+                  $('#id_graph-0-togglelabel').css('opacity', '');
                   // show all toggles
                   $(`#${id}groupToggleBox`).find('input').each(function(){
                       id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
@@ -377,7 +383,7 @@ $(document).ready(function(){
           });
       }
 
-      //gra[h files
+      //graph files
       current_file = $(`#${id_prefix}graphfiles`).val();
       url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${$(this).val()}/graph`;
       $.ajax({url: url,
