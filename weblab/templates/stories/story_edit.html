@@ -100,7 +100,7 @@
 
              <div class="modelgroup-model-selector-row">
                 <div class="modelgroup-model-selector-col">
-                    <select class="selectList modelgroupselect" id="id_graph-{{part.number.value}}-availableModels" size="{{part.models_or_group|length}}" multiple>
+                    <select class="selectList modelgroupselect" id="id_graph-{{part.number.value}}-availableModels" size="10" multiple>
                         {% for mg in part.id_models %}
                             {% if not mg.data.selected %}{{mg}}{% endif %}
                         {% endfor %}
@@ -111,7 +111,7 @@
                    <input class="slectModelForGroup" id="id_graph-{{part.number.value}}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right">
                 </div>
                 <div class="modelgroup-model-selector-col">
-                    <select name="graph-{{part.number.value}}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-{{part.number.value}}-id_models" size="{{part.models_or_group|length}}" multiple>
+                    <select name="graph-{{part.number.value}}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-{{part.number.value}}-id_models" size="10" multiple>
                         {% for mg in part.id_models %}
                             {% if mg.data.selected %}{{mg}}{% endif %}
                         {% endfor %}
