@@ -30,7 +30,7 @@ class TestDatasetCreation:
         assert Dataset.objects.count() == 1
 
         dataset = Dataset.objects.first()
-        assert response.url == '/datasets/%d/addfiles' % dataset.id
+        assert response.url.endswith('/datasets/%d/addfiles' % dataset.id)
         assert dataset.name == 'mydataset'
         assert dataset.author == logged_in_user
 
@@ -107,7 +107,7 @@ class TestDatasetCreation:
             },
         )
         assert response.status_code == 302
-        assert response.url == '/datasets/%d/map' % dataset.pk
+        assert response.url.endswith('/datasets/%d/map' % dataset.pk)
         # Check uploads have been cleared & files removed
         assert dataset.file_uploads.count() == 0
         assert not os.path.exists(del1.upload.path)
@@ -192,7 +192,7 @@ class TestDatasetDeletion:
         assert dataset.archive_path.exists()
         response = client.post('/datasets/%d/delete' % dataset.pk)
         assert response.status_code == 302
-        assert response.url == '/datasets/'
+        assert response.url.endswith('/datasets/')
         assert not Dataset.objects.filter(pk=dataset.pk).exists()
         assert not dataset.archive_path.exists()
 
@@ -203,7 +203,7 @@ class TestDatasetDeletion:
         assert Dataset.objects.filter(pk=dataset.pk).exists()
         response = client.post('/datasets/%d/delete' % dataset.pk)
         assert response.status_code == 302
-        assert response.url == '/datasets/'
+        assert response.url.endswith('/datasets/')
         assert not Dataset.objects.filter(pk=dataset.pk).exists()
 
     def test_non_owner_cannot_delete_dataset(
@@ -257,7 +257,7 @@ class TestDatasetDeletion:
         assert dataset.archive_path.exists()
         response = client.post('/datasets/%d/delete' % dataset.pk)
         assert response.status_code == 302
-        assert response.url == '/datasets/'
+        assert response.url.endswith('/datasets/')
         assert not Dataset.objects.filter(pk=dataset.pk).exists()
         assert not dataset.archive_path.exists()
 
@@ -432,7 +432,7 @@ class TestDatasetFileDownloadView:
         )
         # Check file added OK
         assert response.status_code == 302
-        assert response.url == '/datasets/%d/map' % dataset.pk
+        assert response.url.endswith('/datasets/%d/map' % dataset.pk)
 
         response = client.get(
             reverse('datasets:file_download', args=[dataset.pk, filename])
@@ -919,7 +919,7 @@ class TestDatasetCollaboratorsView:
                                    'form-INITIAL_FORMS': 0,
                                })
         assert response.status_code == 302
-        assert response.url == '/datasets/%d/collaborators' % shared_dataset.pk
+        assert response.url.endswith('/datasets/%d/collaborators' % shared_dataset.pk)
         assert other_user.has_perm('edit_entity', shared_dataset)
 
 

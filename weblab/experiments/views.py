@@ -19,7 +19,7 @@ from guardian.shortcuts import get_objects_for_user
 
 from core.visibility import VisibilityMixin
 from datasets import views as dataset_views
-from entities.models import ModelEntity, ProtocolEntity
+from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 from repocache.models import CACHED_VERSION_TYPE_MAP
 from stories.models import StoryGraph
 
@@ -465,7 +465,7 @@ class ExperimentComparisonJsonView(View):
             'modelVersion': exp.model_version.get_name(),
             'protoVersion': exp.protocol_version.get_name(),
             'runNumber': version.run_number,
-            'groups': [{'id': group.pk, 'title': group.title} for group in version.experiment.model.model_groups.all()]
+            'groups': []
         })
         return details
 
@@ -489,6 +489,21 @@ class ExperimentComparisonJsonView(View):
         }
 
         return JsonResponse(response)
+
+
+class ExperimentGraphForStoryJsonView(ExperimentComparisonJsonView):
+    """
+    Serve up JSON view of multiple experiment versions for graph in stories
+    """
+    def _version_json(self, version, model_version_in_name, protocol_version_in_name):
+        details = super()._version_json(version, model_version_in_name, protocol_version_in_name)
+        modelgroup_pks = filter(None, self.kwargs.get('group_pks', '')[1:].split('/'))
+        details.update({
+            'groups': list(version.experiment.model.model_groups.all().
+                           intersection(ModelGroup.objects.filter(pk__in=modelgroup_pks)).values('id', 'title'))
+        })
+
+        return details
 
 
 @method_decorator(staff_member_required, name='dispatch')
@@ -570,4 +585,3 @@ class ExperimentVersionArchiveView(dataset_views.DatasetArchiveView):
     def get_archive_name(self, version):
         """For historical reasons this is different from the archive_name."""
         return get_valid_filename('%s.zip' % version.experiment.name)
-

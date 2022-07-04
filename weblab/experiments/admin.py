@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from .models import Experiment, ExperimentVersion, RunningExperiment, PlannedExperiment
+from .models import (
+    Experiment,
+    ExperimentVersion,
+    PlannedExperiment,
+    RunningExperiment,
+)
 
 
 admin.site.register(ExperimentVersion)

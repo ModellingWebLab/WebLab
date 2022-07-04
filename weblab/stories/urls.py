@@ -49,7 +49,7 @@ urlpatterns = [
 
 
     url(
-        r'^(?P<mk>\w+)/protocols$',
+        r'^(?P<mk>.+)/protocols$',
         views.StoryFilterProtocolView.as_view(),
         name='filter_protocol',
     ),
@@ -61,7 +61,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^(?P<mk>\w+)/(?P<pk>\d+)/graph$',
+        r'^(?P<mk>.+)/(?P<pk>\d+)/graph$',
         views.StoryFilterGraphView.as_view(),
         name='filter_graph',
     ),
@@ -94,6 +94,13 @@ urlpatterns = [
         r'^experimentversions$',
         views.StoryFilterExperimentVersions.as_view(),
         name='filter_graph_no_keys',
+    ),
+
+
+    url(
+        r'^(?P<gid>\w+)/(?P<mk>\w+)/(?P<pk>\d+)/toggles$',
+        views.StoryFilterGroupToggles.as_view(),
+        name='filter_group_toggles',
     ),
 
 

@@ -525,5 +525,5 @@ def story(logged_in_user, experiment_with_result):
     story = recipes.story.make(author=logged_in_user)
     recipes.story_text.make(author=logged_in_user, story=story)
     recipes.story_graph.make(author=logged_in_user, story=story, cachedprotocolversion=experiment.protocol_version,
-                             cachedmodelversions=[experiment.model_version])
+                             cachedmodelversions=[experiment.model_version], models=[experiment.model])
     return story

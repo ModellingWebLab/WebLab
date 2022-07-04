@@ -3,53 +3,6 @@
 var $ = require('jquery');
 var compare = require('./compare.js')
 
-//spinner to indicate page is loading
-var loadingSpinner = null;
-class jQuerySpinner {
-  constructor(options) {
-    const opt = Object.assign({
-      duration: 300,
-      created: true
-                }, options);
-                this.parentId_ = opt.parentId;
-                this.appendId_ = '_spinner_wrap';
-                this.overlayId_ = `${this.parentId_}${this.appendId_}`;
-    this.duration_ = opt.duration;
-    if (opt.created) {
-      this.createElement();
-    }
-  }
-
-  createElement() {
-      try {
-          const $el = $(`#${this.parentId_}`);
-          const str = `<div id="${this.overlayId_}" class="jquery-spinner-wrap"><div class="jquery-spinner-circle"><span class="jquery-spinner-bar"></span></div></div>`;
-          const html = $.parseHTML(str);
-          $el.append(html);
-      } catch (err) {
-          console.error(err);
-      }
-  }
-
-  removeElement() {
-    try {
-      const $el = $(`#${this.overlayId_}`);
-      $el.remove();
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  show() {
-    $(`#${this.overlayId_}`).fadeIn(this.duration_);
-  }
-
-  hide() {
-    $(`#${this.overlayId_}`).fadeOut(this.duration_);
-  }
-}
-
-
 // Code to facilitate stories with text and graph parts
 const SimpleMDE = require('./lib/simplemde.js');
 
@@ -133,7 +86,7 @@ function getStoryBasePath(){
     return url.replace(/stories.*/i, 'stories');
 }
 
-//checkbox toggels dropdown enabled
+//insert new graph form
 function insertGraphForm(){
     currentTextCount = parseInt($('#id_text-TOTAL_FORMS').val());
     currentGraphCount = parseInt($('#id_graph-TOTAL_FORMS').val())
@@ -157,9 +110,39 @@ function insertGraphForm(){
                   <input type="radio" name="graph-${currentGraphCount}-update" value="True" id="id_graph-${currentGraphCount}-update_0" class="update_0 preview-graph-control" name="graph-${currentGraphCount}-update" checked>
                   <input type="hidden" id="id_graph-${currentGraphCount}-experimentVersionsUpdate" class="experimentVersionsUpdate preview-graph-control" value="/">
                 </div>
-                <label id="${currentGraphCount}-models_or_group-label" for="id_graph-${currentGraphCount}-models_or_group">Select model or model group: </label><select class="modelgroupselect" name="graph-${currentGraphCount}-models_or_group" id="id_graph-${currentGraphCount}-models_or_group"></select><br/>
-                <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol"></select><br/>
-                <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles"></select><br/><br/>
+                <label id="${currentGraphCount}-id_models" for="id_graph-${currentGraphCount}-id_models">Select model or model group: </label><br/>
+
+      <div class="modelgroup-model-selector">
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col left"><h5>Available models</h5></div>
+                <div class="modelgroup-model-selector-col"><h5>Selected models & groups</h5></div>
+             </div>
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col left"><label>Filter search: </label><input class="searchModel" id="${currentGraphCount}-searchAvailableModel" autocomplete="off"><br/></div>
+                <div class="modelgroup-model-selector-colt"><ul class="errorlist"><li></li></ul></div>
+             </div>
+
+             <div class="modelgroup-model-selector-row">
+                <div class="modelgroup-model-selector-col">
+                    <select class="selectList modelgroupselect" id="id_graph-${currentGraphCount}-availableModels" size="2" multiple>
+                    </select>
+                </div>
+                <div class="modelgroup-model-selector-col div-table-buttons">
+                   <input class="deselectModelFromGroup" id="id_graph-${currentGraphCount}-deselectModelFromGroup" type="button" value="◀" style="display: inline-block;" title="move left" alt="move left">
+                   <input class="slectModelForGroup" id="id_graph-${currentGraphCount}-slectModelForGroup" type="button" value="▶" style="display: inline-block;" title="move right" alt="move right">
+                </div>
+                <div class="modelgroup-model-selector-col">
+                    <select name="graph-${currentGraphCount}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-${currentGraphCount}-id_models" size="2" multiple></select>
+                </div>
+           </div><br/>
+                
+                <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol" disabled></select><br/>
+
+                    Select which groups can be switched on and off in the graph: 
+                    <div id="${currentGraphCount}groupToggleBox" class="groupToggleBox"></div>                
+                
+                
+                <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles" disabled></select><br/><br/>
                 <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox">Please select a graph...</div>
                 <br/>
               </td>
@@ -170,7 +153,7 @@ function insertGraphForm(){
 
     // Fill dropdowns
     // get graph selection elements
-    modelorgroup = $(`#id_graph-${currentGraphCount}-models_or_group`);
+    modelorgroup = $(`#id_graph-${currentGraphCount}-availableModels`);
     protocol = $(`#id_graph-${currentGraphCount}-protocol`);
     filename = $(`#id_graph-${currentGraphCount}-graphfiles`);
     // fill models or groups
@@ -202,31 +185,134 @@ function insertGraphForm(){
     $("#id_graph-TOTAL_FORMS").val(currentGraphCount);  // update number of forms
 }
 
-function updateLoadingSpinner(){
-    num_not_loading = 0;
-    $('.graphPreviewBox').each(function(){
-        txt = $(this).text().trim();
-        if(txt == 'Please select a graph...' || txt == 'failed to load the contents'){
-            num_not_loading ++;
+function get_models_str(id_prefix){
+    models_str = ''
+    $(`#${id_prefix}id_models`).children().each(function(){
+        models_str += $(this).attr('value') + '_';
+    });
+    return models_str;
+}
+
+function backFillProtocol(){
+    return $.ajax({url: `${getStoryBasePath()}/${get_models_str(this.id_prefix)}/protocols`,
+                   context: this,
+                   success: function (data) {
+                       $(`#${this.id_prefix}protocol`).html(data);
+                       $(`#${this.id_prefix}protocol`).val(this.protocol_selected);
+                   }
+           });
+}
+
+function backFillGraphFile(){
+    return $.ajax({url: `${getStoryBasePath()}/${get_models_str(this.id_prefix)}/${this.protocol_selected}/graph`,
+                   context: this,
+                   success: function (data) {
+                       $(`#${this.id_prefix}graphfiles`).html(data);
+                       $(`#${this.id_prefix}graphfiles`).val(this.graph_file_selected);
+                   }
+    });
+}
+
+function backFillGroupToggles(){
+    protocol_selected =  $(`#${this.id_prefix}protocol`).val();
+    toggle_values = [];
+    $(`#${this.id}groupToggleBox`).find('input').each(function(){
+        if($(this).is(":checked")){
+            toggle_values.push($(this).val());
         }
     });
-
-    if ((num_not_loading +  ($('.graphPreviewBox').find('canvas').length /2) + $('.graphPreviewBox').find('svg').length) <  $('.graphPreviewBox').length){
-        if(loadingSpinner == null){
-            loadingSpinner = new jQuerySpinner({parentId: 'fullwidthpage'});
-        }
-        loadingSpinner.show();
-        setTimeout(updateLoadingSpinner, 1000);
-    }else if(loadingSpinner != null){
-        loadingSpinner.hide();
+    $(`#${this.id_prefix}togglelabel`).css('opacity', $(`#${this.id_prefix}id_models`).find('option').length < 2 ? '0.5' : '');
+    $(`#${this.id}groupToggleBox`).html('');
+    if($(`#${this.id_prefix}id_models`).find('option').length > 1){
+        $.ajax({url: `${getStoryBasePath()}/${this.id}/${get_models_str(this.id_prefix)}/${protocol_selected}/toggles`,
+                context: this,
+                success: function (data) {
+                    $(`#${this.id}groupToggleBox`).html(data);
+                    $(`#${this.id}groupToggleBox`).find('input').each(function(){
+                        $(this).prop('checked', toggle_values.includes($(this).val()));
+                        $(this).change(); // show toggles as appropriate
+                    });
+                }
+        });
     }
+}
+
+// backfil graph control
+function backfilGraphControl(){
+    this.protocol_selected =  $(`#${this.id_prefix}protocol`).val();
+    this.graph_file_selected = $(`#${this.id_prefix}graphfiles`).val();
+    $.when(backFillProtocol.bind(this)(), backFillGraphFile.bind(this)(), backFillGroupToggles.bind(this)()).done(function(){
+        // link visibility change when update radio changes
+        $(`#${this.id_prefix}update_0`).change(toggleEditVisibility.bind(this));
+        $(`#${this.id_prefix}update_1`).change(toggleEditVisibility.bind(this));
+        toggleEditVisibility.bind(this)();
+    }.bind(this));
+}
+
+function toggleEditVisibility(){
+    if($(`#id_graph-${this.id}-update_0`).is(':checked')){
+        //make sure visability for toggles matches their selectedness
+        $(`#${this.id}groupToggleBox`).find('input').each(function(){
+            $(this).change();
+        });
+
+        $(`#id_graph-${this.id}-graph-selecttion-controls`).css({"visibility": "visible", "display": "block"});
+    }else{
+        //make sure all group toggles in original graph are visible
+        groupToggles = $(`#id_graph-${this.id}-currentGroupToggles`).val();
+        group_toggle_list = groupToggles.split('/');
+        for (i = 0; i < group_toggle_list.length; i++) {
+            $(`<style>#label_selectGroup-group-${this.id}-${group_toggle_list[i]} { visibility: visible; display: block;}</style>`).appendTo('body');
+        }
+        groupToggles = $(`#id_graph-${this.id}-currentGroupToggles-off`).val();
+        group_toggle_list = groupToggles.split('/');
+        for (i = 0; i < group_toggle_list.length; i++) {
+            $(`<style>#label_selectGroup-group-${this.id}-${group_toggle_list[i]} { visibility: hidden; display: none;}</style>`).appendTo('body');
+        }
+        $(`#id_graph-${this.id}-graph-selecttion-controls`).css({"visibility": "hidden", "display": "none"});
+    }
+    $(`#id_graph-${this.id}-experimentVersionsUpdate`).change();
 }
 
 // hook up functionality when document has loaded
 $(document).ready(function(){
-
-    // start loading spinner if needed
-    updateLoadingSpinner();
+    //busy cursor if appropriate
+    var numGraphs = $('.graphPreviewBox').length - $('.graphPreviewButton').length;
+    if(numGraphs >0){
+        $('body').css('cursor', 'wait', '!important');
+        $('.editmeta_cname').css('cursor', 'wait')
+        $('li.editmeta_annotation').css('cursor', 'wait');
+        $('.editmeta_category_name').css('cursor', 'wait');
+        $('.bivesTab').css('cursor', 'wait');
+        $('a, a:active, a:visited').css('cursor', 'wait');
+        $('.pointer').css('cursor', 'wait');
+        $('#dropbox a').css('cursor', 'wait');
+        $('.closebtn').css('cursor', 'wait');
+        $('.CodeMirror-gutter-elt').css('cursor', 'wait');
+        $('.CodeMirror-lines').css('cursor', 'wait');
+        $('.CodeMirror-crosshair').css('cursor', 'wait');
+        $('.editor-toolbar a').css('cursor', 'wait');
+        $('.ui-state-disabled').css('cursor', 'wait', '!important');
+    }
+    $('body').on('graphDrawn', function(){
+        numGraphs--;
+        if(numGraphs <=0){
+            $('body').css('cursor', '');
+            $('.editmeta_cname').css('cursor', 'pointer')
+            $('li.editmeta_annotation').css('cursor', 'pointer');
+            $('.editmeta_category_name').css('cursor', 'pointer');
+            $('.bivesTab').css('cursor', 'default');
+            $('a, a:active, a:visited').css('cursor', 'pointer');
+            $('.pointer').css('cursor', 'pointer');
+            $('#dropbox a').css('cursor', 'pointer');
+            $('.closebtn').css('cursor', 'pointer');
+            $('.CodeMirror-gutter-elt').css('cursor', 'default');
+            $('.CodeMirror-lines').css('cursor', 'text');
+            $('.CodeMirror-crosshair').css('cursor', 'crosshair');
+            $('.editor-toolbar a').css('cursor', 'pointer');
+            $('.ui-state-disabled').css('cursor', 'default', '!important');
+        }
+    });
 
     // disable graph legend when submitting
     $('#newstoryform').submit(function(e) {
@@ -244,78 +330,105 @@ $(document).ready(function(){
         renderMde($(this).find('textarea').attr('id'));
     }
   });
-  //checkbox toggels dropdown enabled
-  $(document).on('click', '.preview-graph-control', function graphMenuVisibility(){
-      id = $(this).attr('id');
-      id = id.replace('id_graph-', '');
-      id = id.replace('-update_0', '');
-      id = id.replace('-update_1', '');
-      update = $(`#id_graph-${id}-update_0`).is(':checked');
-      $(`#id_graph-${id}-models_or_group`).prop("disabled", !update);
-      $(`#id_graph-${id}-protocol`).prop("disabled", !update);
-      $(`#id_graph-${id}-graphfiles`).prop("disabled", !update);
-      $(`#${id}-models_or_group-label`).css('opacity', update ? '1.0' : '0.5');
-      $(`#${id}-protocol`).css('opacity', update ? '1.0' : '0.5');
-      $(`#${id}-graphfiles`).css('opacity', update ? '1.0' : '0.5');
-  });
 
   // update protocols when model changes
-  $(document).on('change', '.modelgroupselect', function(){
-      id = $(this).attr('id').replace('-models_or_group', '');
-      model = $(this).val();
-      protocol = $(`#${id}-protocol`);
-      filename = $(`#${id}-graphfiles`);
-      // empty protocol & file while waiting
-      protocol.html('');
-      filename.html('');
-      url = `${getStoryBasePath()}/${model}/protocols`;
+  $(document).on('modelsChanged', '.modelgroupselect', function(){
+      id_prefix = $(this).attr('id').replace('id_models', '');
+      url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/protocols`;
+      $(`#${id_prefix}protocol`).prop('disabled', true);
       $.ajax({url: url,
               success: function (data) {
-                  protocol.html(data);
-                  protocol.change();
-             }
+                  current_protocol = $(`#${id_prefix}protocol`).val();
+                  $(`#${id_prefix}protocol`).html(data);
+                  if($(`#${id_prefix}protocol`).find('option').length > 1){
+                      if(current_protocol != '' && $(`#${id_prefix}protocol option[value=${current_protocol}]`).val() !== undefined){
+                          $(`#${id_prefix}protocol`).val(current_protocol);
+                      }
+                  }
+                  $(`#${id_prefix}protocol`).prop('disabled', false);
+                  $(`#${id_prefix}protocol`).change();
+              }
       });
   });
 
   // update graphs when protocol changes
   $(document).on('change', '.graphprotocol', function(){
-      id = $(this).attr('id').replace('-protocol', '');
-      model = $(`#${id}-models_or_group`).val();
-      protocol = $(this).val();
-      filename = $(`#${id}-graphfiles`);
-      filename.html('');
-      url = `${getStoryBasePath()}/${model}/${protocol}/graph`;
+      id_prefix = $(this).attr('id').replace('protocol', '');
+      id = id_prefix.replace('id_graph-', '').replace('-', '');
+      $(`#${id_prefix}graphfiles`).prop('disabled', true);
+
+      // toggles
+      $(`#${id}groupToggleBox`).html('');
+      $(`#${id_prefix}togglelabel`).css('opacity', $(`#${id_prefix}id_models`).find('option').length < 2 ? '0.5' : '');
+      if ($(`#${id_prefix}id_models`).find('option').length > 1 && $(this).val() != ''){ // if we have multiple models and a protocol selected
+          un_checked_toggles = [];
+          $(`#${id}groupToggleBox`).find('input').each(function(){
+              if(!$(this).is(':checked')){
+                  un_checked_toggles.push($(this).val());
+              }
+          });
+
+          toggle_url = `${getStoryBasePath()}/${id}/${get_models_str(id_prefix)}/${$(this).val()}/toggles`;
+          $.ajax({url: toggle_url,
+              success: function (data) {
+                  $(`#${id}groupToggleBox`).html(data);
+                  $('#id_graph-0-togglelabel').css('opacity', '');
+                  // show all toggles
+                  $(`#${id}groupToggleBox`).find('input').each(function(){
+                      id_pref = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
+                      $(`<style>#label_selectGroup-group${id_pref}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('body');
+                      $(this).prop("checked", !un_checked_toggles.includes($(this).val()));
+                  });
+              }
+          });
+      }
+
+      //graph files
+      current_file = $(`#${id_prefix}graphfiles`).val();
+      url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${$(this).val()}/graph`;
       $.ajax({url: url,
               success: function (data) {
-                  filename.html(data);
-                  filename.change();
+                  $(`#${id_prefix}graphfiles`).html(data);
+                  if(current_file != '' &&  $(`#${id_prefix}graphfiles option[value='${current_file}']`).val() !== undefined){
+                      $(`#${id_prefix}graphfiles`).val(current_file);
+                  }
+                  $(`#${id_prefix}graphfiles`).prop('disabled', false);
+                  $(`#${id_prefix}graphfiles`).change();
              }
       });
   });
 
   // update graph preview when file changes
   $(document).on('change', '.graphfiles', function(){
-      id = $(this).attr('id').replace('-graphfiles', '');
-      model = $(`#${id}-models_or_group`).val();
-      protocol = $(`#${id}-protocol`).val();
+      id_prefix = $(this).attr('id').replace('graphfiles', '');
+      protocol = $(`#${id_prefix}protocol`).val();
       graphfile = $(this).val();
-      experimentVersionsUpdate = $(`#${id}-experimentVersionsUpdate`);
 
       if(graphfile != ''){
         // retreive experiment versions
-        url = `${getStoryBasePath()}/${model}/${protocol}/experimentversions`;
+        url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentversions`;
         $.ajax({url: url,
                 success: function(data){
                     data = data.trim();
-                    experimentVersionsUpdate.val(data);
-                    experimentVersionsUpdate.change();experimentVersionsUpdate
+                    $(`#${id_prefix}experimentVersionsUpdate`).val(data);
+                    $(`#${id_prefix}experimentVersionsUpdate`).change();
                 }
         });
       }else{
-          if(experimentVersionsUpdate.val().trim() != '/'){
-            experimentVersionsUpdate.val('/');
-            experimentVersionsUpdate.change();
+          if($(`#${id_prefix}experimentVersionsUpdate`).val().trim() != '/'){
+              $(`#${id_prefix}experimentVersionsUpdate`).val('/');
+              $(`#${id_prefix}experimentVersionsUpdate`).change();
           }
+      }
+  });
+
+  // update graph preview when selected model groups change
+  $(document).on('change', '.groupToggleSelect', function(){
+      id_prefix = $(this).attr('name').replace('grouptoggles', '').replace('graph', '');
+      if($(this).is(':checked')){
+          $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: visible; display: block;}</style>`).appendTo('body');
+      }else{
+          $(`<style>#label_selectGroup-group${id_prefix}${$(this).val()} { visibility: hidden; display: none;}</style>`).appendTo('body');
       }
   });
 
@@ -344,26 +457,33 @@ $(document).ready(function(){
         $(this).html(marked(source));
     });
 
+
   /* Graph Preview functionality */
   // update graph preview if any of the controls change
+  // back fill graph controls
   $(body).on('change', '.preview-graph-control', function() {
-        // get prefix graph Id
-        var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
+       var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
         graphId = match[1];
-
         //set relevant css class for preview box size
         $(`#${graphId}graphPreviewBox`).removeClass('displayPlotFlot-preview');
         $(`#${graphId}graphPreviewBox`).removeClass('displayPlotHC-preview');
         $(`#${graphId}graphPreviewBox`).addClass(`${$('#id_graphvisualizer').val()}-preview`);
+        groupToggles = '';
         if ($(`#id_graph-${graphId}-update_1`).is(':checked')) {
             experimentVersions = $(`#id_graph-${graphId}-experimentVersions`).val();
-            currentGraph = $(`#id_graph-${graphId}-currentGraph`).val();
-            currentGraphParts = currentGraph.split(' / ');
-            graphFile = currentGraphParts[currentGraphParts.length - 1];
+            graphFile = $(`#id_graph-${graphId}-currentGraph`).val();
+            groupToggles = $(`#id_graph-${graphId}-currentGroupToggles`).val();
         } else {
             experimentVersions = $(`#id_graph-${graphId}-experimentVersionsUpdate`).val();
             graphFile = $(`#id_graph-${graphId}-graphfiles`).val();
+            // retreive selected groups
+            $(`#${graphId}groupToggleBox`).find('input').each(function(){
+                groupToggles += '/' + $(this).val();
+            });
+            //make sure vasability for toggles matches their selectedness
+
         }
+
         if (experimentVersions != '/') {
             basePath = $('#base_uri').val(); // may be running in subfolder, so the base path (without /stories) is passed form django
             // compse url for ids for preview graph
@@ -371,9 +491,10 @@ $(document).ready(function(){
             graphPathIds = basePath + graphPathIds.replace('//', '/');
 
             // compse url for entities for preview graph
-            graphPathEntities = `/experiments/compare/${experimentVersions}/info`;
+            graphPathEntities = `/experiments/compare/${experimentVersions}/graph_for_story${groupToggles}`;
+
             graphPathEntities = basePath + graphPathEntities.replace('//', '/');
-            $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" class="entityIdsToCompare" value="${graphPathIds}"><div class="entitiesToCompare" id="${graphId}entitiesToCompare" data-comparison-href="${graphPathEntities}">loading...</div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay"></div></div></div>`);
+            $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" class="entityIdsToCompare" value="${graphPathIds}"><div class="entitiesToCompare" id="${graphId}entitiesToCompare" data-comparison-href="${graphPathEntities}"></div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay">loading...</div></div></div>`);
             compare.initCompare(graphId, false);
         } else {
             $(`#${graphId}graphPreviewBox`).html('Please select a graph...');
@@ -383,11 +504,30 @@ $(document).ready(function(){
     // update all graph previews if graph type changes
     $('#id_graphvisualizer').change(function() {
         $('.graphPreviewBox').each(function(){
-            $(this).html('Switching graph visualizer...');
+            if($(this).find('.graphPreviewButton').length == 0){
+                $(this).html('Switching graph visualizer...');
+                id = $(this).attr('id').replace('graphPreviewBox', '')
+                $(`#id_graph-${id}-update_0`).change();
+            }
         });
-        updateLoadingSpinner();
-        $('.update_1').change();
-
     });
+
+    // if the selected model has a value fill it and use ajax to backfil the rest of the form so we can edit it.
+    $('.selectedmodels').each(function(){
+        if($(this).find('option').length){
+            context = {id_prefix: $(this).attr('id').replace('id_models', ''),
+                       id: $(this).attr('id').replace('id_models', '').replace('id_graph-', '').replace('-', '')};
+                       if($(`#${context.id_prefix}update_0`).is('checked')){
+                           backfilGraphControl.bind(context)();
+                           $(`#${context.id_prefix}-0-update_0`).change(toggleEditVisibility.bind(context));
+                           $(`#${context.id_prefix}-0-update_1`).change(toggleEditVisibility.bind(context));
+                       }else{
+                           $(`#${context.id_prefix}update_0`).one('change', backfilGraphControl.bind(context));
+                       }
+        }
+    });
+
 });
+
+
 

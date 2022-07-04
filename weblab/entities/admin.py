@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from .models import EntityFile, ModelEntity, ProtocolEntity, ModelGroup
+from .models import (
+    EntityFile,
+    ModelEntity,
+    ModelGroup,
+    ProtocolEntity,
+)
 
 
 admin.site.register(EntityFile)

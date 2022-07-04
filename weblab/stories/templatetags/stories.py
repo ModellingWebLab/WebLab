@@ -14,4 +14,3 @@ def can_delete_story(context, story):
 def can_manage_story(context, story):
     user = context['user']
     return story.is_managed_by(user)
-

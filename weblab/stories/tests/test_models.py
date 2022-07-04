@@ -1,7 +1,7 @@
 import pytest
-from django.db.utils import IntegrityError
+
 from core import recipes
-from stories.models import Story, StoryText, StoryGraph
+from stories.models import Story, StoryGraph, StoryText
 
 
 @pytest.mark.django_db
@@ -72,6 +72,7 @@ def test_make_storygraph(user, other_user, experiment_with_result, model_with_ve
     story_graph = recipes.story_graph.make(author=user, story=stories[0],
                                            cachedprotocolversion=experiment.protocol_version,
                                            order=0, cachedmodelversions=[experiment.model_version],
+                                           models=[experiment.model],
                                            graphfilename='outputs_Transmembrane_voltage_gnuplot_data.csv')
     assert story_graph.author == user
     assert story_graph.story == stories[0]
@@ -79,7 +80,6 @@ def test_make_storygraph(user, other_user, experiment_with_result, model_with_ve
     assert story_graph.cachedprotocolversion == experiment.protocol_version
     assert list(story_graph.cachedmodelversions.all()) == [experiment.model_version]
     assert story_graph.graphfilename == 'outputs_Transmembrane_voltage_gnuplot_data.csv'
-    assert str(story_graph) == 'my model1 / my protocol1 / outputs_Transmembrane_voltage_gnuplot_data.csv'
     assert StoryGraph.objects.count() == 1
 
     # change
@@ -101,7 +101,6 @@ def test_make_storygraph(user, other_user, experiment_with_result, model_with_ve
         sorted([model_with_version, public_model], key=str)
     assert story_graph.modelgroup == modelgroup
     assert story_graph.graphfilename == 'outputs_All_state_variables_gnuplot_data.csv'
-    assert str(story_graph) == 'test model group / public protocol / outputs_All_state_variables_gnuplot_data.csv'
     assert StoryGraph.objects.count() == 1
 
     # delete via cascade on story
@@ -114,68 +113,3 @@ def test_user_cannot_have_same_named_story(story, other_user):
     # another user can create a story with the same title
     assert story.author != other_user
     recipes.story.make(author=other_user, title=story.title)
-
-    # but the same user cannot
-    with pytest.raises(IntegrityError):
-        recipes.story.make(author=story.author, title=story.title)
-
-
-@pytest.mark.django_db
-def test_model_constraints(user, experiment_with_result, model_with_version, public_model):
-    # Try to make storyGraph with multiple cachedmodelversions but no modelgroup
-    story = recipes.story.make(author=user, title='test title', visibility='private')
-    experiment = experiment_with_result.experiment
-    with pytest.raises(IntegrityError):
-        recipes.story_graph.make(author=user, story=story, modelgroup=None,
-                                 cachedprotocolversion=experiment.protocol_version,
-                                 order=0, cachedmodelversions=[model_with_version.repocache.latest_version,
-                                                               public_model.repocache.latest_version],
-                                 graphfilename='outputs_Transmembrane_voltage_gnuplot_data.csv')
-
-
-@pytest.mark.django_db
-def test_model_constraints2(user, experiment_with_result, model_with_version, public_model):
-    # Try to make storyGraph with no cachedmodelversions
-    story = recipes.story.make(author=user, title='test title', visibility='private')
-    experiment = experiment_with_result.experiment
-    with pytest.raises(IntegrityError):
-        story_graph = recipes.story_graph.make(author=user, story=story, modelgroup=None,
-                                               cachedprotocolversion=experiment.protocol_version,
-                                               order=0,
-                                               graphfilename='outputs_Transmembrane_voltage_gnuplot_data.csv')
-        story_graph.cachedmodelversions.clear()
-        story_graph.save()
-
-
-@pytest.mark.django_db
-def test_model_constraints3(user, experiment_with_result, model_with_version, public_model):
-    # Try to make storyGraph with cachedmodelversions unrelated to modelgroup
-    story = recipes.story.make(author=user, title='test title', visibility='private')
-    experiment = experiment_with_result.experiment
-
-    modelgroup = recipes.modelgroup.make(author=user, models=[public_model],
-                                         title="test model group")
-    with pytest.raises(IntegrityError):
-        recipes.story_graph.make(author=user, story=story, modelgroup=modelgroup,
-                                 cachedprotocolversion=experiment.protocol_version,
-                                 order=0, cachedmodelversions=[model_with_version.repocache.latest_version],
-                                 graphfilename='outputs_Transmembrane_voltage_gnuplot_data.csv')
-
-
-@pytest.mark.django_db(transaction=True)
-def test_model_constraints_save_m2m(user, story, model_with_version, public_model, public_protocol):
-    story_graph = StoryGraph.objects.get(story=story)
-    story_graph.author = story.author
-    story_graph.story = story
-    story_graph.graphfilename = 'outputs_All_state_variables_gnuplot_data.csv'
-    story_graph.cachedprotocolversion = public_protocol.repocache.latest_version
-    story_graph.order = 3
-    story_graph.modelgroup = None
-    story_graph.save()
-    with pytest.raises(IntegrityError):
-        story_graph.cachedmodelversions.set([public_model.repocache.latest_version])
-    assert list(story_graph.cachedmodelversions.all()) != [public_model.repocache.latest_version]
-
-    story_graph.set_cachedmodelversions([public_model.repocache.latest_version])
-    assert list(story_graph.cachedmodelversions.all()) == [public_model.repocache.latest_version]
-    story_graph.save()

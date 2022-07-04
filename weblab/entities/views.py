@@ -32,7 +32,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
-from django.views.generic.edit import CreateView, DeleteView, FormMixin, UpdateView
+from django.views.generic.edit import (
+    CreateView,
+    DeleteView,
+    FormMixin,
+    UpdateView,
+)
 from django.views.generic.list import ListView
 from git import BadName, GitCommandError
 from guardian.shortcuts import get_objects_for_user
@@ -42,7 +47,12 @@ from core.visibility import Visibility, VisibilityMixin
 from experiments.models import Experiment, ExperimentVersion, PlannedExperiment
 from fitting.models import FittingResult, FittingSpec
 from repocache.exceptions import RepoCacheMiss
-from repocache.models import CachedProtocol, CachedProtocolVersion, CachedModel, CachedModelVersion
+from repocache.models import (
+    CachedModel,
+    CachedModelVersion,
+    CachedProtocol,
+    CachedProtocolVersion,
+)
 from stories.models import StoryGraph
 
 from .forms import (
@@ -53,12 +63,17 @@ from .forms import (
     FileUploadForm,
     ModelEntityForm,
     ModelEntityRenameForm,
-    ProtocolEntityForm,
-    ProtocolEntityRenameForm,
     ModelGroupCollaboratorFormSet,
     ModelGroupForm,
+    ProtocolEntityForm,
+    ProtocolEntityRenameForm,
 )
-from .models import Entity, ModelEntity, ProtocolEntity, ModelGroup
+from .models import (
+    Entity,
+    ModelEntity,
+    ModelGroup,
+    ProtocolEntity,
+)
 from .processing import process_check_protocol_callback, record_experiments_to_run
 
 
@@ -476,7 +491,8 @@ class EntityDeleteView(UserPassesTestMixin, DeleteView):
         if self.kwargs['entity_type'] == 'model':
             cached = CachedModelVersion.objects.filter(entity__in=CachedModel.objects.filter(entity=self.get_object()))
             for entity in cached:
-                kwargs['in_use'] |= set([(graph.story.id, graph.story.title) for graph in entity.storygraph_set.all()])
+                kwargs['in_use'] |= set([(graph.story.id, graph.story.title)
+                                         for graph in entity.selected_group_story_modelversions.all()])
         elif self.kwargs['entity_type'] == 'protocol':
             cached = CachedProtocolVersion.objects.filter(
                 entity__in=CachedProtocol.objects.filter(entity=self.get_object())
@@ -1317,7 +1333,7 @@ class ModelGroupDeleteView(UserPassesTestMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         kwargs['in_use'] = set([(graph.story.id, graph.story.title)
-                                for graph in StoryGraph.objects.filter(modelgroup=self.get_object())])
+                                for graph in self.get_object().selected_group_story_graphs.all()])
         return super().get_context_data(**kwargs)
 
 

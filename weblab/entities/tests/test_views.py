@@ -17,7 +17,12 @@ from git import GitCommandError
 from guardian.shortcuts import assign_perm
 
 from core import recipes
-from entities.models import AnalysisTask, ModelEntity, ProtocolEntity, ModelGroup
+from entities.models import (
+    AnalysisTask,
+    ModelEntity,
+    ModelGroup,
+    ProtocolEntity,
+)
 from experiments.models import Experiment, PlannedExperiment
 from repocache.models import CachedProtocolVersion, ProtocolInterface, ProtocolIoputs
 from repocache.populate import populate_entity_cache

@@ -26,7 +26,7 @@ defusedxml==0.7.1
     #   social-auth-core
 dj-database-url==0.4.2
     # via -r base.in
-django==2.2.27
+django==2.2.28
     # via
     #   -r base.in
     #   django-braces
@@ -72,7 +72,7 @@ pycparser==2.20
     # via cffi
 pyflakes==2.3.1
     # via flake8
-pyjwt==2.1.0
+pyjwt==2.4.0
     # via social-auth-core
 pyparsing==2.4.7
     # via packaging

@@ -5,7 +5,7 @@ import datasets.templatetags.datasets as dataset_tags
 
 @pytest.mark.django_db
 def test_dataset_urls_no_files(my_dataset):
-    assert dataset_tags.url_dataset(my_dataset) == '/datasets/%d/addfiles' % my_dataset.pk
+    assert dataset_tags.url_dataset(my_dataset).endswith('/datasets/%d/addfiles' % my_dataset.pk)
 
 
 @pytest.mark.django_db

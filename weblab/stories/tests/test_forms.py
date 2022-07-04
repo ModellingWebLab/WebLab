@@ -53,7 +53,7 @@ class TestStoryCollaboratorForm:
         story = recipes.story.make(author=logged_in_user)
         recipes.story_text.make(author=logged_in_user, story=story)
         recipes.story_graph.make(author=story.author, story=story, cachedprotocolversion=experiment.protocol_version,
-                                 cachedmodelversions=[experiment.model_version])
+                                 cachedmodelversions=[experiment.model_version], models=[experiment.model])
         form = self._form({'email': other_user.email, 'DELETE': False}, story)
         assert not form.is_valid()
 
@@ -83,7 +83,7 @@ class TestStoryCollaboratorForm:
         story = recipes.story.make(author=logged_in_user, visibility='private')
         recipes.story_text.make(author=logged_in_user, story=story)
         recipes.story_graph.make(author=story.author, story=story, cachedprotocolversion=experiment.protocol_version,
-                                 cachedmodelversions=[experiment.model_version])
+                                 cachedmodelversions=[experiment.model_version], models=[experiment.model])
         assert not other_user.has_perm('edit_story', story)
 
         experiment.protocol_version.visibility = 'public'
@@ -105,7 +105,7 @@ class TestStoryCollaboratorForm:
         story = recipes.story.make(author=logged_in_user, visibility='private')
         recipes.story_text.make(author=logged_in_user, story=story)
         recipes.story_graph.make(author=story.author, story=story, cachedprotocolversion=experiment.protocol_version,
-                                 cachedmodelversions=[experiment.model_version])
+                                 cachedmodelversions=[experiment.model_version], models=[experiment.model])
         experiment.protocol_version.visibility = 'public'
         experiment.model_version.visibility = 'public'
         experiment.protocol_version.save()
@@ -124,7 +124,7 @@ class TestStoryTextFormSet:
     def test_create_storyText(self, story):
         story_text_count = StoryText.objects.count()
         form = StoryTextForm(user=story.author, data={})
-        assert not form.is_valid()
+        assert form.is_valid()
         form = StoryTextForm(user=story.author, data={'description': 'simple text example', 'ORDER': '0'})
         form.delete()  # should do nothing, as no existing text loaded
         story_text = form.save(story)
@@ -226,11 +226,11 @@ class TestStoryGraphFormSet:
         form = StoryGraphForm(data=data, user=story.author)
         assert not form.is_valid()
 
-        data['models_or_group'] = str(experiment.model.pk)
+        data['id_models'] = str([experiment.model.pk])
         form = StoryGraphForm(data=data, user=story.author)
         assert not form.is_valid()
 
-        data['models_or_group'] = 'model' + str(experiment.model.pk)
+        data['id_models'] = ['model' + str(experiment.model.pk)]
         form = StoryGraphForm(data=data, user=story.author)
         assert not form.is_valid()
 
@@ -244,12 +244,15 @@ class TestStoryGraphFormSet:
 
     def test_create_storyGraph(self, experiment, story, model_with_version, protocol_with_version):
         story_graph_count = StoryGraph.objects.count()
+        modelgroup, modelgroup2, modelgroup3 = recipes.modelgroup.make(models=[model_with_version],
+                                                                       visibility='public', _quantity=3)
 
         data = {'ORDER': '0',
                 'number': 0,
-                'currentGraph': '', 'update': 'True', 'models_or_group':
-                'model' + str(experiment.model.pk),
+                'currentGraph': '', 'update': 'True', 'id_models':
+                ['model' + str(experiment.model.pk), f'modelgroup{modelgroup.pk}'],
                 'protocol': str(experiment.protocol.pk),
+                'grouptoggles': [modelgroup2.pk, modelgroup3.pk],
                 'graphfilename': 'outputs_APD90_gnuplot_data.csv',
                 'graphfiles': 'outputs_APD90_gnuplot_data.csv'}
 
@@ -264,17 +267,20 @@ class TestStoryGraphFormSet:
         assert story_graph.order == 0
         assert list(story_graph.cachedmodelversions.all()) == [experiment.model_version]
         assert story_graph.cachedprotocolversion == experiment.protocol_version
-        assert story_graph.modelgroup is None
+        assert list(story_graph.models.all()) == [experiment.model]
+        assert set(story_graph.grouptoggles.all()) == set([modelgroup2, modelgroup3])
+        assert list(story_graph.modelgroups.all()) == [modelgroup]
         assert story_graph.graphfilename == 'outputs_APD90_gnuplot_data.csv'
 
     def test_load_storyGraph(self, experiment, story):
         story_graph = recipes.story_graph.make(author=story.author, story=story,
                                                cachedprotocolversion=experiment.protocol_version,
-                                               cachedmodelversions=[experiment.model_version], order=1)
+                                               cachedmodelversions=[experiment.model_version],
+                                               models=[experiment.model], order=1)
         story_graph_count = StoryGraph.objects.count()
         data = {'ORDER': '1', 'number': 0,
                 'currentGraph': str(story_graph), 'update': 'True',
-                'models_or_group': 'model' + str(experiment.model.pk),
+                'id_models': ['model' + str(experiment.model.pk)],
                 'protocol': str(experiment.protocol.pk),
                 'graphfiles': 'outputs_APD90_gnuplot_data.csv',
                 'graphfilename': 'outputs_APD90_gnuplot_data.csv', 'pk': story_graph.pk}
@@ -284,7 +290,7 @@ class TestStoryGraphFormSet:
         assert form.cleaned_data['ORDER'] == 1
         assert form.cleaned_data['currentGraph'] == str(story_graph)
         assert form.cleaned_data['update'] == 'True'
-        assert form.cleaned_data['models_or_group'] == 'model' + str(experiment.model.pk)
+        assert form.cleaned_data['id_models'] == ['model' + str(experiment.model.pk)]
         assert form.cleaned_data['protocol'] == str(experiment.protocol.pk)
         assert form.cleaned_data['graphfiles'] == 'outputs_APD90_gnuplot_data.csv'
         assert StoryGraph.objects.count() == story_graph_count
@@ -292,13 +298,14 @@ class TestStoryGraphFormSet:
     def test_edit_storyGraph(self, experiment, story):
         story_graph = recipes.story_graph.make(author=story.author, story=story,
                                                cachedprotocolversion=experiment.protocol_version,
-                                               cachedmodelversions=[experiment.model_version], order=1,
+                                               cachedmodelversions=[experiment.model_version],
+                                               models=[experiment.model], order=1,
                                                graphfilename='outputs_APD90_gnuplot_data.csv')
         story_graph_count = StoryGraph.objects.count()
 
         # only update order
-        data = {'ORDER': '2', 'number': 1, 'currentGraph': str(story_graph), 'update': '', 'models_or_group':
-                'model' + str(experiment.model.pk),
+        data = {'ORDER': '2', 'number': 1, 'currentGraph': str(story_graph), 'update': '', 'id_models':
+                ['model' + str(experiment.model.pk)],
                 'protocol': str(experiment.protocol.pk),
                 'graphfilename': 'outputs_Resting_potential_gnuplot_data.csv',
                 'graphfiles': 'outputs_Resting_potential_gnuplot_data.csv', 'pk': story_graph.pk}
@@ -327,11 +334,12 @@ class TestStoryGraphFormSet:
     def test_delete_storyGraph(self, experiment, story):
         story_graph = recipes.story_graph.make(author=story.author, story=story,
                                                cachedprotocolversion=experiment.protocol_version,
-                                               cachedmodelversions=[experiment.model_version], order=1,
+                                               cachedmodelversions=[experiment.model_version],
+                                               models=[experiment.model], order=1,
                                                graphfilename='outputs_Resting_potential_gnuplot_data.csv')
         story_graph_count = StoryGraph.objects.count()
 
-        data = {'models_or_group': 'model' + str(story_graph.cachedmodelversions.first().model.pk),
+        data = {'id_models': ['model' + str(story_graph.cachedmodelversions.first().model.pk)],
                 'protocol': story_graph.cachedprotocolversion.protocol.pk, 'graphfiles': story_graph.graphfilename,
                 'graphfilename': story_graph.graphfilename, 'order': 0,
                 'currentGraph': str(story_graph), 'ORDER': story_graph.order, 'pk': story_graph.pk}
@@ -349,7 +357,7 @@ class TestStoryGraphFormSet:
         form_kwargs = {'user': story.author}
         post_data = {'graph-TOTAL_FORMS': 1, 'graph-INITIAL_FORMS': 0, 'graph-MIN_NUM_FORMS': 0,
                      'graph-MAX_NUM_FORMS': 1000, 'graph-0-ORDER': '10', 'graph-0-currentGraph': '',
-                     'graph-0-update': 'True', 'graph-0-models_or_group': 'modelgroup' + str(modelgroup.pk),
+                     'graph-0-update': 'True', 'graph-0-id_models': ['modelgroup' + str(modelgroup.pk)],
                      'graph-0-protocol': str(experiment.protocol.pk),
                      'graph-0-graphfiles': 'outputs_APD90_gnuplot_data.csv'}
 
@@ -359,7 +367,7 @@ class TestStoryGraphFormSet:
         assert StoryGraph.objects.count() == story_graph_count + 1
         assert len(new_graphs) == 1
         assert new_graphs[0].order == 10
-        assert new_graphs[0].modelgroup == modelgroup
+        assert list(new_graphs[0].modelgroups.all()) == [modelgroup]
         assert new_graphs[0].story == story
         assert new_graphs[0].author == story.author
         assert new_graphs[0].cachedprotocolversion == experiment.protocol_version
@@ -371,20 +379,22 @@ class TestStoryGraphFormSet:
                                              title='test model group', visibility='public')
 
         story_graph = recipes.story_graph.make(author=story.author, story=story,
-                                               cachedprotocolversion=experiment.protocol_version, modelgroup=modelgroup,
+                                               cachedprotocolversion=experiment.protocol_version,
+                                               modelgroups=[modelgroup],
                                                order=0, cachedmodelversions=[experiment.model_version],
                                                graphfilename='outputs_Resting_potential_gnuplot_data.csv')
         story_graph_count = StoryGraph.objects.count()
         form_kwargs = {'user': story.author}
+
         # only update order
         post_data = {'graph-TOTAL_FORMS': 1, 'graph-INITIAL_FORMS': 1, 'graph-MIN_NUM_FORMS': 0,
                      'graph-MAX_NUM_FORMS': 1000, 'graph-0-ORDER': 10,
                      'graph-0-currentGraph': str(story_graph), 'graph-0-update': '',
-                     'graph-0-models_or_group': 'modelgroup' + str(story_graph.modelgroup.pk),
+                     'graph-0-id_models': [f'modelgroup{mg.pk}' for mg in story_graph.modelgroups.all()],
                      'graph-0-protocol': str(story_graph.cachedprotocolversion.protocol.pk),
                      'graph-0-graphfiles': 'outputs_APD90_gnuplot_data.csv'}
 
-        initial = [{'models_or_group': 'modelgroup' + str(story_graph.modelgroup.pk),
+        initial = [{'id_models': [f'modelgroup{mg.pk}' for mg in story_graph.modelgroups.all()],
                     'protocol': story_graph.cachedprotocolversion.protocol.pk,
                     'graphfiles': story_graph.graphfilename, 'currentGraph': str(story_graph),
                     'ORDER': story_graph.order, 'pk': story_graph.pk}]
@@ -394,7 +404,7 @@ class TestStoryGraphFormSet:
         assert StoryGraph.objects.count() == story_graph_count
         assert len(new_graphs) == 1
         assert new_graphs[0].order == 10
-        assert new_graphs[0].modelgroup == modelgroup
+        assert list(new_graphs[0].modelgroups.all()) == [modelgroup]
         assert new_graphs[0].story == story
         assert new_graphs[0].author == story.author
         assert new_graphs[0].cachedprotocolversion == experiment.protocol_version
@@ -409,7 +419,7 @@ class TestStoryGraphFormSet:
         assert StoryGraph.objects.count() == story_graph_count
         assert len(new_graphs) == 1
         assert new_graphs[0].order == 10
-        assert new_graphs[0].modelgroup == modelgroup
+        assert list(new_graphs[0].modelgroups.all()) == [modelgroup]
         assert new_graphs[0].story == story
         assert new_graphs[0].author == story.author
         assert new_graphs[0].cachedprotocolversion == experiment.protocol_version
@@ -421,7 +431,8 @@ class TestStoryGraphFormSet:
                                              title='test model group', visibility='public')
 
         story_graph = recipes.story_graph.make(author=story.author, story=story,
-                                               cachedprotocolversion=experiment.protocol_version, modelgroup=modelgroup,
+                                               cachedprotocolversion=experiment.protocol_version,
+                                               modelgroups=[modelgroup],
                                                order=0, cachedmodelversions=[experiment.model_version],
                                                graphfilename='outputs_Resting_potential_gnuplot_data.csv')
         story_graph_count = StoryGraph.objects.count()
@@ -430,7 +441,7 @@ class TestStoryGraphFormSet:
         post_data = {'graph-TOTAL_FORMS': 1, 'graph-INITIAL_FORMS': 1, 'graph-MIN_NUM_FORMS': 0,
                      'graph-MAX_NUM_FORMS': 1000, 'graph-0-ORDER': 10, 'graph-0-DELETE': 'True'}
 
-        initial = [{'models_or_group': 'modelgroup' + str(story_graph.modelgroup.pk),
+        initial = [{'id_models': [f'modelgroup{mg.pk}' for mg in story_graph.modelgroups.all()],
                     'protocol': story_graph.cachedprotocolversion.protocol.pk,
                     'graphfiles': story_graph.graphfilename, 'currentGraph': str(story_graph),
                     'graphfilename': story_graph.graphfilename,

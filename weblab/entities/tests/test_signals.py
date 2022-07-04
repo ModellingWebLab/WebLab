@@ -1,7 +1,8 @@
 import pytest
+
+from accounts.models import User
 from core import recipes
 from entities.models import ModelEntity, ModelGroup
-from accounts.models import User
 from stories.models import Story, StoryGraph
 
 
@@ -27,10 +28,10 @@ def test_story(helpers, user, experiment_with_result):
     story = recipes.story.make(author=user, title='test title', visibility='private')
 
     recipes.story_graph.make(author=user, story=story, cachedprotocolversion=experiment.protocol_version,
-                             cachedmodelversions=[experiment.model_version], modelgroup=modelgroup)
+                             cachedmodelversions=[experiment.model_version], modelgroups=[modelgroup])
 
     recipes.story_graph.make(author=user, story=story, cachedprotocolversion=experiment.protocol_version,
-                             cachedmodelversions=[experiment.model_version])
+                             cachedmodelversions=[experiment.model_version], models=[experiment.model])
 
     # make sure repo path exists (even if we haven't stored any files in it)
     model.repo_abs_path.mkdir(parents=True, exist_ok=True)
@@ -50,4 +51,3 @@ def test_story(helpers, user, experiment_with_result):
     assert Story.objects.count() == num_stories + 1
     assert StoryGraph.objects.count() == num_graphs
     assert not model.repo_abs_path.exists()
-

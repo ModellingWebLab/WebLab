@@ -68,6 +68,12 @@ button,
   &:hover, &.selected {
     background-color: lighten($button-bg, 10%);
   }
+
+  &:disabled{
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
 }
 
 .button::-moz-focus-inner {
@@ -860,8 +866,8 @@ li.entityviz-PRIVATE
 }
 
 .selectList{
-  width:45vh;
-  height:45vh;
+  width: 400px;
+  height: 400px;
 }
 
 .modelgroup-model-selector-row{
@@ -878,11 +884,12 @@ li.entityviz-PRIVATE
 .div-table-buttons {
   float: left; /* fix for  buggy browsers */
   display: table-column;
+  width: 100px;
+  text-align:center;
 }
 
-.div-table-buttons {
-  width: 10vh;
-  text-align:center;
+.div-table-buttons input {
+   width: 30px;
 }
 
 .modelgroup-model-selector-col.left{
@@ -1700,3 +1707,34 @@ span.CodeMirror-selectedtext {
     100% {transform: rotate(360deg);}
 }
 
+.legendhead{
+  font-weight: bold;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* select colours for combined model & group selector */
+.selectList option[value=""]{
+   font-weight: bold;
+}
+
+.selectList option[value^="model"]{
+   color: #40B0A6;
+}
+
+.selectList option[value^="modelgroup"]{
+   color: #E1BE6A;
+}
+
+.groupToggleBox {
+  border: 1px dashed #A9A9A9;
+  min-height: 10px;}
+
+.groupToggleBox input[type="checkbox"], .flotDiv input[type="checkbox"], .flotLegendEntity label{
+    display: inline !important;
+    vertical-align:middle;
+}
+
+.groupToggleBox label, .flotDiv label{
+    display: block;
+}

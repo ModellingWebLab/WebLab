@@ -151,7 +151,7 @@ function HCPlotterComparer (file, div)
 	this.file = file;
 	this.div = div;
 	this.setUp = false;
-	div.appendChild (document.createTextNode ("loading..."));
+	div.appendChild (document.createTextNode ("loading....."));
 	div.setAttribute ("class", "HighChartDiv");
 	this.gotFileContents = 0;
     this.gotKeyContents = 0;
@@ -281,6 +281,7 @@ HCPlotterComparer.prototype.showContents = function ()
         doHcPlot(id, datasets, thisFile);
 	}
 		
+    $('body').trigger('graphDrawn');
 };
 
 HCPlotterComparer.prototype.show = function ()

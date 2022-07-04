@@ -927,11 +927,30 @@ module.exports = {
   init: init,
 }
 
-/* Functions for model group selector */
-$(document).ready(function(){
-    $('#searchAvailableModel').on('input', function() {
-        $('#availableModels').find('option').each(function(){
-            if(!$(this).text().toLowerCase().includes($('#searchAvailableModel').val().toLowerCase())){
+
+ORDER_MAP = {'private': 0,
+             'public': 1,
+             'moderated': 2};
+
+// set which visibility levels are available
+function set_visibility(){
+    $('#id_visibility option').each(function(){
+      $(this).removeAttr('disabled');
+    });
+    $('#id_models option').each(function(){
+        my_visibility = $('#modelvisibility' + $(this).val()).val();
+        $('#id_visibility option').each(function(){
+            if(ORDER_MAP[$(this).val()] > ORDER_MAP[my_visibility]){
+                $(this).attr('disabled', 'disabled');
+            }
+        });
+    });
+}
+
+function addModelSearchFileter(searchbox, modelList){
+    $(searchbox).on('input', function() {
+        $(modelList).find('option').each(function(){
+            if(!$(this).text().toLowerCase().includes($(searchbox).val().toLowerCase())){
                 $(this).prop("selected", false);
                 $(this).hide();
             }else{
@@ -939,39 +958,54 @@ $(document).ready(function(){
             }
         });
     });
+}
 
 
-    ORDER_MAP = {'private': 0,
-                 'public': 1,
-                 'moderated': 2};
 
-    // set which visibility levels are available
-    function set_visibility(){
-        $('#id_visibility option').each(function(){
-          $(this).removeAttr('disabled');
+/* Functions for model group selector */
+$(document).ready(function(){
+    // add search functionality to all model (group) selectors
+    $('.searchModel').each(function(){
+        my_id = $(this).attr('id');
+        addModelSearchFileter(`#${my_id}`, `#${my_id.replace('searchAvailableModel', 'availableModels')}`);
+    });
+
+     $(document).on('click', '.deselectModelFromGroup', function(){
+        my_id_prefix = $(this).attr('id').replace('deselectModelFromGroup', '');
+        selected_item = $(`#${my_id_prefix}id_models`).find(":selected");
+        selected_item_val = $(selected_item).attr('value');
+        selected_item.each(function(){
+            // if it's a modelgroup make sure it stays in the modelgroup section
+            if($(this).attr('value').startsWith('modelgroup')){
+                selected_item = this;
+                $(`#${my_id_prefix}availableModels`).find("[value='']").each(function(){
+                    if($(this).text().endsWith('model')){
+                        $(selected_item).insertBefore($(this));
+                    }
+                });
+            }else{
+                $(`#${my_id_prefix}availableModels`).append($(this));
+            }
         });
-        $('#id_models option').each(function(){
-            my_visibility = $('#modelvisibility' + $(this).val()).val();
-            $('#id_visibility option').each(function(){
-                if(ORDER_MAP[$(this).val()] > ORDER_MAP[my_visibility]){
-                    $(this).attr('disabled', 'disabled');
-                }
-            });
-        });
-    }
-
-    $('#deselectModelFromGroup').click(function(){
-        $('#availableModels').append($('#id_models').find(":selected"));
+        $(`#${my_id_prefix}id_models`).trigger('modelsChanged');
         set_visibility();
     });
-    $('#slectModelForGroup').click(function(){
-        $('#id_models').append(selected = $('#availableModels').find(":selected"));
+
+    $(document).on('click', '.slectModelForGroup', function(){
+        my_id_prefix = $(this).attr('id').replace('slectModelForGroup', '');
+        selected_item = $(`#${my_id_prefix}availableModels`).find(":selected");
+        selected_item.each(function(){
+            if($(this).attr("value") != ""){
+                $(`#${my_id_prefix}id_models`).append($(this));
+            }
+        });
+        $(`#${my_id_prefix}id_models`).trigger('modelsChanged');
         set_visibility();
     });
 
     $('.modelGroupSavebutton').click(function(){
-        $('#id_models').prop('multiple', true);  //reanable multiple select and select all for submission
-        $('#id_models option').each(function(){
+        $('.selectedmodels').prop('multiple', true);  //reanable multiple select and select all for submission
+        $('.selectedmodels option').each(function(){
             $(this).prop('selected', true);
         });
     });

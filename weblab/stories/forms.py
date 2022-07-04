@@ -9,7 +9,6 @@ from core import visibility
 from entities.forms import BaseEntityCollaboratorFormSet, EntityCollaboratorForm
 from entities.models import ModelEntity, ModelGroup, ProtocolEntity
 
-from .graph_filters import get_graph_file_names, get_modelgroups, get_protocols
 from .models import Story, StoryGraph, StoryText
 
 
@@ -72,11 +71,10 @@ class StoryTextForm(UserKwargModelFormMixin, forms.ModelForm):
             storytext = StoryText.objects.get(pk=self.initial['pk'])
             storytext.delete()
 
-    def clean_description(self):
-        description = self.cleaned_data['description']
-        if description == "":
-            raise ValidationError('This field is required.')
-        return description
+
+class MultipleChoiceFieldModelGroup(forms.MultipleChoiceField):
+    def valid_value(self, *args, **kwargs):
+        return True  # Accept choices updated via JS
 
 
 class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
@@ -84,7 +82,14 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         model = StoryGraph
         fields = []
 
+    def str_to_id_list(self, ids):
+        """Turn list of ids passed as string back into a list."""
+        return re.sub(r'\[|\]|\'| ', '', self.cleaned_data['id_models']).split(',')
+
     def __init__(self, *args, **kwargs):
+        visible_model_choices = kwargs.pop('visible_model_choices', [])
+        self.toggle_choices = kwargs.pop('toggle_choices', [])
+
         super().__init__(*args, **kwargs)
         self.user = kwargs.pop('user', None)
 
@@ -101,66 +106,29 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['update'] = forms.ChoiceField(required=False, initial='pk' not in self.initial,
                                                   choices=[('True', 'True'), ('', '')], widget=forms.RadioSelect)
         self.fields['models_or_group'] = forms.CharField(required=False,
-                                                         widget=forms.Select(attrs={'class': 'modelgroupselect'}))
-        self.fields['protocol'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphprotocol'}))
-        self.fields['graphfiles'] = forms.CharField(required=False, widget=forms.Select(attrs={'class': 'graphfiles'}))
+                                                         widget=forms.SelectMultiple(attrs={'class':
+                                                                                            'modelgroupselect'},
+                                                                                     choices=visible_model_choices))
+        self.fields['id_models'] = forms.CharField(required=True,
+                                                   widget=forms.SelectMultiple(attrs={'class':
+                                                                                      'selectList modelgroupselect'},
+                                                                               choices=visible_model_choices))
+        self.fields['protocol'] = forms.CharField(required=True)
+        self.fields['grouptoggles'] = MultipleChoiceFieldModelGroup(required=False,
+                                                                    widget=forms.CheckboxSelectMultiple())
+        # if we are editing, set the current values as options (so they'll show in the template for the js)
+        if 'initial' in kwargs and 'grouptoggles' in kwargs['initial']:
+            self.fields['grouptoggles'].choices = self.toggle_choices
 
-        self.fields['models_or_group'].widget.choices = get_modelgroups(self.user)
-        if 'initial' in kwargs:
-            disabled = not kwargs['initial'].get('update', True)
-            models_or_group = kwargs['initial'].get('models_or_group', '')
-            protocol = kwargs['initial'].get('protocol', '')
+        self.fields['graphfiles'] = forms.CharField(required=True)
 
-            self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
-            self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
-            self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
-            self.fields['protocol'].widget.choices = \
-                [('', '--------- protocol')] + list(get_protocols(models_or_group, self.user))
-            graph_coices = list(get_graph_file_names(self.user,
-                                                     models_or_group,
-                                                     protocol))
-            if not graph_coices:
-                graph_coices = [('', '--------- graph')]
-            self.fields['graphfiles'].widget.choices = graph_coices
+    def clean_id_models(self):
+        return self.str_to_id_list(self.cleaned_data['id_models'])
 
-    def clean(self):
-        cleaned_data = super().clean()
-        disabled = not cleaned_data['update']
-        self.fields['models_or_group'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        self.fields['protocol'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        self.fields['graphfiles'].widget.attrs['disabled'] = 'disabled' if disabled else False
-        if not disabled:
-            self.fields['protocol'].widget.choices = \
-                [('', '--------- protocol')] + list(get_protocols(cleaned_data.get('models_or_group', ''),
-                                                                  self.user))
-            graph_coices = list(
-                get_graph_file_names(self.user,
-                                     cleaned_data.get('models_or_group', ''),
-                                     cleaned_data.get('protocol', ''))
-            )
-            if not graph_coices:
-                graph_coices = [('', '--------- graph')]
-            self.fields['graphfiles'].widget.choices = graph_coices
-        return cleaned_data
-
-    def clean_models_or_group(self):
-        if self.cleaned_data.get('update', False):
-            if self.cleaned_data.get('update', False) and self.cleaned_data['models_or_group'] == "":
-                raise ValidationError("This field is required.")
-            if not self.cleaned_data['models_or_group'].startswith('model'):
-                raise ValidationError("The model of group field value should start with model or modelgroup.")
-        return self.cleaned_data['models_or_group']
-
-    def clean_protocol(self):
-        self.fields['protocol'].disabled = not self.cleaned_data['update']
-        if self.cleaned_data.get('update', False) and self.cleaned_data['protocol'] == "":
-            raise ValidationError("This field is required.")
-        return self.cleaned_data['protocol']
-
-    def clean_graphfiles(self):
-        if self.cleaned_data.get('update', False) and self.cleaned_data['graphfiles'] == "":
-            raise ValidationError("This field is required.")
-        return self.cleaned_data['graphfiles']
+    def clean_grouptoggles(self):
+        # make sure the selected toggles show up when rendering from errors
+        self.fields['grouptoggles'].choices = self.toggle_choices
+        return self.cleaned_data['grouptoggles']
 
     def save(self, story=None, **kwargs):
         if 'pk' in self.initial:
@@ -168,27 +136,37 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         else:
             storygraph = super().save(commit=False)
         storygraph.order = self.cleaned_data['ORDER']
+
         if self.cleaned_data.get('update', False):
+            if not hasattr(storygraph, 'author') or storygraph.author is None:
+                storygraph.author = self.user
             storygraph.story = story
             storygraph.graphfilename = self.cleaned_data['graphfiles']
 
-            mk = self.cleaned_data['models_or_group']
             pk = self.cleaned_data['protocol']
-            modelgroup = None
-            if mk.startswith('modelgroup'):
-                mk = int(mk.replace('modelgroup', ''))
-                modelgroup = ModelGroup.objects.get(pk=mk)
-                model_versions = [m.repocache.latest_version for m in modelgroup.models.all()
-                                  if m.repocache.versions.count()]
-            else:
-                assert mk.startswith('model'), "The model of group field value should start with model or modelgroup."
-                mk = int(mk.replace('model', ''))
-                model_versions = [ModelEntity.objects.get(pk=mk).repocache.latest_version.pk]
             storygraph.cachedprotocolversion = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
-            if not hasattr(storygraph, 'author') or storygraph.author is None:
-                storygraph.author = self.user
-            storygraph.modelgroup = modelgroup
-            storygraph.set_cachedmodelversions(model_versions)
+
+            modelgroups = set()
+            models = set()
+            model_versions = set()
+            for model_or_group in self.cleaned_data['id_models']:
+                if model_or_group.startswith('modelgroup'):
+                    mk = int(model_or_group.replace('modelgroup', ''))
+                    modelgroup = ModelGroup.objects.get(pk=mk)
+                    model_versions |= set(m.repocache.latest_version for m in modelgroup.models.all()
+                                          if m.repocache.versions.exists())
+                    modelgroups.add(modelgroup)
+                else:
+                    mk = int(model_or_group.replace('model', ''))
+                    model = ModelEntity.objects.get(pk=mk)
+                    models.add(model)
+                    model_versions.add(model.repocache.latest_version)
+
+            storygraph.save()
+            storygraph.modelgroups.set(modelgroups)
+            storygraph.models.set(models)
+            storygraph.grouptoggles.set(self.cleaned_data['grouptoggles'])
+            storygraph.cachedmodelversions.set(model_versions)
         storygraph.save()
         return storygraph
 
