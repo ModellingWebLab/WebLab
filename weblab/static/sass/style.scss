@@ -866,8 +866,8 @@ li.entityviz-PRIVATE
 }
 
 .selectList{
-  width:45vh;
-  height:45vh;
+  width: 400px;
+  height: 400px;
 }
 
 .modelgroup-model-selector-row{
@@ -884,11 +884,12 @@ li.entityviz-PRIVATE
 .div-table-buttons {
   float: left; /* fix for  buggy browsers */
   display: table-column;
+  width: 100px;
+  text-align:center;
 }
 
-.div-table-buttons {
-  width: 10vh;
-  text-align:center;
+.div-table-buttons input {
+   width: 30px;
 }
 
 .modelgroup-model-selector-col.left{
