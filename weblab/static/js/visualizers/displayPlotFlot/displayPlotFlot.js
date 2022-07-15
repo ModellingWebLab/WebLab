@@ -75,6 +75,7 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}, skip_groups=f
             var groupLabel = document.createElement('label');
             groupLabel.setAttribute('id', `label_selectGroup-${groupId}`);
             groupLabel.setAttribute('for', `selectGroup-${groupId}`);
+            groupLabel.setAttribute('class', 'flotLegendEntity');
             groupLabel.innerHTML = `${groups[groupId]} &nbsp&nbsp`;
             parentDiv.appendChild(groupLabel);
 
