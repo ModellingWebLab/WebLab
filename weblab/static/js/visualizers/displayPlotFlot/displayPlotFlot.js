@@ -54,6 +54,7 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}, skip_groups=f
 
     var label = document.createElement('label');
     label.setAttribute('for', thisPlot.graphIds['selectTogglerId']);
+    label.setAttribute('class', 'flotLegendEntity');
     label.innerHTML = 'All &nbsp&nbsp';
     parentDiv.appendChild(label);
 
@@ -63,10 +64,18 @@ function createAppendSelectToggler(thisPlot, parentDiv, groups={}, skip_groups=f
     selectTogglerEl.type = 'checkbox';
     label.insertBefore(selectTogglerEl, label.firstChild);
     if(!skip_groups){
-        for(var groupId in groups){
+        sorted_groups = Object.keys(groups).sort((a, b) => {
+            a_comp = groups[a].toString().toLowerCase().concat(groups[a].toString());
+            b_comp = groups[b].toString().toLowerCase().concat(groups[b].toString());
+            return a_comp < b_comp ? -1 : 1;
+        });
+
+        for(var i =0; i< sorted_groups.length; i++){
+            groupId = sorted_groups[i];
             var groupLabel = document.createElement('label');
             groupLabel.setAttribute('id', `label_selectGroup-${groupId}`);
             groupLabel.setAttribute('for', `selectGroup-${groupId}`);
+            groupLabel.setAttribute('class', 'flotLegendEntity');
             groupLabel.innerHTML = `${groups[groupId]} &nbsp&nbsp`;
             parentDiv.appendChild(groupLabel);
 
@@ -642,6 +651,7 @@ contentFlotPlotComparer.prototype.showContents = function ()
 
         var csvDatas = new Array ();
         var groups = {};
+
         for (var i = 0; i < thisFile.entities.length; i++)
         {
             csvDatas.push ({

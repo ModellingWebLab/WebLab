@@ -223,7 +223,7 @@ function backFillGroupToggles(){
     });
     $(`#${this.id_prefix}togglelabel`).css('opacity', $(`#${this.id_prefix}id_models`).find('option').length < 2 ? '0.5' : '');
     $(`#${this.id}groupToggleBox`).html('');
-    if($(`#${this.id_prefix}id_models`).find('option').length > 1 || $(`#${this.id_prefix}id_models`).find("option[value^='modelgroup']").length > 0){
+    if($(`#${this.id_prefix}id_models`).find('option').length > 1 || $(`#${this.id_prefix}id_models`).find("option[value^='modelgroup']").length > 1){
         $.ajax({url: `${getStoryBasePath()}/${this.id}/${get_models_str(this.id_prefix)}/${protocol_selected}/toggles`,
                 context: this,
                 success: function (data) {
@@ -360,7 +360,7 @@ $(document).ready(function(){
       // toggles
       $(`#${id}groupToggleBox`).html('');
       $(`#${id_prefix}togglelabel`).css('opacity', $(`#${id_prefix}id_models`).find('option').length < 2 ? '0.5' : '');
-      if (($(`#${id_prefix}id_models`).find('option').length > 1 || $(`#${id_prefix}id_models`).find("option[value^='modelgroup']").length > 0) && $(this).val() != ''){ // if we have multiple models and a protocol selected
+      if (($(`#${id_prefix}id_models`).find('option').length > 1  $(`#${this.id_prefix}id_models`).find("option[value^='modelgroup']").length > 1) && $(this).val() != ''){ // if we have multiple models and a protocol selected
           un_checked_toggles = [];
           $(`#${id}groupToggleBox`).find('input').each(function(){
               if(!$(this).is(':checked')){

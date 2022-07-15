@@ -1,3 +1,3 @@
 {% for entity in object_list %}
-    <label for="id_graph-{{ gid }}-grouptoggles_{{ forloop.counter0 }}"><input class="groupToggleSelect" type="checkbox" name="graph-{{ gid }}-grouptoggles" value="{{ entity.pk }}" id="id_graph-{{ gid }}-grouptoggles_{{ forloop.counter0 }}" checked>{{ entity.title }}</label>
+    <label  class="flotLegendEntity" for="id_graph-{{ gid }}-grouptoggles_{{ forloop.counter0 }}"><input class="groupToggleSelect" type="checkbox" name="graph-{{ gid }}-grouptoggles" value="{{ entity.pk }}" id="id_graph-{{ gid }}-grouptoggles_{{ forloop.counter0 }}" checked>{{ entity.title }}</label>
 {% endfor %}
