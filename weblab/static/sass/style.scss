@@ -1728,7 +1728,9 @@ span.CodeMirror-selectedtext {
 
 .groupToggleBox {
   border: 1px dashed #A9A9A9;
-  min-height: 10px;}
+  min-height: 10px;
+  overflow: hidden;
+}
 
 .groupToggleBox input[type="checkbox"], .flotDiv input[type="checkbox"], .flotLegendEntity label{
     display: inline !important;

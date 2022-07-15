@@ -83,7 +83,7 @@ def get_modelgroups(user):
 def get_used_groups(user, model_key, protocol_key):
     """ Returns the model groups that are in use by a given model, protocol combination."""
     models = get_models_run_for_model_and_protocol(user, model_key, protocol_key)
-    return set().union(*(m.model_groups.all() for m in models))
+    return sorted(set().union(*(m.model_groups.all() for m in models)), key=lambda gr:(gr.title.lower(), gr.title))
 
 
 def get_protocols(mk, user):
