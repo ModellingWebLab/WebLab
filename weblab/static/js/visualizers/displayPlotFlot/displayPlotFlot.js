@@ -199,6 +199,7 @@ function updateGroups(prefix){
         numInGroup = $(groupClass).length;
         numSelected = $(`${groupClass}:checked`).length;
         $(this).prop('checked', numInGroup == numSelected);
+        $(this).prop('indeterminate', numSelected > 0 && numSelected != numInGroup);
     });
 }
 
