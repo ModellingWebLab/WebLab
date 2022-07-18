@@ -191,8 +191,10 @@ function retrieveGenericSettings(legendContainer) {
 
 //update all & groups toggle
 function updateGroups(prefix){
-    all_selected = $(`#${prefix}choices`).find('input[type=checkbox]:checked').length == $(`#${prefix}choices`).find('input[type=checkbox]').length;
-    $(`#${prefix}selectToggler`).prop('checked', all_selected);
+    all_boxes = $(`#${prefix}choices`).find('input[type=checkbox]').length;
+    checked_boxes = $(`#${prefix}choices`).find('input[type=checkbox]:checked').length;
+    $(`#${prefix}selectToggler`).prop('checked', all_boxes == checked_boxes);
+    $(`#${prefix}selectToggler`).prop('indeterminate', checked_boxes > 0 && all_boxes != checked_boxes);
     $(`.${prefix}grouptoggle`).each(function(){
         id = $(this).attr('id');
         groupClass = id.replace('selectGroup-', '.');
@@ -284,30 +286,15 @@ function setListeners(thisPlot, plotProperties, moreThanOneDataset) {
     if (moreThanOneDataset)
     {
         /* action when all datasets toggler is clicked */
-        $('#' + thisPlot.graphIds['selectTogglerId']).click(function() {
-          var toggler = $(this);
-          setTogglerTitle(toggler);
-          /* remove any disabled inputs */
-          $('#' + thisPlot.graphIds['choicesDivId'] + ' input:checkbox:disabled').prop('disabled', false);
-          if (toggler.is(':checked'))
-          {
-            /* check all currently unchecked datasets */
-            choicesContainer.find('input:checkbox:not(:checked)').each(function() {
-              $(this).prop('checked', true);
+        $(`#${thisPlot.graphIds['selectTogglerId']}`).click(function() {
+            id_prefix = $(this).attr('id').replace('selectToggler', '');
+            checked = $(this).is(':checked');
+            $(`#${id_prefix}filedisplay`).find('input:checkbox').each(function(){
+                $(this).prop('checked', checked)
             });
-          }
-          else
-          {
-            /* remove all the checked properties except on the first (and disabled that!) */
-            choicesContainer.find('input:checkbox:not(:eq(0))').each(function() {
-              $(this).prop('checked', false);
-            });
-            /* switch on the first (just in case it was already de-selected) and disable it */
-            $('#' + thisPlot.graphIds['choicesDivId'] + ' input:checkbox:eq(0)').prop({ 'disabled': true, 'checked': true });
-          }
-          plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
-          updateGroups(thisPlot.graphIds['prefix']); //update all & groups
-      });
+            plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
+            updateGroups(thisPlot.graphIds['prefix']); //update all & groups
+        });
     }
 
     // group toggle
@@ -370,11 +357,6 @@ function setListeners(thisPlot, plotProperties, moreThanOneDataset) {
     	legend.removeClass ("legend-fade");
     	$('#' + thisPlot.graphIds['legendHideButtonId']).hide();
     }
-}
-
-/* provide dataset toggler title */
-function setTogglerTitle(toggler) {
-  toggler.attr('title', toggler.is(':checked') ? 'Select one (cannot select none!)' : 'Toggle all');
 }
 
 /**
