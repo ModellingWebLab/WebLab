@@ -21,6 +21,8 @@ var graphGlobal = {};
 function setupDownloadFileContents(f, prefix) {
     f.getContents = function(callBack, pref = prefix) {
         for (var i = 0; i < f.entities.length; i++) {
+console.log(Object.keys(csv_cache));
+console.log(f.entities[i].entityFileLink.url);
           $.extend(f.entities[i].entityFileLink, csv_cache[f.entities[i].entityFileLink.url]);
           callBack.getContentsCallback(true, pref);
         }
@@ -98,7 +100,7 @@ function parseEntities(entityObj, prefix) {
             }
     }
 
-    buildSite(prefix);
+//    buildSite(prefix);
 }
 
 function buildSite(prefix) {
@@ -180,8 +182,6 @@ function buildSite(prefix) {
 }
 
 function displayFile(id, pluginName, prefix) {
-    if (!graphGlobal[prefix]['gotInfos'])
-        return;
     var f = graphGlobal[prefix]['files'][id];
     if (!f) {
         notifications.add("no such file", "error");
@@ -215,7 +215,7 @@ function displayFile(id, pluginName, prefix) {
 }
 
 function handleReq(prefix) {
-    if (graphGlobal[prefix]['fileName'] && graphGlobal[prefix]['pluginName'] && graphGlobal[prefix]['gotInfos']) {
+    if (graphGlobal[prefix]['fileName'] && graphGlobal[prefix]['pluginName']) {
         displayFile(graphGlobal[prefix]['fileName'].hashCode(), graphGlobal[prefix]['pluginName'], prefix);
         if (graphGlobal[prefix]['doc'].displayClose) {
             graphGlobal[prefix]['doc'].displayClose.href = basicurl;
@@ -223,28 +223,6 @@ function handleReq(prefix) {
     } else {
         graphGlobal[prefix]['doc'].fileDetails.style.display = "none";
     }
-}
-
-function getInfos(url, prefix) {
-//console.log('getInfos: '+ url);
-    $.getJSON(url, function(data) {
-        notifications.display(data);
-        graphGlobal[prefix]['gotInfos'] = true;
-
-        if (data.getEntityInfos) {
-            parseEntities(data.getEntityInfos.entities, prefix);
-        }
-    })
-}
-
-function parseUrl(event, prefix) {
-    filename_plugin = $(`#${prefix}entityIdsToCompare`).val().replace(/http.*show\//,'').split('/'); // https://cardiac.nottingham.ac.uk/weblab/experiments/compare/18/show/outputs_I__CaL__current_gnuplot_data.csv/displayPlotFlot
-    graphGlobal[prefix]['fileName'] = filename_plugin[0];
-    graphGlobal[prefix]['pluginName'] = filename_plugin[1];
-
-    basicurl = $(`#${prefix}entityIdsToCompare`).val().replace(/show\/.*$/, '');
-    getInfos($("#" + prefix + "entitiesStorygraph").data('comparison-href'), prefix);
-
 }
 
 function initGraph(prefix) {
@@ -264,7 +242,6 @@ function initGraph(prefix) {
             fileDetails: document.getElementById(prefix + "filedetails"),
             outputFileHeadline: document.getElementById(prefix + "outputFileHeadline")
         },
-        gotInfos: false,
         plotDescription: null,
         plotFiles: new Array(),
         filesTable: {},
@@ -292,11 +269,21 @@ function initGraph(prefix) {
     }
 
 downloads = [];
-info = $.ajax({url: $(`#${prefix}entitiesStorygraph`).attr('data-comparison-href'), dataType: "json", context: {csv_cache, downloads}, async: false})
+filename_plugin = $(`#${prefix}entityIdsToCompare`).val().replace(/^.*show\//,'').split('/');
+graphGlobal[prefix]['fileName'] = filename_plugin[0];
+graphGlobal[prefix]['pluginName'] = filename_plugin[1];
+basicurl = $(`#${prefix}entityIdsToCompare`).val().replace(/show\/.*$/, '');
+$(plugins).each(function(i, plugin) {
+    graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
+});
+
+info = $.ajax({url: $(`#${prefix}entitiesStorygraph`).data('comparison-href'), dataType: "json", context: {csv_cache, downloads}, async: false})
                .done((data) => {
                    $.each(data.getEntityInfos.entities, (_, entity) => {
-                       download_url = entity.download_url.replace('archive', 'download/');
-                       file_url = download_url + $(`#id_graph-${prefix}-graphfiles`).val();
+                       // parse entities (but don't build yet)
+                       parseEntities(data.getEntityInfos.entities, prefix);
+                       //get & save data
+                       file_url = entity.download_url.replace('archive', 'download/') + graphGlobal[prefix]['fileName'] ;
                        if(csv_cache[file_url] == undefined){
                            var context_object = {url: file_url};
                            data_dld = $.ajax({url: file_url,
@@ -319,15 +306,7 @@ info = $.ajax({url: $(`#${prefix}entitiesStorygraph`).attr('data-comparison-href
 
     downloads.push(info);
     $.when.apply($, downloads).then(() => {
-        filename_plugin = $(`#${prefix}entityIdsToCompare`).val().replace(/http.*show\//,'').split('/');
-        graphGlobal[prefix]['fileName'] = filename_plugin[0];
-        graphGlobal[prefix]['pluginName'] = filename_plugin[1];
-        basicurl = $(`#${prefix}entityIdsToCompare`).val().replace(/show\/.*$/, '');
-        getInfos($(`#${prefix}entitiesStorygraph`).data('comparison-href'), prefix);
-
-        $(plugins).each(function(i, plugin) {
-            graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
-        });
+        buildSite(prefix);
     });
 }
 
