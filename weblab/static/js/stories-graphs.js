@@ -1,7 +1,7 @@
 var notifications = require('./lib/notifications.js');
 var utils = require('./lib/utils.js');
 var expt_common = require('./expt_common.js');
-var csv_cache = {};
+//var csv_cache = {};
 
 var plugins = [
     require('./visualizers/displayPlotFlot/displayPlotFlot.js'),
@@ -11,24 +11,6 @@ var plugins = [
 ];
 
 var graphGlobal = {};
-
-/**
- * Add a `getContents` method to the file object f (a member of the global `files` collection) which will call
- * `utils.getFileContent` for the version of the file in each experiment being compared (but only on the first time
- * it is called).
- * @param f  the file
- */
-function setupDownloadFileContents(f, prefix) {
-    f.getContents = function(callBack, pref = prefix) {
-        for (var i = 0; i < f.entities.length; i++) {
-console.log(Object.keys(csv_cache));
-console.log(f.entities[i].entityFileLink.url);
-          $.extend(f.entities[i].entityFileLink, csv_cache[f.entities[i].entityFileLink.url]);
-          callBack.getContentsCallback(true, pref);
-        }
-    };
-}
-
 
 function parseOutputContents(entity, file, showDefault, prefix) {
     graphGlobal[prefix]['metadataToParse'] += 1;
@@ -55,15 +37,6 @@ function parseOutputContents(entity, file, showDefault, prefix) {
 
 function parseEntities(entityObj, prefix) {
     if (entityObj.length == 0) return;
-
-    // State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol,
-    // or indeed multiple versions of the same model / protocol, etc.
-    var versionsOfModels = {};
-    var versionsOfProtocols = {};
-    var versionsOfFittingSpecs = {};
-    graphGlobal[prefix]['modelsWithMultipleVersions'] = [];
-    graphGlobal[prefix]['protocolsWithMultipleVersions'] = [];
-    graphGlobal[prefix]['fittingSpecsWithMultipleVersions'] = [];
 
     // Sort entityObj list by .name
     entityObj.sort(function(a, b) {
@@ -251,9 +224,6 @@ function initGraph(prefix) {
         defaultViz: null,
         defaultVizCount: 0,
         // State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol
-        modelsWithMultipleVersions: [],
-        protocolsWithMultipleVersions: [],
-        fittingSpecsWithMultipleVersions: [],
         singleEntities: {
             model: true,
             protocol: true,
@@ -268,41 +238,69 @@ function initGraph(prefix) {
         },
     }
 
-downloads = [];
-filename_plugin = $(`#${prefix}entityIdsToCompare`).val().replace(/^.*show\//,'').split('/');
-graphGlobal[prefix]['fileName'] = filename_plugin[0];
-graphGlobal[prefix]['pluginName'] = filename_plugin[1];
-basicurl = $(`#${prefix}entityIdsToCompare`).val().replace(/show\/.*$/, '');
-$(plugins).each(function(i, plugin) {
-    graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
-});
+    downloads = [];
+    filename_plugin = $(`#${prefix}entityIdsToCompare`).val().replace(/^.*show\//,'').split('/');
+    graphGlobal[prefix]['fileName'] = filename_plugin[0];
+    graphGlobal[prefix]['pluginName'] = filename_plugin[1];
+    basicurl = $(`#${prefix}entityIdsToCompare`).val().replace(/show\/.*$/, '');
+    $(plugins).each(function(i, plugin) {
+        graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
+    });
 
-info = $.ajax({url: $(`#${prefix}entitiesStorygraph`).data('comparison-href'), dataType: "json", context: {csv_cache, downloads}, async: false})
-               .done((data) => {
-                   $.each(data.getEntityInfos.entities, (_, entity) => {
-                       // parse entities (but don't build yet)
-                       parseEntities(data.getEntityInfos.entities, prefix);
-                       //get & save data
-                       file_url = entity.download_url.replace('archive', 'download/') + graphGlobal[prefix]['fileName'] ;
-                       if(csv_cache[file_url] == undefined){
-                           var context_object = {url: file_url};
-                           data_dld = $.ajax({url: file_url,
-                                              context: context_object,
-                                              success: function(data){
-                                                   file = {url: this.url, contents: data};
-                                                   expt_common.getCSV(file);
-                                                   csv_cache[this.url] = file;
-                                              }})
-                                          .fail(() => {
-                                              $(`#${prefix}filedetails`).append(`ERROR loding data: ${file_url}`);
-                                          });
-                           downloads.push(data_dld);
-                       }
-                   })
-               })
-               .fail(() => {
-                 $(`#${prefix}filedetails`).append("ERROR retreiving graph info");
-               });
+    info = $.ajax({url: $(`#${prefix}entitiesStorygraph`).data('comparison-href'), dataType: "json", context: {downloads}, async: false})
+                   .done((data) => {
+                       $.each(data.getEntityInfos.entities, (_, entity) => {
+                           // parse entities (but don't build yet)
+                           entity.plotName = entity.modelName;
+
+                            // Fill in the entities and files entries for this entity
+                            graphGlobal[prefix]['entities'][entity.id] = entity;
+                            if (entity.files){
+                                for (var j = 0; j < entity.files.length; j++) {
+                                    var file = entity.files[j];
+                                    if(file.name == graphGlobal[prefix]['fileName']){
+                                        var sig = file.name.hashCode();
+                                        file.signature = sig;
+                                        file.type = file.filetype;
+                                        if (!graphGlobal[prefix]['files'][sig]) {
+                                            graphGlobal[prefix]['files'][sig] = {};
+                                            graphGlobal[prefix]['files'][sig].sig = sig;
+                                            graphGlobal[prefix]['files'][sig].name = file.name;
+                                            graphGlobal[prefix]['files'][sig].entities = new Array();
+                                            graphGlobal[prefix]['files'][sig].div = {};
+                                            graphGlobal[prefix]['files'][sig].viz = {};
+                                            graphGlobal[prefix]['files'][sig].hasContents = true; //false;
+                                            graphGlobal[prefix]['files'][sig].id = prefix + file.name;
+
+                                            //getContents method should just call callback, as we will seperately pre-download contents
+                                           graphGlobal[prefix]['files'][sig].getContents = function(callBack, pref = prefix) {
+                                               for (var i = 0; i < graphGlobal[prefix]['files'][sig].entities.length; i++) {
+                                                   callBack.getContentsCallback(true, pref);
+                                               }
+                                           };
+                                        }
+                                        graphGlobal[prefix]['files'][sig].entities.push({
+                                            entityLink: entity,
+                                            entityFileLink: file
+                                        });
+
+                                        download_url = entity.download_url.replace('archive', 'download/') + graphGlobal[prefix]['fileName'] ;
+                                        var context_object = {url: download_url, file: file};
+                                        data_dld = $.ajax({url: download_url,
+                                                           context: context_object,
+                                                           success: function(data){
+                                                                        this.file.contents = data;
+                                                                        expt_common.getCSV(this.file);
+                                                          }})
+                                                          .fail(() => {
+                                                              $(`#${prefix}filedetails`).append(`ERROR loding data: ${file_url}`);
+                                                          });
+                                        downloads.push(data_dld);
+                                    }
+                                }
+                            }
+                       });
+                   });
 
     downloads.push(info);
     $.when.apply($, downloads).then(() => {
