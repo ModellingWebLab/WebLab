@@ -12,6 +12,7 @@ var notifications = require('./lib/notifications.js');
 var fitting = require('./fitting.js');
 var dataset = require('./dataset.js');
 require('./compare.js');
+require('./stories-graphs.js')
 require('./entity_version_list.js');
 require('./experiment_tasks.js');
 require('./run_experiment.js');

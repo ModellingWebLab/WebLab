@@ -1,7 +1,7 @@
 /* stories facilities */
 
 var $ = require('jquery');
-var compare = require('./compare.js')
+var graphs = require('./stories-graphs.js');
 
 // Code to facilitate stories with text and graph parts
 const SimpleMDE = require('./lib/simplemde.js');
@@ -494,8 +494,8 @@ $(document).ready(function(){
             graphPathEntities = `/experiments/compare/${experimentVersions}/graph_for_story${groupToggles}`;
 
             graphPathEntities = basePath + graphPathEntities.replace('//', '/');
-            $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" class="entityIdsToCompare" value="${graphPathIds}"><div class="entitiesToCompare" id="${graphId}entitiesToCompare" data-comparison-href="${graphPathEntities}"></div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay">loading...</div></div></div>`);
-            compare.initCompare(graphId, false);
+            $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" class="entityIdsToCompare" value="${graphPathIds}"><div class="entitiesStorygraph" id="${graphId}entitiesStorygraph" data-comparison-href="${graphPathEntities}"></div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay">loading...</div></div></div>`);
+            graphs.initGraph(graphId);
         } else {
             $(`#${graphId}graphPreviewBox`).html('Please select a graph...');
         }
@@ -528,6 +528,3 @@ $(document).ready(function(){
     });
 
 });
-
-
-

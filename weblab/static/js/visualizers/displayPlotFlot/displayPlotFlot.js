@@ -813,6 +813,6 @@ flotContent.prototype.setUpComparision = function (files, div)
 
 module.exports = {
   'name': 'displayPlotFlot',
-  'get_visualizer': function(prefix) { return new flotContent(prefix); }
+  'get_visualizer': function(prefix="") { return new flotContent(prefix); }
 }
 

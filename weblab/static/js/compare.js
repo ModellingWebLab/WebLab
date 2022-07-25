@@ -11,19 +11,19 @@ var plugins = [
 
 var graphGlobal = {};
 
-function nextPage(url, replace, prefix) {
+function nextPage(url, replace) {
     if (replace)
         window.history.replaceState(document.location.href, "", url);
     else
         window.history.pushState(document.location.href, "", url);
-    parseUrl(null, prefix);
+    parseUrl(null);
 }
 
-function registerFileDisplayer(elem, prefix) {
-    elem.addEventListener("click", function(ev, pref = prefix) {
+function registerFileDisplayer(elem) {
+    elem.addEventListener("click", function(ev) {
         if (ev.which == 1) {
             ev.preventDefault();
-            nextPage(elem.href, false, pref);
+            nextPage(elem.href, false);
         }
     }, true);
 }
@@ -34,10 +34,10 @@ function registerFileDisplayer(elem, prefix) {
  * it is called).
  * @param f  the file
  */
-function setupDownloadFileContents(f, prefix) {
-    f.getContents = function(callBack, pref = prefix) {
+function setupDownloadFileContents(f) {
+    f.getContents = function(callBack) {
         if (f.hasContents)
-            callBack.getContentsCallback(true, pref);
+            callBack.getContentsCallback(true);
         f.hasContents = true;
 
         for (var i = 0; i < f.entities.length; i++) {
@@ -52,16 +52,16 @@ function setupDownloadFileContents(f, prefix) {
  * @param entity  the experiment object
  * @param showDefault  whether to show a default visualisation (if available)
  */
-function highlightPlots(entity, showDefault, prefix) {
+function highlightPlots(entity, showDefault) {
     // Plot description has fields: Plot title,File name,Data file name,Line style,First variable id,Optional second variable id,Optional key variable id
     // Output contents has fields: Variable id,Variable name,Units,Number of dimensions,File name,Type,Dimensions
-    graphGlobal[prefix]['plotDescription'] = entity.plotDescription;
+    graphGlobal['plotDescription'] = entity.plotDescription;
     outputContents = entity.outputContents;
-    for (var i = 1 /* Skip first row - it's a header */ ; i < graphGlobal[prefix]['plotDescription'].length; i++) {
-        if (graphGlobal[prefix]['plotDescription'][i].length < 3)
+    for (var i = 1 /* Skip first row - it's a header */ ; i < graphGlobal['plotDescription'].length; i++) {
+        if (graphGlobal['plotDescription'][i].length < 3)
             continue;
-        var data_file_code = graphGlobal[prefix]['plotDescription'][i][2].hashCode(),
-            f = graphGlobal[prefix]['files'][data_file_code];
+        var data_file_code = graphGlobal['plotDescription'][i][2].hashCode(),
+            f = graphGlobal['files'][data_file_code];
         if (f) {
 
             // See if we should show this as the default plot.
@@ -73,10 +73,10 @@ function highlightPlots(entity, showDefault, prefix) {
                 if (showDefault) {
                     var viz = document.getElementById("filerow-" + data_file_code + "-viz-displayPlotFlot");
                     if (viz) {
-                        var thisCount = graphGlobal[prefix]['singleEntities'].protocol ? graphGlobal[prefix]['plotDescription'].length : f.entities.length;
-                        if ((!graphGlobal[prefix]['singleEntities'].protocol || i == 1) && thisCount > graphGlobal[prefix]['defaultVizCount']) {
-                            graphGlobal[prefix]['defaultViz'] = viz;
-                            graphGlobal[prefix]['defaultVizCount'] = thisCount;
+                        var thisCount = graphGlobal['singleEntities'].protocol ? graphGlobal['plotDescription'].length : f.entities.length;
+                        if ((!graphGlobal['singleEntities'].protocol || i == 1) && thisCount > graphGlobal['defaultVizCount']) {
+                            graphGlobal['defaultViz'] = viz;
+                            graphGlobal['defaultVizCount'] = thisCount;
                         }
                     }
                 }
@@ -84,21 +84,21 @@ function highlightPlots(entity, showDefault, prefix) {
 
             // Find the plot x and y object names and units from the output contents file.
             for (var output_idx = 0; output_idx < outputContents.length; output_idx++) {
-                if (graphGlobal[prefix]['plotDescription'][i][4] == outputContents[output_idx][0]) {
+                if (graphGlobal['plotDescription'][i][4] == outputContents[output_idx][0]) {
                     f.xAxes = outputContents[output_idx][1] + ' (' + outputContents[output_idx][2] + ')';
                     f.xUnits = outputContents[output_idx][2];
                 }
-                if (graphGlobal[prefix]['plotDescription'][i][5] == outputContents[output_idx][0]) {
+                if (graphGlobal['plotDescription'][i][5] == outputContents[output_idx][0]) {
                     f.yAxes = outputContents[output_idx][1] + ' (' + outputContents[output_idx][2] + ')';
                     f.yUnits = outputContents[output_idx][2];
                 }
-                if (graphGlobal[prefix]['plotDescription'][i].length > 6 && graphGlobal[prefix]['plotDescription'][i][6] == outputContents[output_idx][0]) {
+                if (graphGlobal['plotDescription'][i].length > 6 && graphGlobal['plotDescription'][i][6] == outputContents[output_idx][0]) {
                     // When comparing, f.entities is a list of the experiments containing this output data file (`entityLink`),
                     // and the version of the file appearing in each experiment (`entityFileLink`).
-                    var key_file = graphGlobal[prefix]['files'][outputContents[output_idx][4].hashCode()],
-                        ent_f = findEntityFileLink(f, entity, prefix); // This entity's version of f
+                    var key_file = graphGlobal['files'][outputContents[output_idx][4].hashCode()],
+                        ent_f = findEntityFileLink(f, entity); // This entity's version of f
                     if (ent_f && key_file) {
-                        var ent_key_file = findEntityFileLink(key_file, entity, prefix); // This entity's version of the key file
+                        var ent_key_file = findEntityFileLink(key_file, entity); // This entity's version of the key file
                         if (ent_key_file) {
                             ent_f.keyId = outputContents[output_idx][0];
                             ent_f.keyName = outputContents[output_idx][1];
@@ -108,16 +108,16 @@ function highlightPlots(entity, showDefault, prefix) {
                     }
                 }
             }
-            f.title = graphGlobal[prefix]['plotDescription'][i][0];
-            f.linestyle = graphGlobal[prefix]['plotDescription'][i][3];
+            f.title = graphGlobal['plotDescription'][i][0];
+            f.linestyle = graphGlobal['plotDescription'][i][3];
 
-            graphGlobal[prefix]['plotFiles'].push(graphGlobal[prefix]['plotDescription'][i][2]);
+            graphGlobal['plotFiles'].push(graphGlobal['plotDescription'][i][2]);
         }
     }
-    expt_common.sortTable(graphGlobal[prefix]['filesTable'], graphGlobal[prefix]['plotFiles']);
+    expt_common.sortTable(graphGlobal['filesTable'], graphGlobal['plotFiles']);
     // Show the default visualisation if this is the last experiment to be analysed
-    if (graphGlobal[prefix]['defaultViz'] && graphGlobal[prefix]['metadataParsed'] == graphGlobal[prefix]['metadataToParse']) {
-        nextPage(graphGlobal[prefix]['defaultViz'].href, true, prefix); // 'Invisible' redirect
+    if (graphGlobal['defaultViz'] && graphGlobal['metadataParsed'] == graphGlobal['metadataToParse']) {
+        nextPage(graphGlobal['defaultViz'].href, true); // 'Invisible' redirect
     }
 }
 
@@ -127,24 +127,24 @@ function highlightPlots(entity, showDefault, prefix) {
  * @param entity  the entity to look for
  * @returns  f.entities[ent_idx].entityFileLink where f.entities[ent_idx].entityLink === entity
  */
-function findEntityFileLink(f, entity, prefix) {
+function findEntityFileLink(f, entity) {
     for (var ent_idx = 0; ent_idx < f.entities.length; ent_idx++)
         if (f.entities[ent_idx].entityLink === entity)
             return f.entities[ent_idx].entityFileLink;
 }
 
-function parseOutputContents(entity, file, showDefault, prefix) {
-    graphGlobal[prefix]['metadataToParse'] += 1;
+function parseOutputContents(entity, file, showDefault) {
+    graphGlobal['metadataToParse'] += 1;
     entity.outputContents = null; // Note that there is one to parse
 
     var goForIt = {
-        getContentsCallback: function(succ, pref = prefix) {
+        getContentsCallback: function(succ) {
             if (succ) {
                 utils.parseCsvRaw(file);
                 entity.outputContents = file.csv;
-                graphGlobal[pref]['metadataParsed'] += 1;
+                graphGlobal['metadataParsed'] += 1;
                 if (entity.plotDescription) {
-                    highlightPlots(entity, showDefault, pref);
+                    highlightPlots(entity, showDefault);
                 }
             }
         }
@@ -154,18 +154,18 @@ function parseOutputContents(entity, file, showDefault, prefix) {
     return null;
 }
 
-function parsePlotDescription(entity, file, showDefault, prefix) {
-    graphGlobal[prefix]['metadataToParse'] += 1;
+function parsePlotDescription(entity, file, showDefault) {
+    graphGlobal['metadataToParse'] += 1;
     entity.plotDescription = null; // Note that there is one to parse
 
     var goForIt = {
-        getContentsCallback: function(succ, pref = prefix) {
+        getContentsCallback: function(succ) {
             if (succ) {
                 utils.parseCsvRaw(file);
                 entity.plotDescription = file.csv;
-                graphGlobal[pref]['metadataParsed'] += 1;
+                graphGlobal['metadataParsed'] += 1;
                 if (entity.outputContents) {
-                    highlightPlots(entity, showDefault, pref);
+                    highlightPlots(entity, showDefault);
                 }
             }
         }
@@ -175,24 +175,24 @@ function parsePlotDescription(entity, file, showDefault, prefix) {
     return null;
 }
 
-function parseEntities(entityObj, prefix) {
+function parseEntities(entityObj) {
     if (entityObj.length == 0) return;
 
     // State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol,
     // or indeed multiple versions of the same model / protocol, etc.
-    graphGlobal[prefix]['firstModelName'] = entityObj[0].modelName;
-    graphGlobal[prefix]['firstModelVersion'] = entityObj[0].modelVersion;
-    graphGlobal[prefix]['firstProtoName'] = entityObj[0].protoName;
-    graphGlobal[prefix]['firstProtoVersion'] = entityObj[0].protoVersion;
-    graphGlobal[prefix]['firstFittingSpecName'] = entityObj[0].fittingSpecName;
-    graphGlobal[prefix]['firstFittingSpecVersion'] = entityObj[0].fittingSpecVersion;
-    graphGlobal[prefix]['firstDatasetName'] = entityObj[0].datasetName;
+    graphGlobal['firstModelName'] = entityObj[0].modelName;
+    graphGlobal['firstModelVersion'] = entityObj[0].modelVersion;
+    graphGlobal['firstProtoName'] = entityObj[0].protoName;
+    graphGlobal['firstProtoVersion'] = entityObj[0].protoVersion;
+    graphGlobal['firstFittingSpecName'] = entityObj[0].fittingSpecName;
+    graphGlobal['firstFittingSpecVersion'] = entityObj[0].fittingSpecVersion;
+    graphGlobal['firstDatasetName'] = entityObj[0].datasetName;
     var versionsOfModels = {};
     var versionsOfProtocols = {};
     var versionsOfFittingSpecs = {};
-    graphGlobal[prefix]['modelsWithMultipleVersions'] = [];
-    graphGlobal[prefix]['protocolsWithMultipleVersions'] = [];
-    graphGlobal[prefix]['fittingSpecsWithMultipleVersions'] = [];
+    graphGlobal['modelsWithMultipleVersions'] = [];
+    graphGlobal['protocolsWithMultipleVersions'] = [];
+    graphGlobal['fittingSpecsWithMultipleVersions'] = [];
 
     // Sort entityObj list by .name
     entityObj.sort(function(a, b) {
@@ -202,85 +202,85 @@ function parseEntities(entityObj, prefix) {
     for (var i = 0; i < entityObj.length; i++) {
         var entity = entityObj[i];
 
-        if (graphGlobal[prefix]['singleEntities'].model && (entity.modelName != graphGlobal[prefix]['firstModelName'])) {
-            graphGlobal[prefix]['singleEntities'].model = false;
+        if (graphGlobal['singleEntities'].model && (entity.modelName != graphGlobal['firstModelName'])) {
+            graphGlobal['singleEntities'].model = false;
         }
 
         if (versionsOfModels[entity.modelName] === undefined) {
             versionsOfModels[entity.modelName] = entity.modelVersion;
         } else if (versionsOfModels[entity.modelName] != entity.modelVersion) {
-            graphGlobal[prefix]['modelsWithMultipleVersions'].push(entity.modelName);
-            graphGlobal[prefix]['versionComparisons'].model = true;
+            graphGlobal['modelsWithMultipleVersions'].push(entity.modelName);
+            graphGlobal['versionComparisons'].model = true;
         }
 
-        if (graphGlobal[prefix]['singleEntities'].protocol && (entity.protoName != graphGlobal[prefix]['firstProtoName'])) {
-            graphGlobal[prefix]['singleEntities'].protocol = false;
+        if (graphGlobal['singleEntities'].protocol && (entity.protoName != graphGlobal['firstProtoName'])) {
+            graphGlobal['singleEntities'].protocol = false;
         }
 
         if (versionsOfProtocols[entity.protoName] === undefined) {
             versionsOfProtocols[entity.protoName] = entity.protoVersion;
         } else if (versionsOfProtocols[entity.protoName] != entity.protoVersion) {
-            graphGlobal[prefix]['protocolsWithMultipleVersions'].push(entity.protoName);
-            graphGlobal[prefix]['versionComparisons'].protocol = true;
+            graphGlobal['protocolsWithMultipleVersions'].push(entity.protoName);
+            graphGlobal['versionComparisons'].protocol = true;
         }
 
-        if (graphGlobal[prefix]['singleEntities'].fittingspec && (entity.fittingSpecName != graphGlobal[prefix]['firstFittingSpecName'])) {
-            graphGlobal[prefix]['singleEntities'].fittingspec = false;
+        if (graphGlobal['singleEntities'].fittingspec && (entity.fittingSpecName != graphGlobal['firstFittingSpecName'])) {
+            graphGlobal['singleEntities'].fittingspec = false;
         }
 
         if (versionsOfFittingSpecs[entity.fittingSpecName] === undefined) {
             versionsOfFittingSpecs[entity.fittingSpecName] = entity.fittingSpecVersion;
         } else if (versionsOfFittingSpecs[entity.fittingSpecName] != entity.fittingSpecVersion) {
-            graphGlobal[prefix]['fittingSpecsWithMultipleVersions'].push(entity.fittingSpecName);
-            graphGlobal[prefix]['versionComparisons'].fittingspec = true;
+            graphGlobal['fittingSpecsWithMultipleVersions'].push(entity.fittingSpecName);
+            graphGlobal['versionComparisons'].fittingspec = true;
         }
 
-        if (graphGlobal[prefix]['singleEntities'].dataset && (entity.datasetName != graphGlobal[prefix]['firstDatasetName'])) {
-            graphGlobal[prefix]['singleEntities'].dataset = false;
+        if (graphGlobal['singleEntities'].dataset && (entity.datasetName != graphGlobal['firstDatasetName'])) {
+            graphGlobal['singleEntities'].dataset = false;
         }
 
         // Fill in the entities and files entries for this entity
-        graphGlobal[prefix]['entities'][entity.id] = entity;
+        graphGlobal['entities'][entity.id] = entity;
         if (entity.files)
             for (var j = 0; j < entity.files.length; j++) {
                 var file = entity.files[j],
                     sig = file.name.hashCode();
                 file.signature = sig;
                 file.type = file.filetype;
-                if (!graphGlobal[prefix]['files'][sig]) {
-                    graphGlobal[prefix]['files'][sig] = {};
-                    graphGlobal[prefix]['files'][sig].sig = sig;
-                    graphGlobal[prefix]['files'][sig].name = file.name;
-                    graphGlobal[prefix]['files'][sig].entities = new Array();
-                    graphGlobal[prefix]['files'][sig].div = {};
-                    graphGlobal[prefix]['files'][sig].viz = {};
-                    graphGlobal[prefix]['files'][sig].hasContents = false;
-                    graphGlobal[prefix]['files'][sig].id = prefix + file.name;
-                    setupDownloadFileContents(graphGlobal[prefix]['files'][sig], prefix);
+                if (!graphGlobal['files'][sig]) {
+                    graphGlobal['files'][sig] = {};
+                    graphGlobal['files'][sig].sig = sig;
+                    graphGlobal['files'][sig].name = file.name;
+                    graphGlobal['files'][sig].entities = new Array();
+                    graphGlobal['files'][sig].div = {};
+                    graphGlobal['files'][sig].viz = {};
+                    graphGlobal['files'][sig].hasContents = false;
+                    graphGlobal['files'][sig].id = file.name;
+                    setupDownloadFileContents(graphGlobal['files'][sig]);
                 }
                 if (file.name.toLowerCase() == "outputs-default-plots.csv")
-                    parsePlotDescription(entity, file, !(graphGlobal[prefix]['fileName'] && graphGlobal[prefix]['pluginName']), prefix);
+                    parsePlotDescription(entity, file, !(graphGlobal['fileName'] && graphGlobal['pluginName']));
                 if (file.name.toLowerCase() == "outputs-contents.csv")
-                    parseOutputContents(entity, file, !(graphGlobal[prefix]['fileName'] && graphGlobal[prefix]['pluginName']), prefix);
+                    parseOutputContents(entity, file, !(graphGlobal['fileName'] && graphGlobal['pluginName']));
 
-                graphGlobal[prefix]['files'][sig].entities.push({
+                graphGlobal['files'][sig].entities.push({
                     entityLink: entity,
                     entityFileLink: file
                 });
             }
     }
 
-//    console.log(graphGlobal[prefix]['singleEntities'].model ? 'single model' : 'multiple models',
-//        graphGlobal[prefix]['versionComparisons'].model ? ('- compare versions of ' + graphGlobal[prefix]['modelsWithMultipleVersions'].join(',')) : '');
-//    console.log(graphGlobal[prefix]['singleEntities'].protocol ? 'single protocol' : 'multiple protocols',
-//        graphGlobal[prefix]['versionComparisons'].protocol ? ('- compare versions of ' + graphGlobal[prefix]['protocolsWithMultipleVersions'].join(',')) : '');
-//    console.log(graphGlobal[prefix]['singleEntities'].fittingspec ? 'single fitting spec' : 'multiple fitting specs',
-//        graphGlobal[prefix]['versionComparisons'].fittingspec ? ('- compare versions of ' + graphGlobal[prefix]['fittingSpecsWithMultipleVersions'].join(',')) : '');
-//    console.log(graphGlobal[prefix]['singleEntities'].dataset ? 'single dataset' : 'multiple datasets')
+//    console.log(graphGlobal['singleEntities'].model ? 'single model' : 'multiple models',
+//        graphGlobal['versionComparisons'].model ? ('- compare versions of ' + graphGlobal['modelsWithMultipleVersions'].join(',')) : '');
+//    console.log(graphGlobal['singleEntities'].protocol ? 'single protocol' : 'multiple protocols',
+//        graphGlobal['versionComparisons'].protocol ? ('- compare versions of ' + graphGlobal['protocolsWithMultipleVersions'].join(',')) : '');
+//    console.log(graphGlobal['singleEntities'].fittingspec ? 'single fitting spec' : 'multiple fitting specs',
+//        graphGlobal['versionComparisons'].fittingspec ? ('- compare versions of ' + graphGlobal['fittingSpecsWithMultipleVersions'].join(',')) : '');
+//    console.log(graphGlobal['singleEntities'].dataset ? 'single dataset' : 'multiple datasets')
 
 
     var entityTypes = ['model', 'protocol'];
-    if (graphGlobal[prefix]['entityType'] == 'result') entityTypes.push('fittingspec', 'dataset');
+    if (graphGlobal['entityType'] == 'result') entityTypes.push('fittingspec', 'dataset');
 
     var entityTypeDisplayStrings = {
         model: 'model',
@@ -290,18 +290,18 @@ function parseEntities(entityObj, prefix) {
     };
 
     // List of entity types which have multiple objects
-    var entityTypesToCompare = entityTypes.filter(entityType => !graphGlobal[prefix]['singleEntities'][entityType]);
+    var entityTypesToCompare = entityTypes.filter(entityType => !graphGlobal['singleEntities'][entityType]);
 
     // List of entity types which have multiple versions but not multiple objects
-    var entityVersionsToCompare = entityTypes.filter(entityType => graphGlobal[prefix]['versionComparisons'][entityType] && graphGlobal[prefix]['singleEntities'][entityType]);
+    var entityVersionsToCompare = entityTypes.filter(entityType => graphGlobal['versionComparisons'][entityType] && graphGlobal['singleEntities'][entityType]);
 
     // Add version info to plot labels where needed
     for (var i = 0; i < entityObj.length; i++) {
         var entity = entityObj[i];
 
-        var modelDescription = entity.modelName + (graphGlobal[prefix]['modelsWithMultipleVersions'].includes(entity.modelName) ? ('@' + entity.modelVersion) : '');
-        var protoDescription = entity.protoName + (graphGlobal[prefix]['protocolsWithMultipleVersions'].includes(entity.protoName) ? ('@' + entity.protoVersion) : '');
-        var fitspecDescription = entity.fittingSpecName + (graphGlobal[prefix]['fittingSpecsWithMultipleVersions'].includes(entity.fittingSpecName) ? ('@' + entity.fittingSpecVersion) : '');
+        var modelDescription = entity.modelName + (graphGlobal['modelsWithMultipleVersions'].includes(entity.modelName) ? ('@' + entity.modelVersion) : '');
+        var protoDescription = entity.protoName + (graphGlobal['protocolsWithMultipleVersions'].includes(entity.protoName) ? ('@' + entity.protoVersion) : '');
+        var fitspecDescription = entity.fittingSpecName + (graphGlobal['fittingSpecsWithMultipleVersions'].includes(entity.fittingSpecName) ? ('@' + entity.fittingSpecVersion) : '');
         var datasetDescription = entity.datasetName;
 
         // Descriptions of things that have entity comparisons
@@ -339,12 +339,12 @@ function parseEntities(entityObj, prefix) {
     }
 
     // Alter heading to reflect type of comparison
-    var pageTitle = "Comparison of " + graphGlobal[prefix]['entityType'].charAt(0).toUpperCase() + graphGlobal[prefix]['entityType'].slice(1) + "s";
+    var pageTitle = "Comparison of " + graphGlobal['entityType'].charAt(0).toUpperCase() + graphGlobal['entityType'].slice(1) + "s";
 
-    if (graphGlobal[prefix]['entityType'] == "experiment" || graphGlobal[prefix]['entityType'] == "result") {
+    if (graphGlobal['entityType'] == "experiment" || graphGlobal['entityType'] == "result") {
         if (entityTypesToCompare.length == 0) {
             // All same entities, just possibly different versions of them
-            pageTitle = graphGlobal[prefix]['firstModelName'] + " & " + graphGlobal[prefix]['firstProtoName'];
+            pageTitle = graphGlobal['firstModelName'] + " & " + graphGlobal['firstProtoName'];
             if (entityVersionsToCompare.length == 1) {
                 // Just one type of version comparison
                 pageTitle += " experiments: comparison of " + entityTypeDisplayStrings[entityVersionsToCompare[0]] + " versions";
@@ -360,7 +360,7 @@ function parseEntities(entityObj, prefix) {
             }
         } else if (entityTypesToCompare.length == 1) {
             // Just one type of entity comparison, possibly also with version comparisons
-            pageTitle = graphGlobal[prefix]['singleEntities'].model ? graphGlobal[prefix]['firstModelName'] : graphGlobal[prefix]['firstProtoName'];
+            pageTitle = graphGlobal['singleEntities'].model ? graphGlobal['firstModelName'] : graphGlobal['firstProtoName'];
             pageTitle += " experiments : comparison of " + entityTypeDisplayStrings[entityTypesToCompare[0]] + "s";
             // If just one type of version comparison, be specific.
             // Otherwise, just say "versions"
@@ -376,20 +376,20 @@ function parseEntities(entityObj, prefix) {
             // Two types of entity comparisons
             // just list those and take the title from one of the other entity types
             var entityName;
-            if (graphGlobal[prefix]['singleEntities'].model) {
-                entityName = graphGlobal[prefix]['firstModelName'];
-            } else if (graphGlobal[prefix]['singleEntities'].protocol) {
-                entityName = graphGlobal[prefix]['firstProtoName'];
-            } else if (graphGlobal[prefix]['firstFittingSpecName'] && graphGlobal[prefix]['singleEntities'].fittingspec) {
-                entityName = graphGlobal[prefix]['firstFittingSpecName'];
+            if (graphGlobal['singleEntities'].model) {
+                entityName = graphGlobal['firstModelName'];
+            } else if (graphGlobal['singleEntities'].protocol) {
+                entityName = graphGlobal['firstProtoName'];
+            } else if (graphGlobal['firstFittingSpecName'] && graphGlobal['singleEntities'].fittingspec) {
+                entityName = graphGlobal['firstFittingSpecName'];
             }
             if (entityName !== undefined) {
                 pageTitle = entityName + " experiments: comparison of " + entityTypeDisplayStrings[entityTypesToCompare[0]] + "s and " + entityTypeDisplayStrings[entityTypesToCompare[1]] + "s";
             }
             // label: "<model name> & <protocol name>"
         }
-        if (graphGlobal[prefix]['doc'].heading) {
-            graphGlobal[prefix]['doc'].heading.innerHTML = pageTitle;
+        if (graphGlobal['doc'].heading) {
+            graphGlobal['doc'].heading.innerHTML = pageTitle;
         }
 
         // This was used in an earlier version and is still expected to exist by plugins
@@ -397,11 +397,11 @@ function parseEntities(entityObj, prefix) {
     }
 
     // Create a drop-down box that allows display of/navigate to experiments being compared
-    var entitiesToCompare = document.getElementById(prefix + "entitiesToCompare");
+    var entitiesToCompare = document.getElementById("entitiesToCompare");
 
     $(entitiesToCompare).empty();
-    if (graphGlobal[prefix]['doc'].outputFileHeadline) {
-        graphGlobal[prefix]['doc'].outputFileHeadline.innerHTML = "Output files from all compared " + graphGlobal[prefix]['entityType'] + "s";
+    if (graphGlobal['doc'].outputFileHeadline) {
+        graphGlobal['doc'].outputFileHeadline.innerHTML = "Output files from all compared " + graphGlobal['entityType'] + "s";
         var form = document.createElement("form");
         entitiesToCompare.appendChild(form);
         var select_box = document.createElement("select");
@@ -410,38 +410,38 @@ function parseEntities(entityObj, prefix) {
         var default_option = document.createElement("option");
         default_option.selected = true;
         default_option.value = document.location.href;
-        default_option.innerHTML = "Click to view, select to show a single " + graphGlobal[prefix]['entityType'];
+        default_option.innerHTML = "Click to view, select to show a single " + graphGlobal['entityType'];
         select_box.onchange = function() {
             sel = document.getElementById("exptSelect");
             console.log(sel);
             document.location.href = sel.options[sel.selectedIndex].value;
         };
         select_box.appendChild(default_option);
-        for (var entity in graphGlobal[prefix]['entities']) {
+        for (var entity in graphGlobal['entities']) {
             var option = document.createElement("option");
-            option.value = graphGlobal[prefix]['entities'][entity].url;
-            option.innerHTML = graphGlobal[prefix]['entities'][entity].name + ((graphGlobal[prefix]['entityType'] == "experiment" || graphGlobal[prefix]['entityType'] == "result") ? "" : " &mdash; " + graphGlobal[prefix]['entities'][entity].version);
+            option.value = graphGlobal['entities'][entity].url;
+            option.innerHTML = graphGlobal['entities'][entity].name + ((graphGlobal['entityType'] == "experiment" || graphGlobal['entityType'] == "result") ? "" : " &mdash; " + graphGlobal['entities'][entity].version);
             select_box.appendChild(option);
         }
-        form.innerHTML = graphGlobal[prefix]['entityType'].charAt(0).toUpperCase() + graphGlobal[prefix]['entityType'].slice(1) + "s selected for comparison: ";
+        form.innerHTML = graphGlobal['entityType'].charAt(0).toUpperCase() + graphGlobal['entityType'].slice(1) + "s selected for comparison: ";
         form.appendChild(select_box);
     }
 
-    buildSite(prefix);
+    buildSite();
 }
 
-function buildSite(prefix) {
-    var filestableElement = document.getElementById(prefix + "filestable");
+function buildSite() {
+    var filestableElement = document.getElementById("filestable");
     if (filestableElement) {
-        graphGlobal[prefix]['filesTable'] = {};
-        graphGlobal[prefix]['filesTable'].table = filestableElement;
-        graphGlobal[prefix]['filesTable'].plots = {};
-        graphGlobal[prefix]['filesTable'].pngeps = {};
-        graphGlobal[prefix]['filesTable'].otherCSV = {};
-        graphGlobal[prefix]['filesTable'].defaults = {};
-        graphGlobal[prefix]['filesTable'].text = {};
-        graphGlobal[prefix]['filesTable'].other = {};
-        graphGlobal[prefix]['filesTable'].all = new Array();
+        graphGlobal['filesTable'] = {};
+        graphGlobal['filesTable'].table = filestableElement;
+        graphGlobal['filesTable'].plots = {};
+        graphGlobal['filesTable'].pngeps = {};
+        graphGlobal['filesTable'].otherCSV = {};
+        graphGlobal['filesTable'].defaults = {};
+        graphGlobal['filesTable'].text = {};
+        graphGlobal['filesTable'].other = {};
+        graphGlobal['filesTable'].all = new Array();
 
         var tr = document.createElement("tr");
 
@@ -459,8 +459,8 @@ function buildSite(prefix) {
 
         filestableElement.appendChild(tr);
 
-        for (var file in graphGlobal[prefix]['files']) {
-            var ents = graphGlobal[prefix]['files'][file];
+        for (var file in graphGlobal['files']) {
+            var ents = graphGlobal['files'][file];
             var curFileName = ents.name;
             tr = document.createElement("tr");
             tr.id = "filerow-" + ents.sig;
@@ -469,7 +469,7 @@ function buildSite(prefix) {
             td.appendChild(document.createTextNode(curFileName + " (" + ents.entities.length + ")"));
             tr.appendChild(td);
 
-            graphGlobal[prefix]['filesTable'].all.push({
+            graphGlobal['filesTable'].all.push({
                 name: curFileName,
                 row: tr
             });
@@ -486,32 +486,32 @@ function buildSite(prefix) {
             td.appendChild(document.createTextNode("action"));*/
 
             td = document.createElement("td");
-            for (var vi in graphGlobal[prefix]['visualizers']) {
-                var viz = graphGlobal[prefix]['visualizers'][vi];
+            for (var vi in graphGlobal['visualizers']) {
+                var viz = graphGlobal['visualizers'][vi];
                 if (!viz.canRead(ents.entities[0].entityFileLink))
                     continue;
                 var a = document.createElement("a");
                 a.setAttribute("id", "filerow-" + file + "-viz-" + viz.getName());
-                a.href = basicurl + 'show/' + encodeURIComponent(graphGlobal[prefix]['files'][file].name) + "/" + vi;
+                a.href = basicurl + 'show/' + encodeURIComponent(graphGlobal['files'][file].name) + "/" + vi;
                 var img = document.createElement("img");
                 img.src = staticPath + "js/visualizers/" + vi + "/" + viz.getIcon();
                 img.alt = viz.getDescription();
                 img.title = img.alt;
                 a.appendChild(img);
-                registerFileDisplayer(a, prefix);
+                registerFileDisplayer(a);
                 td.appendChild(a);
                 td.appendChild(document.createTextNode(" "));
             }
             tr.appendChild(td);
         }
     }
-    handleReq(prefix);
+    handleReq();
 }
 
-function displayFile(id, pluginName, prefix) {
-    if (!graphGlobal[prefix]['gotInfos'])
+function displayFile(id, pluginName) {
+    if (!graphGlobal['gotInfos'])
         return;
-    var f = graphGlobal[prefix]['files'][id];
+    var f = graphGlobal['files'][id];
     if (!f) {
         notifications.add("no such file", "error");
         return;
@@ -521,57 +521,57 @@ function displayFile(id, pluginName, prefix) {
         if (entity.outputContents === null || entity.plotDescription === null) {
             // Try again in 0.1s, by which time hopefully they have been parsed
             window.setTimeout(function() {
-                displayFile(id, pluginName, prefix)
+                displayFile(id, pluginName)
             }, 100);
             return;
         }
     }
-    if (graphGlobal[prefix]['doc'].fileName) {
-        graphGlobal[prefix]['doc'].fileName.innerHTML = f.name;
+    if (graphGlobal['doc'].fileName) {
+        graphGlobal['doc'].fileName.innerHTML = f.name;
     }
 
     if (!f.div[pluginName]) {
         f.div[pluginName] = document.createElement("div");
-        f.viz[pluginName] = graphGlobal[prefix]['visualizers'][pluginName].setUpComparision(f, f.div[pluginName]);
+        f.viz[pluginName] = graphGlobal['visualizers'][pluginName].setUpComparision(f, f.div[pluginName]);
     }
-    $(graphGlobal[prefix]['doc'].fileDisplay).empty();
-    graphGlobal[prefix]['doc'].fileDisplay.appendChild(f.div[pluginName]);
+    $(graphGlobal['doc'].fileDisplay).empty();
+    graphGlobal['doc'].fileDisplay.appendChild(f.div[pluginName]);
     f.viz[pluginName].show();
 
     // Show parent div of the file display, and scroll there
-    graphGlobal[prefix]['doc'].fileDetails.style.display = "block";
-    var pos = utils.getPos(graphGlobal[prefix]['doc'].heading);
-    if (graphGlobal[prefix]['scroll']) {
+    graphGlobal['doc'].fileDetails.style.display = "block";
+    var pos = utils.getPos(graphGlobal['doc'].heading);
+    if (graphGlobal['scroll']) {
         window.scrollTo(pos.xPos, pos.yPos);
     }
 }
 
-function handleReq(prefix) {
-    if (graphGlobal[prefix]['fileName'] && graphGlobal[prefix]['pluginName'] && graphGlobal[prefix]['gotInfos']) {
-        displayFile(graphGlobal[prefix]['fileName'].hashCode(), graphGlobal[prefix]['pluginName'], prefix);
-        if (graphGlobal[prefix]['doc'].displayClose) {
-            graphGlobal[prefix]['doc'].displayClose.href = basicurl;
+function handleReq() {
+    if (graphGlobal['fileName'] && graphGlobal['pluginName'] && graphGlobal['gotInfos']) {
+        displayFile(graphGlobal['fileName'].hashCode(), graphGlobal['pluginName']);
+        if (graphGlobal['doc'].displayClose) {
+            graphGlobal['doc'].displayClose.href = basicurl;
         }
     } else {
-        graphGlobal[prefix]['doc'].fileDetails.style.display = "none";
+        graphGlobal['doc'].fileDetails.style.display = "none";
     }
 }
 
-function getInfos(url, prefix) {
+function getInfos(url) {
     $.getJSON(url, function(data) {
         notifications.display(data);
-        graphGlobal[prefix]['gotInfos'] = true;
+        graphGlobal['gotInfos'] = true;
 
         if (data.getEntityInfos) {
-            parseEntities(data.getEntityInfos.entities, prefix);
+            parseEntities(data.getEntityInfos.entities);
         }
     })
 }
 
-function parseUrl(event, prefix) {
+function parseUrl(event) {
     var entityIds = null;
-    if ($('#' + prefix + 'entityIdsToCompare').length) {
-        var parts = $('#' + prefix + 'entityIdsToCompare').val().split("/");
+    if ($('#entityIdsToCompare').length) {
+        var parts = $('#entityIdsToCompare').val().split("/");
     } else {
         var parts = document.location.pathname.split("/");
     }
@@ -579,38 +579,38 @@ function parseUrl(event, prefix) {
     for (var i = 0; i < parts.length; i++) {
         if (parts[i] == 'experiments') {
             basicurl = parts.slice(0, i + 2).join('/') + '/';
-            graphGlobal[prefix]['entityType'] = 'experiment';
+            graphGlobal['entityType'] = 'experiment';
             entityIds = parts.slice(i + 2);
             break;
         } else if (parts[i] == 'results') {
             basicurl = parts.slice(0, i + 2).join('/') + '/';
-            graphGlobal[prefix]['entityType'] = 'result';
+            graphGlobal['entityType'] = 'result';
             entityIds = parts.slice(i + 2);
         } else if (parts[i + 1] == 'compare') {
             basicurl = parts.slice(0, i + 2).join('/') + '/';
-            graphGlobal[prefix]['entityType'] = parts[i].slice(0, parts[i].length - 1);
+            graphGlobal['entityType'] = parts[i].slice(0, parts[i].length - 1);
             entityIds = parts.slice(i + 2);
             break;
         }
     }
 
     if (!entityIds) {
-        var entitiesToCompare = document.getElementById(prefix + "entitiesToCompare");
+        var entitiesToCompare = document.getElementById("entitiesToCompare");
         $(entitiesToCompare).empty();
         entitiesToCompare.appendChild(document.createTextNode("ERROR building site"));
         return;
     }
 
-    graphGlobal[prefix]['fileName'] = null;
-    graphGlobal[prefix]['pluginName'] = null;
+    graphGlobal['fileName'] = null;
+    graphGlobal['pluginName'] = null;
     var TentityIds = new Array();
 
 
     for (var i = 0; i < entityIds.length; i++) {
         if (entityIds[i] == "show") {
             if (i + 2 < entityIds.length) {
-                graphGlobal[prefix]['fileName'] = entityIds[i + 1];
-                graphGlobal[prefix]['pluginName'] = entityIds[i + 2];
+                graphGlobal['fileName'] = entityIds[i + 1];
+                graphGlobal['pluginName'] = entityIds[i + 2];
             }
             entityIds = entityIds.slice(0, i);
             break;
@@ -620,16 +620,16 @@ function parseUrl(event, prefix) {
     entityIds = TentityIds;
     basicurl = basicurl + entityIds.join("/") + "/";
 
-    if (!graphGlobal[prefix]['tableParsed']) {
-        graphGlobal[prefix]['tableParsed'] = true;
-        getInfos($("#" + prefix + "entitiesToCompare").data('comparison-href'), prefix);
+    if (!graphGlobal['tableParsed']) {
+        graphGlobal['tableParsed'] = true;
+        getInfos($("#entitiesToCompare").data('comparison-href'));
     } else
-        handleReq(prefix);
+        handleReq();
 
 }
 
-function initCompare(prefix, scroll = true) {
-    graphGlobal[prefix] = {
+function initCompare(scroll = true) {
+    graphGlobal = {
         entities: {}, // Contains information about each experiment being compared
         // `files` contains information about each unique (by name) file within the compared experiments,
         // including references to the experiments in which a file of that name appears and that particular instance of the file.
@@ -640,12 +640,12 @@ function initCompare(prefix, scroll = true) {
         fileName: null,
         pluginName: null,
         doc: {
-            heading: document.getElementById(prefix + "heading"),
-            displayClose: document.getElementById(prefix + "fileclose"),
-            fileName: document.getElementById(prefix + "filename"),
-            fileDisplay: document.getElementById(prefix + "filedisplay"),
-            fileDetails: document.getElementById(prefix + "filedetails"),
-            outputFileHeadline: document.getElementById(prefix + "outputFileHeadline")
+            heading: document.getElementById("heading"),
+            displayClose: document.getElementById("fileclose"),
+            fileName: document.getElementById("filename"),
+            fileDisplay: document.getElementById("filedisplay"),
+            fileDetails: document.getElementById("filedetails"),
+            outputFileHeadline: document.getElementById("outputFileHeadline")
         },
         gotInfos: false,
         plotDescription: null,
@@ -682,39 +682,31 @@ function initCompare(prefix, scroll = true) {
         scroll: scroll,
     }
 
-//    graphGlobal[prefix]['doc'].fileDetails.style.display = "none";
+//    graphGlobal['doc'].fileDetails.style.display = "none";
 
     // Prevent redirection to the default plot when we close it
-    if (graphGlobal[prefix]['doc'].displayClose) {
-        graphGlobal[prefix]['doc'].displayClose.addEventListener("click", function(ev, pref = prefix) {
+    if (graphGlobal['doc'].displayClose) {
+        graphGlobal['doc'].displayClose.addEventListener("click", function(ev) {
             if (ev.which == 1) {
                 ev.preventDefault();
-                graphGlobal[pref]['doc'].fileDetails.style.display = "none";
+                graphGlobal['doc'].fileDetails.style.display = "none";
                 shownDefault = true;
-                nextPage(graphGlobal[prefix]['doc'].displayClose.href, false, prefix);
+                nextPage(graphGlobal['doc'].displayClose.href, false);
             }
         }, true);
     }
 
-    if (prefix == '') {
-        window.onpopstate = (event) => {parseUrl(event, '');}
-    }
-    parseUrl(null, prefix);
+    window.onpopstate = (event) => {parseUrl(event, '');}
+    parseUrl(null);
 
     $(plugins).each(function(i, plugin) {
-        graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
+        graphGlobal['visualizers'][plugin.name] = plugin.get_visualizer();
     });
 }
 
 // initialise (all) compare graphs on the page
 $(document).ready(function() {
-  $(".entitiesToCompare").each(function() {
-      prefix = $(this).attr('id').replace("entitiesToCompare", "");
-      initCompare(prefix, prefix == "");
-  });
+    if($('#entitiesToCompare').length){
+        initCompare('', true);
+    }
 });
-
-// export the initCompare function so stories can create comparisson graph
-module.exports = {
-  initCompare: initCompare
-}

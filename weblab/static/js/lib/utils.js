@@ -1,5 +1,7 @@
 var XDate = require('xdate');
+
 var scriptsAdded = [];
+
 
 function humanReadableBytes (bytes)
 {
@@ -156,12 +158,20 @@ function getPos(ele) {
 
 function getFileContent (file, succ) {
   // TODO: loading indicator.. so the user knows that we are doing something
-  $.get(file.url, function(data) {
-      file.contents = data;
-      succ.getContentsCallback (true);
-  }).fail(function() {
-    succ.getContentsCallback(false);
-  });
+//    if(! file.url.endsWith('outputs-contents.csv') && !file.url.endsWith('outputs-default-plots.csv')){console.time(file.url);}
+//console.time(file.url);
+    return $.ajax({url: file.url,
+                   context: file,
+                   success: function(data) {
+//                                if(! file.url.endsWith('outputs-contents.csv') && !file.url.endsWith('outputs-default-plots.csv')){console.timeEnd(file.url);}
+//console.timeEnd(file.url);
+                                file.contents = data;
+                                succ.getContentsCallback (true);
+                            },
+                   error: function() {
+                              succ.getContentsCallback(false);
+                          }
+           });
 }
 
 module.exports = {
