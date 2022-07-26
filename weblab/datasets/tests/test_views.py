@@ -465,7 +465,7 @@ class TestDatasetFileDownloadView:
         )
 
         assert response.status_code == 200
-        assert response['Content-Type'] == 'application/octet-stream'
+        assert response['Content-Type'] == 'text/csv'
 
     def test_returns_404_for_nonexistent_file(self, my_dataset_with_file, client):
         response = client.get(
