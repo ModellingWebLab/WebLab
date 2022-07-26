@@ -9,8 +9,10 @@ var plugins = [
 
 var graphGlobal = {};
 
-function displayFile(id, pluginName, prefix) {
+function displayFile(id, prefix) {
+$(graphGlobal[prefix]['fileDisplay']).empty();
     var f = graphGlobal[prefix]['files'][id];
+    var pluginName = graphGlobal[prefix]['pluginName'];
     if (!f.div[pluginName]) {
         f.div[pluginName] = $('<div/>').get(0);
         f.viz[pluginName] = graphGlobal[prefix]['visualizers'][pluginName].setUpComparision(f, f.div[pluginName]);
@@ -22,7 +24,17 @@ function displayFile(id, pluginName, prefix) {
     f.viz[pluginName].show();
 }
 
+function showGraph(prefix){
+    displayFile(graphGlobal[prefix]['fileName'].hashCode(), prefix);
+}
+
+function reloadGraph(prefix, pluginName){
+    graphGlobal[prefix]['pluginName'] = pluginName;
+    showGraph(prefix);
+}
+
 function initGraph(prefix) {
+console.log('start init');
     graphGlobal[prefix] = {
         entities: {}, // Contains information about each experiment being compared
         files: {},
@@ -40,8 +52,10 @@ function initGraph(prefix) {
     $(plugins).each(function(i, plugin) {
         graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
     });
+console.log('start loading data');
     info = $.ajax({url: $(`#${prefix}entitiesStorygraph`).data('comparison-href'), dataType: "json", context: {downloads}, async: false})
                    .done((data) => {
+console.log('received info data');
                        $(`#${prefix}filedisplay`).append('.');
                        $.each(data.getEntityInfos.entities, (_, entity) => {
                            // parse entities (but don't build yet)
@@ -63,7 +77,7 @@ function initGraph(prefix) {
                                             graphGlobal[prefix]['files'][sig].entities = new Array();
                                             graphGlobal[prefix]['files'][sig].div = {};
                                             graphGlobal[prefix]['files'][sig].viz = {};
-                                            graphGlobal[prefix]['files'][sig].hasContents = true; //false;
+                                            graphGlobal[prefix]['files'][sig].hasContents = true;
                                             graphGlobal[prefix]['files'][sig].id = prefix + file.name;
 
                                             //getContents method should just call callback, as we will seperately pre-download contents
@@ -80,7 +94,8 @@ function initGraph(prefix) {
                                         });
                                         $(`#${prefix}filedisplay`).append('.');
                                         download_url = entity.download_url.replace('archive', 'download/') + graphGlobal[prefix]['fileName'] ;
-                                        var context_object = {url: download_url, file: file};
+                                        var context_object = {file: file};
+console.log('get contents');
                                         data_dld = $.ajax({url: download_url,
                                                            context: context_object,
                                                            success: function(data){
@@ -88,6 +103,7 @@ function initGraph(prefix) {
                                                                         expt_common.getCSV(this.file);
                                                                         this.file.contents = undefined; // free up memory
                                                                         $(`#${prefix}filedisplay`).append('.');
+console.log('got contents');
                                                           }})
                                                           .fail(() => {
                                                               $(`#${prefix}filedetails`).append(`ERROR loding data: ${file_url}`);
@@ -101,7 +117,9 @@ function initGraph(prefix) {
 
     downloads.push(info);
     $.when.apply($, downloads).then(() => {
-        displayFile(graphGlobal[prefix]['fileName'].hashCode(), graphGlobal[prefix]['pluginName'], prefix);
+console.log('got all data');
+        showGraph(prefix);
+console.log('finished setting up graph');
     });
 }
 
@@ -115,5 +133,6 @@ $(document).ready(function() {
 
 // export the initCompare function so stories can create comparisson graph
 module.exports = {
-  initGraph: initGraph
+    initGraph: initGraph,
+    reloadGraph: reloadGraph
 }

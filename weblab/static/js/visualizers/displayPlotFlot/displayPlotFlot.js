@@ -156,7 +156,6 @@ function plotAccordingToChoices(thisPlot, plotProperties, selectedCoords) {
             };
         }
     }
-
     thisPlot.graphIds['plottedGraph'] = $.plot("#" + flotPlotDivId, data, settings);
 };
 
