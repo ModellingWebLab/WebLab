@@ -1,7 +1,6 @@
 var notifications = require('./lib/notifications.js');
 var utils = require('./lib/utils.js');
 var expt_common = require('./expt_common.js');
-//var csv_cache = {};
 
 var plugins = [
     require('./visualizers/displayPlotFlot/displayPlotFlot.js'),
@@ -13,52 +12,24 @@ var graphGlobal = {};
 function displayFile(id, pluginName, prefix) {
     var f = graphGlobal[prefix]['files'][id];
     if (!f.div[pluginName]) {
-        f.div[pluginName] = document.createElement("div");
+        f.div[pluginName] = $('<div/>').get(0);
         f.viz[pluginName] = graphGlobal[prefix]['visualizers'][pluginName].setUpComparision(f, f.div[pluginName]);
     }
-    $(graphGlobal[prefix]['doc'].fileDisplay).empty();
-    graphGlobal[prefix]['doc'].fileDisplay.appendChild(f.div[pluginName]);
+
+    $(graphGlobal[prefix]['fileDisplay']).empty();
+    graphGlobal[prefix]['fileDisplay'].append(f.div[pluginName]);
+
     f.viz[pluginName].show();
 }
 
 function initGraph(prefix) {
     graphGlobal[prefix] = {
         entities: {}, // Contains information about each experiment being compared
-        // `files` contains information about each unique (by name) file within the compared experiments,
-        // including references to the experiments in which a file of that name appears and that particular instance of the file.
         files: {},
         visualizers: {},
         fileName: null,
         pluginName: null,
-        doc: {
-            heading: document.getElementById(prefix + "heading"),
-            displayClose: document.getElementById(prefix + "fileclose"),
-            fileName: document.getElementById(prefix + "filename"),
-            fileDisplay: document.getElementById(prefix + "filedisplay"),
-            fileDetails: document.getElementById(prefix + "filedetails"),
-            outputFileHeadline: document.getElementById(prefix + "outputFileHeadline")
-        },
-        plotDescription: null,
-        plotFiles: new Array(),
-        filesTable: {},
-        // Used for determining what graph (if any) to show by default
-        metadataToParse: 0,
-        metadataParsed: 0,
-        defaultViz: null,
-        defaultVizCount: 0,
-        // State for figuring out whether we're comparing multiple protocols on a single model, or multiple models on a single protocol
-        singleEntities: {
-            model: true,
-            protocol: true,
-            fittingspec: true,
-            dataset: true,
-        },
-        versionComparisons: {
-            model: false,
-            protocol: false,
-            fittingspec: false,
-            dataset: false,
-        },
+        fileDisplay: $(`#${prefix}filedisplay`),
     }
 
     downloads = [];
@@ -115,6 +86,7 @@ function initGraph(prefix) {
                                                            success: function(data){
                                                                         this.file.contents = data;
                                                                         expt_common.getCSV(this.file);
+                                                                        this.file.contents = undefined; // free up memory
                                                                         $(`#${prefix}filedisplay`).append('.');
                                                           }})
                                                           .fail(() => {
