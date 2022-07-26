@@ -14,7 +14,6 @@ from django.contrib.auth.mixins import (
 from django.http import (
     Http404,
     HttpResponse,
-#    StreamingHttpResponse,
     HttpResponseBadRequest,
     HttpResponseRedirect,
     JsonResponse,
@@ -200,30 +199,18 @@ class DatasetFileDownloadView(VisibilityMixin, SingleObjectMixin, View):
     model = Dataset
 
     def get(self, request, *args, **kwargs):
-#        def file_iterator(filename, chunk_size=1024):
-#            with dataset.open_file(filename) as f:
-#                while True:
-#                    c = f.read(chunk_size)
-#                    if c:
-#                        yield c
-#                    else:
-#                        break
-#            f.close()
-
         filename = self.kwargs['filename']
         dataset = self.get_object()
 
         content_type, _ = mimetypes.guess_type(filename)
         if content_type is None:
-#            content_type = 'text/csv'
-            content_type = 'application/octet-stream'
+            content_type = 'text/csv'
 
         try:
             with dataset.open_file(filename) as file_:
                 response = HttpResponse(content_type=content_type)
                 response['Content-Disposition'] = 'attachment; filename=%s' % filename
                 response.write(file_.read())
-#            return StreamingHttpResponse(file_iterator(filename), content_type=content_type)
         except KeyError:
             raise Http404
 
