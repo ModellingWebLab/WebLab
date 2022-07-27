@@ -9,18 +9,50 @@ var plugins = [
 
 var graphGlobal = {};
 
-/**
-* Check whether or not to use downsampling of data.
-*/
-function useDownsampling(file){
-    return file.linestyle == undefined || (file.linestyle != "linespoints" && file.linestyle != "points");
-}
+
 
 /**
-* Calculate the maximum distance between three successive values in a series.
+* Parse the (downsampled or unDownsampled) data for a file.
 */
-function maxDist (val1, val2, val3){
-    return Math.max(val1, val2, val3) - Math.min(val1, val2, val3);
+function parseData(file, data){
+    function maxDist (val1, val2, val3){
+        return Math.max(val1, val2, val3) - Math.min(val1, val2, val3);
+    }
+    
+    data = data.trim().split('\n');
+    if(file.linestyle == undefined || (file.linestyle != "linespoints" && file.linestyle != "points")){// use downsampling
+        file.downsampled = [[], []];
+        var maxX = Number.NEGATIVE_INFINITY;
+        var minX = Number.POSITIVE_INFINITY;
+        var maxY = Number.NEGATIVE_INFINITY;
+        var minY = Number.POSITIVE_INFINITY;
+        for(let i = 0; i < data.length; ++i){
+            data[i] = data[i].split(',').map(Number);
+            maxX = Math.max(maxX, data[i][0]);
+            minX = Math.min(minX, data[i][0]);
+            maxY = Math.max(maxY, data[i][1]);
+            minY = Math.min(minY, data[i][1]);
+        }
+        for(let i = 0; i < data.length; ++i){
+            if(i==0 || i == data.length -1){
+                file.downsampled[1].push({x: data[i][0], y: data[i][1]});
+            }else{
+                last = file.downsampled[1][file.downsampled[1].length -1];
+                cur = data[i];
+                next = data[i+1];
+                if(i==0 || i == data.length -1 || maxDist(last.x, cur[0], next[0]) > (maxX - minX)/500.0 || maxDist(last.y, cur[1], next[1]) > (maxY - minY)/500.0 ){
+                    file.downsampled[1].push({x: data[i][0], y: data[i][1]});
+                }
+            }
+        }
+    }else{
+        file.nonDownsampled = [[], []];
+        for(let i = 0; i < data.length; ++i){
+            data[i] = data[i].split(',').map(Number);
+            file.nonDownsampled[1].push({x: data[i][0], y: data[i][1]});
+        }
+    
+    }
 }
 
 /**
@@ -114,44 +146,8 @@ function initGraph(prefix) {
                                         data_dld = $.ajax({url: download_url,
                                                            context: context_object,
                                                            success: function(data){
-//alert(isDownsampled(this.file));
-//this.file.contents = data;
-//this.file.csv = [];
-data = data.trim().split('\n');
-if(useDownsampling(this.file)){
-    this.file.downsampled = [[], []];
-    var maxX = Number.NEGATIVE_INFINITY;
-    var minX = Number.POSITIVE_INFINITY;
-    var maxY = Number.NEGATIVE_INFINITY;
-    var minY = Number.POSITIVE_INFINITY;
-    for(let i = 0; i < data.length; ++i){
-//$(`#${prefix}filedisplay`).append('.');
-        data[i] = data[i].split(',').map(Number);
-        maxX = Math.max(maxX, data[i][0]);
-        minX = Math.min(minX, data[i][0]);
-        maxY = Math.max(maxY, data[i][1]);
-        minY = Math.min(minY, data[i][1]);
-    }
-    for(let i = 0; i < data.length; ++i){
-        if(i==0 || i == data.length -1){
-            this.file.downsampled[1].push({x: data[i][0], y: data[i][1]});
-        }else{
-            last = this.file.downsampled[1][this.file.downsampled[1].length -1];
-            cur = data[i];
-            next = data[i+1];
-            if(i==0 || i == data.length -1 || maxDist(last.x, cur[0], next[0]) > (maxX - minX)/500.0 || maxDist(last.y, cur[1], next[1]) > (maxY - minY)/500.0 ){
-                this.file.downsampled[1].push({x: data[i][0], y: data[i][1]});
-            }
-        }
-    }
-}else{
-    this.file.nonDownsampled = [[], []];
-    for(let i = 0; i < data.length; ++i){
-        data[i] = data[i].split(',').map(Number);
-        this.file.nonDownsampled[1].push({x: data[i][0], y: data[i][1]});
-    }
-
-}
+                                                                        $(`#${prefix}filedisplay`).append('.');
+                                                                        parseData(this.file, data)
                                                                         $(`#${prefix}filedisplay`).append('.');
                                                           }})
                                                           .fail(() => {
