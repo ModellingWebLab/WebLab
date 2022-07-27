@@ -9,8 +9,25 @@ var plugins = [
 
 var graphGlobal = {};
 
-function displayFile(id, prefix) {
-$(graphGlobal[prefix]['fileDisplay']).empty();
+/**
+* Check whether or not to use downsampling of data.
+*/
+function useDownsampling(file){
+    return file.linestyle == undefined || (file.linestyle != "linespoints" && file.linestyle != "points");
+}
+
+/**
+* Calculate the maximum distance between three successive values in a series.
+*/
+function maxDist (val1, val2, val3){
+    return Math.max(val1, val2, val3) - Math.min(val1, val2, val3);
+}
+
+/**
+* Show the graph using the plugin.
+*/
+function showGraph(prefix){
+    var id = graphGlobal[prefix]['fileName'].hashCode();
     var f = graphGlobal[prefix]['files'][id];
     var pluginName = graphGlobal[prefix]['pluginName'];
     if (!f.div[pluginName]) {
@@ -24,17 +41,18 @@ $(graphGlobal[prefix]['fileDisplay']).empty();
     f.viz[pluginName].show();
 }
 
-function showGraph(prefix){
-    displayFile(graphGlobal[prefix]['fileName'].hashCode(), prefix);
-}
-
+/**
+* Reload a graph that had already been loaded using plugin pluginName
+*/
 function reloadGraph(prefix, pluginName){
     graphGlobal[prefix]['pluginName'] = pluginName;
     showGraph(prefix);
 }
 
+/**
+* initialise graph, download & parse its contents, and show it
+*/
 function initGraph(prefix) {
-console.log('start init');
     graphGlobal[prefix] = {
         entities: {}, // Contains information about each experiment being compared
         files: {},
@@ -52,10 +70,8 @@ console.log('start init');
     $(plugins).each(function(i, plugin) {
         graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
     });
-console.log('start loading data');
     info = $.ajax({url: $(`#${prefix}entitiesStorygraph`).data('comparison-href'), dataType: "json", context: {downloads}, async: false})
                    .done((data) => {
-console.log('received info data');
                        $(`#${prefix}filedisplay`).append('.');
                        $.each(data.getEntityInfos.entities, (_, entity) => {
                            // parse entities (but don't build yet)
@@ -95,15 +111,48 @@ console.log('received info data');
                                         $(`#${prefix}filedisplay`).append('.');
                                         download_url = entity.download_url.replace('archive', 'download/') + graphGlobal[prefix]['fileName'] ;
                                         var context_object = {file: file};
-console.log('get contents');
                                         data_dld = $.ajax({url: download_url,
                                                            context: context_object,
                                                            success: function(data){
-                                                                        this.file.contents = data;
-                                                                        expt_common.getCSV(this.file);
-                                                                        this.file.contents = undefined; // free up memory
+//alert(isDownsampled(this.file));
+//this.file.contents = data;
+//this.file.csv = [];
+data = data.trim().split('\n');
+if(useDownsampling(this.file)){
+    this.file.downsampled = [[], []];
+    var maxX = Number.NEGATIVE_INFINITY;
+    var minX = Number.POSITIVE_INFINITY;
+    var maxY = Number.NEGATIVE_INFINITY;
+    var minY = Number.POSITIVE_INFINITY;
+    for(let i = 0; i < data.length; ++i){
+//$(`#${prefix}filedisplay`).append('.');
+        data[i] = data[i].split(',').map(Number);
+        maxX = Math.max(maxX, data[i][0]);
+        minX = Math.min(minX, data[i][0]);
+        maxY = Math.max(maxY, data[i][1]);
+        minY = Math.min(minY, data[i][1]);
+    }
+    for(let i = 0; i < data.length; ++i){
+        if(i==0 || i == data.length -1){
+            this.file.downsampled[1].push({x: data[i][0], y: data[i][1]});
+        }else{
+            last = this.file.downsampled[1][this.file.downsampled[1].length -1];
+            cur = data[i];
+            next = data[i+1];
+            if(i==0 || i == data.length -1 || maxDist(last.x, cur[0], next[0]) > (maxX - minX)/500.0 || maxDist(last.y, cur[1], next[1]) > (maxY - minY)/500.0 ){
+                this.file.downsampled[1].push({x: data[i][0], y: data[i][1]});
+            }
+        }
+    }
+}else{
+    this.file.nonDownsampled = [[], []];
+    for(let i = 0; i < data.length; ++i){
+        data[i] = data[i].split(',').map(Number);
+        this.file.nonDownsampled[1].push({x: data[i][0], y: data[i][1]});
+    }
+
+}
                                                                         $(`#${prefix}filedisplay`).append('.');
-console.log('got contents');
                                                           }})
                                                           .fail(() => {
                                                               $(`#${prefix}filedetails`).append(`ERROR loding data: ${file_url}`);
@@ -117,9 +166,7 @@ console.log('got contents');
 
     downloads.push(info);
     $.when.apply($, downloads).then(() => {
-console.log('got all data');
         showGraph(prefix);
-console.log('finished setting up graph');
     });
 }
 

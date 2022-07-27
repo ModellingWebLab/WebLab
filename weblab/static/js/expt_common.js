@@ -164,8 +164,9 @@ function maxDist (val1, val2, val3)
  */
 function parseCSVContent (file)
 {
-    utils.parseCsvRaw(file);
+//    utils.parseCsvRaw(file);
     var csv = file.csv, colmap = [];
+console.log(csv);
 
     // Identity column map by default
     for (var i = 0; i < csv[0].length; i++)
@@ -384,4 +385,6 @@ module.exports = {
   getCSV: getCSV,
   getKeyValues: getKeyValues,
   allowPlotExport: allowPlotExport
+
+,parseCSVContent:parseCSVContent
 }
