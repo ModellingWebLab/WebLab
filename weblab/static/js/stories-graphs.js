@@ -1,3 +1,4 @@
+var utils = require('./lib/utils.js');
 var plugins = [
     require('./visualizers/displayPlotFlot/displayPlotFlot.js'),
     require('./visualizers/displayPlotHC/displayPlotHC.js'),
@@ -14,7 +15,8 @@ function parseData(file, data){
     }
 
     data = data.trim().split('\n');
-    if(file.linestyle == undefined || (file.linestyle != "linespoints" && file.linestyle != "points")){// use downsampling
+    // check whether we need to downsample the data
+    if(file.linestyle == undefined || (file.linestyle != "linespoints" && file.linestyle != "points")){
         file.downsampled = [[], []];
         var maxX = Number.NEGATIVE_INFINITY;
         var minX = Number.POSITIVE_INFINITY;
@@ -59,10 +61,55 @@ function getContentsCall(graphFiles, pref, callBack) {
 };
 
 /**
+ * Process information to set axes lables & units.
+ */
+function processAxes(prefix){
+    if(graphGlobal[prefix]['outputs-default-plots.csv'].length > 1 && graphGlobal[prefix]['outputs-contents.csv'].length > 1)
+        data_file_name_idx = Array.from(graphGlobal[prefix]['outputs-default-plots.csv'][0]).indexOf('Data file name');
+        line_style_idx = Array.from(graphGlobal[prefix]['outputs-default-plots.csv'][0]).indexOf('Line style');
+        first_var_id =  Array.from(graphGlobal[prefix]['outputs-default-plots.csv'][0]).indexOf('First variable id');
+        second_var_id = Array.from(graphGlobal[prefix]['outputs-default-plots.csv'][0]).indexOf('Optional second variable id');
+        var first_var = undefined;
+        var second_var = undefined;
+        var line_style = undefined;
+        for(let i=1; i< graphGlobal[prefix]['outputs-default-plots.csv'].length; i++){
+            if(graphGlobal[prefix]['outputs-default-plots.csv'][i][data_file_name_idx] == graphGlobal[prefix]['fileName']){
+                first_var = graphGlobal[prefix]['outputs-default-plots.csv'][i][first_var_id];
+                second_var = graphGlobal[prefix]['outputs-default-plots.csv'][i][second_var_id];
+                line_style = graphGlobal[prefix]['outputs-default-plots.csv'][i][line_style_idx];
+            }
+        }
+        var_id_idx = Array.from(graphGlobal[prefix]['outputs-contents.csv'][0]).indexOf('Variable id');
+        var_name_idx =  Array.from(graphGlobal[prefix]['outputs-contents.csv'][0]).indexOf('Variable name');
+        units_idx =  Array.from(graphGlobal[prefix]['outputs-contents.csv'][0]).indexOf('Units');
+        for(let i=1; i< graphGlobal[prefix]['outputs-contents.csv'].length; i++){
+            variable = graphGlobal[prefix]['outputs-contents.csv'][i][var_name_idx];
+            units = graphGlobal[prefix]['outputs-contents.csv'][i][units_idx];
+            if(graphGlobal[prefix]['outputs-contents.csv'][i][var_id_idx] == first_var){
+                for(sig of Object.keys(graphGlobal[prefix]['files'])){
+                    graphGlobal[prefix]['files'][sig].xAxes = `${variable} (${units})`;
+                    graphGlobal[prefix]['files'][sig].xUnits = units;
+                    graphGlobal[prefix]['files'][sig].linestyle = line_style;
+                }
+            }
+            if(graphGlobal[prefix]['outputs-contents.csv'][i][var_id_idx] == second_var){
+                for(sig of Object.keys(graphGlobal[prefix]['files'])){
+                    graphGlobal[prefix]['files'][sig].yAxes = `${variable} (${units})`;
+                    graphGlobal[prefix]['files'][sig].yUnits = units;
+               }
+            }
+        }
+
+    }
+
+/**
 * Show the graph using the plugin.
 */
 function showGraph(prefix){
     $.when.apply($, graphGlobal[prefix]['download_requests']).then(() => {
+        if(!graphGlobal[prefix]['shown']){
+            processAxes(prefix);
+        }
         graphGlobal[prefix]['shown'] = true;
         var id = graphGlobal[prefix]['fileName'].hashCode();
         var f = graphGlobal[prefix]['files'][id];
@@ -103,6 +150,7 @@ function initGraph(prefix) {
     }
     graphGlobal[prefix]['fileName'] = filename_plugin[0];
     graphGlobal[prefix]['download_requests'] = [];
+    graphGlobal[prefix]['description_requests'] = [];
     graphGlobal[prefix]['entities'] = {};
     graphGlobal[prefix]['files'] = {};
     graphGlobal[prefix]['visualizers'] = {};
@@ -128,8 +176,22 @@ function initGraph(prefix) {
                             if (entity.files){
                                 for (var j = 0; j < entity.files.length; j++) {
                                     var file = entity.files[j];
-                                    if(file.name == graphGlobal[this.prefix]['fileName']){
-                                        var sig = file.name.hashCode();
+                                    var sig = file.name.hashCode();
+                                    var context_object = {file: file, prefix: this.prefix};
+                                    if(file.name == 'outputs-contents.csv' || file.name == 'outputs-default-plots.csv'){
+                                        if(graphGlobal[prefix][file.name] == undefined){ // only retreive once when processing multiple models
+                                            outputs_dld =  $.ajax({url: file.url,
+                                                                   context: context_object,
+                                                                   success: function(data){
+                                                                       graphGlobal[this.prefix][this.file.name] = utils.parseCsvDataRaw(data);
+                                                                   },
+                                                                   error: function(){
+                                                                       $(`#${this.prefix}filedetails`).append(`ERROR loding outputs-contents: ${this.file.url}`);
+                                                                   }});
+                                            graphGlobal[this.prefix]['download_requests'].push(outputs_dld);
+                                            graphGlobal[this.prefix]['description_requests'].push(outputs_dld);
+                                        }
+                                    }else if(file.name == graphGlobal[this.prefix]['fileName']){
                                         file.signature = sig;
                                         file.type = file.filetype;
                                         if (!graphGlobal[this.prefix]['files'][sig]) {
@@ -150,9 +212,8 @@ function initGraph(prefix) {
                                             entityFileLink: file
                                         });
                                         $(`#${this.prefix}filedisplay`).append('.');
-                                        download_url = entity.download_url.replace('archive', 'download/') + graphGlobal[this.prefix]['fileName'];
                                         var context_object = {file: file, prefix: this.prefix};
-                                        data_dld = $.ajax({url: download_url,
+                                        data_dld = $.ajax({url: file.url,
                                                            context: context_object,
                                                            success: function(data){
                                                                $(`#${this.prefix}filedisplay`).append('.');

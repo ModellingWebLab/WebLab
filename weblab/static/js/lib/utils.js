@@ -97,11 +97,12 @@ function addLink (link)
 }
 
   /**
-   * Raw parsing function for CSV files into columns of numerical/textual data
-   * @param file  the loaded file to parse
+   * Raw parsing function for CSV data into columns of numerical/textual data
+   * @param data  the loaded raw data to parse
+   * @returns the CSV data as column
    */
-function parseCsvRaw(file) {
-  var str = file.contents.replace(/\s*#.*\n/gm,"");
+function parseCsvDataRaw(data) {
+  data = data.replace(/\s*#.*\n/gm,"");
   var patterns = new RegExp(
       (
        // Delimiters.
@@ -115,7 +116,7 @@ function parseCsvRaw(file) {
       );
   var csv = [[]];
   var matches = null;
-  while (matches = patterns.exec (str))
+  while (matches = patterns.exec (data))
   {
     var value;
     var matchDel = matches[1];
@@ -128,7 +129,15 @@ function parseCsvRaw(file) {
 
     csv[csv.length - 1].push (value);
   }
-  file.csv = csv;
+  return csv;
+}
+
+  /**
+   * Raw parsing function for CSV files into columns of numerical/textual data
+   * @param file  the loaded file to parse
+   */
+function parseCsvRaw(file) {
+    file.csv = parseCsvDataRaw(file.contents);
 }
 
 function keys(obj) {
@@ -158,20 +167,12 @@ function getPos(ele) {
 
 function getFileContent (file, succ) {
   // TODO: loading indicator.. so the user knows that we are doing something
-//    if(! file.url.endsWith('outputs-contents.csv') && !file.url.endsWith('outputs-default-plots.csv')){console.time(file.url);}
-//console.time(file.url);
-    return $.ajax({url: file.url,
-                   context: file,
-                   success: function(data) {
-//                                if(! file.url.endsWith('outputs-contents.csv') && !file.url.endsWith('outputs-default-plots.csv')){console.timeEnd(file.url);}
-//console.timeEnd(file.url);
-                                file.contents = data;
-                                succ.getContentsCallback (true);
-                            },
-                   error: function() {
-                              succ.getContentsCallback(false);
-                          }
-           });
+  $.get(file.url, function(data) {
+      file.contents = data;
+      succ.getContentsCallback (true);
+  }).fail(function() {
+    succ.getContentsCallback(false);
+  });
 }
 
 module.exports = {
@@ -185,6 +186,7 @@ module.exports = {
   addScript: addScript,
   addLink: addLink,
   parseCsvRaw: parseCsvRaw,
+  parseCsvDataRaw: parseCsvDataRaw,
   keys: keys,
   getPos: getPos,
   getFileContent: getFileContent,
