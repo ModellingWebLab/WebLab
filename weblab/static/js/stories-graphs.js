@@ -5,8 +5,6 @@ var plugins = [
 
 var graphGlobal = {};
 
-
-
 /**
 * Parse the (downsampled or unDownsampled) data for a file.
 */
@@ -50,115 +48,131 @@ function parseData(file, data){
     }
 }
 
+
+/**
+* callback frunction to signal to plugin that contents were retreived.
+*/
+function getContentsCall(graphFiles, pref, callBack) {
+    for (var i = 0; i < graphFiles.entities.length; i++) {
+        callBack.getContentsCallback(true, pref);
+    }
+};
+
 /**
 * Show the graph using the plugin.
 */
 function showGraph(prefix){
-    var id = graphGlobal[prefix]['fileName'].hashCode();
-    var f = graphGlobal[prefix]['files'][id];
-    var pluginName = graphGlobal[prefix]['pluginName'];
-    if (!f.div[pluginName]) {
-        f.div[pluginName] = $('<div/>').get(0);
-        f.viz[pluginName] = graphGlobal[prefix]['visualizers'][pluginName].setUpComparision(f, f.div[pluginName]);
-    }
+    $.when.apply($, graphGlobal[prefix]['download_requests']).then(() => {
+        graphGlobal[prefix]['shown'] = true;
+        var id = graphGlobal[prefix]['fileName'].hashCode();
+        var f = graphGlobal[prefix]['files'][id];
+        var pluginName = graphGlobal[prefix]['pluginName'];
+        if (!f.div[pluginName]) {
+            f.div[pluginName] = $('<div/>').get(0);
+            f.viz[pluginName] = graphGlobal[prefix]['visualizers'][pluginName].setUpComparision(f, f.div[pluginName]);
+        }
 
-    $(graphGlobal[prefix]['fileDisplay']).empty();
-    graphGlobal[prefix]['fileDisplay'].append(f.div[pluginName]);
+        $(graphGlobal[prefix]['fileDisplay']).empty();
+        graphGlobal[prefix]['fileDisplay'].append(f.div[pluginName]);
 
-    f.viz[pluginName].show();
+        f.viz[pluginName].show();
+    });
 }
 
 /**
-* Reload a graph that had already been loaded using plugin pluginName
+* Change the plugin name and reload the graph, if it has already been loaded
 */
 function reloadGraph(prefix, pluginName){
-    graphGlobal[prefix]['pluginName'] = pluginName;
-    showGraph(prefix);
+    if(graphGlobal[prefix] == undefined){
+        graphGlobal[prefix] = {pluginName: pluginName, shown: false};
+    }else{
+        graphGlobal[prefix]['pluginName'] = pluginName;
+        if(graphGlobal[prefix]['shown']){
+            showGraph(prefix);
+        }
+    }
 }
 
 /**
 * initialise graph, download & parse its contents, and show it
 */
 function initGraph(prefix) {
-    graphGlobal[prefix] = {
-        entities: {}, // Contains information about each experiment being compared
-        files: {},
-        visualizers: {},
-        fileName: null,
-        pluginName: null,
-        fileDisplay: $(`#${prefix}filedisplay`),
-    }
-
-    downloads = [];
     filename_plugin = $(`#${prefix}entityIdsToCompare`).val().replace(/^.*show\//,'').split('/');
+    if(graphGlobal[prefix] == undefined){
+        graphGlobal[prefix] = {pluginName: filename_plugin[1], shown: false};
+    }
     graphGlobal[prefix]['fileName'] = filename_plugin[0];
-    graphGlobal[prefix]['pluginName'] = filename_plugin[1];
-    basicurl = $(`#${prefix}entityIdsToCompare`).val().replace(/show\/.*$/, '');
+    graphGlobal[prefix]['download_requests'] = [];
+    graphGlobal[prefix]['entities'] = {};
+    graphGlobal[prefix]['files'] = {};
+    graphGlobal[prefix]['visualizers'] = {};
+    graphGlobal[prefix]['fileDisplay'] = $(`#${prefix}filedisplay`);
     $(plugins).each(function(i, plugin) {
         graphGlobal[prefix]['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
     });
-    info = $.ajax({url: $(`#${prefix}entitiesStorygraph`).data('comparison-href'), dataType: "json", context: {downloads}, async: false})
-                   .done((data) => {
-                       $(`#${prefix}filedisplay`).append('.');
+
+    info_url = $(`#${prefix}entitiesStorygraph`).data('comparison-href');
+    var context_obj = {prefix: prefix, info_url: info_url};
+    info = $.ajax({url: info_url,
+                   dataType: "json",
+                   context: context_obj,
+                   prefix: prefix,
+                   success: function(data){
+                       $(`#${this.prefix}filedisplay`).append('.');
                        $.each(data.getEntityInfos.entities, (_, entity) => {
                            // parse entities (but don't build yet)
                            entity.plotName = entity.modelName;
 
                             // Fill in the entities and files entries for this entity
-                            graphGlobal[prefix]['entities'][entity.id] = entity;
+                            graphGlobal[this.prefix]['entities'][entity.id] = entity;
                             if (entity.files){
                                 for (var j = 0; j < entity.files.length; j++) {
                                     var file = entity.files[j];
-                                    if(file.name == graphGlobal[prefix]['fileName']){
+                                    if(file.name == graphGlobal[this.prefix]['fileName']){
                                         var sig = file.name.hashCode();
                                         file.signature = sig;
                                         file.type = file.filetype;
-                                        if (!graphGlobal[prefix]['files'][sig]) {
-                                            graphGlobal[prefix]['files'][sig] = {};
-                                            graphGlobal[prefix]['files'][sig].sig = sig;
-                                            graphGlobal[prefix]['files'][sig].name = file.name;
-                                            graphGlobal[prefix]['files'][sig].entities = new Array();
-                                            graphGlobal[prefix]['files'][sig].div = {};
-                                            graphGlobal[prefix]['files'][sig].viz = {};
-                                            graphGlobal[prefix]['files'][sig].hasContents = true;
-                                            graphGlobal[prefix]['files'][sig].id = prefix + file.name;
-
-                                            //getContents method should just call callback, as we will seperately pre-download contents
-                                           graphGlobal[prefix]['files'][sig].getContents = function(callBack, pref = prefix) {
-                                               for (var i = 0; i < graphGlobal[prefix]['files'][sig].entities.length; i++) {
-                                                   callBack.getContentsCallback(true, pref);
-                                               }
-                                           };
+                                        if (!graphGlobal[this.prefix]['files'][sig]) {
+                                            graphGlobal[this.prefix]['files'][sig] = {};
+                                            graphGlobal[this.prefix]['files'][sig].sig = sig;
+                                            graphGlobal[this.prefix]['files'][sig].name = file.name;
+                                            graphGlobal[this.prefix]['files'][sig].entities = new Array();
+                                            graphGlobal[this.prefix]['files'][sig].div = {};
+                                            graphGlobal[this.prefix]['files'][sig].viz = {};
+                                            graphGlobal[this.prefix]['files'][sig].hasContents = true;
+                                            graphGlobal[this.prefix]['files'][sig].id = this.prefix + file.name;
+                                            //set-up plug-in callback to signal data was retreived
+                                            graphGlobal[this.prefix]['files'][sig].getContents = getContentsCall.bind(null, graphGlobal[this.prefix]['files'][sig], this.prefix);
 
                                         }
-                                        graphGlobal[prefix]['files'][sig].entities.push({
+                                        graphGlobal[this.prefix]['files'][sig].entities.push({
                                             entityLink: entity,
                                             entityFileLink: file
                                         });
-                                        $(`#${prefix}filedisplay`).append('.');
-                                        download_url = entity.download_url.replace('archive', 'download/') + graphGlobal[prefix]['fileName'];
-                                        var context_object = {file: file, prefix:prefix};
+                                        $(`#${this.prefix}filedisplay`).append('.');
+                                        download_url = entity.download_url.replace('archive', 'download/') + graphGlobal[this.prefix]['fileName'];
+                                        var context_object = {file: file, prefix: this.prefix};
                                         data_dld = $.ajax({url: download_url,
                                                            context: context_object,
                                                            success: function(data){
-                                                                        $(`#${this.prefix}filedisplay`).append('.');
-                                                                        parseData(this.file, data)
-                                                                        $(`#${this.prefix}filedisplay`).append('.');
-                                                                    },
+                                                               $(`#${this.prefix}filedisplay`).append('.');
+                                                               parseData(this.file, data)
+                                                               $(`#${this.prefix}filedisplay`).append('.');
+                                                           },
                                                            error: function(){
-                                                               $(`#${this,prefix}filedetails`).append(`ERROR loding data: ${this.file.url}`);
+                                                               $(`#${this.prefix}filedetails`).append(`ERROR loding data: ${this.file.url}`);
                                                            }});
-                                        downloads.push(data_dld);
+                                        graphGlobal[this.prefix]['download_requests'].push(data_dld);
                                     }
                                 }
                             }
                        });
-                   });
-
-    downloads.push(info);
-    $.when.apply($, downloads).then(() => {
-        showGraph(prefix);
-    });
+                       showGraph(this.prefix);
+                   },
+                   error: function(){
+                       $(`#${this.prefix}filedetails`).append(`ERROR loding info: ${this.info_url}`);
+                   }});
+    graphGlobal[prefix]['download_requests'].push(info);
 }
 
 // initialise (all) compare graphs on the page
