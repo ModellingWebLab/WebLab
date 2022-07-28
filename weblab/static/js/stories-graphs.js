@@ -64,11 +64,12 @@ function getContentsCall(graphFiles, pref, callBack) {
  * Process information to set axes lables & units.
  */
 function processAxes(prefix){
-    if(graphGlobal[prefix]['outputs-default-plots.csv'].length > 1 && graphGlobal[prefix]['outputs-contents.csv'].length > 1)
-        data_file_name_idx = Array.from(graphGlobal[prefix]['outputs-default-plots.csv'][0]).indexOf('Data file name');
-        line_style_idx = Array.from(graphGlobal[prefix]['outputs-default-plots.csv'][0]).indexOf('Line style');
-        first_var_id =  Array.from(graphGlobal[prefix]['outputs-default-plots.csv'][0]).indexOf('First variable id');
-        second_var_id = Array.from(graphGlobal[prefix]['outputs-default-plots.csv'][0]).indexOf('Optional second variable id');
+    if(graphGlobal[prefix]['outputs-default-plots.csv'].length > 1 && graphGlobal[prefix]['outputs-contents.csv'].length > 1){
+        default_header_as_arr = Array.from(graphGlobal[prefix]['outputs-default-plots.csv'][0]);
+        data_file_name_idx = default_header_as_arr.indexOf('Data file name');
+        line_style_idx = default_header_as_arr.indexOf('Line style');
+        first_var_id =  default_header_as_arr.indexOf('First variable id');
+        second_var_id = default_header_as_arr.indexOf('Optional second variable id');
         var first_var = undefined;
         var second_var = undefined;
         var line_style = undefined;
@@ -79,9 +80,10 @@ function processAxes(prefix){
                 line_style = graphGlobal[prefix]['outputs-default-plots.csv'][i][line_style_idx];
             }
         }
-        var_id_idx = Array.from(graphGlobal[prefix]['outputs-contents.csv'][0]).indexOf('Variable id');
-        var_name_idx =  Array.from(graphGlobal[prefix]['outputs-contents.csv'][0]).indexOf('Variable name');
-        units_idx =  Array.from(graphGlobal[prefix]['outputs-contents.csv'][0]).indexOf('Units');
+        contents_header_as_arr = Array.from(graphGlobal[prefix]['outputs-contents.csv'][0]);
+        var_id_idx = contents_header_as_arr.indexOf('Variable id');
+        var_name_idx = contents_header_as_arr.indexOf('Variable name');
+        units_idx = contents_header_as_arr.indexOf('Units');
         for(let i=1; i< graphGlobal[prefix]['outputs-contents.csv'].length; i++){
             variable = graphGlobal[prefix]['outputs-contents.csv'][i][var_name_idx];
             units = graphGlobal[prefix]['outputs-contents.csv'][i][units_idx];
@@ -99,8 +101,8 @@ function processAxes(prefix){
                }
             }
         }
-
     }
+}
 
 /**
 * Show the graph using the plugin.
