@@ -1,7 +1,3 @@
-var notifications = require('./lib/notifications.js');
-var utils = require('./lib/utils.js');
-var expt_common = require('./expt_common.js');
-
 var plugins = [
     require('./visualizers/displayPlotFlot/displayPlotFlot.js'),
     require('./visualizers/displayPlotHC/displayPlotHC.js'),
@@ -18,7 +14,7 @@ function parseData(file, data){
     function maxDist (val1, val2, val3){
         return Math.max(val1, val2, val3) - Math.min(val1, val2, val3);
     }
-    
+
     data = data.trim().split('\n');
     if(file.linestyle == undefined || (file.linestyle != "linespoints" && file.linestyle != "points")){// use downsampling
         file.downsampled = [[], []];
@@ -51,7 +47,6 @@ function parseData(file, data){
             data[i] = data[i].split(',').map(Number);
             file.nonDownsampled[1].push({x: data[i][0], y: data[i][1]});
         }
-    
     }
 }
 
@@ -141,18 +136,18 @@ function initGraph(prefix) {
                                             entityFileLink: file
                                         });
                                         $(`#${prefix}filedisplay`).append('.');
-                                        download_url = entity.download_url.replace('archive', 'download/') + graphGlobal[prefix]['fileName'] ;
-                                        var context_object = {file: file};
+                                        download_url = entity.download_url.replace('archive', 'download/') + graphGlobal[prefix]['fileName'];
+                                        var context_object = {file: file, prefix:prefix};
                                         data_dld = $.ajax({url: download_url,
                                                            context: context_object,
                                                            success: function(data){
-                                                                        $(`#${prefix}filedisplay`).append('.');
+                                                                        $(`#${this.prefix}filedisplay`).append('.');
                                                                         parseData(this.file, data)
-                                                                        $(`#${prefix}filedisplay`).append('.');
-                                                          }})
-                                                          .fail(() => {
-                                                              $(`#${prefix}filedetails`).append(`ERROR loding data: ${file_url}`);
-                                                          });
+                                                                        $(`#${this.prefix}filedisplay`).append('.');
+                                                                    },
+                                                           error: function(){
+                                                               $(`#${this,prefix}filedetails`).append(`ERROR loding data: ${this.file.url}`);
+                                                           }});
                                         downloads.push(data_dld);
                                     }
                                 }
