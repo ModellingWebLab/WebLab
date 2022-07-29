@@ -282,7 +282,5 @@ $(document).ready(function() {
 module.exports = {
     initGraph: initGraph,
     reloadGraph: reloadGraph,
-    cancelGraph: reloadGraph;
+    cancelGraph: cancelGraph
 }
-
-

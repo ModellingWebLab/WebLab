@@ -334,8 +334,11 @@ $(document).ready(function(){
   // update protocols when model changes
   $(document).on('modelsChanged', '.modelgroupselect', function(){
       id_prefix = $(this).attr('id').replace('id_models', '');
+      id = id_prefix.replace('id_graph-', '').replace('-', '');
+      graphs.cancelGraph(id);
       url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/protocols`;
       $(`#${id_prefix}protocol`).prop('disabled', true);
+      $(`#${id_prefix}graphfiles`).prop('disabled', true);
       $.ajax({url: url,
               success: function (data) {
                   current_protocol = $(`#${id_prefix}protocol`).val();
@@ -355,6 +358,7 @@ $(document).ready(function(){
   $(document).on('change', '.graphprotocol', function(){
       id_prefix = $(this).attr('id').replace('protocol', '');
       id = id_prefix.replace('id_graph-', '').replace('-', '');
+      graphs.cancelGraph(id);
       $(`#${id_prefix}graphfiles`).prop('disabled', true);
 
       // toggles
