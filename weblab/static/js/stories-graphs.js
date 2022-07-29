@@ -109,9 +109,7 @@ function processAxes(prefix){
 */
 function showGraph(prefix){
     $.when.apply($, graphGlobal[prefix]['download_requests']).then(() => {
-        if(!graphGlobal[prefix]['shown']){
-            processAxes(prefix);
-        }
+        processAxes(prefix);
         graphGlobal[prefix]['shown'] = true;
         var id = graphGlobal[prefix]['fileName'].hashCode();
         var f = graphGlobal[prefix]['files'][id];
