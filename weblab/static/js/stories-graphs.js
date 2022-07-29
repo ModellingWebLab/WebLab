@@ -54,9 +54,13 @@ function parseData(file, data){
 /**
 * callback frunction to signal to plugin that contents were retreived.
 */
-function getContentsCall(graphFiles, pref, callBack) {
+function getContentsCall(graphFiles, prefix, callBack) {
     for (var i = 0; i < graphFiles.entities.length; i++) {
-        callBack.getContentsCallback(true, pref);
+        $.when.apply($, graphGlobal[prefix]['download_requests']).done(() => {
+            if(!graphGlobal[prefix]['cancelling']){
+                callBack.getContentsCallback(true, prefix);
+            }
+        });
     }
 };
 
@@ -108,21 +112,23 @@ function processAxes(prefix){
 * Show the graph using the plugin.
 */
 function showGraph(prefix){
-    $.when.apply($, graphGlobal[prefix]['download_requests']).then(() => {
-        processAxes(prefix);
-        graphGlobal[prefix]['shown'] = true;
-        var id = graphGlobal[prefix]['fileName'].hashCode();
-        var f = graphGlobal[prefix]['files'][id];
-        var pluginName = graphGlobal[prefix]['pluginName'];
-        if (!f.div[pluginName]) {
-            f.div[pluginName] = $('<div/>').get(0);
-            f.viz[pluginName] = graphGlobal[prefix]['visualizers'][pluginName].setUpComparision(f, f.div[pluginName]);
+    $.when.apply($, graphGlobal[prefix]['download_requests']).done(() => {
+        if(!graphGlobal[prefix]['cancelling']){
+            processAxes(prefix);
+            graphGlobal[prefix]['shown'] = true;
+            var id = graphGlobal[prefix]['fileName'].hashCode();
+            var f = graphGlobal[prefix]['files'][id];
+            var pluginName = graphGlobal[prefix]['pluginName'];
+            if (!f.div[pluginName]) {
+                f.div[pluginName] = $('<div/>').get(0);
+                f.viz[pluginName] = graphGlobal[prefix]['visualizers'][pluginName].setUpComparision(f, f.div[pluginName]);
+            }
+
+            $(graphGlobal[prefix]['fileDisplay']).empty();
+            graphGlobal[prefix]['fileDisplay'].append(f.div[pluginName]);
+
+            f.viz[pluginName].show();
         }
-
-        $(graphGlobal[prefix]['fileDisplay']).empty();
-        graphGlobal[prefix]['fileDisplay'].append(f.div[pluginName]);
-
-        f.viz[pluginName].show();
     });
 }
 
@@ -144,13 +150,24 @@ function reloadGraph(prefix, pluginName){
 * initialise graph, download & parse its contents, and show it
 */
 function initGraph(prefix) {
+console.log('init');
     filename_plugin = $(`#${prefix}entityIdsToCompare`).val().replace(/^.*show\//,'').split('/');
     if(graphGlobal[prefix] == undefined){
         graphGlobal[prefix] = {pluginName: filename_plugin[1], shown: false};
+    }else if(graphGlobal[prefix]['download_requests'] != undefined){
+        graphGlobal[prefix]['cancelling'] = true;
+        for(req of graphGlobal[prefix]['download_requests']){
+            req.abort();
+        }
+        graphGlobal[prefix]['cancelling'] = false;
+//        $.when.apply($, graphGlobal[prefix]['download_requests']).fail(() => {
+//            console.log('aborted');
+//            graphGlobal[prefix]['cancelling'] = false;
+//        });
     }
+    graphGlobal[prefix]['cancelling'] = false;
     graphGlobal[prefix]['fileName'] = filename_plugin[0];
     graphGlobal[prefix]['download_requests'] = [];
-    graphGlobal[prefix]['description_requests'] = [];
     graphGlobal[prefix]['entities'] = {};
     graphGlobal[prefix]['files'] = {};
     graphGlobal[prefix]['visualizers'] = {};
@@ -186,10 +203,11 @@ function initGraph(prefix) {
                                                                        graphGlobal[this.prefix][this.file.name] = utils.parseCsvDataRaw(data);
                                                                    },
                                                                    error: function(){
-                                                                       $(`#${this.prefix}filedetails`).append(`ERROR loding outputs-contents: ${this.file.url}`);
+                                                                       if(!graphGlobal[this.prefix]['cancelling']){
+                                                                           $(`#${this.prefix}filedetails`).append(`ERROR loding outputs-contents: ${this.file.url}`);
+                                                                       }
                                                                    }});
                                             graphGlobal[this.prefix]['download_requests'].push(outputs_dld);
-                                            graphGlobal[this.prefix]['description_requests'].push(outputs_dld);
                                         }
                                     }else if(file.name == graphGlobal[this.prefix]['fileName']){
                                         file.signature = sig;
@@ -221,7 +239,9 @@ function initGraph(prefix) {
                                                                $(`#${this.prefix}filedisplay`).append('.');
                                                            },
                                                            error: function(){
-                                                               $(`#${this.prefix}filedetails`).append(`ERROR loding data: ${this.file.url}`);
+                                                               if(!graphGlobal[this.prefix]['cancelling']){
+                                                                   $(`#${this.prefix}filedetails`).append(`ERROR loding data: ${this.file.url}`);
+                                                               }
                                                            }});
                                         graphGlobal[this.prefix]['download_requests'].push(data_dld);
                                     }
@@ -231,7 +251,9 @@ function initGraph(prefix) {
                        showGraph(this.prefix);
                    },
                    error: function(){
-                       $(`#${this.prefix}filedetails`).append(`ERROR loding info: ${this.info_url}`);
+                       if(!graphGlobal[this.prefix]['cancelling']){
+                           $(`#${this.prefix}filedetails`).append(`ERROR loding info: ${this.info_url}`);
+                       }
                    }});
     graphGlobal[prefix]['download_requests'].push(info);
 }
@@ -249,3 +271,4 @@ module.exports = {
     initGraph: initGraph,
     reloadGraph: reloadGraph
 }
+
