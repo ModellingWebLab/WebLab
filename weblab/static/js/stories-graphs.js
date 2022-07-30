@@ -152,7 +152,7 @@ function reloadGraph(prefix, pluginName){
 function cancelGraph(prefix){
     old_graph = graphGlobal[prefix];
     // cancel old graph loading
-    if(old_graph != undefined  && old_graph['download_requests'] != undefined){
+    if(old_graph != undefined  && !old_graph['shown'] && old_graph['download_requests'] != undefined){
         old_graph['cancelling'] = true;
         for(req of graphGlobal[prefix]['download_requests']){
             req.abort();
@@ -223,7 +223,6 @@ function initGraph(prefix) {
                                     }else if(file.name == this.graph.fileName){
                                         file.signature = sig;
                                         file.type = file.filetype;
-//                                        if (!this.graph.files[sig]) {
                                         this.graph.files[sig] = {};
                                         this.graph.files[sig].sig = sig;
                                         this.graph.files[sig].name = file.name;
@@ -232,9 +231,6 @@ function initGraph(prefix) {
                                         this.graph.files[sig].viz = {};
                                         this.graph.files[sig].hasContents = true;
                                         this.graph.files[sig].id = this.prefix + file.name;
-                                            //set-up plug-in callback to signal data was retrieved
-                                            //this.graph.files[sig].getContents = getContentsCall.bind(null, this.graph.files[sig], this.graph, this.prefix);
-//                                        }
                                         this.graph.files[sig].entities.push({
                                             entityLink: entity,
                                             entityFileLink: file
