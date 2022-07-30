@@ -83,6 +83,7 @@ urlpatterns = [
         name='version_json',
     ),
 
+    # Caching should be safe: any changes => new version numer, but these files are the main slowdown in graph loading
     url(
         r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/download/%s$' % _FILENAME,
         cache_page(None)(views.ExperimentFileDownloadView.as_view()),
