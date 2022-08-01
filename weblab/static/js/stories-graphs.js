@@ -14,6 +14,7 @@ function parseData(file, data){
         return Math.max(val1, val2, val3) - Math.min(val1, val2, val3);
     }
 
+    // we save either downsampled or nonDownsampled
     file.downsampled = [[], []];
     file.nonDownsampled = file.downsampled;
     data = data.trim().split('\n');
@@ -52,20 +53,20 @@ function parseData(file, data){
 
 
 /**
-* callback function to signal to plugin that contents were retrieved.
+* callback function to signal to plug-in that contents were retrieved.
 */
-function getContentsCall(graphFiles, data_dld, prefix, callBack) {
-    data_dld.done((data) => {
-        for (var i = 0; i < graphFiles.entities.length; i++) {
+function getContentsCall(graphFiles, graph, prefix, callBack) {
+    for (var i = 0; i < graphFiles.entities.length; i++) {
+        $.when.apply($, graph['download_requests']).done(() => {
             if(!graph['cancelling']){
                 callBack.getContentsCallback(true, prefix);
             }
-        }
-    });
+        });
+    }
 };
 
 /**
- * Process information to set axes lables & units.
+ * Process information to set axes labels & units.
  */
 function processAxes(graph){
     if(graph['outputs-default-plots.csv'].length > 1 && graph['outputs-contents.csv'].length > 1){
@@ -111,9 +112,9 @@ function processAxes(graph){
 /**
 * Show the graph using the plugin.
 */
-function showGraph(graph, prefix){
+function showGraph(graph){
     $.when.apply($, graph['download_requests']).done(() => {
-        if(!graph['cancelling']  && graph === graphGlobal[prefix]){
+        if(!graph['cancelling']){
             processAxes(graph);
             graph['shown'] = true;
             var id = graph['fileName'].hashCode();
@@ -141,7 +142,7 @@ function reloadGraph(prefix, pluginName){
     }else{
         graphGlobal[prefix]['pluginName'] = pluginName;
         if(graphGlobal[prefix]['shown']){
-            showGraph(graphGlobal[prefix], prefix);
+            showGraph(graphGlobal[prefix]);
         }
     }
 }
@@ -152,7 +153,7 @@ function reloadGraph(prefix, pluginName){
 function cancelGraph(prefix){
     old_graph = graphGlobal[prefix];
     // cancel old graph loading
-    if(old_graph != undefined  && !old_graph['shown'] && old_graph['download_requests'] != undefined){
+    if(old_graph != undefined && !old_graph['shown'] && old_graph['download_requests'] != undefined){
         old_graph['cancelling'] = true;
         for(req of graphGlobal[prefix]['download_requests']){
             req.abort();
@@ -168,28 +169,31 @@ function initGraph(prefix) {
     old_graph = cancelGraph(prefix);
     
     filename_plugin = $(`#${prefix}entityIdsToCompare`).val().replace(/^.*show\//,'').split('/');
-    graph = {
+    
+//    if(graphGlobal[prefix] == undefined){
+    var graph = {
         shown: false,
         cancelling: false,
-        pluginName: (old_graph != undefined && old_graph['pluginName'] != undefined) ? old_graph['pluginName']: filename_plugin[1],
+                                                                                                                                   
         fileName: filename_plugin[0],
+        pluginName: (old_graph != undefined && old_graph['pluginName'] != undefined) ? old_graph['pluginName']: filename_plugin[1],
         download_requests: [],
         entities: {},
         files: {},
         visualizers: {},
-        div: {},
-        fiz: {},
+                
+                
         fileDisplay: $(`<div id="#${prefix}filedisplay">loading...</div>`)
-    }
-    $(`#${prefix}filedisplay`).empty();
-    $(`#${prefix}filedisplay`).append(graph.fileDisplay);
-    
+    };
+    $(`#${prefix}filedetails`).empty();
+    $(`#${prefix}filedetails`).append(graph.fileDisplay);
+            
     $(plugins).each(function(i, plugin) {
-        graph.visualizers[plugin.name] = plugin.get_visualizer(prefix);
+        graph['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
     });
-
+      
     info_url = $(`#${prefix}entitiesStorygraph`).data('comparison-href');
-    var context_obj = {prefix, prefix, graph: graph, info_url: info_url};
+    var context_obj = {graph: graph, prefix: prefix, info_url: info_url};
     info = $.ajax({url: info_url,
                    dataType: "json",
                    context: context_obj,
@@ -200,12 +204,12 @@ function initGraph(prefix) {
                            entity.plotName = entity.modelName;
 
                             // Fill in the entities and files entries for this entity
-                            this.graph.entities[entity.id] = entity;
+                            this.graph['entities'][entity.id] = entity;
                             if (entity.files){
                                 for (var j = 0; j < entity.files.length; j++) {
                                     var file = entity.files[j];
                                     var sig = file.name.hashCode();
-                                    var context_object = {file: file, graph: this.graph};
+                                    var context_object = {graph: this.graph, file: file, prefix: this.prefix};
                                     if(file.name == 'outputs-contents.csv' || file.name == 'outputs-default-plots.csv'){
                                         if(this.graph[file.name] == undefined){ // only retreive once when processing multiple models
                                             outputs_dld =  $.ajax({url: file.url,
@@ -215,23 +219,28 @@ function initGraph(prefix) {
                                                                    },
                                                                    error: function(){
                                                                        if(!this.graph['cancelling']){
-                                                                           this.graph.fileDisplay.append(`ERROR loading outputs-contents: ${this.file.url}`);
+                                                                           this.graph.fileDisplay.append(`ERROR loding outputs-contents: ${this.file.url}`);
                                                                        }
                                                                    }});
-                                            this.graph.download_requests.push(outputs_dld);
+                                            this.graph['download_requests'].push(outputs_dld);
                                         }
-                                    }else if(file.name == this.graph.fileName){
+                                    }else if(file.name == this.graph['fileName']){
                                         file.signature = sig;
                                         file.type = file.filetype;
-                                        this.graph.files[sig] = {};
-                                        this.graph.files[sig].sig = sig;
-                                        this.graph.files[sig].name = file.name;
-                                        this.graph.files[sig].entities = new Array();
-                                        this.graph.files[sig].div = {};
-                                        this.graph.files[sig].viz = {};
-                                        this.graph.files[sig].hasContents = true;
-                                        this.graph.files[sig].id = this.prefix + file.name;
-                                        this.graph.files[sig].entities.push({
+                                        if (!this.graph['files'][sig]) {
+                                            this.graph['files'][sig] = {};
+                                            this.graph['files'][sig].sig = sig;
+                                            this.graph['files'][sig].name = file.name;
+                                            this.graph['files'][sig].entities = new Array();
+                                            this.graph['files'][sig].div = {};
+                                            this.graph['files'][sig].viz = {};
+                                            this.graph['files'][sig].hasContents = true;
+                                            this.graph['files'][sig].id = this.prefix + file.name;
+                                            //set-up plug-in callback to signal data was retreived
+                                            this.graph['files'][sig].getContents = getContentsCall.bind(null, this.graph['files'][sig], this.graph, this.prefix);
+
+                                        }
+                                        this.graph['files'][sig].entities.push({
                                             entityLink: entity,
                                             entityFileLink: file
                                         });
@@ -245,25 +254,25 @@ function initGraph(prefix) {
                                                            },
                                                            error: function(){
                                                                if(!this.graph['cancelling']){
-                                                                   this.graph.fileDisplay.append(`ERROR loading data: ${this.file.url}`);
+                                                                   this.graph.fileDisplay.append(`ERROR loding data: ${this.file.url}`);
                                                                }
                                                            }});
-                                        this.graph.download_requests.push(data_dld);
-                                        //set-up plug-in callback to signal data was retrieved
-                                        this.graph.files[sig].getContents = getContentsCall.bind(null, this.graph.files[sig], data_dld, this.prefix);
+                                        this.graph['download_requests'].push(data_dld);
+                                                                                              
+                                                                                                                                                     
                                     }
                                 }
                             }
                        });
-                       showGraph(this.graph, this.prefix);
+                       showGraph(this.graph);
                    },
                    error: function(){
                        if(!this.graph['cancelling']){
-                           this.graph.fileDisplay.append(`ERROR loading info: ${this.info_url}`);
+                           this.graph.fileDisplay.append(`ERROR loding info: ${this.info_url}`);
                        }
                    }});
     graph['download_requests'].push(info);
-    graphGlobal[prefix] = graph;
+    graphGlobal[prefix] = graph
 }
 
 // initialise (all) compare graphs on the page
@@ -280,3 +289,5 @@ module.exports = {
     reloadGraph: reloadGraph,
     cancelGraph: cancelGraph
 }
+
+
