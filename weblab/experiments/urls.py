@@ -1,4 +1,5 @@
 from django.conf.urls import url
+from django.views.decorators.cache import cache_page
 
 from . import views
 
@@ -82,9 +83,10 @@ urlpatterns = [
         name='version_json',
     ),
 
+    # Caching should be safe: any changes => new version numer, but these files are the main slowdown in graph loading
     url(
         r'^(?P<experiment_pk>\d+)/versions/(?P<pk>\d+)/download/%s$' % _FILENAME,
-        views.ExperimentFileDownloadView.as_view(),
+        cache_page(None)(views.ExperimentFileDownloadView.as_view()),
         name='file_download',
     ),
 
