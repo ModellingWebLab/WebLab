@@ -1,4 +1,5 @@
 var XDate = require('xdate');
+var scriptsAdded = [];
 
 function humanReadableBytes (bytes)
 {
@@ -74,11 +75,14 @@ function convertForURL (str)
 
 function addScript (link)
 {
-  var el = document.createElement('script');
-  el.async = false;
-  el.src = link;
-  el.type = 'text/javascript';
-  (document.getElementsByTagName('head')[0]||document.body).appendChild(el);
+  if(!scriptsAdded.includes(link)){
+    scriptsAdded.push(link);
+    var el = document.createElement('script');
+    el.async = false;
+    el.src = link;
+    el.type = 'text/javascript';
+    (document.getElementsByTagName('head')[0]||document.body).appendChild(el);
+  }
 }
 
 function addLink (link)

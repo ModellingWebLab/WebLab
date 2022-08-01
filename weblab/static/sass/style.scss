@@ -862,18 +862,20 @@ li.entityviz-PRIVATE
 /* model group selector */
 .modelgroup-model-selector {
   display: table;
-  width: 100vh;
+  width: 850px;
 }
 
 .selectList{
-  width: 400px;
-  height: 400px;
+  width: 385px;
+  height: 385px;
 }
 
 .modelgroup-model-selector-row{
   display: table-row;
   clear: both;
-  width: 100vh;
+  width: 850px;
+;
+
 }
 
 .modelgroup-model-selector-col{
@@ -884,7 +886,7 @@ li.entityviz-PRIVATE
 .div-table-buttons {
   float: left; /* fix for  buggy browsers */
   display: table-column;
-  width: 100px;
+  width: 80px;
   text-align:center;
 }
 
@@ -893,7 +895,7 @@ li.entityviz-PRIVATE
 }
 
 .modelgroup-model-selector-col.left{
-    width:55vh;
+    width: 350px;
 }
 
 /* stories editing icons */

@@ -506,8 +506,8 @@ $(document).ready(function(){
         $('.graphPreviewBox').each(function(){
             if($(this).find('.graphPreviewButton').length == 0){
                 $(this).html('Switching graph visualizer...');
-                id = $(this).attr('id').replace('graphPreviewBox', '')
-                $(`#id_graph-${id}-update_0`).change();
+                id = $(this).attr('id').replace('graphPreviewBox', '');
+               $(`#id_graph-${id}-graphfiles`).change();
             }
         });
     });
