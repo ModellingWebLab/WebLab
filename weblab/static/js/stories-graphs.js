@@ -167,31 +167,27 @@ function cancelGraph(prefix){
 */
 function initGraph(prefix) {
     old_graph = cancelGraph(prefix);
-    
+
     filename_plugin = $(`#${prefix}entityIdsToCompare`).val().replace(/^.*show\//,'').split('/');
-    
-//    if(graphGlobal[prefix] == undefined){
+
     var graph = {
         shown: false,
         cancelling: false,
-                                                                                                                                   
         fileName: filename_plugin[0],
         pluginName: (old_graph != undefined && old_graph['pluginName'] != undefined) ? old_graph['pluginName']: filename_plugin[1],
         download_requests: [],
         entities: {},
         files: {},
         visualizers: {},
-                
-                
         fileDisplay: $(`<div id="#${prefix}filedisplay">loading...</div>`)
     };
     $(`#${prefix}filedetails`).empty();
     $(`#${prefix}filedetails`).append(graph.fileDisplay);
-            
+
     $(plugins).each(function(i, plugin) {
         graph['visualizers'][plugin.name] = plugin.get_visualizer(prefix);
     });
-      
+
     info_url = $(`#${prefix}entitiesStorygraph`).data('comparison-href');
     var context_obj = {graph: graph, prefix: prefix, info_url: info_url};
     info = $.ajax({url: info_url,
@@ -238,7 +234,6 @@ function initGraph(prefix) {
                                             this.graph['files'][sig].id = this.prefix + file.name;
                                             //set-up plug-in callback to signal data was retreived
                                             this.graph['files'][sig].getContents = getContentsCall.bind(null, this.graph['files'][sig], this.graph, this.prefix);
-
                                         }
                                         this.graph['files'][sig].entities.push({
                                             entityLink: entity,
@@ -258,8 +253,6 @@ function initGraph(prefix) {
                                                                }
                                                            }});
                                         this.graph['download_requests'].push(data_dld);
-                                                                                              
-                                                                                                                                                     
                                     }
                                 }
                             }
