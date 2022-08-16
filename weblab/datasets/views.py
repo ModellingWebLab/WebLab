@@ -201,10 +201,12 @@ class DatasetFileDownloadView(VisibilityMixin, SingleObjectMixin, View):
     def get(self, request, *args, **kwargs):
         filename = self.kwargs['filename']
         dataset = self.get_object()
+        # known bug see https://bugs.python.org/issue13952
+        mimetypes.add_type('text/csv', 'csv', strict=True)
 
         content_type, _ = mimetypes.guess_type(filename)
         if content_type is None:
-            content_type = 'text/csv'
+            content_type = 'application/octet-stream'
 
         try:
             with dataset.open_file(filename) as file_:
