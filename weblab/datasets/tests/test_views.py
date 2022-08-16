@@ -458,8 +458,9 @@ class TestDatasetFileDownloadView:
         assert response.status_code == 404
 
     @patch('mimetypes.guess_type', return_value=(None, None))
-    def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, helpers, logged_in_user, public_protocol, client):
-        #create dataset with file with unknown type
+    def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, helpers,
+                                                     logged_in_user, public_protocol, client):
+        # create dataset with file with unknown type
         helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
         dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
         file_name = 'mydataset.ext'
