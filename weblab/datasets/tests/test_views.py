@@ -458,14 +458,36 @@ class TestDatasetFileDownloadView:
         assert response.status_code == 404
 
     @patch('mimetypes.guess_type', return_value=(None, None))
-    def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, my_dataset_with_file, client):
+    def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, helpers,
+                                                     logged_in_user, public_protocol, client):
+        # create dataset with file with unknown type
+        helpers.add_permission(logged_in_user, 'create_dataset', Dataset)
+        dataset = recipes.dataset.make(author=logged_in_user, name='mydataset', protocol=public_protocol)
+        file_name = 'mydataset.ext'
+        file_contents = b'my test dataset'
+        recipes.dataset_file.make(
+            dataset=dataset,
+            upload=SimpleUploadedFile(file_name, file_contents),
+            original_name=file_name,
+        )
+
+        client.post(
+            '/datasets/%d/addfiles' % dataset.pk,
+            data={
+                'filename[]': ['uploads/' + file_name],
+                'delete_filename[]': [],
+                'mainEntry': [file_name],
+            },
+        )
+
         response = client.get(
             '/datasets/%d/download/%s' %
-            (my_dataset_with_file.pk, 'mydataset.csv')
+            (dataset.pk, 'mydataset.ext')
         )
 
         assert response.status_code == 200
         assert response['Content-Type'] == 'application/octet-stream'
+        dataset.delete()
 
     def test_returns_404_for_nonexistent_file(self, my_dataset_with_file, client):
         response = client.get(

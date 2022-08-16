@@ -1038,7 +1038,7 @@ class TestStoryRenderView:
         assert response.status_code == 200, str(response)
         assert '<h1>Story: story for render</h1>' in str(response.content)
         assert '<div class="markdowrenderview">' not in str(response.content)
-        assert '<div class="entitiesToCompare"' not in str(response.content)
+        assert '<div class="entitiesStorygraph"' not in str(response.content)
 
     def test_render_story_with_text(self, client, story_for_render_no_parts):
         recipes.story_text.make(author=story_for_render_no_parts.author, story=story_for_render_no_parts,
@@ -1048,7 +1048,7 @@ class TestStoryRenderView:
         assert '<h1>Story: story for render</h1>' in str(response.content)
         assert '<div class="markdowrenderview">' in str(response.content)
         assert 'new text' in str(response.content)
-        assert '<div class="entitiesToCompare"' not in str(response.content)
+        assert '<div class="entitiesStorygraph"' not in str(response.content)
 
     def test_render_story_graph(self, client, story_for_render_no_parts, experiment_with_result_public):
         experiment = experiment_with_result_public.experiment
@@ -1061,7 +1061,7 @@ class TestStoryRenderView:
         assert response.status_code == 200, str(response)
         assert '<h1>Story: story for render</h1>' in str(response.content)
         assert '<div class="markdowrenderview">' not in str(response.content)
-        assert '<div class="entitiesToCompare"' in str(response.content)
+        assert '<div class="entitiesStorygraph"' in str(response.content)
         assert 'outputs_RestingPotential.csv' in str(response.content)
         assert '/graph_for_story"' in str(response.content)
 
@@ -1079,7 +1079,7 @@ class TestStoryRenderView:
         assert response.status_code == 200, str(response)
         assert '<h1>Story: story for render</h1>' in str(response.content)
         assert '<div class="markdowrenderview">' not in str(response.content)
-        assert '<div class="entitiesToCompare"' in str(response.content)
+        assert '<div class="entitiesStorygraph"' in str(response.content)
         assert 'outputs_RestingPotential.csv' in str(response.content)
         assert f'/graph_for_story/{modelgroup.pk}"' in str(response.content)
 
@@ -1104,5 +1104,5 @@ class TestStoryRenderView:
         assert '<div class="markdowrenderview">' in str(response.content)
         assert 'new text 1' in str(response.content)
         assert 'new text 2' in str(response.content)
-        assert '<div class="entitiesToCompare"' in str(response.content)
+        assert '<div class="entitiesStorygraph"' in str(response.content)
         assert 'outputs_APD90.csv' in str(response.content)

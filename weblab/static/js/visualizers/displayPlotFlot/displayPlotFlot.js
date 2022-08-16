@@ -156,7 +156,6 @@ function plotAccordingToChoices(thisPlot, plotProperties, selectedCoords) {
             };
         }
     }
-
     thisPlot.graphIds['plottedGraph'] = $.plot("#" + flotPlotDivId, data, settings);
 };
 
@@ -289,7 +288,7 @@ function setListeners(thisPlot, plotProperties, moreThanOneDataset) {
         $(`#${thisPlot.graphIds['selectTogglerId']}`).click(function() {
             id_prefix = $(this).attr('id').replace('selectToggler', '');
             checked = $(this).is(':checked');
-            $(`#${id_prefix}filedisplay`).find('input:checkbox').each(function(){
+            $(`#${id_prefix}choices`).find('input:checkbox').each(function(){
                 $(this).prop('checked', checked)
             });
             plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
@@ -301,22 +300,15 @@ function setListeners(thisPlot, plotProperties, moreThanOneDataset) {
     $(`.${thisPlot.graphIds['prefix']}grouptoggle`).click(function(){
         togglerChecked = $(this).is(':checked');
         groupClass = $(this).attr('id').replace('selectGroup-', '.');
-        numDataSets = $(`#${thisPlot.graphIds['prefix']}choices`).find('input[type=checkbox]').length;
-        if(numDataSets == $(groupClass).length){
-            // this group contains all models
-            allToggler = $(`#${thisPlot.graphIds['prefix']}selectToggler`);
-            allToggler.prop('checked', !togglerChecked);
-            $(`#${thisPlot.graphIds['prefix']}selectToggler`).click();
-        }else{
-            // set all checboxes on/off as appropriate
-            $(groupClass).each(function(){
-                $(this).prop('disabled', false);
-                $(this).prop('checked', togglerChecked);
-            });
-            // update graph
-            plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
-            updateGroups(thisPlot.graphIds['prefix']); // update all & groups
-        }
+console.log(togglerChecked, groupClass);
+        // set all checboxes on/off as appropriate
+        $(groupClass).each(function(){
+            $(this).prop('disabled', false);
+            $(this).prop('checked', togglerChecked);
+        });
+        // update graph
+        plotAccordingToChoices(thisPlot, plotProperties, retrieveCurrentPlotCoords(thisPlot));
+        updateGroups(thisPlot.graphIds['prefix']); // update all & groups
     });
 
 
@@ -813,6 +805,6 @@ flotContent.prototype.setUpComparision = function (files, div)
 
 module.exports = {
   'name': 'displayPlotFlot',
-  'get_visualizer': function(prefix) { return new flotContent(prefix); }
+  'get_visualizer': function(prefix="") { return new flotContent(prefix); }
 }
 

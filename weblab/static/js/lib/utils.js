@@ -1,5 +1,7 @@
 var XDate = require('xdate');
+
 var scriptsAdded = [];
+
 
 function humanReadableBytes (bytes)
 {
@@ -95,11 +97,12 @@ function addLink (link)
 }
 
   /**
-   * Raw parsing function for CSV files into columns of numerical/textual data
-   * @param file  the loaded file to parse
+   * Raw parsing function for CSV data into columns of numerical/textual data
+   * @param data  the loaded raw data to parse
+   * @returns the CSV data as column
    */
-function parseCsvRaw(file) {
-  var str = file.contents.replace(/\s*#.*\n/gm,"");
+function parseCsvDataRaw(data) {
+  data = data.replace(/\s*#.*\n/gm,"");
   var patterns = new RegExp(
       (
        // Delimiters.
@@ -113,7 +116,7 @@ function parseCsvRaw(file) {
       );
   var csv = [[]];
   var matches = null;
-  while (matches = patterns.exec (str))
+  while (matches = patterns.exec (data))
   {
     var value;
     var matchDel = matches[1];
@@ -126,7 +129,15 @@ function parseCsvRaw(file) {
 
     csv[csv.length - 1].push (value);
   }
-  file.csv = csv;
+  return csv;
+}
+
+  /**
+   * Raw parsing function for CSV files into columns of numerical/textual data
+   * @param file  the loaded file to parse
+   */
+function parseCsvRaw(file) {
+    file.csv = parseCsvDataRaw(file.contents);
 }
 
 function keys(obj) {
@@ -175,6 +186,7 @@ module.exports = {
   addScript: addScript,
   addLink: addLink,
   parseCsvRaw: parseCsvRaw,
+  parseCsvDataRaw: parseCsvDataRaw,
   keys: keys,
   getPos: getPos,
   getFileContent: getFileContent,

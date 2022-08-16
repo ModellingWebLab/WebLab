@@ -1,7 +1,7 @@
 /* stories facilities */
 
 var $ = require('jquery');
-var compare = require('./compare.js')
+var graphs = require('./stories-graphs.js');
 
 // Code to facilitate stories with text and graph parts
 const SimpleMDE = require('./lib/simplemde.js');
@@ -334,8 +334,11 @@ $(document).ready(function(){
   // update protocols when model changes
   $(document).on('modelsChanged', '.modelgroupselect', function(){
       id_prefix = $(this).attr('id').replace('id_models', '');
+      id = id_prefix.replace('id_graph-', '').replace('-', '');
+      graphs.cancelGraph(id);
       url = `${getStoryBasePath()}/${get_models_str(id_prefix)}/protocols`;
       $(`#${id_prefix}protocol`).prop('disabled', true);
+      $(`#${id_prefix}graphfiles`).prop('disabled', true);
       $.ajax({url: url,
               success: function (data) {
                   current_protocol = $(`#${id_prefix}protocol`).val();
@@ -355,6 +358,7 @@ $(document).ready(function(){
   $(document).on('change', '.graphprotocol', function(){
       id_prefix = $(this).attr('id').replace('protocol', '');
       id = id_prefix.replace('id_graph-', '').replace('-', '');
+      graphs.cancelGraph(id);
       $(`#${id_prefix}graphfiles`).prop('disabled', true);
 
       // toggles
@@ -494,8 +498,8 @@ $(document).ready(function(){
             graphPathEntities = `/experiments/compare/${experimentVersions}/graph_for_story${groupToggles}`;
 
             graphPathEntities = basePath + graphPathEntities.replace('//', '/');
-            $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" class="entityIdsToCompare" value="${graphPathIds}"><div class="entitiesToCompare" id="${graphId}entitiesToCompare" data-comparison-href="${graphPathEntities}"></div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay">loading...</div></div></div>`);
-            compare.initCompare(graphId, false);
+            $(`#${graphId}graphPreviewBox`).html(`<div class="graphPreviewDialog"><input type="hidden" id="${graphId}entityIdsToCompare" class="entityIdsToCompare" value="${graphPathIds}"><div class="entitiesStorygraph" id="${graphId}entitiesStorygraph" data-comparison-href="${graphPathEntities}"></div><div id="${graphId}filedetails" class="filedetails"><div id="${graphId}filedisplay">loading...</div></div></div>`);
+            graphs.initGraph(graphId);
         } else {
             $(`#${graphId}graphPreviewBox`).html('Please select a graph...');
         }
@@ -505,9 +509,8 @@ $(document).ready(function(){
     $('#id_graphvisualizer').change(function() {
         $('.graphPreviewBox').each(function(){
             if($(this).find('.graphPreviewButton').length == 0){
-                $(this).html('Switching graph visualizer...');
                 id = $(this).attr('id').replace('graphPreviewBox', '');
-               $(`#id_graph-${id}-graphfiles`).change();
+                graphs.reloadGraph(id, $('#id_graphvisualizer').val());
             }
         });
     });
@@ -528,6 +531,3 @@ $(document).ready(function(){
     });
 
 });
-
-
-
