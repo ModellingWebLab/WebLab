@@ -461,11 +461,11 @@ class TestDatasetFileDownloadView:
     def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, my_dataset_with_file, client):
         response = client.get(
             '/datasets/%d/download/%s' %
-            (my_dataset_with_file.pk, 'mydataset.csv')
+            (my_dataset_with_file.pk, 'mydataset.ext')
         )
 
         assert response.status_code == 200
-        assert response['Content-Type'] == 'text/csv'
+        assert response['Content-Type'] == 'application/octet-stream'
 
     def test_returns_404_for_nonexistent_file(self, my_dataset_with_file, client):
         response = client.get(
