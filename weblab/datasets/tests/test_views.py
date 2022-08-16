@@ -459,6 +459,8 @@ class TestDatasetFileDownloadView:
 
     @patch('mimetypes.guess_type', return_value=(None, None))
     def test_uses_octet_stream_for_unknown_file_type(self, mock_guess, my_dataset_with_file, client):
+        my_dataset_with_file.original_name = 'mydataset.ext'
+
         response = client.get(
             '/datasets/%d/download/%s' %
             (my_dataset_with_file.pk, 'mydataset.ext')
