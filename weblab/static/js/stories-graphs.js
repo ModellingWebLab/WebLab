@@ -70,12 +70,12 @@ function getContentsCall(graphFiles, data_dld, prefix, callBack) {
  */
 function processAxes(graph){
     var sig = graph.fileName.hashCode();
-    if(graph.files[sig] != undefined && graph.files[sig]['first_var'] != undefined && this.graph.files[sig]['axes_csv'] != undefined){
-        for(let i=1; i< this.graph.files[sig]['axes_csv'].length; i++){
-            variable_id = this.graph.files[sig]['axes_csv'][i][graph.files[sig]['var_id_idx']];
+    if(graph.files[sig] != undefined && graph.files[sig]['first_var'] != undefined && graph.files[sig]['axes_csv'] != undefined){
+        for(let i=1; i< graph.files[sig]['axes_csv'].length; i++){
+            variable_id = graph.files[sig]['axes_csv'][i][graph.files[sig]['var_id_idx']];
             var_name_idx = contents_header_as_arr.indexOf('Variable name');
-            variable = this.graph.files[sig]['axes_csv'][i][var_name_idx];
-            units = this.graph.files[sig]['axes_csv'][i][graph.files[sig]['units_idx']];
+            variable = graph.files[sig]['axes_csv'][i][var_name_idx];
+            units = graph.files[sig]['axes_csv'][i][graph.files[sig]['units_idx']];
             if(variable_id == graph.files[sig]['first_var']){
                 graph.files[sig].xAxes = `${variable} (${units})`;
                 graph.files[sig].xUnits = units;
@@ -90,7 +90,7 @@ function processAxes(graph){
             for(req of graph.axes_info_requests){
                 req.abort();
             }
-            this.graph.files[sig]['axes_csv'] = undefined; // free memory
+            graph.files[sig]['axes_csv'] = undefined; // free memory
         }
     }
 }
