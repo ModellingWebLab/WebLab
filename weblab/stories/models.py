@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import ManyToManyField, TextField
+from django.db.models import ManyToManyField, TextField, BooleanField
 
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
 from core.visibility import Visibility
@@ -70,3 +70,5 @@ class StoryGraph(StoryItem):
     modelgroups = ManyToManyField(ModelGroup, blank=True, related_name='selected_group_story_graphs')
     models = ManyToManyField(ModelEntity, blank=True, related_name='selected_group_story_models')
     grouptoggles = ManyToManyField(ModelGroup, blank=True, related_name='toggle_group_story_graphs')
+    protocol_is_latest = BooleanField(default=True)
+    all_model_versions_latest = BooleanField(default=True)

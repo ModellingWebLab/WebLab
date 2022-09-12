@@ -632,6 +632,7 @@ class EntityNewVersionView(
     def post(self, request, *args, **kwargs):
 
         entity = self.object = self.get_object()
+        latest_entity_version = entity.repocache.latest_version
         form = self.get_form()
         if not form.is_valid():
             return self.form_invalid(form)
@@ -712,6 +713,16 @@ class EntityNewVersionView(
             entity.analyse_new_version(version)
             if request.POST.get('rerun_expts'):
                 record_experiments_to_run(request.user, entity, commit)
+
+            #  if entity is a protocol/model, update storiy graphs using it to indicate they are not useing teh latest version
+            if entity.entity_type == Entity.ENTITY_TYPE_PROTOCOL:
+                for storygraph in StoryGraph.objects.filter(cachedprotocolversion=latest_entity_version):
+                    storygraph.protocol_is_latest = False
+                    storygraph.save()
+            elif entity.entity_type == Entity.ENTITY_TYPE_MODEL:
+                for storygraph in StoryGraph.objects.filter(cachedmodelversions__in=[latest_entity_version]):
+                    storygraph.all_model_versions_latest = False
+                    storygraph.save()
 
             # Show the user the new version
             ns = self.request.resolver_match.namespace
