@@ -15,7 +15,7 @@
     "json-schema": "^0.4.0",
     "kind-of": "^6.0.3",
     "minimist": "^1.2.6",
-    "node-sass": "^7.0.1",
+    "node-sass": "^7.0.3",
     "showdown": "^1.9.1",
     "tar": "^4.4.18",
     "xdate": "^0.8.2"
