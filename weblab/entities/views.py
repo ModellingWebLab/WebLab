@@ -632,7 +632,8 @@ class EntityNewVersionView(
     def post(self, request, *args, **kwargs):
 
         entity = self.object = self.get_object()
-        latest_entity_version = entity.repocache.latest_version
+        latest_entity_version = entity.repocache.latest_version if entity.repocache.versions.exists() else None
+
         form = self.get_form()
         if not form.is_valid():
             return self.form_invalid(form)
