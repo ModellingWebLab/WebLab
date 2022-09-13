@@ -97,6 +97,9 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['ORDER'] = forms.IntegerField(required=False)
         self.fields['graphfilename'] = forms.CharField(required=False, widget=forms.HiddenInput)
         self.fields['currentGraph'] = forms.CharField(required=False)
+        self.fields['protocol_is_latest'] = forms.BooleanField(required=False)
+        self.fields['all_model_versions_latest'] = forms.BooleanField(required=False)
+
         self.fields['experimentVersions'] = \
             forms.CharField(required=False, widget=forms.HiddenInput(attrs={'class': 'preview-graph-control'}))
 

@@ -245,7 +245,9 @@ class StoryEditView(StoryView, UpdateView):
                  'experimentVersions': experimentVersions,
                  'ORDER': s.order,
                  'update': False,
-                 'pk': s.pk}
+                 'pk': s.pk,
+                 'protocol_is_latest': s.protocol_is_latest,
+                 'all_model_versions_latest': s.all_model_versions_latest}
             )
         return super().get_formset_graph(initial=initial)
 
