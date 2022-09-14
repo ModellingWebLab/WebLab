@@ -603,7 +603,9 @@ class TestStoryCreateView:
              'update': False,
              'ORDER': 0,
              'grouptoggles': [modelgroup.pk],
-             'pk': 30001}
+             'pk': 30001,
+             'protocol_is_latest': True,
+             'all_model_versions_latest': True}
         ]
 
     def test_edit_story_without_text_or_graph(self, logged_in_user, client):
