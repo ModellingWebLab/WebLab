@@ -1,0 +1,12 @@
+Hi {{ user.full_name }}
+
+Your story called {{story.title}} is affected by recent changed to models or protocols.
+
+This means that in your story one or more of the graphs is now based on an outdated protocol version or model version.
+
+To see more details, see: {{ base_url }}{% url 'stories:story_edit' story.id %}
+
+In order to unsubscribe from these notifications please see {{ base_url }}{% url 'accounts:myaccount' %}
+
+Your sincerely,
+Cardiac Web Lab website

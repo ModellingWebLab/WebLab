@@ -62,8 +62,10 @@
         <th>Email preferences</th>
         <td>
           {{ form.receive_emails }}
-          {{ form.receive_emails.label }}
-          <span class="errorlist">{{ form.receive_emails.errors }}</span>
+          {{ form.receive_emails.label }}<br/>
+          {{ form.receive_story_emails}}
+          {{ form.receive_story_emails.label }}
+          <span class="errorlist">{{ form.receive_emails.errors }}{{form.receive_story_emails.errors}}</span>
         </td>
       </tr>
     </table>

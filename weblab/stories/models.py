@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import ManyToManyField, TextField, BooleanField
+from django.db.models import BooleanField, ManyToManyField, TextField
 
 from core.models import UserCreatedModelMixin, VisibilityModelMixin
 from core.visibility import Visibility
@@ -21,6 +21,8 @@ class Story(UserCreatedModelMixin, VisibilityModelMixin):
         help_text='The different visualisers determine how graphs are shown in this story.',
         default='displayPlotFlot',
     )
+
+    email_sent = models.BooleanField(default=False)  # Was alert that the story is affected by version caanges sent?
 
     class Meta:
         ordering = ['title']
@@ -72,3 +74,4 @@ class StoryGraph(StoryItem):
     grouptoggles = ManyToManyField(ModelGroup, blank=True, related_name='toggle_group_story_graphs')
     protocol_is_latest = BooleanField(default=True)
     all_model_versions_latest = BooleanField(default=True)
+    email_sent = BooleanField(default=False)
