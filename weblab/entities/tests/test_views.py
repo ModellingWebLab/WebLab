@@ -1716,7 +1716,7 @@ class TestVersionCreation:
         assert not graph.email_sent
         helpers.add_permission(logged_in_user, 'create_model')
 
-        model = graph.Cachedmodelversions.first().model
+        model = graph.cachedmodelversions.first().model
         helpers.add_version(model,
                             filename='file1.txt',
                             tag_name=None,
