@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 import requests
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile, mail
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from git import GitCommandError
@@ -26,6 +26,7 @@ from entities.models import (
 from experiments.models import Experiment, PlannedExperiment
 from repocache.models import CachedProtocolVersion, ProtocolInterface, ProtocolIoputs
 from repocache.populate import populate_entity_cache
+from stories.models import StoryGraph
 
 
 @pytest.fixture
@@ -1704,6 +1705,32 @@ class TestVersionCreation:
 
         assert 0 == PlannedExperiment.objects.count()
         assert 0 == model.files.count()
+
+    def test_new_model_version_existing_story(self, client, logged_in_user, helpers, story):
+        assert len(mail.outbox) == 0
+        graph = StoryGraph.objects.get(story=story)
+        assert not story.email_sent
+        assert graph.protocol_is_latest
+        assert graph.all_model_versions_latest
+        assert not graph.email_sent
+        helpers.add_permission(logged_in_user, 'create_model')
+
+        model = graph.Cachedmodelversions.first().model
+        helpers.add_version(model,
+                            filename='file1.txt',
+                            tag_name=None,
+                            visibility=None,
+                            cache=True,
+                            message='file',
+                            contents='entity contents')
+
+        story.refresh_from_db()
+        graph.refresh_from_db()
+        assert story.email_sent
+        assert graph.protocol_is_latest
+        assert not graph.all_model_versions_latest
+        assert graph.email_sent
+        assert len(mail.outbox) == 1
 
     def test_cannot_create_model_version_as_non_owner(self, logged_in_user, client):
         model = recipes.model.make()
