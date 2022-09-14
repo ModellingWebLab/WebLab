@@ -580,7 +580,9 @@ class TestStoryCreateView:
              'update': False,
              'ORDER': 0,
              'grouptoggles': [modelgroup.pk],
-             'pk': 30001}
+             'pk': 30001,
+             'protocol_is_latest': True,
+             'all_model_versions_latest': True}
         ]
 
         # check without modelgroup
