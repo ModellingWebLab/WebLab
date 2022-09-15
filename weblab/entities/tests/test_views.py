@@ -1708,15 +1708,17 @@ class TestVersionCreation:
         assert 0 == model.files.count()
 
     def test_new_model_version_existing_story(self, client, logged_in_user, helpers, story):
+        helpers.add_permission(logged_in_user, 'create_model')
         assert len(mail.outbox) == 0
+
         graph = StoryGraph.objects.get(story=story)
         assert not story.email_sent
         assert graph.protocol_is_latest
         assert graph.all_model_versions_latest
         assert not graph.email_sent
-        helpers.add_permission(logged_in_user, 'create_model')
 
         model = graph.cachedmodelversions.first().model
+        latest_version = model.repocache.latest_version
         helpers.add_version(model,
                             filename='file1.txt',
                             tag_name=None,
@@ -1725,8 +1727,31 @@ class TestVersionCreation:
                             message='file',
                             contents='entity contents')
 
+        model,refresh_from_db()
+        latest_version = model.repocache.latest_version
         story.refresh_from_db()
         graph.refresh_from_db()
+        assert latest_version != model.repocache.latest_version
+        latest_version = model.repocache.latest_version
+
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'filename[]': 'uploads/model.txt',
+                'commit_message': 'first commit',
+                'tag': 'v1',
+                'visibility': 'public',
+            },
+        )
+        assert response.status_code == 302
+
+        model,refresh_from_db()
+        latest_version = model.repocache.latest_version
+        story.refresh_from_db()
+        graph.refresh_from_db()
+        assert latest_version != model.repocache.latest_version
+        latest_version = model.repocache.latest_version
+        
         assert story.email_sent
         assert graph.protocol_is_latest
         assert not graph.all_model_versions_latest
