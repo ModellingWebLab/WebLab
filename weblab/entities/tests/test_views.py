@@ -10,8 +10,8 @@ from unittest.mock import patch
 
 import pytest
 import requests
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from git import GitCommandError
@@ -1706,6 +1706,24 @@ class TestVersionCreation:
         assert 0 == PlannedExperiment.objects.count()
         assert 0 == model.files.count()
 
+    def test_create_fitting_spec_version(self, client, logged_in_user, helpers):
+        # trigger new version of fitting spec via entity view
+        # to test alternative entity type other than model & protocol
+        helpers.add_permission(logged_in_user, 'create_fittingspec')
+        model = recipes.cached_fittingspec.make(
+            entity__author=logged_in_user,
+        ).entity
+        response = client.post(
+            '/fitting/specs/%d/versions/new' % model.pk,
+            data={
+                'filename[]': 'uploads/model.txt',
+                'commit_message': 'first commit',
+                'tag': 'v1',
+                'visibility': 'public',
+            },
+        )
+        assert response.status_code == 302
+
     def test_new_model_version_existing_story(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
         # Create model
@@ -1755,6 +1773,59 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert len(mail.outbox) == 3  # one email per story
+
+    def test_new_model_version_existing_story_no_emails(self, client, logged_in_user, helpers):
+        logged_in_user.receive_story_emails = False
+        logged_in_user.save()
+
+        helpers.add_permission(logged_in_user, 'create_model')
+        # Create model
+        model = recipes.model_file.make(
+            entity__author=logged_in_user,
+            upload=SimpleUploadedFile('model.txt', b'my test model'),
+            original_name='model.txt',
+        ).entity
+        # add model version
+        helpers.add_version(model, visibility='public')
+
+        # make protocol version
+        protocol = recipes.protocol.make(author=logged_in_user)
+        helpers.add_version(protocol, visibility='public')
+
+        # create stories
+        story = recipes.story.make(author=logged_in_user)
+        story2 = recipes.story.make(author=logged_in_user)
+        story3 = recipes.story.make(author=logged_in_user)
+
+        # make story graphs
+        recipes.story_graph.make(author=logged_in_user, story=story,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
+                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
+        recipes.story_graph.make(author=logged_in_user, story=story,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
+                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
+        recipes.story_graph.make(author=logged_in_user, story=story2,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
+                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
+        recipes.story_graph.make(author=logged_in_user, story=story3,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
+                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
+
+        assert len(mail.outbox) == 0  # no emails sent yet
+
+        # add new model version
+        response = client.post(
+            '/entities/models/%d/versions/new' % model.pk,
+            data={
+                'parent_hexsha': model.repo.latest_commit.sha,
+                'filename[]': 'uploads/model2.txt',
+                'commit_message': 'second commit',
+                'tag': 'v2',
+                'visibility': 'public',
+            },
+        )
+        assert response.status_code == 302
+        assert len(mail.outbox) == 0  # still no emails as user does not want emails
 
     def test_new_protocol_version_existing_story(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_protocol')
@@ -3766,4 +3837,3 @@ class TestModelGroupViews:
         response = client.get('/entities/modelgroups/')
         assert response.status_code == 200
         assert list(response.context_data['modelgroup_list'].all()) == modelgroups
-
