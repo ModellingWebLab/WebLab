@@ -650,7 +650,7 @@ class EntityNewVersionView(
         if entity.repo.latest_commit is not None:
             if entity.repo.latest_commit.sha != parent_hexsha:
 
-                form.add_error(None, 'Someone has saved a newer version since you started editing')
+                form.add_error(None, 'Someone has saved a newer version since you started editing %s, %s' %(entity.repo.latest_commit.sha, parent_hexsha))
                 return self.form_invalid(form)
 
         # Copy files into the index

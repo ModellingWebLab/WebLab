@@ -1707,56 +1707,74 @@ class TestVersionCreation:
         assert 0 == PlannedExperiment.objects.count()
         assert 0 == model.files.count()
 
-    def test_new_model_version_existing_story(self, client, logged_in_user, helpers, story):
+    def test_new_model_version_existing_story(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_model')
+        model = recipes.model_file.make(
+            entity__author=logged_in_user,
+            upload=SimpleUploadedFile('model.txt', b'my test model'),
+            original_name='model.txt',
+        ).entity
+        helpers.add_version(model, visibility='public')
+
+#        model.refresh_from_db()
+        model_latest_version = model.repocache.latest_version
         assert len(mail.outbox) == 0
 
-        graph = StoryGraph.objects.get(story=story)
-        assert not story.email_sent
-        assert graph.protocol_is_latest
-        assert graph.all_model_versions_latest
-        assert not graph.email_sent
+        protocol = recipes.protocol.make(author=logged_in_user)
+        helpers.add_version(protocol, visibility='public')
 
-        model = graph.cachedmodelversions.first().model
-        latest_version = model.repocache.latest_version
-        helpers.add_version(model,
-                            filename='file1.txt',
-                            tag_name=None,
-                            visibility=None,
-                            cache=True,
-                            message='file',
-                            contents='entity contents')
-
-        model,refresh_from_db()
-        latest_version = model.repocache.latest_version
-        story.refresh_from_db()
-        graph.refresh_from_db()
-        assert latest_version != model.repocache.latest_version
-        latest_version = model.repocache.latest_version
+        story = recipes.story.make(author=logged_in_user)
+        recipes.story_graph.make(author=logged_in_user, story=story, cachedprotocolversion=protocol.repocache.latest_version,
+                                 cachedmodelversions=[model_latest_version], models=[model])
 
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
-                'filename[]': 'uploads/model.txt',
-                'commit_message': 'first commit',
-                'tag': 'v1',
+                'parent_hexsha': model_latest_version.sha,
+                'filename[]': 'uploads/model2.txt',
+                'commit_message': 'second commit',
+                'tag': 'v2',
                 'visibility': 'public',
             },
         )
-        assert response.status_code == 302
+        assert response.status_code == 302, str(response.content)
+#        model.refresh_from_db()
+        assert model_latest_version != model.repocache.latest_version
 
-        model,refresh_from_db()
-        latest_version = model.repocache.latest_version
-        story.refresh_from_db()
-        graph.refresh_from_db()
-        assert latest_version != model.repocache.latest_version
-        latest_version = model.repocache.latest_version
-        
-        assert story.email_sent
-        assert graph.protocol_is_latest
-        assert not graph.all_model_versions_latest
-        assert graph.email_sent
         assert len(mail.outbox) == 1
+#        helpers.add_permission(logged_in_user, 'create_model')
+#        assert len(mail.outbox) == 0
+
+#        graph = StoryGraph.objects.get(story=story)
+#        assert not story.email_sent
+#        assert graph.protocol_is_latest
+#        assert graph.all_model_versions_latest
+#        assert not graph.email_sent
+#
+#        model = graph.cachedmodelversions.first().model
+#        model = recipes.model_file.make(
+#            entity__author=logged_in_user,
+#            upload=SimpleUploadedFile('model.txt', b'my test model'),
+#            original_name='model.txt',
+#        ).entity
+#
+#        latest_version = model.repocache.latest_version
+#        assert response.status_code == 302
+#
+#        model.refresh_from_db()
+        assert False, str(model.repocache.latest_version)
+#        story.refresh_from_db()
+#        graph.refresh_from_db()
+
+#        latest_version = model.repocache.latest_version
+#        assert latest_version != model.repocache.latest_version
+#        latest_version = model.repocache.latest_version
+#
+#        assert story.email_sent
+#        assert graph.protocol_is_latest
+#        assert not graph.all_model_versions_latest
+#        assert graph.email_sent
+#        assert len(mail.outbox) == 1
 
     def test_cannot_create_model_version_as_non_owner(self, logged_in_user, client):
         model = recipes.model.make()
