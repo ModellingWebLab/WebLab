@@ -27,7 +27,6 @@ from entities.models import (
 from experiments.models import Experiment, PlannedExperiment
 from repocache.models import CachedProtocolVersion, ProtocolInterface, ProtocolIoputs
 from repocache.populate import populate_entity_cache
-from stories.models import StoryGraph
 
 
 @pytest.fixture
@@ -1728,13 +1727,17 @@ class TestVersionCreation:
         story3 = recipes.story.make(author=logged_in_user)
 
         # make story graphs
-        recipes.story_graph.make(author=logged_in_user, story=story, cachedprotocolversion=protocol.repocache.latest_version,
+        recipes.story_graph.make(author=logged_in_user, story=story,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
                                  cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story, cachedprotocolversion=protocol.repocache.latest_version,
+        recipes.story_graph.make(author=logged_in_user, story=story,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
                                  cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story2, cachedprotocolversion=protocol.repocache.latest_version,
+        recipes.story_graph.make(author=logged_in_user, story=story2,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
                                  cachedmodelversions=[model.repocache.latest_version], models=[model])
-        graph3 = recipes.story_graph.make(author=logged_in_user, story=story3, cachedprotocolversion=protocol.repocache.latest_version,
+        recipes.story_graph.make(author=logged_in_user, story=story3,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
                                  cachedmodelversions=[model.repocache.latest_version], models=[model])
 
         assert len(mail.outbox) == 0  # no emails sent yet
@@ -1743,7 +1746,7 @@ class TestVersionCreation:
         response = client.post(
             '/entities/models/%d/versions/new' % model.pk,
             data={
-                'parent_hexsha':  model.repo.latest_commit.sha,
+                'parent_hexsha': model.repo.latest_commit.sha,
                 'filename[]': 'uploads/model2.txt',
                 'commit_message': 'second commit',
                 'tag': 'v2',
@@ -1753,7 +1756,7 @@ class TestVersionCreation:
         assert response.status_code == 302
         assert len(mail.outbox) == 3  # one email per story
 
-    def test_new_model_version_existing_story2(self, client, logged_in_user, helpers):
+    def test_new_protocol_version_existing_story(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_protocol')
         doc = b'\n# Title\n\ndocumentation goes here\nand here'
         content = b'my test protocol\ndocumentation\n{' + doc + b'}'
@@ -1773,20 +1776,23 @@ class TestVersionCreation:
         story3 = recipes.story.make(author=logged_in_user)
 
         # make story graphs
-        recipes.story_graph.make(author=logged_in_user, story=story, cachedprotocolversion=protocol.repocache.latest_version,
+        recipes.story_graph.make(author=logged_in_user, story=story,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
                                  cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story, cachedprotocolversion=protocol.repocache.latest_version,
+        recipes.story_graph.make(author=logged_in_user, story=story,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
                                  cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story2, cachedprotocolversion=protocol.repocache.latest_version,
+        recipes.story_graph.make(author=logged_in_user, story=story2,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
                                  cachedmodelversions=[model.repocache.latest_version], models=[model], email_sent=True)
-        graph3 = recipes.story_graph.make(author=logged_in_user, story=story3, cachedprotocolversion=protocol.repocache.latest_version,
+        recipes.story_graph.make(author=logged_in_user, story=story3,
+                                 cachedprotocolversion=protocol.repocache.latest_version,
                                  cachedmodelversions=[model.repocache.latest_version], models=[model])
-
 
         response = client.post(
             '/entities/protocols/%d/versions/new' % protocol.pk,
             data={
-                'parent_hexsha':  protocol.repo.latest_commit.sha,
+                'parent_hexsha': protocol.repo.latest_commit.sha,
                 'filename[]': 'uploads/protocol.txt',
                 'mainEntry': ['protocol.txt'],
                 'commit_message': 'first commit',
