@@ -29,10 +29,12 @@ def send_story_changed_email(graphs):
                 [author.email],
             )
 
+            # prevent re-sending emails for story
             story.email_sent = True
             story.save()
 
-    # prevent re-sending emails
+    # prevent re-sending emails for graphs
     for graph in graphs:
-        graph.email_sent = True
-        graph.save()
+        if graph.story.author.receive_story_emails:
+            graph.email_sent = True
+            graph.save()

@@ -1745,18 +1745,18 @@ class TestVersionCreation:
         story3 = recipes.story.make(author=logged_in_user)
 
         # make story graphs
-        recipes.story_graph.make(author=logged_in_user, story=story,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story2,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story3,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph = recipes.story_graph.make(author=logged_in_user, story=story,
+                                         cachedprotocolversion=protocol.repocache.latest_version,
+                                         cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph2 = recipes.story_graph.make(author=logged_in_user, story=story,
+                                          cachedprotocolversion=protocol.repocache.latest_version,
+                                          cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph3 = recipes.story_graph.make(author=logged_in_user, story=story2,
+                                          cachedprotocolversion=protocol.repocache.latest_version,
+                                          cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph4 = recipes.story_graph.make(author=logged_in_user, story=story3,
+                                          cachedprotocolversion=protocol.repocache.latest_version,
+                                          cachedmodelversions=[model.repocache.latest_version], models=[model])
 
         assert len(mail.outbox) == 0  # no emails sent yet
 
@@ -1773,6 +1773,21 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert len(mail.outbox) == 3  # one email per story
+
+        story.refresh_from_db()
+        story2.refresh_from_db()
+        story3.refresh_from_db()
+        graph.refresh_from_db()
+        graph2.refresh_from_db()
+        graph3.refresh_from_db()
+        graph4.refresh_from_db()
+        assert story.email_sent
+        assert story2.email_sent
+        assert story3.email_sent
+        assert graph.email_sent
+        assert graph2.email_sent
+        assert graph3.email_sent
+        assert graph4.email_sent
 
     def test_new_model_version_existing_story_no_emails(self, client, logged_in_user, helpers):
         logged_in_user.receive_story_emails = False
@@ -1798,18 +1813,18 @@ class TestVersionCreation:
         story3 = recipes.story.make(author=logged_in_user)
 
         # make story graphs
-        recipes.story_graph.make(author=logged_in_user, story=story,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story2,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story3,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph = recipes.story_graph.make(author=logged_in_user, story=story,
+                                         cachedprotocolversion=protocol.repocache.latest_version,
+                                         cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph2 = recipes.story_graph.make(author=logged_in_user, story=story,
+                                          cachedprotocolversion=protocol.repocache.latest_version,
+                                          cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph3 = recipes.story_graph.make(author=logged_in_user, story=story2,
+                                          cachedprotocolversion=protocol.repocache.latest_version,
+                                          cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph4 = recipes.story_graph.make(author=logged_in_user, story=story3,
+                                          cachedprotocolversion=protocol.repocache.latest_version,
+                                          cachedmodelversions=[model.repocache.latest_version], models=[model])
 
         assert len(mail.outbox) == 0  # no emails sent yet
 
@@ -1826,6 +1841,21 @@ class TestVersionCreation:
         )
         assert response.status_code == 302
         assert len(mail.outbox) == 0  # still no emails as user does not want emails
+
+        story.refresh_from_db()
+        story2.refresh_from_db()
+        story3.refresh_from_db()
+        graph.refresh_from_db()
+        graph2.refresh_from_db()
+        graph3.refresh_from_db()
+        graph4.refresh_from_db()
+        assert not story.email_sent
+        assert not story2.email_sent
+        assert not story3.email_sent
+        assert not graph.email_sent
+        assert not graph2.email_sent
+        assert not graph3.email_sent
+        assert not graph4.email_sent
 
     def test_new_protocol_version_existing_story(self, client, logged_in_user, helpers):
         helpers.add_permission(logged_in_user, 'create_protocol')
@@ -1847,18 +1877,19 @@ class TestVersionCreation:
         story3 = recipes.story.make(author=logged_in_user)
 
         # make story graphs
-        recipes.story_graph.make(author=logged_in_user, story=story,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
-        recipes.story_graph.make(author=logged_in_user, story=story2,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model], email_sent=True)
-        recipes.story_graph.make(author=logged_in_user, story=story3,
-                                 cachedprotocolversion=protocol.repocache.latest_version,
-                                 cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph = recipes.story_graph.make(author=logged_in_user, story=story,
+                                         cachedprotocolversion=protocol.repocache.latest_version,
+                                         cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph2 = recipes.story_graph.make(author=logged_in_user, story=story,
+                                          cachedprotocolversion=protocol.repocache.latest_version,
+                                          cachedmodelversions=[model.repocache.latest_version], models=[model])
+        graph3 = recipes.story_graph.make(author=logged_in_user, story=story2,
+                                          cachedprotocolversion=protocol.repocache.latest_version,
+                                          cachedmodelversions=[model.repocache.latest_version], models=[model],
+                                          email_sent=True)
+        graph4 = recipes.story_graph.make(author=logged_in_user, story=story3,
+                                          cachedprotocolversion=protocol.repocache.latest_version,
+                                          cachedmodelversions=[model.repocache.latest_version], models=[model])
 
         response = client.post(
             '/entities/protocols/%d/versions/new' % protocol.pk,
@@ -1873,6 +1904,21 @@ class TestVersionCreation:
         )
         assert response.status_code == 302, str(response.content)
         assert len(mail.outbox) == 1  # one email per story only if not already sent
+
+        story.refresh_from_db()
+        story2.refresh_from_db()
+        story3.refresh_from_db()
+        graph.refresh_from_db()
+        graph2.refresh_from_db()
+        graph3.refresh_from_db()
+        graph4.refresh_from_db()
+        assert story.email_sent
+        assert not story2.email_sent  # story updated but not graph, so sending skipped
+        assert story3.email_sent
+        assert graph.email_sent
+        assert graph2.email_sent
+        assert graph3.email_sent
+        assert graph4.email_sent
 
     def test_cannot_create_model_version_as_non_owner(self, logged_in_user, client):
         model = recipes.model.make()
