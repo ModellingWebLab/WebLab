@@ -251,7 +251,7 @@ function backfilGraphControl(){
 
 function toggleEditVisibility(){
     if($(`#id_graph-${this.id}-update_0`).is(':checked')){
-        //make sure visability for toggles matches their selectedness
+        //make sure visibility for toggles matches their selectedness
         $(`#${this.id}groupToggleBox`).find('input').each(function(){
             $(this).change();
         });
@@ -271,7 +271,7 @@ function toggleEditVisibility(){
         }
         $(`#id_graph-${this.id}-graph-selecttion-controls`).css({"visibility": "hidden", "display": "none"});
     }
-    $(`#id_graph-${this.id}-experimentVersionsUpdate`).change();
+    $(`#id_graph-${this.id}-graphfiles`).change();
 }
 
 // hook up functionality when document has loaded

@@ -1,6 +1,6 @@
 Hi {{ user.full_name }}
 
-Your story called {{story.title}} is affected by recent changed to models or protocols.
+Your story called "{{story.title}}" is affected by recent changes to models or protocols.
 
 This means that in your story one or more of the graphs is now based on an outdated protocol version or model version.
 
