@@ -64,6 +64,7 @@ def get_models_not_run(user, mk, pk):
     model_versions_run = tuple(get_models_run_for_model_and_protocol(user, mk, pk))
     return (m for m in modelversions if m not in model_versions_run)
 
+
 def get_graph_file_names(user, mk, pk):
     """Retreives the file names of graphs for a given user, model(group) and protocol."""
     experiment_versions = get_versions_for_model_and_protocol(user, mk, pk)
