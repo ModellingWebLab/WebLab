@@ -27,6 +27,7 @@ from .graph_filters import (
     get_experiment_versions,
     get_graph_file_names,
     get_modelgroups,
+    get_models_not_run,
     get_protocols,
     get_url,
     get_used_groups,
@@ -300,6 +301,14 @@ class StoryFilterGraphView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         return get_graph_file_names(self.request.user, self.kwargs.get('mk', ''), self.kwargs.get('pk', ''))
+
+
+class StoryFilterExperimentsNotRunView(LoginRequiredMixin, ListView):
+    model = ExperimentVersion
+    template_name = 'stories/models_not_run.html'
+
+    def get_queryset(self):
+        return tuple(get_models_not_run(self.request.user, self.kwargs.get('mk', ''), self.kwargs.get('pk', '')))
 
 
 class StoryRenderView(UserPassesTestMixin, DetailView):

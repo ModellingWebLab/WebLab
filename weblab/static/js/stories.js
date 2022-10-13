@@ -135,13 +135,10 @@ function insertGraphForm(){
                     <select name="graph-${currentGraphCount}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-${currentGraphCount}-id_models" size="2" multiple></select>
                 </div>
            </div><br/>
-                
-                <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol" disabled></select><br/>
 
+                <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol" disabled></select><br/>
                     Select which groups can be switched on and off in the graph: 
-                    <div id="${currentGraphCount}groupToggleBox" class="groupToggleBox"></div>                
-                
-                
+                    <div id="${currentGraphCount}groupToggleBox" class="groupToggleBox"></div
                 <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles" disabled></select><br/><br/>
                 <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox">Please select a graph...</div>
                 <br/>
@@ -272,6 +269,18 @@ function toggleEditVisibility(){
         $(`#id_graph-${this.id}-graph-selecttion-controls`).css({"visibility": "hidden", "display": "none"});
     }
     $(`#id_graph-${this.id}-graphfiles`).change();
+    updateModelsNotRun(`id_graph-${this.id}-`);
+}
+
+// update models not run
+function updateModelsNotRun(id_prefix){
+    protocol = $(`#${id_prefix}protocol`).val();
+    url =  `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentsnotrun`
+    $.ajax({url: url,
+            success: function (data) {
+                $(`#${id_prefix}modelsnotrunBox`).html(data);
+            }
+    });
 }
 
 // hook up functionality when document has loaded
@@ -352,6 +361,8 @@ $(document).ready(function(){
                   $(`#${id_prefix}protocol`).change();
               }
       });
+
+      updateModelsNotRun(id_prefix);
   });
 
   // update graphs when protocol changes
@@ -386,6 +397,8 @@ $(document).ready(function(){
               }
           });
       }
+
+      updateModelsNotRun(id_prefix);
 
       //graph files
       current_file = $(`#${id_prefix}graphfiles`).val();

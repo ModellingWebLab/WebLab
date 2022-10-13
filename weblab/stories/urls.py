@@ -85,15 +85,35 @@ urlpatterns = [
     ),
 
     url(
+        r'^(?P<mk>.+)/(?P<pk>\d+)/experimentsnotrun$',
+        views.StoryFilterExperimentsNotRunView.as_view(),
+        name='filter_experiments_not_run',
+    ),
+
+    url(
+        r'^(?P<mk>.+)/experimentsnotrun$',
+        views.StoryFilterExperimentsNotRunView.as_view(),
+        name='filter_experiments_not_run_no_pk',
+    ),
+
+    url(
+        r'^experimentsnotrun$',
+        views.StoryFilterExperimentsNotRunView.as_view(),
+        name='filter_experiments_not_run_no_keys',
+    ),
+
+
+
+    url(
         r'^(?P<mk>\w+)/experimentversions$',
         views.StoryFilterExperimentVersions.as_view(),
-        name='filter_graph',
+        name='filter_experimentversions',
     ),
 
     url(
         r'^experimentversions$',
         views.StoryFilterExperimentVersions.as_view(),
-        name='filter_graph_no_keys',
+        name='filter_experimentversions_no_keys',
     ),
 
 

@@ -71,8 +71,8 @@
                   <td class="storypart-content">
                     <ul class="errorlist"><li>{{ part.non_field_errors }}</li></ul>
                     {%if not part.protocol_is_latest.value or not part.all_model_versions_latest.value %}
-                      <img src="{% static 'img/alert.gif' %}" alt="Graph changed icon" title="{%if not part.protocol_is_latest.value%}protocol {% endif %}{%if not part.protocol_is_latest.value and not part.all_model_versions_latest.value %}and {%endif%}{%if not part.all_model_versions_latest.value%}model {% endif %}version(s) have been updated"/>
-                      <span class="graph_versions_updated">{%if not part.protocol_is_latest.value%}protocol {% endif %}{%if not part.protocol_is_latest.value and not part.all_model_versions_latest.value %}and {%endif%}{%if not part.all_model_versions_latest.value%}model {% endif %}version(s) have been updated</span>
+                      <img src="{% static 'img/alert.gif' %}" alt="Graph changed icon" title="{%if not part.protocol_is_latest.value%}protocol {% endif %}{%if not part.protocol_is_latest.value and not part.all_model_versions_latest.value %}and {%endif%}{%if not part.all_model_versions_latest.value%}model {% endif %}version(s) have been updated. To update the graph, select Update graph."/>
+                      <span class="graph_versions_updated">{%if not part.protocol_is_latest.value%}protocol {% endif %}{%if not part.protocol_is_latest.value and not part.all_model_versions_latest.value %}and {%endif%}{%if not part.all_model_versions_latest.value%}model {% endif %}version(s) have been updated. To update the graph, select <em>Update graph</em> below. </span>
                     {%endif%}
 
                     <div class="StoryGraphRadio" {% if part.currentGraph.value == '' or part.currentGraph.value == '/'%} style="display:none"{% endif %}>
@@ -138,6 +138,9 @@
                             <label for="{{ toggle.data.id  }}"><input type="checkbox" name="graph-{{ part.number.value}}-grouptoggles" value="{{ toggle.data.value  }}" class="groupToggleSelect" id="id_graph-{{ part.number.value}}-grouptoggles_{{forloop.counter0}}" {% if toggle.data.selected %}checked{% endif %}>{{ toggle.data.label }}</label>
                         {% endfor %}
                     </div>
+                    <div id="id_graph-{{part.number.value}}-modelsnotrunBox" class="modelsnotrunBox">
+                    </div>
+
                     <ul class="errorlist"><li>{{ part.graphfiles.errors }}</li></ul>
                     <label id="{{part.number.value}}-graphfiles" for="id_graph-{{part.number.value}}-graphfiles">Select graph: </label>
                     <select name="graph-{{part.number.value}}-graphfiles" class="graphfiles" id="id_graph-{{part.number.value}}-graphfiles">

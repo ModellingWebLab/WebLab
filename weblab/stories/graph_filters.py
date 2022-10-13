@@ -47,12 +47,22 @@ def get_versions_for_model_and_protocol(user, mk, pk):
 
 
 def get_models_run_for_model_and_protocol(user, mk, pk):
+    """Retreive the models which are the latest version and for which the protocol has been run."""
     protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version.pk
     model_version_pks = get_model_version_pks(mk)
     return (e.model for e in Experiment.objects.filter(model_version__pk__in=model_version_pks,
                                                        protocol_version=protocol_version)
             if e.latest_result == Runnable.STATUS_SUCCESS and e.is_visible_to_user(user))
 
+
+def get_models_not_run(user, mk, pk):
+    """Retreive the models which are either not the latest version and for which the protocol has not been run."""
+    if mk == '' or pk == '':
+        return tuple()
+
+    modelversions = (mv.model for mv in CachedModelVersion.objects.filter(pk__in=get_model_version_pks(mk)))
+    model_versions_run = tuple(get_models_run_for_model_and_protocol(user, mk, pk))
+    return (m for m in modelversions if m not in model_versions_run)
 
 def get_graph_file_names(user, mk, pk):
     """Retreives the file names of graphs for a given user, model(group) and protocol."""
