@@ -62,7 +62,7 @@ def get_models_not_run(user, mk, pk):
 
     modelversions = (mv.model for mv in CachedModelVersion.objects.filter(pk__in=get_model_version_pks(mk)))
     model_versions_run = tuple(get_models_run_for_model_and_protocol(user, mk, pk))
-    return (m for m in modelversions if m not in model_versions_run)
+    return (m for m in modelversions if m not in model_versions_run and m)
 
 
 def get_graph_file_names(user, mk, pk):

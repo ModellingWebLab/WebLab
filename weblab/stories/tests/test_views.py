@@ -935,6 +935,44 @@ class TestStoryFilterExperimentVersions:
 
 
 @pytest.mark.django_db
+class TesttoryFilterExperimentsNotRunView:
+    def test_requires_login(self, experiment_with_result, client):
+        experiment = experiment_with_result.experiment
+        response = client.get('/stories/model%d/%d/experimentsnotrun' % (experiment.model.pk, experiment.protocol.pk))
+        assert response.status_code == 302
+        assert '/login/' in response.url
+
+    def test_model_not_run(self, client, logged_in_user, experiment_with_result_public, helpers):
+        experiment = experiment_with_result_public.experiment
+
+        # add another model
+        new_model = recipes.model.make(author=logged_in_user, name='test model not run')
+        helpers.add_version(new_model, visibility='public')
+
+        # create a model group
+        modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model, new_model])
+
+        response = client.get('/stories/model%d_modelgroup%d_/%d/experimentsnotrun' %
+                              (experiment.model.pk, modelgroup.pk, experiment.protocol.pk))
+        assert response.status_code == 200
+        resp = response.content.decode("utf-8").strip()
+        assert experiment.model.name not in resp
+        assert new_model.name in resp
+
+    def test_no_protocol(self, client, logged_in_admin, experiment_with_result):
+        experiment = experiment_with_result.experiment
+        response = client.get('/stories/model%d/experimentsnotrun' %
+                              (experiment.model.pk))
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").strip() == ''
+
+    def test_no_keys(self, client, logged_in_admin):
+        response = client.get('/stories/experimentsnotrun')
+        assert response.status_code == 200
+        assert response.content.decode("utf-8").strip() == ''
+
+
+@pytest.mark.django_db
 class TestStoryFilterGroupToggles:
     def test_requires_login(self, experiment_with_result, client):
         experiment = experiment_with_result.experiment
