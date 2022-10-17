@@ -6,6 +6,8 @@ var graphs = require('./stories-graphs.js');
 // Code to facilitate stories with text and graph parts
 const SimpleMDE = require('./lib/simplemde.js');
 
+var hasUnusedGraphs = [];
+
 function moveUp(id)
 {
     me = $(id.closest('tr'));
@@ -246,6 +248,27 @@ function backfilGraphControl(){
     }.bind(this));
 }
 
+// update models not run
+function updateModelsNotRun(id_prefix){
+    protocol = $(`#${id_prefix}protocol`).val();
+    url =  `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentsnotrun`
+    $.ajax({url: url,
+            success: function (data) {
+                $(`#${id_prefix}modelsnotrunBox`).html(data);
+                updateSaveButton(id_prefix);
+            }
+    });
+}
+
+//update save button enabledness
+function updateSaveButton(id_prefix){
+    hasUnusedGraphs[id_prefix] = ($(`#${id_prefix}modelsnotrunBox`).html().trim() != '') && $(`#${id_prefix}update_0`).is(':checked');
+    if(!hasUnusedGraphs[id_prefix]){
+        delete hasUnusedGraphs[id_prefix];
+    }
+    $('#savebutton').prop('disabled', Object.keys(hasUnusedGraphs).length != 0);
+}
+
 function toggleEditVisibility(){
     if($(`#id_graph-${this.id}-update_0`).is(':checked')){
         //make sure visibility for toggles matches their selectedness
@@ -272,19 +295,10 @@ function toggleEditVisibility(){
     updateModelsNotRun(`id_graph-${this.id}-`);
 }
 
-// update models not run
-function updateModelsNotRun(id_prefix){
-    protocol = $(`#${id_prefix}protocol`).val();
-    url =  `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentsnotrun`
-    $.ajax({url: url,
-            success: function (data) {
-                $(`#${id_prefix}modelsnotrunBox`).html(data);
-            }
-    });
-}
 
 // hook up functionality when document has loaded
 $(document).ready(function(){
+
     //busy cursor if appropriate
     var numGraphs = $('.graphPreviewBox').length - $('.graphPreviewButton').length;
     if(numGraphs >0){
@@ -321,6 +335,13 @@ $(document).ready(function(){
             $('.editor-toolbar a').css('cursor', 'pointer');
             $('.ui-state-disabled').css('cursor', 'default', '!important');
         }
+    });
+
+    //dismiss warnings about models not being run
+    $(document).on('click', '.dismissnotrun', function(){
+        id_prefix = $(this).parent().attr('id').replace('modelsnotrunBox', '');
+        $(this).parent().html('');
+        updateSaveButton(id_prefix);
     });
 
     // disable graph legend when submitting
@@ -361,8 +382,6 @@ $(document).ready(function(){
                   $(`#${id_prefix}protocol`).change();
               }
       });
-
-      updateModelsNotRun(id_prefix);
   });
 
   // update graphs when protocol changes
@@ -478,8 +497,8 @@ $(document).ready(function(){
   /* Graph Preview functionality */
   // update graph preview if any of the controls change
   // back fill graph controls
-  $(body).on('change', '.preview-graph-control', function() {
-       var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
+    $(body).on('change', '.preview-graph-control', function() {
+        var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
         graphId = match[1];
         //set relevant css class for preview box size
         $(`#${graphId}graphPreviewBox`).removeClass('displayPlotFlot-preview');
@@ -516,6 +535,7 @@ $(document).ready(function(){
         } else {
             $(`#${graphId}graphPreviewBox`).html('Please select a graph...');
         }
+        updateSaveButton(`id_graph-${graphId}-`);
     });
 
     // update all graph previews if graph type changes
