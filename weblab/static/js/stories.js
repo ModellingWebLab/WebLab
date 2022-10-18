@@ -251,7 +251,7 @@ function backfilGraphControl(){
 // update models not run
 function updateModelsNotRun(id_prefix){
     protocol = $(`#${id_prefix}protocol`).val();
-    url =  `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentsnotrun`
+    url =  `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentsnotrun`;
     $.ajax({url: url,
             success: function (data) {
                 $(`#${id_prefix}modelsnotrunBox`).html(data);
@@ -267,6 +267,7 @@ function updateSaveButton(id_prefix){
         delete hasUnusedGraphs[id_prefix];
     }
     $('#savebutton').prop('disabled', Object.keys(hasUnusedGraphs).length != 0);
+    $('#savebuttondiv').prop('title', (Object.keys(hasUnusedGraphs).length != 0) ? 'To save the story, please dismiss all warnings about experiments not being run!' : '');
 }
 
 function toggleEditVisibility(){

@@ -1,9 +1,9 @@
 {% if  object_list|length > 0 %}
-<ul class="errorlist"><li>For the following models, the experiment has not been run. These will be excluded from the graph. You may want to re-run the experiment. 
+<ul class="errorlist"><li>For the following models, the experiment has not been run succesfully. These will be excluded from the graph. You may want to re-run the experiment. 
 <ul>
 {% endif %}
 {% for entity in object_list %}
-  <li>{{ entity }}</li>
+ <li>{{ entity.0 }} - {%if entity.1%}<a href="{% url 'experiments:version' entity.1.experiment.pk entity.1.pk %} {{entity.1.pk}}">experiment {{ entity.1.status }}</a>{%else%}<input type="button" class="runsimulation" value="run simulation">{% endif %}</li>
 {% endfor %}
 {% if  object_list|length != 0 %}
 </ul></li></ul>
