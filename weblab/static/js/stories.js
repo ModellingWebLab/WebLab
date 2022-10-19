@@ -345,6 +345,25 @@ $(document).ready(function(){
         updateSaveButton(id_prefix);
     });
 
+    //run simulation from warning message about simulations not run
+    $(document).on('click', '.runsimulation', function(){
+        model_pk = $(this).attr("class").match(/model([[0-9]*).*$/)[1];
+        protocol_pk = $(this).attr("class").match(/protocol([[0-9]*).*$/)[1];
+        modelversion_sha = $(this).attr("class").match(/modelversion([a-z0-9]*).*$/)[1];
+        protocolversion_sha = $(this).attr("class").match(/protocolversion([a-z0-9]*).*$/)[1];
+        $.ajax({
+            context: this,
+            type: 'POST',
+            data: {model: model_pk, protocol: protocol_pk, model_version: modelversion_sha, protocol_version: protocolversion_sha},
+            url: getStoryBasePath() + "/../experiments/new",
+            success: function (data) {
+                if('newExperiment' in data){
+                    $(this).replaceWith(`<a href="${data['newExperiment']['url']}">experiment ${data['newExperiment']['status']}</a>`);
+                }
+            }
+        });
+    });
+
     // disable graph legend when submitting
     $('#newstoryform').submit(function(e) {
         $('.graphPreviewDialog').find('input').each(function(){

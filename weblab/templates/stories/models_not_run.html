@@ -3,7 +3,7 @@
 <ul>
 {% endif %}
 {% for entity in object_list %}
- <li>{{ entity.0 }} - {%if entity.1%}<a href="{% url 'experiments:version' entity.1.experiment.pk entity.1.pk %} {{entity.1.pk}}">experiment {{ entity.1.status }}</a>{%else%}<input type="button" class="runsimulation" value="run simulation">{% endif %}</li>
+ <li>{{ entity.0 }} - {%if entity.1%}<a href="{% url 'experiments:version' entity.1.experiment.pk entity.1.pk %}">experiment {{ entity.1.status }}</a>{%else%}<input type="button" class="runsimulation model{{entity.0.pk}} protocol{{entity.2.protocol.pk}} modelversion{{entity.0.repocache.latest_version.sha}} protocolversion{{entity.2.sha}}" value="Run simulation">{% endif %}</li>
 {% endfor %}
 {% if  object_list|length != 0 %}
 </ul></li></ul>

@@ -57,15 +57,20 @@ def get_models_run_for_model_and_protocol(user, mk, pk):
 
 def get_models_not_run(user, mk, pk):
     """Retreive the models which are either not the latest version and for which the protocol has not been run."""
+    def get_exp_ver(model_version, protocol_version):
+        return ExperimentVersion.objects.filter(
+            experiment__in=Experiment.objects.filter(model_version=model_version,
+                                                     protocol_version=protocol_version)
+        ).order_by('-pk').first()
+
     if mk == '' or pk == '':
         return tuple()
-    def get_exp_ver(model_version, protocol_version):
-        return ExperimentVersion.objects.filter(experiment__in=Experiment.objects.filter(model_version=model_version, protocol_version=protocol_version)).order_by('-pk').first()
 
     protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
     modelversions = CachedModelVersion.objects.filter(pk__in=get_model_version_pks(mk))
     model_versions_run = tuple(get_models_run_for_model_and_protocol(user, mk, pk))
-    return ((mv.model, get_exp_ver(mv, protocol_version)) for mv in modelversions if mv.model not in model_versions_run)
+    return ((mv.model, get_exp_ver(mv, protocol_version), protocol_version)
+            for mv in modelversions if mv.model not in model_versions_run)
 
 
 def get_graph_file_names(user, mk, pk):
