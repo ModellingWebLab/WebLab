@@ -3,7 +3,10 @@
 <ul>
 {% endif %}
 {% for entity in object_list %}
- <li>{{ entity.0 }} - {%if entity.1%}<a href="{% url 'experiments:version' entity.1.experiment.pk entity.1.pk %}">experiment {{ entity.1.status }}</a>{%else%}<input type="button" class="runsimulation model{{entity.0.pk}} protocol{{entity.2.protocol.pk}} modelversion{{entity.0.repocache.latest_version.sha}} protocolversion{{entity.2.sha}}" value="Run simulation">{% endif %}</li>
+ <li>{{ entity.0 }} - {%if entity.1%}<a href="{% url 'experiments:version' entity.1.experiment.pk entity.1.pk %}">experiment {{ entity.1.status }}</a>{%else%}<input type="button" class="runsimulation model{{entity.0.pk}} protocol{{entity.2.protocol.pk}} modelversion{{entity.0.repocache.latest_version.sha}} protocolversion{{entity.2.sha}}" value="Run simulation">{% endif %}
+{%if entity.4 != entity.0.repocache.latest_version and entity.4%}<input title="Compare model version in existing graph with the latest model version" type="button" class="comparenotrun" value="Compare model versions" data-sha1="{{entity.4.sha}}" data-sha2="{{entity.0.repocache.latest_version.sha}}" data-pk="{{entity.0.pk}}" data-type="model">{%endif%}
+{%if entity.3 != entity.2 and entity.3%}<input  title="Compare protocol version in existing graph with the latest protocol version" type="button" class="comparenotrun" value="Compare protocol versions" data-sha1="{{entity.3.sha}}" data-sha2="{{entity.2.sha}}" data-pk="{{entity.3.entity.entity.pk}}" data-type="protocol">{%endif%}
+</li>
 {% endfor %}
 {% if  object_list|length != 0 %}
 </ul></li></ul>

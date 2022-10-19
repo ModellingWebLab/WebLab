@@ -250,8 +250,13 @@ function backfilGraphControl(){
 
 // update models not run
 function updateModelsNotRun(id_prefix){
+    currentGraphPk = '';
+    if( $(`#${id_prefix}pk`).length != 0){
+        currentGraphPk = '/' + $(`#${id_prefix}pk`).val();
+    }
+
     protocol = $(`#${id_prefix}protocol`).val();
-    url =  `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentsnotrun`;
+    url =  `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentsnotrun${currentGraphPk}`;
     $.ajax({url: url,
             success: function (data) {
                 $(`#${id_prefix}modelsnotrunBox`).html(data);
@@ -362,6 +367,11 @@ $(document).ready(function(){
                 }
             }
         });
+    });
+
+    // open model or protocol comparisson for not run experiment
+    $(document).on('click', '.comparenotrun', function(){
+        window.open(`${getStoryBasePath()}/../entities/${$(this).data('type')}s/compare/${$(this).data('pk')}:${$(this).data('sha1')}/${$(this).data('pk')}:${$(this).data('sha2')}`);
     });
 
     // disable graph legend when submitting

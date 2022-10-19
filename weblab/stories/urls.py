@@ -89,6 +89,12 @@ urlpatterns = [
         views.StoryFilterExperimentsNotRunView.as_view(),
         name='filter_experiments_not_run',
     ),
+    url(
+        r'^(?P<mk>.+)/(?P<pk>\d+)/experimentsnotrun/(?P<gpk>\d+)/$',
+        views.StoryFilterExperimentsNotRunView.as_view(),
+        name='filter_experiments_not_run_existing_graph',
+    ),
+
 
     url(
         r'^(?P<mk>.+)/experimentsnotrun$',

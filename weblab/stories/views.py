@@ -15,7 +15,8 @@ from django.views.generic.list import ListView
 from accounts.forms import OwnershipTransferForm
 from entities.models import ModelGroup, ProtocolEntity
 from entities.views import EditCollaboratorsAbstractView
-from experiments.models import ExperimentVersion
+from experiments.models import Experiment, ExperimentVersion
+from repocache.models import CachedModelVersion
 
 from .forms import (
     StoryCollaboratorFormSet,
@@ -26,8 +27,9 @@ from .forms import (
 from .graph_filters import (
     get_experiment_versions,
     get_graph_file_names,
+    get_model_version_pks,
     get_modelgroups,
-    get_models_not_run,
+    get_models_run_for_model_and_protocol,
     get_protocols,
     get_url,
     get_used_groups,
@@ -308,7 +310,35 @@ class StoryFilterExperimentsNotRunView(LoginRequiredMixin, ListView):
     template_name = 'stories/models_not_run.html'
 
     def get_queryset(self):
-        return tuple(get_models_not_run(self.request.user, self.kwargs.get('mk', ''), self.kwargs.get('pk', '')))
+        def get_exp_ver(model_version, protocol_version):
+            return ExperimentVersion.objects.filter(
+                experiment__in=Experiment.objects.filter(model_version=model_version,
+                                                         protocol_version=protocol_version)
+            ).order_by('-pk').first()
+
+        mk = self.kwargs.get('mk', '')
+        pk = self.kwargs.get('pk', '')
+        gpk = self.kwargs.get('gpk', '')
+
+        current_protocol_version = None
+        current_model_versions = CachedModelVersion.objects.none()
+        if gpk:
+            current_graph = StoryGraph.objects.get(pk=gpk)
+            current_protocol_version = current_graph.cachedprotocolversion
+            current_model_versions = current_graph.cachedmodelversions.all()
+
+        if mk == '' or pk == '':
+            return tuple()
+
+        protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version
+        modelversions = CachedModelVersion.objects.filter(pk__in=get_model_version_pks(mk))
+        model_versions_run = tuple(get_models_run_for_model_and_protocol(self.request.user, mk, pk))
+        return tuple((mv.model,
+                      get_exp_ver(mv, protocol_version),
+                      protocol_version,
+                      current_protocol_version,
+                      current_model_versions.filter(entity__entity=mv.model).first())
+                     for mv in modelversions if mv.model not in model_versions_run)
 
 
 class StoryRenderView(UserPassesTestMixin, DetailView):
