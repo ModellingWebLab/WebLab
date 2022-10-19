@@ -124,7 +124,6 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
             self.fields['grouptoggles'].choices = self.toggle_choices
 
         if 'pk' in self.initial:
-            #assert False, str(self.initial['pk'])
             self.fields['pk'] = forms.CharField(widget=forms.HiddenInput(), required=False)
 
         self.fields['graphfiles'] = forms.CharField(required=True)
