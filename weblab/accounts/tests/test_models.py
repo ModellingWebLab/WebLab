@@ -11,5 +11,10 @@ def test_user_properties():
         institution='UCL',
     )
     assert str(user) == 'test@example.com (Test User)'
+    assert user.is_staff ==False
+    assert user.is_active == True
     assert user.get_short_name() == 'test@example.com'
     assert user.get_full_name() == 'Test User'
+    assert user.receive_emails == False
+    assert user.receive_story_emails  == True
+    assert not user.is_superuser

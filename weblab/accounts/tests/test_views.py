@@ -63,3 +63,57 @@ def test_cannot_delete_other_account(client, logged_in_user, other_user):
     assert response.status_code == 403
     assert User.objects.filter(pk=other_user.pk).exists()
     assert user_directory_repo.exists()
+
+
+@pytest.mark.django_db
+def test_register(client, logged_in_user):
+    assert not User.objects.filter(email='new@email.com').exists()
+
+    # no password
+    response = client.post('/accounts/register/', data = {'email': 'new@email.com',
+                                                          'institution': 'nottingham',
+                                                          'full_name': 'john doe'})
+    assert response.status_code == 200
+    assert not User.objects.filter(email='new@email.com').exists()
+
+    # passwords not matching
+    response = client.post('/accounts/register/', data = {'email': 'new@email.com',
+                                                          'institution': 'nottingham',
+                                                          'full_name': 'john doe',
+                                                          'password1': 'h0rse_Battery_staple',
+                                                          'password2': 'blabla'})
+    assert response.status_code == 200
+    assert not User.objects.filter(email='new@email.com').exists()
+
+    # register successfully
+    response = client.post('/accounts/register/', data = {'email': 'new@email.com',
+                                                          'institution': 'nottingham',
+                                                          'full_name': 'john doe',
+                                                          'password1': 'h0rse_Battery_staple',
+                                                          'password2': 'h0rse_Battery_staple'})
+
+    assert User.objects.filter(email='new@email.com').exists()
+    assert response.status_code == 302
+
+
+@pytest.mark.django_db
+def test_edit_account(client, logged_in_user):
+    old_email = logged_in_user.email
+    old_institution = logged_in_user.institution
+    old_receive_emails = logged_in_user.receive_emails
+    old_receive_story_emails = logged_in_user.receive_story_emails
+    old_full_name = logged_in_user.full_name
+    response = client.get('/accounts/myaccount/')
+    assert response.status_code == 200
+
+    response = client.post('/accounts/myaccount/', data = {'email': 'new@email.com',
+                                                           'institution': 'nottingham',
+                                                           'receive_emails': 'on',
+                                                           'receive_story_emails': ''})
+    logged_in_user.refresh_from_db()
+    assert logged_in_user.email == 'new@email.com' != old_email
+    assert logged_in_user.institution == 'nottingham' != old_institution
+    assert logged_in_user.receive_emails == True != old_receive_emails
+    assert logged_in_user.receive_story_emails == False != old_receive_story_emails
+    assert response.status_code == 302
+

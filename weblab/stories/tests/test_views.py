@@ -958,6 +958,86 @@ class TesttoryFilterExperimentsNotRunView:
         resp = response.content.decode("utf-8").strip()
         assert experiment.model.name not in resp
         assert new_model.name in resp
+        assert 'Run simulation' in resp
+
+    def test_model_running(self, client, logged_in_user, experiment_with_result_public, helpers):
+        experiment = experiment_with_result_public.experiment
+
+        # add another model
+        new_model = recipes.model.make(author=logged_in_user, name='test model not run')
+        helpers.add_version(new_model, visibility='public')
+
+        # create a model group
+        modelgroup = recipes.modelgroup.make(author=logged_in_user, models=[experiment.model, new_model])
+
+        recipes.experiment_version.make(
+            status='QUEUED',
+            experiment__model=new_model,
+            experiment__model_version=new_model.repocache.latest_version,
+            experiment__protocol=experiment.protocol,
+            experiment__protocol_version=experiment.protocol_version,
+        )
+
+        response = client.get('/stories/model%d_modelgroup%d_/%d/experimentsnotrun' %
+                              (experiment.model.pk, modelgroup.pk, experiment.protocol.pk))
+        assert response.status_code == 200
+        resp = response.content.decode("utf-8").strip()
+        assert experiment.model.name not in resp
+        assert new_model.name in resp
+        assert 'QUEUED' in resp
+
+    def test_model_new_model_version(self, client, logged_in_user, experiment_with_result_public, helpers):
+        experiment = experiment_with_result_public.experiment
+        # make existing graph
+        graph = recipes.story_graph.make(author=logged_in_user, cachedprotocolversion=experiment.protocol_version,
+                                         cachedmodelversions=[experiment.model_version], models=[experiment.model])
+
+        # add new model version
+        helpers.add_version(experiment.model, visibility='public')
+
+        response = client.get('/stories/model%d_/%d/experimentsnotrun/%d' %
+                              (experiment.model.pk, experiment.protocol.pk, graph.pk))
+        assert response.status_code == 200
+        resp = response.content.decode("utf-8").strip()
+        assert experiment.model.name in resp
+        assert 'Compare model version in existing graph with the latest model version' in resp
+        assert 'Compare protocol version in existing graph with the latest protocol version' not in resp
+
+    def test_model_new_protocol_version(self, client, logged_in_user, experiment_with_result_public, helpers):
+        experiment = experiment_with_result_public.experiment
+        # make existing graph
+        graph = recipes.story_graph.make(author=logged_in_user, cachedprotocolversion=experiment.protocol_version,
+                                         cachedmodelversions=[experiment.model_version], models=[experiment.model])
+
+        # add new protocol version
+        helpers.add_version(experiment.protocol, visibility='public')
+
+        response = client.get('/stories/model%d_/%d/experimentsnotrun/%d' %
+                              (experiment.model.pk, experiment.protocol.pk, graph.pk))
+        assert response.status_code == 200
+        resp = response.content.decode("utf-8").strip()
+        assert experiment.model.name in resp
+        assert 'Compare model version in existing graph with the latest model version' not in resp
+        assert 'Compare protocol version in existing graph with the latest protocol version' in resp
+
+    def test_model_new_model_and_protocol_version(self, client, logged_in_user, experiment_with_result_public, helpers):
+        experiment = experiment_with_result_public.experiment
+        # make existing graph
+        graph = recipes.story_graph.make(author=logged_in_user, cachedprotocolversion=experiment.protocol_version,
+                                         cachedmodelversions=[experiment.model_version], models=[experiment.model])
+
+        # add new model version
+        helpers.add_version(experiment.model, visibility='public')
+        # add new protocol version
+        helpers.add_version(experiment.protocol, visibility='public')
+
+        response = client.get('/stories/model%d_/%d/experimentsnotrun/%d' %
+                              (experiment.model.pk, experiment.protocol.pk, graph.pk))
+        assert response.status_code == 200
+        resp = response.content.decode("utf-8").strip()
+        assert experiment.model.name in resp
+        assert 'Compare model version in existing graph with the latest model version' in resp
+        assert 'Compare protocol version in existing graph with the latest protocol version' in resp
 
     def test_no_protocol(self, client, logged_in_admin, experiment_with_result):
         experiment = experiment_with_result.experiment
