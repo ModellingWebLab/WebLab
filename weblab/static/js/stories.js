@@ -198,6 +198,7 @@ function backFillProtocol(){
                    success: function (data) {
                        $(`#${this.id_prefix}protocol`).html(data);
                        $(`#${this.id_prefix}protocol`).val(this.protocol_selected);
+                       $(`#${this.id_prefix}protocol`).data('protocol', this.protocol_selected);
                    }
            });
 }
@@ -256,6 +257,9 @@ function updateModelsNotRun(id_prefix){
     }
 
     protocol = $(`#${id_prefix}protocol`).val();
+    if(protocol == undefined){
+        protocol = $(`#${id_prefix}protocol`).data('protocol');
+    }
     url =  `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentsnotrun${currentGraphPk}`;
     $.ajax({url: url,
             success: function (data) {
