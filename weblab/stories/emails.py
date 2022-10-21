@@ -12,7 +12,6 @@ def send_story_changed_email(graphs):
         author = story.author
 
         if author.receive_story_emails:
-            print('sending email')
             body = render_to_string(
                 'emails/story_versions_changed.txt',
                 {
