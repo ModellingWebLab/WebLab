@@ -76,7 +76,7 @@ pyjwt==2.4.0
     # via social-auth-core
 pyparsing==2.4.7
     # via packaging
-pytest==7.0.1
+pytest==7.2.0
     # via
     #   -r test.in
     #   pytest-cov
