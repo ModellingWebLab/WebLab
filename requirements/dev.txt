@@ -4,12 +4,12 @@
 #
 #    pip-compile --output-file=dev.txt dev.in
 #
-flake8==4.0.1
-isort==5.10.1
-pytest==7.0.0
-pytest_cov==3.0.0
-pytest-django==4.5.2
-model-bakery==1.4.0
+flake8
+isort
+pytest
+pytest_cov
+pytest-django
+model-bakery
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
