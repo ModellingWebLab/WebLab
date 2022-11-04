@@ -110,6 +110,7 @@ dj-database-url
 social-auth-app-django
 django-guardian
 psycopg2
+gitpython
 #pytest==7.0.0
 #pytest_cov==3.0.0
 #pytest-django==4.5.2
