@@ -80,25 +80,25 @@
 #python3-openid==3.2.0
 #    # via social-auth-core
 #pytz==2021.1
-#    # via django
-#requests-oauthlib==1.3.0
-#    # via social-auth-core
-#rollbar==0.15.1
-#    # via -r base.in
-#six==1.16.0
-#    # via
-#    #   django-braces
-#    #   rollbar
-#    #   social-auth-app-django
-#smmap==4.0.0
-#    # via gitdb
-#social-auth-app-django==4.0.0
-#    # via -r base.in
-#social-auth-core==4.1.0
-#    # via social-auth-app-django
-#sqlparse==0.4.2
-#    # via django
-#
+    # via django
+requests-oauthlib==1.3.0
+    # via social-auth-core
+rollbar==0.15.1
+    # via -r base.in
+six==1.16.0
+    # via
+    #   django-braces
+    #   rollbar
+    #   social-auth-app-django
+smmap==4.0.0
+    # via gitdb
+social-auth-app-django==4.0.0
+    # via -r base.in
+social-auth-core==4.1.0
+    # via social-auth-app-django
+sqlparse==0.4.2
+    # via django
+
 
 codecov==2.1.11
 dj-database-url==0.4.2
