@@ -48,24 +48,24 @@
 #    # via flake8
 #model-bakery==1.2.0
 #    # via -r test.in
-#oauthlib==3.2.1
-#    # via
-#    #   requests-oauthlib
-#    #   social-auth-core
-#packaging==20.9
-#    # via pytest
-#pint==0.9
-#    # via -r base.in
-#pluggy==0.13.1
-#    # via pytest
+oauthlib==3.2.1
+    # via
+    #   requests-oauthlib
+    #   social-auth-core
+packaging==20.9
+    # via pytest
+pint==0.9
+    # via -r base.in
+pluggy==0.13.1
+    # via pytest
 #psycopg2==2.8.6
-#    # via -r base.in
-#py==1.10.0
-#    # via pytest
-#pycodestyle==2.7.0
-#    # via flake8
-#pycparser==2.20
-#    # via cffi
+    # via -r base.in
+py==1.10.0
+    # via pytest
+pycodestyle==2.7.0
+    # via flake8
+pycparser==2.20
+    # via cffi
 pyflakes==2.3.1
     # via flake8
 pyjwt==2.4.0
