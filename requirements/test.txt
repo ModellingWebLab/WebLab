@@ -42,19 +42,19 @@
 #    # via requests
 #iniconfig==1.1.1
 #    # via pytest
-#isort==4.3.21
-#    # via -r test.in
-#mccabe==0.6.1
-#    # via flake8
-#model-bakery==1.2.0
-#    # via -r test.in
+isort==4.3.21
+    # via -r test.in
+mccabe==0.6.1
+    # via flake8
+model-bakery==1.2.0
+    # via -r test.in
 oauthlib==3.2.1
     # via
     #   requests-oauthlib
     #   social-auth-core
 packaging==20.9
     # via pytest
-pint==0.9
+#pint==0.9
     # via -r base.in
 pluggy==0.13.1
     # via pytest
@@ -112,7 +112,7 @@ gitpython==3.1.11
 isort==4.3.21
 model-bakery==1.2.0
 
-#pint==0.19
+pint==0.19
 psycopg2
 
 pytest==6.2.4
