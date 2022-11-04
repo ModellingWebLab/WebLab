@@ -102,7 +102,8 @@
 
 pint ==0.19
 isort==4.3.21
-#psycopg2==2.8.6
+django==2.2.28
+
 psycopg2
 requests
 codecov
@@ -115,9 +116,7 @@ django-guardian
 gitpython
 model-bakery
 django-braces
-#pytest==7.0.0
-pytest-cov==3.0.0
-#pytest-django==4.5.2
 pytest-cov
 pytest-django
-django==2.2.28
+rollbar
+
