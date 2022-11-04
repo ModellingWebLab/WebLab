@@ -100,7 +100,7 @@
 #    # via django
 #
 
-isort
+isort==4.3.21
 requests
 codecov
 flake8
