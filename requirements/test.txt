@@ -102,6 +102,7 @@
 
 pint ==0.19
 isort==4.3.21
+psycopg2==2.8.6
 requests
 codecov
 flake8
@@ -110,7 +111,6 @@ pytest_cov
 dj-database-url
 social-auth-app-django
 django-guardian
-psycopg2
 gitpython
 model-bakery
 django-braces
