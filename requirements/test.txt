@@ -100,23 +100,24 @@
 #    # via django
 #
 
-pint ==0.19
-isort==4.3.21
-django==2.2.28
+codecov==2.1.11
+dj-database-url==0.4.2
+django-braces==1.14.0
+django-guardian==2.3.0
 
+django==2.2.28
+flake8==3.9.2
+gitpython==3.1.11
+
+isort==4.3.21
+model-bakery==1.2.0
+
+pint==0.19
 psycopg2
-requests
-codecov
-flake8
-pytest
-pytest_cov
-dj-database-url
-social-auth-app-django
-django-guardian
-gitpython
-model-bakery
-django-braces
+
+pytest==6.2.4
 pytest-cov
 pytest-django
-rollbar
-
+requests
+rollbar==0.15.1
+social-auth-app-django==4.0.0
