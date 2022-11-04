@@ -107,6 +107,7 @@ flake8
 pytest
 pytest_cov
 dj-database-url
+social_django
 #pytest==7.0.0
 #pytest_cov==3.0.0
 #pytest-django==4.5.2
