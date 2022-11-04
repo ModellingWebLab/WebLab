@@ -104,7 +104,6 @@ requests
 codecov
 flake8
 pytest
-pyytest-django
 pytest_cov
 #pytest==7.0.0
 #pytest_cov==3.0.0
