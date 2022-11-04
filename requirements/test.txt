@@ -115,6 +115,8 @@ gitpython
 model-bakery
 django-braces
 #pytest==7.0.0
-#pytest_cov==3.0.0
+pytest-cov==3.0.0
 #pytest-django==4.5.2
+pytest-cov
+pytest-django
 django==2.2.28
