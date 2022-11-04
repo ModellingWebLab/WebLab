@@ -109,4 +109,4 @@ pytest_cov
 #pytest==7.0.0
 #pytest_cov==3.0.0
 #pytest-django==4.5.2
-django=2.2.28
+django==2.2.28
