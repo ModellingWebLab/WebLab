@@ -100,6 +100,7 @@
 #    # via django
 #
 
+pint ==0.19
 isort==4.3.21
 requests
 codecov
