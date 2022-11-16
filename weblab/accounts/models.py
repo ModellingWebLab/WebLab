@@ -25,7 +25,12 @@ class User(PermissionsMixin, AbstractBaseUser):
 
     receive_emails = models.BooleanField(
         default=False,
-        help_text='User wants to receive emails',
+        help_text='User wants to receive emails about finished experiments',
+    )
+
+    receive_story_emails = models.BooleanField(
+        default=True,
+        help_text='User wants to receive emails about changes affecting theri stories',
     )
 
     USERNAME_FIELD = 'email'

@@ -19,10 +19,12 @@ class RegistrationForm(auth_forms.UserCreationForm):
 class MyAccountForm(forms.ModelForm):
     class Meta(forms.ModelForm):
         model = User
-        fields = ('email', 'institution', 'receive_emails')
-        labels = {
-            'receive_emails': 'Inform me about finished experiments',
-        }
+        fields = ('email', 'institution', 'receive_emails', 'receive_story_emails')
+        widgets = {'receive_emails': forms.CheckboxInput(attrs={"class": 'inline'}),
+                   'receive_story_emails': forms.CheckboxInput(attrs={"class": 'inline'})}
+
+        labels = {'receive_emails': 'Inform me about finished experiments',
+                  'receive_story_emails': 'Inform me when my stories are effected by new protocol/model versions'}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
