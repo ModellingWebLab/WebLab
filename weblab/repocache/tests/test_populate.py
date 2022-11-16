@@ -1,4 +1,5 @@
 import pytest
+import time
 
 from accounts.models import User
 from core import recipes
@@ -18,7 +19,7 @@ class TestPopulate:
 
         assert version1.sha == latest.sha
         assert version1.message == latest.message
-        assert version1.timestamp == latest.timestamp
+        assert time.mktime(version1.timestamp.timetuple()) == time.mktime(latest.timestamp.timetuple())
         assert version1.master_filename == latest.master_filename
         assert latest.master_filename is None
         assert version1.author != model_with_version.author.full_name
