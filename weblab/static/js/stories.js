@@ -6,6 +6,8 @@ var graphs = require('./stories-graphs.js');
 // Code to facilitate stories with text and graph parts
 const SimpleMDE = require('./lib/simplemde.js');
 
+var hasUnusedGraphs = [];
+
 function moveUp(id)
 {
     me = $(id.closest('tr'));
@@ -135,13 +137,10 @@ function insertGraphForm(){
                     <select name="graph-${currentGraphCount}-id_models" class="selectList modelgroupselect selectedmodels" id="id_graph-${currentGraphCount}-id_models" size="2" multiple></select>
                 </div>
            </div><br/>
-                
-                <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol" disabled></select><br/>
 
+                <label id="${currentGraphCount}-protocol" for="id_graph-${currentGraphCount}-protocol">Select protocol: </label><select class="graphprotocol" name="graph-${currentGraphCount}-protocol" id="id_graph-${currentGraphCount}-protocol" disabled></select><br/>
                     Select which groups can be switched on and off in the graph: 
-                    <div id="${currentGraphCount}groupToggleBox" class="groupToggleBox"></div>                
-                
-                
+                    <div id="${currentGraphCount}groupToggleBox" class="groupToggleBox"></div
                 <label id="${currentGraphCount}-graphfiles" for="id_graph-${currentGraphCount}-graphfiles">Select graph: </label><select class="graphfiles" name="graph-${currentGraphCount}-graphfiles" id="id_graph-${currentGraphCount}-graphfiles" disabled></select><br/><br/>
                 <div id="${currentGraphCount}graphPreviewBox" class="graphPreviewBox">Please select a graph...</div>
                 <br/>
@@ -199,6 +198,7 @@ function backFillProtocol(){
                    success: function (data) {
                        $(`#${this.id_prefix}protocol`).html(data);
                        $(`#${this.id_prefix}protocol`).val(this.protocol_selected);
+                       $(`#${this.id_prefix}protocol`).data('protocol', this.protocol_selected);
                    }
            });
 }
@@ -249,9 +249,39 @@ function backfilGraphControl(){
     }.bind(this));
 }
 
+// update models not run
+function updateModelsNotRun(id_prefix){
+    currentGraphPk = '';
+    if( $(`#${id_prefix}pk`).length != 0){
+        currentGraphPk = '/' + $(`#${id_prefix}pk`).val();
+    }
+
+    protocol = $(`#${id_prefix}protocol`).val();
+    if(protocol == undefined){
+        protocol = $(`#${id_prefix}protocol`).data('protocol');
+    }
+    url =  `${getStoryBasePath()}/${get_models_str(id_prefix)}/${protocol}/experimentsnotrun${currentGraphPk}`;
+    $.ajax({url: url,
+            success: function (data) {
+                $(`#${id_prefix}modelsnotrunBox`).html(data);
+                updateSaveButton(id_prefix);
+            }
+    });
+}
+
+//update save button enabledness
+function updateSaveButton(id_prefix){
+    hasUnusedGraphs[id_prefix] = ($(`#${id_prefix}modelsnotrunBox`).html().trim() != '') && $(`#${id_prefix}update_0`).is(':checked');
+    if(!hasUnusedGraphs[id_prefix]){
+        delete hasUnusedGraphs[id_prefix];
+    }
+    $('#savebutton').prop('disabled', Object.keys(hasUnusedGraphs).length != 0);
+    $('#savebuttondiv').prop('title', (Object.keys(hasUnusedGraphs).length != 0) ? 'To save the story, please dismiss all warnings about experiments not being run!' : '');
+}
+
 function toggleEditVisibility(){
     if($(`#id_graph-${this.id}-update_0`).is(':checked')){
-        //make sure visability for toggles matches their selectedness
+        //make sure visibility for toggles matches their selectedness
         $(`#${this.id}groupToggleBox`).find('input').each(function(){
             $(this).change();
         });
@@ -271,11 +301,14 @@ function toggleEditVisibility(){
         }
         $(`#id_graph-${this.id}-graph-selecttion-controls`).css({"visibility": "hidden", "display": "none"});
     }
-    $(`#id_graph-${this.id}-experimentVersionsUpdate`).change();
+    $(`#id_graph-${this.id}-graphfiles`).change();
+    updateModelsNotRun(`id_graph-${this.id}-`);
 }
+
 
 // hook up functionality when document has loaded
 $(document).ready(function(){
+
     //busy cursor if appropriate
     var numGraphs = $('.graphPreviewBox').length - $('.graphPreviewButton').length;
     if(numGraphs >0){
@@ -312,6 +345,37 @@ $(document).ready(function(){
             $('.editor-toolbar a').css('cursor', 'pointer');
             $('.ui-state-disabled').css('cursor', 'default', '!important');
         }
+    });
+
+    //dismiss warnings about models not being run
+    $(document).on('click', '.dismissnotrun', function(){
+        id_prefix = $(this).parent().attr('id').replace('modelsnotrunBox', '');
+        $(this).parent().html('');
+        updateSaveButton(id_prefix);
+    });
+
+    //run simulation from warning message about simulations not run
+    $(document).on('click', '.runsimulation', function(){
+        model_pk = $(this).attr("class").match(/model([[0-9]*).*$/)[1];
+        protocol_pk = $(this).attr("class").match(/protocol([[0-9]*).*$/)[1];
+        modelversion_sha = $(this).attr("class").match(/modelversion([a-z0-9]*).*$/)[1];
+        protocolversion_sha = $(this).attr("class").match(/protocolversion([a-z0-9]*).*$/)[1];
+        $.ajax({
+            context: this,
+            type: 'POST',
+            data: {model: model_pk, protocol: protocol_pk, model_version: modelversion_sha, protocol_version: protocolversion_sha},
+            url: getStoryBasePath() + "/../experiments/new",
+            success: function (data) {
+                if('newExperiment' in data){
+                    $(this).replaceWith(`<a href="${data['newExperiment']['url']}">experiment ${data['newExperiment']['status']}</a>`);
+                }
+            }
+        });
+    });
+
+    // open model or protocol comparisson for not run experiment
+    $(document).on('click', '.comparenotrun', function(){
+        window.open(`${getStoryBasePath()}/../entities/${$(this).data('type')}s/compare/${$(this).data('pk')}:${$(this).data('sha1')}/${$(this).data('pk')}:${$(this).data('sha2')}`);
     });
 
     // disable graph legend when submitting
@@ -386,6 +450,8 @@ $(document).ready(function(){
               }
           });
       }
+
+      updateModelsNotRun(id_prefix);
 
       //graph files
       current_file = $(`#${id_prefix}graphfiles`).val();
@@ -465,8 +531,8 @@ $(document).ready(function(){
   /* Graph Preview functionality */
   // update graph preview if any of the controls change
   // back fill graph controls
-  $(body).on('change', '.preview-graph-control', function() {
-       var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
+    $(body).on('change', '.preview-graph-control', function() {
+        var match = $(this).attr("id").match(/^id_graph-([0-9]*)-.*$/)
         graphId = match[1];
         //set relevant css class for preview box size
         $(`#${graphId}graphPreviewBox`).removeClass('displayPlotFlot-preview');
@@ -503,6 +569,7 @@ $(document).ready(function(){
         } else {
             $(`#${graphId}graphPreviewBox`).html('Please select a graph...');
         }
+        updateSaveButton(`id_graph-${graphId}-`);
     });
 
     // update all graph previews if graph type changes

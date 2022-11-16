@@ -1,6 +1,7 @@
 import pytest
 
 from core import recipes
+from entities.models import ModelGroup
 from stories.models import Story, StoryGraph, StoryText
 
 
@@ -113,3 +114,23 @@ def test_user_cannot_have_same_named_story(story, other_user):
     # another user can create a story with the same title
     assert story.author != other_user
     recipes.story.make(author=other_user, title=story.title)
+
+
+@pytest.mark.django_db
+def test_delete_model(story):
+    assert StoryGraph.objects.count() == 1
+    graph = StoryGraph.objects.filter(story=story).first()
+    graph.cachedmodelversions.first().model.delete()
+    assert StoryGraph.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_delete_group(story):
+    assert StoryGraph.objects.count() == 1
+    graph = StoryGraph.objects.filter(story=story).first()
+    model = graph.cachedmodelversions.first().model
+    assert ModelGroup.objects.count() == 0
+    recipes.modelgroup.make(models=[model])
+    assert ModelGroup.objects.count() == 1
+    model.delete()
+    assert ModelGroup.objects.count() == 0

@@ -97,6 +97,9 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         self.fields['ORDER'] = forms.IntegerField(required=False)
         self.fields['graphfilename'] = forms.CharField(required=False, widget=forms.HiddenInput)
         self.fields['currentGraph'] = forms.CharField(required=False)
+        self.fields['protocol_is_latest'] = forms.BooleanField(required=False)
+        self.fields['all_model_versions_latest'] = forms.BooleanField(required=False)
+
         self.fields['experimentVersions'] = \
             forms.CharField(required=False, widget=forms.HiddenInput(attrs={'class': 'preview-graph-control'}))
 
@@ -119,6 +122,9 @@ class StoryGraphForm(UserKwargModelFormMixin, forms.ModelForm):
         # if we are editing, set the current values as options (so they'll show in the template for the js)
         if 'initial' in kwargs and 'grouptoggles' in kwargs['initial']:
             self.fields['grouptoggles'].choices = self.toggle_choices
+
+        if 'pk' in self.initial:
+            self.fields['pk'] = forms.CharField(widget=forms.HiddenInput(), required=False)
 
         self.fields['graphfiles'] = forms.CharField(required=True)
 

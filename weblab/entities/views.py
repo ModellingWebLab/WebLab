@@ -75,6 +75,7 @@ from .models import (
     ProtocolEntity,
 )
 from .processing import process_check_protocol_callback, record_experiments_to_run
+from stories.emails import send_story_changed_email
 
 
 class EntityTypeMixin:
@@ -632,6 +633,8 @@ class EntityNewVersionView(
     def post(self, request, *args, **kwargs):
 
         entity = self.object = self.get_object()
+        latest_entity_version = entity.repocache.latest_version if entity.repocache.versions.exists() else None
+
         form = self.get_form()
         if not form.is_valid():
             return self.form_invalid(form)
@@ -712,6 +715,20 @@ class EntityNewVersionView(
             entity.analyse_new_version(version)
             if request.POST.get('rerun_expts'):
                 record_experiments_to_run(request.user, entity, commit)
+
+            #  if entity is a protocol/model, update storiy & graphs to indicate they are not useing teh latest version
+            if entity.entity_type == Entity.ENTITY_TYPE_PROTOCOL:
+                graphs = StoryGraph.objects.filter(cachedprotocolversion=latest_entity_version, email_sent=False)
+                for storygraph in graphs:
+                    storygraph.protocol_is_latest = False
+                    storygraph.save()
+                send_story_changed_email(graphs)
+            elif entity.entity_type == Entity.ENTITY_TYPE_MODEL:
+                graphs = StoryGraph.objects.filter(cachedmodelversions__in=[latest_entity_version], email_sent=False)
+                for storygraph in graphs:
+                    storygraph.all_model_versions_latest = False
+                    storygraph.save()
+                send_story_changed_email(graphs)
 
             # Show the user the new version
             ns = self.request.resolver_match.namespace

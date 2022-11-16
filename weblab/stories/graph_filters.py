@@ -47,6 +47,7 @@ def get_versions_for_model_and_protocol(user, mk, pk):
 
 
 def get_models_run_for_model_and_protocol(user, mk, pk):
+    """Retreive the models which are the latest version and for which the protocol has been run."""
     protocol_version = ProtocolEntity.objects.get(pk=pk).repocache.latest_version.pk
     model_version_pks = get_model_version_pks(mk)
     return (e.model for e in Experiment.objects.filter(model_version__pk__in=model_version_pks,
