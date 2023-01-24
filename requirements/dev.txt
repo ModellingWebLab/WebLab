@@ -8,7 +8,7 @@ attrs==21.2.0
     # via pytest
 backcall==0.2.0
     # via ipython
-certifi==2021.5.30
+certifi==2022.12.7
     # via requests
 cffi==1.14.5
     # via cryptography
@@ -162,7 +162,7 @@ urllib3==1.26.5
     # via requests
 wcwidth==0.2.5
     # via prompt-toolkit
-wheel==0.36.2
+wheel==0.38.1
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
