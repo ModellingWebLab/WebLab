@@ -33,7 +33,7 @@ gitpython==3.1.30
     # via -r base.in
 idna==2.10
     # via requests
-oauthlib==3.2.1
+oauthlib==3.2.2
     # via
     #   requests-oauthlib
     #   social-auth-core
