@@ -4,7 +4,7 @@ cffi==1.15.1
 chardet==4.0.0
 codecov==2.1.11
 coverage==7.0.5
-cryptography==39.0.0
+cryptography==39.0.1
 defusedxml==0.7.1
 dj-database-url==0.4.2
 django==2.2.28

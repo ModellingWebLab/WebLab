@@ -22,7 +22,7 @@ coverage==5.5
     # via
     #   codecov
     #   pytest-cov
-cryptography==3.4.7
+cryptography==39.0.1
     # via social-auth-core
 decorator==5.0.9
     # via
