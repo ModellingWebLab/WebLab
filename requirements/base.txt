@@ -27,11 +27,11 @@ django-braces==1.14.0
     # via -r base.in
 django-guardian==2.3.0
     # via -r base.in
-gitdb==4.0.9; python_version < '2.7'
-gitdb==4.0.10; python_version >= '2.7'
+gitdb==4.0.9; python_version == '2.6'
+gitdb==4.0.10; python_version > '2.6'
     # via gitpython
-gitpython==3.1.18; python_version < '2.7'
-gitPython==3.1.30; python_version >= '2.7'
+gitpython==3.1.18; python_version == '2.6'
+gitPython==3.1.30; python_version > '2.6'
     # via -r base.in
 idna==2.10
     # via requests

@@ -47,11 +47,11 @@ django-guardian==2.3.0
     # via -r base.in
 flake8==3.9.2
     # via -r test.in
-gitdb==4.0.9; python_version < '2.7'
-gitdb==4.0.10; python_version >= '2.7'
+gitdb==4.0.9; python_version == '2.6'
+gitdb==4.0.10; python_version != '2.6'
     # via gitpython
-gitpython==3.1.18; python_version < '2.7'
-gitPython==3.1.30; python_version >= '2.7'
+gitpython==3.1.18; python_version == '2.6'
+gitPython==3.1.30; python_version != '2.6'
     # via -r base.in
 idna==2.10
     # via requests
@@ -77,8 +77,8 @@ oauthlib==3.2.1
     # via
     #   requests-oauthlib
     #   social-auth-core
-packaging==21.3; python_version < '2.7'
-packaging==23.0; python_version >= '2.7'
+packaging==21.3; python_version == '2.6'
+packaging==23.0; python_version != '2.6'
     # via pytest
 parso==0.8.2
     # via jedi
