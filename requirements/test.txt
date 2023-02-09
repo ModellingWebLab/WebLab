@@ -14,7 +14,7 @@ flake8==3.9.2
 gitdb==4.0.9
 gitpython==3.1.18
 idna==2.10
-iniconfig==2.0.0
+iniconfig==1.1.1
 isort==4.3.21
 mccabe==0.6.1
 model-bakery==1.2.0
