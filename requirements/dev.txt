@@ -18,7 +18,7 @@ click==8.0.1
     # via pip-tools
 codecov==2.1.11
     # via -r test.in
-coverage==5.5
+coverage==6.2
     # via
     #   codecov
     #   pytest-cov
