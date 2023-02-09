@@ -19,7 +19,7 @@ isort==4.3.21
 mccabe==0.6.1
 model-bakery==1.2.0
 oauthlib==3.2.2
-packaging==23.0
+packaging==21.3
 pint==0.9
 pluggy==0.13.1
 psycopg2==2.8.6
