@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=dev.txt dev.in
 #
+asttokens==2.2.1
+    # via stack-data
 attrs==21.2.0
     # via pytest
 backcall==0.2.0
@@ -28,7 +30,6 @@ decorator==5.0.9
     # via
     #   ipdb
     #   ipython
-    #   traitlets
 defusedxml==0.7.1
     # via
     #   python3-openid
@@ -45,6 +46,8 @@ django-braces==1.14.0
     # via -r base.in
 django-guardian==2.3.0
     # via -r base.in
+executing==1.2.0
+    # via stack-data
 flake8==3.9.2
     # via -r test.in
 gitdb==4.0.7
@@ -57,10 +60,8 @@ iniconfig==1.1.1
     # via pytest
 ipdb==0.13.9
     # via -r dev.in
-ipython==7.31.1
+ipython==8.10.0
     # via ipdb
-ipython-genutils==0.2.0
-    # via traitlets
 isort==4.3.21
     # via -r test.in
 jedi==0.18.0
@@ -91,12 +92,14 @@ pip-tools==6.2.0
     # via -r dev.in
 pluggy==0.13.1
     # via pytest
-prompt-toolkit==3.0.19
+prompt-toolkit==3.0.36
     # via ipython
 psycopg2==2.8.6
     # via -r base.in
 ptyprocess==0.7.0
     # via pexpect
+pure-eval==0.2.2
+    # via stack-data
 py==1.10.0
     # via pytest
 pycodestyle==2.7.0
@@ -136,10 +139,10 @@ rollbar==0.15.1
     # via -r base.in
 six==1.16.0
     # via
+    #   asttokens
     #   django-braces
     #   rollbar
     #   social-auth-app-django
-    #   traitlets
 smmap==4.0.0
     # via gitdb
 social-auth-app-django==4.0.0
@@ -148,13 +151,15 @@ social-auth-core==4.1.0
     # via social-auth-app-django
 sqlparse==0.4.2
     # via django
+stack-data==0.6.2
+    # via ipython
 toml==0.10.2
     # via
     #   ipdb
     #   pep517
     #   pytest
     #   pytest-cov
-traitlets==4.3.3
+traitlets==5.9.0
     # via
     #   ipython
     #   matplotlib-inline
