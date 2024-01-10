@@ -29,7 +29,7 @@ django-guardian==2.3.0
     # via -r base.in
 gitdb==4.0.7
     # via gitpython
-gitpython==3.1.30
+gitpython==3.1.41
     # via -r base.in
 idna==2.10
     # via requests
