@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=dev.txt dev.in
 #
+asgiref==3.7.2
+    # via django
 attrs==21.2.0
     # via pytest
 backcall==0.2.0
@@ -16,7 +18,7 @@ chardet==4.0.0
     # via requests
 click==8.0.1
     # via pip-tools
-codecov==2.1.11
+codecov==2.1.13
     # via -r test.in
 coverage==5.5
     # via
@@ -35,7 +37,7 @@ defusedxml==0.7.1
     #   social-auth-core
 dj-database-url==0.4.2
     # via -r base.in
-django==2.2.28
+django==3.2.24
     # via
     #   -r base.in
     #   django-braces
