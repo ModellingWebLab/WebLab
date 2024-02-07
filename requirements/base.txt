@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=base.txt base.in
 #
+asgiref==3.7.2
+    # via django
 certifi==2022.12.7
     # via requests
 cffi==1.14.5
@@ -18,7 +20,7 @@ defusedxml==0.7.1
     #   social-auth-core
 dj-database-url==0.4.2
     # via -r base.in
-django==2.2.28
+django==3.2.24
     # via
     #   -r base.in
     #   django-braces
